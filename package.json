@@ -1,0 +1,25 @@
+{
+  "name": "ballers-api",
+  "version": "1.0.0",
+  "description": "<h1>Ballers-API</h1> <br> <h3>Installation (local)</h3> <p>Clone repo to your machine with Node.js installed</p> <p>Inside the cloned directory, open your terminal and run <code>npm install && npm run start</code></p> <p>Go to http://localhost:3000/api/v1/welcome</p>",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Highrachy/ballers-api.git"
+  },
+  "keywords": [],
+  "author": "tobieeniafe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Highrachy/ballers-api/issues"
+  },
+  "homepage": "https://github.com/Highrachy/ballers-api#readme",
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.20.1"
+  }
+}
