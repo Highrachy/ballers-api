@@ -1,12 +1,13 @@
 {
   "name": "ballers-api",
   "version": "1.0.0",
-  "description": "Ballers-API",
+  "description": "Ballers API",
   "main": "app.js",
   "scripts": {
     "start": "babel-node app.js",
     "start:dev": "nodemon --exec babel-node app.js",
-    "test": "mocha --require @babel/register"
+    "test": "mocha",
+    "test:watch": "mocha --watch"
   },
   "repository": {
     "type": "git",

@@ -20,10 +20,12 @@ app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-app.listen(process.env.PORT || port, (err) => {
+app.listen(process.env.PORT || port, err => {
   if (err) {
     console.log(err);
   } else {
     console.log(`Server running on port ${port}`);
   }
 });
+
+export default app;
