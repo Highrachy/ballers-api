@@ -1,11 +1,12 @@
 {
   "name": "ballers-api",
   "version": "1.0.0",
-  "description": "<h1>Ballers-API</h1> <br> <h3>Installation (local)</h3> <p>Clone repo to your machine with Node.js installed</p> <p>Inside the cloned directory, open your terminal and run <code>npm install && npm run start</code></p> <p>Go to http://localhost:3000/api/v1/welcome</p>",
+  "description": "Ballers-API",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon --exec babel-node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "babel-node app.js",
+    "start:dev": "nodemon --exec babel-node app.js",
+    "test": "mocha --require @babel/register"
   },
   "repository": {
     "type": "git",
@@ -23,15 +24,21 @@
     "@babel/core": "^7.8.7",
     "@babel/node": "^7.8.7",
     "@babel/preset-env": "^7.8.7",
+    "@babel/register": "^7.8.6",
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.20.1",
+    "mocha": "^7.1.0",
     "nodemon": "^2.0.2"
   },
   "dependencies": {
+    "app-root-path": "^3.0.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "morgan": "^1.9.1"
+    "morgan": "^1.9.1",
+    "winston": "^3.2.1"
   }
 }
