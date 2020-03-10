@@ -10,6 +10,7 @@ const formatParams = (info) => {
     Object.keys(args).length ? JSON.stringify(args, '', '') : ''
   }`;
 };
+
 const errorLog = `${appRoot}/logs/error.log`;
 const combinedLog = `${appRoot}/logs/combined.log`;
 const optionsFiles = [
