@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import logger from './config/winston';
 import { DB_URL, PORT } from './config/config';
 import welcome from './routes/welcome';
+import user from './routes/user';
 
 mongoose.connect(DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -26,6 +27,7 @@ app.use(bodyParser.json());
 app.use(morgan('combined', { stream: winston.stream.write }));
 
 app.use('/api/v1/welcome', welcome);
+app.use('/api/v1/user', user);
 
 app.listen(PORT, (err) => {
   if (err) {
