@@ -9,7 +9,12 @@ import { DB_URL, PORT } from './config/config';
 import welcome from './routes/welcome';
 import user from './routes/user';
 
-mongoose.connect(DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(DB_URL, {
+  useNewUrlParser: true,
+  useFindAndModify: false,
+  useCreateIndex: true,
+  useUnifiedTopology: true,
+});
 
 const db = mongoose.connection;
 const app = express();
