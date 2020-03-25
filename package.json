@@ -4,11 +4,15 @@
   "description": "Ballers API",
   "main": "app.js",
   "scripts": {
-    "start": "babel-node app.js",
-    "start:dev": "nodemon --exec babel-node app.js",
+    "build": "npm run build:clean && npm run build:server",
+    "build:clean": "rm -rf build && mkdir build",
+    "build:server": "babel -d ./build ./server -s",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "start": "node ./build/index.js",
+    "start:dev": "nodemon --exec babel-node ./server/index.js",
     "test": "NODE_ENV=test nyc mocha",
-    "test:watch": "NODE_ENV=test mocha --watch",
-    "coverage": "nyc report --reporter=text-lcov | coveralls"
+    "test:only": "NODE_ENV=test mocha",
+    "test:watch": "NODE_ENV=test mocha --watch"
   },
   "repository": {
     "type": "git",
