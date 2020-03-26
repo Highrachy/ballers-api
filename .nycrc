@@ -3,7 +3,7 @@
   "check-coverage": true,
   "exclude": [
     ".eslintrc.js",
-    "config/winston.js"
+    "config/**"
   ],
   "extends": "@istanbuljs/nyc-config-babel",
   "branches": 80,

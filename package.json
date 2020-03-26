@@ -6,8 +6,8 @@
   "scripts": {
     "start": "babel-node app.js",
     "start:dev": "nodemon --exec babel-node app.js",
-    "test": "nyc mocha",
-    "test:watch": "mocha --watch",
+    "test": "NODE_ENV=test nyc mocha",
+    "test:watch": "NODE_ENV=test mocha --watch",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "repository": {
@@ -37,6 +37,7 @@
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.20.1",
     "mocha": "^7.1.0",
+    "mongodb-memory-server": "^6.5.0",
     "nodemon": "^2.0.2",
     "nyc": "^15.0.0"
   },
@@ -52,6 +53,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.3",
     "morgan": "^1.9.1",
+    "sinon": "^9.0.1",
     "winston": "^3.2.1"
   }
 }

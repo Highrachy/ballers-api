@@ -1,4 +1,20 @@
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import { expect, request } from '../config';
+
+let mongoServer;
+const opts = { useUnifiedTopology: true, useNewUrlParser: true };
+
+before(async () => {
+  mongoServer = new MongoMemoryServer();
+  const mongoUri = await mongoServer.getUri();
+  await mongoose.connect(mongoUri, opts);
+});
+
+after(async () => {
+  await mongoose.disconnect();
+  await mongoServer.stop();
+});
 
 const validUser = {
   firstName: 'John',

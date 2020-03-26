@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import Joi from '@hapi/joi';
 import joigoose from 'joigoose';
 
-const hashPassword = async (password) => {
+export const hashPassword = async (password) => {
   try {
     const salt = await bcrypt.genSalt(10);
     return await bcrypt.hash(password, salt);
