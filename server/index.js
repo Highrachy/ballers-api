@@ -11,9 +11,9 @@ import { PORT } from './config/config';
 import startDBConnection from './config/db';
 import welcome from './routes/welcome';
 import user from './routes/user';
+import { errorMiddleware } from './helpers/errorHandler';
 
 const routesPath = path.join(__dirname, './**/*.js');
-
 const app = express();
 
 const options = {
@@ -51,6 +51,7 @@ app.use(morgan('combined', { stream: winston.stream.write }));
 app.use('/api/v1/welcome', welcome);
 app.use('/api/v1/user', user);
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
+app.use(errorMiddleware);
 
 startDBConnection();
 

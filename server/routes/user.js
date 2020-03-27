@@ -5,6 +5,7 @@ import User from '../models/user.model';
 import { registerSchema } from '../schema/user.schema';
 import { schemaValidation } from '../helpers/middleware';
 import { getUserByEmail, addUser } from '../services/user.service';
+import { ErrorHandler } from '../helpers/errorHandler';
 
 const router = express.Router();
 
@@ -34,7 +35,7 @@ const router = express.Router();
  *       description: Internal server error
  */
 
-router.post('/register', schemaValidation(registerSchema), (req, res) => {
+router.post('/register', schemaValidation(registerSchema), (req, res, next) => {
   const newUser = new User(req.locals);
 
   getUserByEmail(newUser.email)
@@ -51,19 +52,12 @@ router.post('/register', schemaValidation(registerSchema), (req, res) => {
             );
             res.status(200).json({ success: true, message: 'User registered', token });
           })
-          .catch((error) => {
-            res.status(500).json({ success: false, message: 'Error adding user', error });
-          });
+          .catch((error) => next(new ErrorHandler(400, 'Error adding user', error)));
       } else {
-        res.status(200).json({
-          success: false,
-          message: 'Email is linked to another account',
-        });
+        next(new ErrorHandler(412, 'Email is linked to another account'));
       }
     })
-    .catch((error) => {
-      res.status(500).json({ success: false, message: 'Internal Server Error', error });
-    });
+    .catch((error) => next(new ErrorHandler(500, 'Internal Server Error', error)));
 });
 
 module.exports = router;
