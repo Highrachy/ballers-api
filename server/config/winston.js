@@ -2,9 +2,7 @@ import appRoot from 'app-root-path';
 import winston, { format } from 'winston';
 
 const formatParams = (info) => {
-  const {
-    timestamp, level, message, ...args
-  } = info;
+  const { timestamp, level, message, ...args } = info;
   const currentTime = timestamp.slice(0, 19).replace('T', ' ');
   return `${currentTime} ${level}: ${message} ${
     Object.keys(args).length ? JSON.stringify(args, '', '') : ''
@@ -22,7 +20,8 @@ const optionsFiles = [
     maxsize: 5242880,
     maxFiles: 5,
     colorize: false,
-  }, {
+  },
+  {
     level: 'warn',
     filename: combinedLog,
     handleExceptions: true,
@@ -42,11 +41,7 @@ const optionsConsole = {
 
 const logger = winston.createLogger({
   level: 'info',
-  format: format.combine(
-    format.timestamp(),
-    format.align(),
-    format.printf(formatParams),
-  ),
+  format: format.combine(format.timestamp(), format.align(), format.printf(formatParams)),
   exitOnError: false,
   transports: [
     new winston.transports.File(optionsFiles[0]),

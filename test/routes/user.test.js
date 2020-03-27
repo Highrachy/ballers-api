@@ -42,8 +42,12 @@ describe('User Route', () => {
       .end((err, res) => {
         expect(res).to.be.an('object');
         expect(res).to.have.status(200);
-        expect(res.body).to.have.property('success').eql(false);
-        expect(res.body).to.have.property('message').eql('Passwords should match');
+        expect(res.body)
+          .to.have.property('success')
+          .eql(false);
+        expect(res.body)
+          .to.have.property('message')
+          .eql('Passwords should match');
         done();
       });
   });
@@ -55,8 +59,12 @@ describe('User Route', () => {
       .end((err, res) => {
         expect(res).to.be.an('object');
         expect(res).to.have.status(200);
-        expect(res.body).to.have.property('success').eql(true);
-        expect(res.body).to.have.property('message').eql('User registered');
+        expect(res.body)
+          .to.have.property('success')
+          .eql(true);
+        expect(res.body)
+          .to.have.property('message')
+          .eql('User registered');
         expect(res.body).to.have.property('token');
         done();
       });
@@ -69,8 +77,12 @@ describe('User Route', () => {
       .end((err, res) => {
         expect(res).to.be.an('object');
         expect(res).to.have.status(200);
-        expect(res.body).to.have.property('success').eql(false);
-        expect(res.body).to.have.property('message').eql('Email is linked to another account');
+        expect(res.body)
+          .to.have.property('success')
+          .eql(false);
+        expect(res.body)
+          .to.have.property('message')
+          .eql('Email is linked to another account');
         done();
       });
   });
