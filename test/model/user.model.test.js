@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { expect, sinon } from '../config';
-import { hashPassword } from '../../models/user.model';
+import { hashPassword } from '../../server/models/user.model';
 
 describe('User Model', () => {
   describe('Hash Password', () => {
@@ -11,10 +11,7 @@ describe('User Model', () => {
       expect(hash).to.not.eql(password);
     });
     it('should return a hashed password asynchronously', async () => {
-      // Create an error to throw
-      const expectedError = new Error('some error');
-
-      // Force the bcrypt.genSalt() method to throw our expected error
+      const expectedError = new Error('sample error');
       sinon.stub(bcrypt, 'genSalt').throws(expectedError);
 
       const password = 'my_password';
@@ -23,6 +20,7 @@ describe('User Model', () => {
       } catch (err) {
         sinon.assert.threw(bcrypt.genSalt, expectedError);
       }
+
       // Remember to restore!
       bcrypt.genSalt.restore();
     });

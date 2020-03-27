@@ -1,7 +1,7 @@
 import { expect, request } from '../config';
 
 describe('Welcome Route', () => {
-  it('should have status 200', done => {
+  it('should have status 200', (done) => {
     request()
       .get('/api/v1/welcome')
       .end((err, res) => {
@@ -10,13 +10,13 @@ describe('Welcome Route', () => {
       });
   });
 
-  it('should return a valid object', done => {
+  it('should return a valid object', (done) => {
     request()
       .get('/api/v1/welcome')
       .end((err, res) => {
         expect(res.body).to.eql({
           success: true,
-          message: 'Welcome to Ballers API endpoint'
+          message: 'Welcome to Ballers API endpoint',
         });
         done();
       });
