@@ -12,7 +12,7 @@ export const hashPassword = async (password) => {
   }
 };
 
-const Joigoose = (joigoose)(mongoose, { convert: false });
+const Joigoose = joigoose(mongoose, { convert: false });
 
 const joiUserSchema = Joi.object({
   firstName: Joi.string().trim(),
@@ -28,7 +28,7 @@ const UserSchema = new mongoose.Schema(Joigoose.convert(joiUserSchema));
 
 // Note: arrow function cannot be used in a pre hook
 // eslint-disable-next-line func-names
-UserSchema.pre('save', async function (next) {
+UserSchema.pre('save', async function(next) {
   if (this.isModified('password')) {
     this.password = await hashPassword(this.password);
   }

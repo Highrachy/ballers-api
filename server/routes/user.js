@@ -27,24 +27,20 @@ router.post('/register', (req, res) => {
                 USER_SECRET,
                 { expiresIn: '30d' },
               );
-              res.status(200)
-                .json({ success: true, message: 'User registered', token });
+              res.status(200).json({ success: true, message: 'User registered', token });
             })
             .catch((error) => {
-              res.status(500)
-                .json({ success: false, message: 'Error adding user', error });
+              res.status(500).json({ success: false, message: 'Error adding user', error });
             });
         } else {
-          res.status(200)
-            .json({
-              success: false,
-              message: 'Email is linked to another account',
-            });
+          res.status(200).json({
+            success: false,
+            message: 'Email is linked to another account',
+          });
         }
       })
       .catch((error) => {
-        res.status(500)
-          .json({ success: false, message: 'Internal Server Error', error });
+        res.status(500).json({ success: false, message: 'Internal Server Error', error });
       });
   } else {
     res.status(200).json({ success: false, message: 'Passwords should match' });

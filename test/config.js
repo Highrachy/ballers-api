@@ -7,6 +7,4 @@ chai.use(chaiHttp);
 const { expect } = chai;
 const request = () => chai.request(app);
 
-export {
-  chai, expect, request, sinon,
-};
+export { chai, expect, request, sinon };
