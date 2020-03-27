@@ -6,8 +6,8 @@
   "scripts": {
     "start": "babel-node app.js",
     "start:dev": "nodemon --exec babel-node app.js",
-    "test": "nyc mocha",
-    "test:watch": "mocha --watch",
+    "test": "NODE_ENV=test nyc mocha",
+    "test:watch": "NODE_ENV=test mocha --watch",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "repository": {
@@ -25,6 +25,7 @@
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.8.7",
     "@babel/node": "^7.8.7",
+    "@babel/plugin-transform-runtime": "^7.9.0",
     "@babel/preset-env": "^7.8.7",
     "@babel/register": "^7.8.6",
     "@istanbuljs/nyc-config-babel": "^3.0.0",
@@ -36,17 +37,23 @@
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.20.1",
     "mocha": "^7.1.0",
+    "mongodb-memory-server": "^6.5.0",
     "nodemon": "^2.0.2",
     "nyc": "^15.0.0"
   },
   "dependencies": {
+    "@hapi/joi": "^17.1.1",
     "app-root-path": "^3.0.0",
+    "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "joigoose": "^7.0.0",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.3",
     "morgan": "^1.9.1",
+    "sinon": "^9.0.1",
     "winston": "^3.2.1"
   }
 }

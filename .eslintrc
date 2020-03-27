@@ -1,5 +1,16 @@
 {
-  "extends": [
-    "airbnb-base"
-  ]
+  "extends": ["airbnb-base"],
+  "env": {
+    "commonjs": true,
+    "node": true,
+    "mocha": true
+  },
+  "rules": {
+    "no-underscore-dangle": [
+      "error",
+      {
+        "allow": ["_id"]
+      }
+    ]
+  }
 }
