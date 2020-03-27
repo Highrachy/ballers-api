@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import Joi from '@hapi/joi';
-import joigoose from 'joigoose';
 
 export const hashPassword = async (password) => {
   try {
@@ -12,19 +10,16 @@ export const hashPassword = async (password) => {
   }
 };
 
-const Joigoose = joigoose(mongoose, { convert: false });
-
-const joiUserSchema = Joi.object({
-  firstName: Joi.string().trim(),
-  lastName: Joi.string().trim(),
-  email: Joi.string().email(),
-  password: Joi.string(),
-  phone: Joi.string(),
-  createdAt: Joi.date().default(Date.now),
-  updatedAt: Joi.date().default(Date.now),
-});
-
-const UserSchema = new mongoose.Schema(Joigoose.convert(joiUserSchema));
+const UserSchema = new mongoose.Schema(
+  {
+    firstName: String,
+    lastName: String,
+    email: { type: String, unique: true },
+    password: String,
+    phone: String,
+  },
+  { timestamps: true },
+);
 
 // Note: arrow function cannot be used in a pre hook
 // eslint-disable-next-line func-names
