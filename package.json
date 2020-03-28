@@ -64,6 +64,7 @@
     "mongoose": "^5.9.3",
     "morgan": "^1.9.1",
     "sinon": "^9.0.1",
+    "swagger-ui-express": "^4.1.4",
     "winston": "^3.2.1"
   },
   "husky": {
