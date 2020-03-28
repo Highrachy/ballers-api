@@ -7,7 +7,7 @@ export const schemaValidation = (schema) => {
       req.locals = value;
       next();
     } else {
-      res.status(422).json({ error: error.message });
+      res.status(412).json({ success: false, message: 'Validation Error', error: error.message });
     }
   };
 };
