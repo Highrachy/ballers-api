@@ -1,5 +1,5 @@
 import { expect, request, useDatabase } from '../config';
-import User from '../../factories/user.factory';
+import User from '../factories/user.factory';
 
 useDatabase();
 

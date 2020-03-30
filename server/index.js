@@ -9,8 +9,8 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import logger from './config/winston';
 import { PORT } from './config/config';
 import startDBConnection from './config/db';
-import welcome from './routes/welcome';
-import user from './routes/user';
+import welcome from './routes/welcome.routes';
+import user from './routes/user.routes';
 import { errorMiddleware } from './helpers/errorHandler';
 
 const routesPath = path.join(__dirname, './**/*.js');

@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerSchema } from '../schema/user.schema';
+import { registerSchema } from '../schemas/user.schema';
 import { schemaValidation } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
 
