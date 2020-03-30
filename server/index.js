@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -10,6 +11,8 @@ import { PORT } from './config/config';
 import startDBConnection from './config/db';
 import welcome from './routes/welcome';
 import user from './routes/user';
+
+const routesPath = path.join(__dirname, './**/*.js');
 
 const app = express();
 
@@ -36,7 +39,7 @@ const options = {
       },
     ],
   },
-  apis: ['./models/*.model.js', './routes/*.js'],
+  apis: [routesPath],
 };
 const specs = swaggerJsdoc(options);
 
