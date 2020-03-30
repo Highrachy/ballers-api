@@ -4,14 +4,41 @@ import cors from 'cors';
 import morgan from 'morgan';
 import winston from 'winston';
 import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
 import logger from './config/winston';
 import { PORT } from './config/config';
+import startDBConnection from './config/db';
 import welcome from './routes/welcome';
 import user from './routes/user';
-import startDBConnection from './config/db';
-import swaggerDocument from './swagger.json';
 
 const app = express();
+
+const options = {
+  swaggerDefinition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Ballers API',
+      version: '1.0.0',
+      description: 'API documentation for Ballers from Highrachy',
+      license: {
+        name: 'MIT',
+        url: 'https://choosealicense.com/licenses/mit/',
+      },
+      contact: {
+        name: 'Ballers',
+        url: 'https://ballers.ng',
+        email: 'info@ballers.ng',
+      },
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000/api/v1',
+      },
+    ],
+  },
+  apis: ['./models/*.model.js', './routes/*.js'],
+};
+const specs = swaggerJsdoc(options);
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -20,8 +47,7 @@ app.use(morgan('combined', { stream: winston.stream.write }));
 
 app.use('/api/v1/welcome', welcome);
 app.use('/api/v1/user', user);
-
-app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
 
 startDBConnection();
 
