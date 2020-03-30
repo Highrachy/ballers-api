@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { expect, sinon } from '../config';
-import { hashPassword } from '../../server/models/user.model';
+import { hashPassword } from '../../../server/models/user.model';
 
 describe('User Model', () => {
   describe('Hash Password', () => {
