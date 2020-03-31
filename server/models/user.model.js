@@ -70,6 +70,6 @@ export default User;
  *           lastName: Doe
  *           email: johndoe@email.com
  *           password: johnd007
- *           confirmPpassword: johnd007
+ *           confirmPassword: johnd007
  *           phone: 08012345678
  */
