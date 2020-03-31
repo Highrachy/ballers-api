@@ -65,6 +65,8 @@ export default User;
  *          confirmPassword:
  *            type: string
  *            description: Should match password.
+ *          phone:
+ *            type: string
  *        example:
  *           firstName: John
  *           lastName: Doe
