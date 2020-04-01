@@ -1,6 +1,12 @@
+import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import { DB_URL } from './config';
 import logger from './winston';
+
+dotenv.config();
+
+const DB_URL = process.env.DB_URL || process.env.MONGODB_URI || 'mongodb://localhost:27017/ballers';
+const PORT = process.env.PORT || 3000;
+const USER_SECRET = process.env.USER_SECRET || 'local_secret';
 
 const startDBConnection = () => {
   if (process.env.NODE_ENV !== 'test') {
@@ -22,4 +28,4 @@ const startDBConnection = () => {
   }
 };
 
-export default startDBConnection;
+export { startDBConnection, PORT, USER_SECRET };

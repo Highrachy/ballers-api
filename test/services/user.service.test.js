@@ -10,14 +10,14 @@ import {
   addUser,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
-import { USER_SECRET } from '../../server/config/config';
+import { USER_SECRET } from '../../server/config';
 import User from '../../server/models/user.model';
 
 useDatabase();
 
 describe('User Service', () => {
   describe('#hashPassword', () => {
-    it('should return a hashed password asynchronously', async () => {
+    it('should return a hashed password', async () => {
       const password = 'my_password';
       const hash = await hashPassword(password);
       expect(hash).to.length(60);
@@ -59,6 +59,7 @@ describe('User Service', () => {
 
   describe('#getUserByEmail', () => {
     const email = 'myemail@mail.com';
+
     before(async () => {
       await User.create(UserFactory.build({ email }));
     });
@@ -71,6 +72,7 @@ describe('User Service', () => {
 
   describe('#getUserById', () => {
     const _id = mongoose.Types.ObjectId();
+
     before(async () => {
       await User.create(UserFactory.build({ _id }));
     });
@@ -96,47 +98,61 @@ describe('User Service', () => {
     const email = 'myemail@mail.com';
     const user = UserFactory.build({ email });
 
-    beforeEach(async () => {
-      countedUsers = await User.countDocuments({});
-      await addUser(user);
-    });
-
-    it('adds a new user', async () => {
-      const currentCountedUsers = await User.countDocuments({});
-      expect(currentCountedUsers).to.eql(countedUsers + 1);
-    });
-
-    it('returns the user token', async () => {
-      const _id = mongoose.Types.ObjectId();
-      const token = await addUser(UserFactory.build({ _id }));
+    const expectsReturnedTokenToBeValid = (token, id) => {
       const decodedToken = jwt.verify(token, USER_SECRET);
       const castedId = new mongoose.mongo.ObjectId(decodedToken.id);
-      expect(castedId).to.deep.equal(_id);
+      expect(castedId).to.deep.equal(id);
+    };
+
+    beforeEach(async () => {
+      countedUsers = await User.countDocuments({});
     });
 
-    it('throws an error', async () => {
-      try {
+    context('when a valid user is entered', () => {
+      beforeEach(async () => {
         await addUser(user);
-      } catch (err) {
+      });
+
+      it('adds a new user', async () => {
         const currentCountedUsers = await User.countDocuments({});
-        expect(err.statusCode).to.eql(412);
-        expect(err.error).to.be.eql('Email is linked to another account');
-        expect(err.message).to.be.eql('Email is linked to another account');
         expect(currentCountedUsers).to.eql(countedUsers + 1);
-      }
+      });
+
+      it('returns the user token', async () => {
+        const _id = mongoose.Types.ObjectId();
+        const token = await addUser(UserFactory.build({ _id }));
+        expectsReturnedTokenToBeValid(token, _id);
+      });
     });
 
-    it('throws an error', async () => {
-      try {
-        const InvalidUser = UserFactory.build({ firstName: '' });
-        await addUser(InvalidUser);
-      } catch (err) {
-        const currentCountedUsers = await User.countDocuments({});
-        expect(err.statusCode).to.eql(400);
-        expect(err.error.name).to.be.eql('ValidationError');
-        expect(err.message).to.be.eql('Error adding user');
-        expect(currentCountedUsers).to.eql(countedUsers + 1);
-      }
+    context('when an existing user is entered', () => {
+      it('throws an error', async () => {
+        try {
+          await addUser(user);
+          await addUser(user);
+        } catch (err) {
+          const currentCountedUsers = await User.countDocuments({});
+          expect(err.statusCode).to.eql(412);
+          expect(err.error).to.be.eql('Email is linked to another account');
+          expect(err.message).to.be.eql('Email is linked to another account');
+          expect(currentCountedUsers).to.eql(countedUsers + 1);
+        }
+      });
+    });
+
+    context('when an invalid data is entered', () => {
+      it('throws an error', async () => {
+        try {
+          const InvalidUser = UserFactory.build({ firstName: '' });
+          await addUser(InvalidUser);
+        } catch (err) {
+          const currentCountedUsers = await User.countDocuments({});
+          expect(err.statusCode).to.eql(400);
+          expect(err.error.name).to.be.eql('ValidationError');
+          expect(err.message).to.be.eql('Error adding user');
+          expect(currentCountedUsers).to.eql(countedUsers);
+        }
+      });
     });
 
     context('when getUserbyEmail returns an error', () => {
@@ -150,7 +166,7 @@ describe('User Service', () => {
           expect(err.statusCode).to.eql(500);
           expect(err.error).to.be.an('Error');
           expect(err.message).to.be.eql('Internal Server Error');
-          expect(currentCountedUsers).to.eql(countedUsers + 1);
+          expect(currentCountedUsers).to.eql(countedUsers);
         }
 
         User.findOne.restore();

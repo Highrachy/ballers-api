@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/user.model';
-import { USER_SECRET } from '../config/config';
+import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 
 export const getUserByEmail = async (email) => User.findOne({ email });
