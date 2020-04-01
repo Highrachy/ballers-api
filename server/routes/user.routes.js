@@ -21,12 +21,12 @@ const router = express.Router();
  *            $ref: '#/components/schemas/User'
  *      description: Inventory item to add
  *     responses:
- *      '200':
- *        description: Success, but email is linked to another account
  *      '201':
  *        description: User created
  *      '400':
- *        description: Invalid input parameters. Or passwords should match
+ *        description: Error adding user
+ *      '412':
+ *        description: Email is linked to another account
  *      '500':
  *       description: Internal server error
  */
