@@ -8,10 +8,10 @@ import {
   getUserById,
   generateToken,
   addUser,
-} from '../../../server/services/user.service';
+} from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
-import { USER_SECRET } from '../../../server/config/config';
-import User from '../../../server/models/user.model';
+import { USER_SECRET } from '../../server/config/config';
+import User from '../../server/models/user.model';
 
 useDatabase();
 

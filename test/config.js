@@ -3,7 +3,7 @@ import chaiHttp from 'chai-http';
 import sinon from 'sinon';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import app from '../../server/index';
+import app from '../server';
 
 chai.use(chaiHttp);
 const { expect } = chai;
