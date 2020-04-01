@@ -13,7 +13,7 @@ describe('Register Route', () => {
         .post('/api/v1/user/register')
         .send(user)
         .end((err, res) => {
-          expect(res).to.have.status(200);
+          expect(res).to.have.status(201);
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('User registered');
           expect(res.body).to.have.property('token');
@@ -179,7 +179,7 @@ describe('Register Route', () => {
         .post('/api/v1/user/register')
         .send(user)
         .end((err, res) => {
-          expect(res).to.have.status(200);
+          expect(res).to.have.status(201);
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('User registered');
           expect(res.body).to.have.property('token');
@@ -196,7 +196,7 @@ describe('Register Route', () => {
         .post('/api/v1/user/register')
         .send(user)
         .end((err, res) => {
-          expect(res).to.have.status(200);
+          expect(res).to.have.status(201);
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('User registered');
           expect(res.body).to.have.property('token');
