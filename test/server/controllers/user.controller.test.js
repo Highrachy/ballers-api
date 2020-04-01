@@ -1,12 +1,14 @@
 import { expect, request, useDatabase } from '../config';
-import User from '../factories/user.factory';
+import User from '../../../server/models/user.model';
+
+import UserFactory from '../factories/user.factory';
 
 useDatabase();
 
 describe('Register Route', () => {
   context('with valid data', () => {
     it('returns successful token', (done) => {
-      const user = User.build({ email: 'myemail@mail.com' });
+      const user = UserFactory.build({ email: 'myemail@mail.com' });
       request()
         .post('/api/v1/user/register')
         .send(user)
@@ -18,9 +20,13 @@ describe('Register Route', () => {
           done();
         });
     });
-
+  });
+  context('when email exists in the db', () => {
+    const user = UserFactory.build({ email: 'myemail@mail.com' });
+    before(async () => {
+      await User.create(user);
+    });
     it('returns error for an existing email', (done) => {
-      const user = User.build({ email: 'myemail@mail.com' });
       request()
         .post('/api/v1/user/register')
         .send(user)
@@ -37,7 +43,7 @@ describe('Register Route', () => {
   context('with invalid data', () => {
     context('when firstName is empty', () => {
       it('returns an error', (done) => {
-        const user = User.build({ firstName: '' });
+        const user = UserFactory.build({ firstName: '' });
         request()
           .post('/api/v1/user/register')
           .send(user)
@@ -53,7 +59,7 @@ describe('Register Route', () => {
 
     context('when lastName is empty', () => {
       it('returns an error', (done) => {
-        const user = User.build({ lastName: '' });
+        const user = UserFactory.build({ lastName: '' });
         request()
           .post('/api/v1/user/register')
           .send(user)
@@ -69,7 +75,7 @@ describe('Register Route', () => {
 
     context('when email is empty', () => {
       it('returns an error', (done) => {
-        const user = User.build({ email: '' });
+        const user = UserFactory.build({ email: '' });
         request()
           .post('/api/v1/user/register')
           .send(user)
@@ -85,7 +91,7 @@ describe('Register Route', () => {
 
     context('with invalid email address', () => {
       it('returns an error', (done) => {
-        const user = User.build({ email: 'wrong-email' });
+        const user = UserFactory.build({ email: 'wrong-email' });
         request()
           .post('/api/v1/user/register')
           .send(user)
@@ -101,7 +107,7 @@ describe('Register Route', () => {
 
     context('when password is empty', () => {
       it('returns an error', (done) => {
-        const user = User.build({ password: '' });
+        const user = UserFactory.build({ password: '' });
         request()
           .post('/api/v1/user/register')
           .send(user)
@@ -117,7 +123,7 @@ describe('Register Route', () => {
 
     context('when password is weak', () => {
       it('returns an error', (done) => {
-        const user = User.build({ password: '123' });
+        const user = UserFactory.build({ password: '123' });
         request()
           .post('/api/v1/user/register')
           .send(user)
@@ -135,7 +141,7 @@ describe('Register Route', () => {
 
     context('when confirm password is empty', () => {
       it('returns an error', (done) => {
-        const user = User.build({ confirmPassword: '' });
+        const user = UserFactory.build({ confirmPassword: '' });
         request()
           .post('/api/v1/user/register')
           .send(user)
@@ -151,7 +157,7 @@ describe('Register Route', () => {
 
     context('when confirm password is not equal to password', () => {
       it('returns an error', (done) => {
-        const user = User.build({ password: '123456', confirmPassword: '000000' });
+        const user = UserFactory.build({ password: '123456', confirmPassword: '000000' });
         request()
           .post('/api/v1/user/register')
           .send(user)
@@ -168,7 +174,7 @@ describe('Register Route', () => {
 
   context('when phone number is empty', () => {
     it('registers the user', (done) => {
-      const user = User.build({ phone: '' });
+      const user = UserFactory.build({ phone: '' });
       request()
         .post('/api/v1/user/register')
         .send(user)
@@ -184,7 +190,7 @@ describe('Register Route', () => {
 
   context('when phone number is not given', () => {
     it('returns an error', (done) => {
-      const user = User.build();
+      const user = UserFactory.build();
       delete user.phone;
       request()
         .post('/api/v1/user/register')

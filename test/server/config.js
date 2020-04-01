@@ -19,6 +19,10 @@ const useDatabase = () => {
     await mongoose.connect(mongoUri, opts);
   });
 
+  afterEach(async () => {
+    await mongoose.connection.db.dropDatabase();
+  });
+
   after(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
