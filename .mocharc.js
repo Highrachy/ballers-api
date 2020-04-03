@@ -5,5 +5,5 @@ module.exports = {
   spec: ['./test/**/*.test.js'],
   slow: 75,
   timeout: 2000,
-  watch: false
+  watch: false,
 };

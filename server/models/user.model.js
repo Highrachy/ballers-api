@@ -1,43 +1,4 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import Joi from '@hapi/joi';
-import joigoose from 'joigoose';
-
-export const hashPassword = async (password) => {
-  try {
-    const salt = await bcrypt.genSalt(10);
-    return await bcrypt.hash(password, salt);
-  } catch (error) {
-    throw new Error(error);
-  }
-};
-
-const Joigoose = joigoose(mongoose, { convert: false });
-
-const joiUserSchema = Joi.object({
-  firstName: Joi.string().trim(),
-  lastName: Joi.string().trim(),
-  email: Joi.string().email(),
-  password: Joi.string(),
-  phone: Joi.string(),
-  createdAt: Joi.date().default(Date.now),
-  updatedAt: Joi.date().default(Date.now),
-});
-
-const UserSchema = new mongoose.Schema(Joigoose.convert(joiUserSchema));
-
-// Note: arrow function cannot be used in a pre hook
-// eslint-disable-next-line func-names
-UserSchema.pre('save', async function (next) {
-  if (this.isModified('password')) {
-    this.password = await hashPassword(this.password);
-  }
-  next();
-});
-
-const User = mongoose.model('User', UserSchema);
-
-export default User;
 
 /**
  * @swagger
@@ -75,3 +36,27 @@ export default User;
  *           confirmPassword: johnd007
  *           phone: 08012345678
  */
+
+const UserSchema = new mongoose.Schema(
+  {
+    firstName: {
+      type: String,
+      required: true,
+    },
+    lastName: {
+      type: String,
+      required: true,
+    },
+    email: { type: String, unique: true, required: true },
+    password: {
+      type: String,
+      required: true,
+    },
+    phone: String,
+  },
+  { timestamps: true },
+);
+
+const User = mongoose.model('User', UserSchema);
+
+export default User;
