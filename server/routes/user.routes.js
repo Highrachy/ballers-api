@@ -46,8 +46,14 @@ router.post('/register', schemaValidation(registerSchema), UserController.regist
  *      content:
  *        application/json:
  *          schema:
- *            $ref: '#/components/schemas/User'
- *      description: User to add
+ *            type: object
+ *            properties:
+ *              email:
+ *                  type: string
+ *                  example: john@mail.com
+ *              password:
+ *                  type: string
+ *      description: Login Details
  *     responses:
  *      '200':
  *        description: Login Successful

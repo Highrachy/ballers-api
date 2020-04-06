@@ -18,14 +18,9 @@ export const hashPassword = async (password) => {
   }
 };
 
-export const comparePassword = async (candidatePassword, hash, callback) => {
+export const comparePassword = async (password, hashedPassword) => {
   try {
-    return bcrypt.compare(candidatePassword, hash, (err, isMatch) => {
-      if (err) {
-        throw err;
-      }
-      callback(null, isMatch);
-    });
+    return await bcrypt.compare(password, hashedPassword);
   } catch (error) {
     throw new Error(error);
   }
@@ -56,19 +51,23 @@ export const loginUser = async (user) => {
 
   if (existingUser) {
     const id = existingUser._id;
-
-    comparePassword(user.password, existingUser.password, (err, isMatch) => {
-      if (err) throw err;
-
+    try {
+      const isMatch = await comparePassword(user.password, existingUser.password);
       if (isMatch) {
-        console.log(isMatch);
-        console.log(id);
-
-        // return generateToken(id);
-      } else {
-        throw new ErrorHandler(401, 'Invalid email or password');
+        const token = generateToken(id);
+        const payload = {
+          firstName: existingUser.firstName,
+          lastName: existingUser.lastName,
+          email: existingUser.email,
+          phone: existingUser.phone,
+          token,
+        };
+        return payload;
       }
-    });
+      throw new ErrorHandler(401, 'Invalid email or password');
+    } catch (error) {
+      throw new ErrorHandler(500, 'Internal Server Error', error);
+    }
   } else {
     throw new ErrorHandler(401, 'Invalid email or password');
   }

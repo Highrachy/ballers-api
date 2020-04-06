@@ -12,8 +12,8 @@ const UserController = {
   login(req, res, next) {
     const user = req.locals;
     loginUser(user)
-      .then((token) => {
-        res.status(200).json({ success: true, message: 'Login successful', token });
+      .then((payload) => {
+        res.status(200).json({ success: true, message: 'Login successful', payload });
       })
       .catch((error) => next(error));
   },
