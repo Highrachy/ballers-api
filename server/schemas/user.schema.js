@@ -11,3 +11,8 @@ export const registerSchema = Joi.object({
   }),
   phone: Joi.string().allow(null, '').optional().default(''),
 });
+
+export const loginSchema = Joi.object({
+  email: Joi.string().label('Email Address').email().required(),
+  password: Joi.string().label('Password').min(6).required().strict(),
+});
