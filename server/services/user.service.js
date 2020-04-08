@@ -64,9 +64,9 @@ export const loginUser = async (user) => {
         };
         return payload;
       }
-      throw new ErrorHandler(401, 'Invalid email or password');
+      throw new ErrorHandler(500, 'Internal Server Error NE');
     } catch (error) {
-      throw new ErrorHandler(500, 'Internal Server Error', error);
+      throw new ErrorHandler(401, 'Invalid email or password', error);
     }
   } else {
     throw new ErrorHandler(401, 'Invalid email or password');

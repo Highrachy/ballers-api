@@ -1,6 +1,6 @@
 import { expect, request, useDatabase } from '../config';
 import User from '../../server/models/user.model';
-
+import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 
 useDatabase();
@@ -200,6 +200,61 @@ describe('Register Route', () => {
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('User registered');
           expect(res.body).to.have.property('token');
+          done();
+        });
+    });
+  });
+});
+
+describe('Login Route', () => {
+  context('with valid data', () => {
+    const userLogin = { email: 'myemail@mail.com', password: '123456' };
+    const user = UserFactory.build(userLogin);
+    before(async () => {
+      await addUser(user);
+    });
+    it('returns successful payload', (done) => {
+      request()
+        .post('/api/v1/user/login')
+        .send(userLogin)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.message).to.be.eql('Login successful');
+          expect(res.body.payload).to.have.property('firstName');
+          expect(res.body.payload).to.have.property('lastName');
+          expect(res.body.payload).to.have.property('email');
+          expect(res.body.payload).to.have.property('token');
+          done();
+        });
+    });
+  });
+  context('with empty email', () => {
+    const userLogin = { email: '', password: '123456' };
+    it('returns error', (done) => {
+      request()
+        .post('/api/v1/user/login')
+        .send(userLogin)
+        .end((err, res) => {
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Validation Error');
+          expect(res.body.error).to.be.eql('"Email Address" is not allowed to be empty');
+          done();
+        });
+    });
+  });
+  context('with empty password', () => {
+    const userLogin = { email: 'myemail@mail.com', password: '' };
+    it('returns error', (done) => {
+      request()
+        .post('/api/v1/user/login')
+        .send(userLogin)
+        .end((err, res) => {
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Validation Error');
+          expect(res.body.error).to.be.eql('"Password" is not allowed to be empty');
           done();
         });
     });
