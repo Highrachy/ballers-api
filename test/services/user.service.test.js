@@ -217,7 +217,7 @@ describe('User Service', () => {
       });
     });
 
-    context('when existingUser returns an error', () => {
+    context('when the User model returns an error', () => {
       it('throws an error', async () => {
         sinon.stub(User, 'findOne').rejects();
         try {

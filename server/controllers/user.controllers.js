@@ -10,10 +10,10 @@ const UserController = {
       .catch((error) => next(error));
   },
   login(req, res, next) {
-    const user = req.locals;
-    loginUser(user)
-      .then((payload) => {
-        res.status(200).json({ success: true, message: 'Login successful', payload });
+    const loginDetails = req.locals;
+    loginUser(loginDetails)
+      .then((user) => {
+        res.status(200).json({ success: true, message: 'Login successful', user });
       })
       .catch((error) => next(error));
   },

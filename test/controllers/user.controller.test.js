@@ -221,10 +221,9 @@ describe('Login Route', () => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('Login successful');
-          expect(res.body.payload).to.have.property('firstName');
-          expect(res.body.payload).to.have.property('lastName');
-          expect(res.body.payload).to.have.property('email');
-          expect(res.body.payload).to.have.property('token');
+          expect(res.body.user.firstName).to.be.eql(user.firstName);
+          expect(res.body.user.lastName).to.be.eql(user.lastName);
+          expect(res.body.user.email).to.be.eql(user.email);
           done();
         });
     });
