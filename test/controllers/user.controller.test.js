@@ -224,6 +224,7 @@ describe('Login Route', () => {
           expect(res.body.user.firstName).to.be.eql(user.firstName);
           expect(res.body.user.lastName).to.be.eql(user.lastName);
           expect(res.body.user.email).to.be.eql(user.email);
+          expect(res.body.user).to.have.property('token');
           done();
         });
     });
