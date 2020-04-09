@@ -8,6 +8,8 @@ import {
   getUserById,
   generateToken,
   addUser,
+  loginUser,
+  comparePassword,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -53,6 +55,32 @@ describe('User Service', () => {
         }
 
         bcrypt.hash.restore();
+      });
+    });
+  });
+
+  describe('#comparePassword', () => {
+    it('should return a hashed password', async () => {
+      const password = 'my_password';
+      const hash = await hashPassword(password);
+      const comparison = await comparePassword(password, hash);
+      expect(comparison).to.eql(true);
+    });
+
+    context('when compare password fails', () => {
+      it('throws an error', async () => {
+        const expectedError = new Error('sample error');
+        sinon.stub(bcrypt, 'compare').throws(expectedError);
+
+        const password = 'my_password';
+        const hash = await hashPassword(password);
+        try {
+          await comparePassword(password, hash);
+        } catch (err) {
+          sinon.assert.threw(bcrypt.compare, expectedError);
+        }
+
+        bcrypt.compare.restore();
       });
     });
   });
@@ -170,6 +198,60 @@ describe('User Service', () => {
         }
 
         User.findOne.restore();
+      });
+    });
+  });
+
+  describe('#loginUser', () => {
+    const userDetails = { email: 'myemail@mail.com', password: '123456' };
+    const user = UserFactory.build(userDetails);
+    beforeEach(async () => {
+      await addUser(user);
+    });
+
+    context('when a valid user is entered', () => {
+      it('comparePassword should return true', async () => {
+        const hash = (await getUserByEmail(userDetails.email)).password;
+        const compareResponse = await comparePassword(userDetails.password, hash);
+        expect(compareResponse).to.eql(true);
+      });
+    });
+
+    context('when the User model returns an error', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findOne').rejects();
+        try {
+          await loginUser(userDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        User.findOne.restore();
+      });
+    });
+
+    context('when an invalid data is entered', () => {
+      it('throws an error', async () => {
+        try {
+          const InvalidUser = UserFactory.build({ email: '' });
+          await loginUser(InvalidUser);
+        } catch (err) {
+          expect(err.statusCode).to.eql(401);
+          expect(err.message).to.be.eql('Invalid email or password');
+        }
+      });
+      it('throws an error', async () => {
+        try {
+          const invalidDetails = UserFactory.build({
+            email: 'myemail@mail.com',
+            password: '654321',
+          });
+          await loginUser(invalidDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(401);
+          expect(err.message).to.be.eql('Invalid email or password');
+        }
       });
     });
   });

@@ -18,6 +18,14 @@ export const hashPassword = async (password) => {
   }
 };
 
+export const comparePassword = async (password, hashedPassword) => {
+  try {
+    return await bcrypt.compare(password, hashedPassword);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 export const addUser = async (user) => {
   const existingUser = await getUserByEmail(user.email).catch((error) => {
     throw new ErrorHandler(500, 'Internal Server Error', error);
@@ -33,5 +41,34 @@ export const addUser = async (user) => {
     return generateToken(savedUser._id);
   } catch (error) {
     throw new ErrorHandler(400, 'Error adding user', error);
+  }
+};
+
+export const loginUser = async (user) => {
+  const existingUser = await getUserByEmail(user.email).catch((error) => {
+    throw new ErrorHandler(500, 'Internal Server Error', error);
+  });
+
+  if (existingUser) {
+    const id = existingUser._id;
+    try {
+      const isMatch = await comparePassword(user.password, existingUser.password);
+      if (isMatch) {
+        const token = generateToken(id);
+        const payload = {
+          firstName: existingUser.firstName,
+          lastName: existingUser.lastName,
+          email: existingUser.email,
+          phone: existingUser.phone,
+          token,
+        };
+        return payload;
+      }
+      throw new ErrorHandler(500, 'Internal Server Error');
+    } catch (error) {
+      throw new ErrorHandler(401, 'Invalid email or password', error);
+    }
+  } else {
+    throw new ErrorHandler(401, 'Invalid email or password');
   }
 };
