@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import morgan from 'morgan';
 import winston from 'winston';
+import passport from 'passport';
 import { PORT, startDBConnection } from './config';
 import logger from './config/winston';
 import routes from './routes';
@@ -14,6 +15,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(morgan('combined', { stream: winston.stream.write }));
+app.use(passport.initialize());
 
 routes(app);
 app.use(errorMiddleware);

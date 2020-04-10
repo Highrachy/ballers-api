@@ -1,8 +1,23 @@
+/* eslint-disable no-underscore-dangle */
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import passport from 'passport';
+import dotenv from 'dotenv';
+import strategy from 'passport-facebook';
 import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
+
+const FacebookStrategy = strategy.Strategy;
+dotenv.config();
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((obj, done) => {
+  done(null, obj);
+});
 
 export const getUserByEmail = async (email) => User.findOne({ email });
 export const getUserById = async (id) => User.findById(id);
@@ -72,3 +87,45 @@ export const loginUser = async (user) => {
     throw new ErrorHandler(401, 'Invalid email or password');
   }
 };
+
+export const loginFacebookUser = async (email) => {
+  const existingUser = await getUserByEmail(email).catch((error) => {
+    throw new ErrorHandler(500, 'Internal Server Error', error);
+  });
+
+  if (existingUser) {
+    const id = existingUser._id;
+    const token = generateToken(id);
+    const payload = {
+      firstName: existingUser.firstName,
+      lastName: existingUser.lastName,
+      email: existingUser.email,
+      phone: existingUser.phone,
+      token,
+    };
+    return payload;
+  }
+  throw new ErrorHandler(401, 'Email address is not registered with Ballers');
+};
+
+passport.use(
+  new FacebookStrategy(
+    {
+      clientID: process.env.FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+      callbackURL: process.env.FACEBOOK_CALLBACK_URL,
+      profileFields: ['email', 'name'],
+    },
+    (accessToken, refreshToken, profile, done) => {
+      // eslint-disable-next-line camelcase
+      const { email, first_name, last_name } = profile._json;
+      const faceBookData = {
+        email,
+        firstName: first_name,
+        lastName: last_name,
+      };
+
+      done(null, loginFacebookUser(faceBookData.email));
+    },
+  ),
+);

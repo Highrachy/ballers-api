@@ -1,4 +1,5 @@
 import express from 'express';
+import passport from 'passport';
 import { registerSchema, loginSchema } from '../schemas/user.schema';
 import { schemaValidation } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
@@ -65,4 +66,28 @@ router.post('/register', schemaValidation(registerSchema), UserController.regist
 
 router.post('/login', schemaValidation(loginSchema), UserController.login);
 
-module.exports = router;
+router.get(
+  '/auth/facebook',
+  passport.authenticate('facebook', {
+    authType: 'rerequest',
+    scope: ['email'],
+  }),
+);
+
+router.get(
+  '/auth/facebook/callback',
+  passport.authenticate('facebook', {
+    successRedirect: '/api/v1/user/auth/facebook/success',
+    failureRedirect: '/api/v1/user/auth/facebook/fail',
+  }),
+);
+
+router.get('/auth/facebook/success', (req, res) => {
+  res.send('Success');
+});
+
+router.get('/auth/facebook/fail', (req, res) => {
+  res.send('Failed attempt');
+});
+
+export default router;
