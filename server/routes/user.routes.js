@@ -90,4 +90,27 @@ router.get('/auth/facebook/fail', (req, res) => {
   res.send('Failed attempt');
 });
 
+router.get(
+  '/auth/google',
+  passport.authenticate('google', {
+    scope: ['email'],
+  }),
+);
+
+router.get(
+  '/auth/google/callback',
+  passport.authenticate('google', {
+    successRedirect: '/api/v1/user/auth/google/success',
+    failureRedirect: '/api/v1/user/auth/google/fail',
+  }),
+);
+
+router.get('/auth/google/success', (req, res) => {
+  res.send('Success');
+});
+
+router.get('/auth/google/fail', (req, res) => {
+  res.send('Failed attempt');
+});
+
 export default router;

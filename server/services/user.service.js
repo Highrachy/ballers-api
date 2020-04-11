@@ -3,21 +3,14 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import passport from 'passport';
 import dotenv from 'dotenv';
-import strategy from 'passport-facebook';
+import fbstrategy from 'passport-facebook';
+import GoogleStrategy from 'passport-google-oauth20';
 import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 
-const FacebookStrategy = strategy.Strategy;
 dotenv.config();
-
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-
-passport.deserializeUser((obj, done) => {
-  done(null, obj);
-});
+const FacebookStrategy = fbstrategy.Strategy;
 
 export const getUserByEmail = async (email) => User.findOne({ email });
 export const getUserById = async (id) => User.findById(id);
@@ -88,7 +81,7 @@ export const loginUser = async (user) => {
   }
 };
 
-export const loginFacebookUser = async (email) => {
+export const loginSocialMedia = async (email) => {
   const existingUser = await getUserByEmail(email).catch((error) => {
     throw new ErrorHandler(500, 'Internal Server Error', error);
   });
@@ -125,7 +118,31 @@ passport.use(
         lastName: last_name,
       };
 
-      done(null, loginFacebookUser(faceBookData.email));
+      done(null, loginSocialMedia(faceBookData.email));
     },
   ),
 );
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    (accessToken, refreshToken, profile, done) => {
+      const { email } = profile._json;
+      const googleData = { email };
+
+      done(null, loginSocialMedia(googleData.email));
+    },
+  ),
+);
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((obj, done) => {
+  done(null, obj);
+});
