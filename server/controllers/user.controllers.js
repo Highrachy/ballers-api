@@ -1,4 +1,5 @@
 import { addUser, loginUser } from '../services/user.service';
+import '../services/passport.service';
 
 const UserController = {
   register(req, res, next) {

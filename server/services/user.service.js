@@ -1,16 +1,9 @@
 /* eslint-disable no-underscore-dangle */
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import passport from 'passport';
-import dotenv from 'dotenv';
-import fbstrategy from 'passport-facebook';
-import GoogleStrategy from 'passport-google-oauth20';
 import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
-
-dotenv.config();
-const FacebookStrategy = fbstrategy.Strategy;
 
 export const getUserByEmail = async (email) => User.findOne({ email });
 export const getUserById = async (id) => User.findById(id);
@@ -81,7 +74,7 @@ export const loginUser = async (user) => {
   }
 };
 
-export const loginSocialMedia = async (email) => {
+export const loginViaSocialMedia = async (email) => {
   const existingUser = await getUserByEmail(email).catch((error) => {
     throw new ErrorHandler(500, 'Internal Server Error', error);
   });
@@ -100,49 +93,3 @@ export const loginSocialMedia = async (email) => {
   }
   throw new ErrorHandler(401, 'Email address is not registered with Ballers');
 };
-
-passport.use(
-  new FacebookStrategy(
-    {
-      clientID: process.env.FACEBOOK_CLIENT_ID,
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-      callbackURL: process.env.FACEBOOK_CALLBACK_URL,
-      profileFields: ['email', 'name'],
-    },
-    (accessToken, refreshToken, profile, done) => {
-      // eslint-disable-next-line camelcase
-      const { email, first_name, last_name } = profile._json;
-      const faceBookData = {
-        email,
-        firstName: first_name,
-        lastName: last_name,
-      };
-
-      done(null, loginSocialMedia(faceBookData.email));
-    },
-  ),
-);
-
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
-    },
-    (accessToken, refreshToken, profile, done) => {
-      const { email } = profile._json;
-      const googleData = { email };
-
-      done(null, loginSocialMedia(googleData.email));
-    },
-  ),
-);
-
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-
-passport.deserializeUser((obj, done) => {
-  done(null, obj);
-});
