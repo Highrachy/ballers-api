@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/user.model';
@@ -71,4 +72,24 @@ export const loginUser = async (user) => {
   } else {
     throw new ErrorHandler(401, 'Invalid email or password');
   }
+};
+
+export const loginViaSocialMedia = async (email) => {
+  const existingUser = await getUserByEmail(email).catch((error) => {
+    throw new ErrorHandler(500, 'Internal Server Error', error);
+  });
+
+  if (existingUser) {
+    const id = existingUser._id;
+    const token = generateToken(id);
+    const payload = {
+      firstName: existingUser.firstName,
+      lastName: existingUser.lastName,
+      email: existingUser.email,
+      phone: existingUser.phone,
+      token,
+    };
+    return payload;
+  }
+  throw new ErrorHandler(401, 'Email address is not registered with Ballers');
 };
