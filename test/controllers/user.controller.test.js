@@ -1,4 +1,4 @@
-import { expect, request, useDatabase } from '../config';
+import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
@@ -257,6 +257,22 @@ describe('Login Route', () => {
           expect(res.body.error).to.be.eql('"Password" is not allowed to be empty');
           done();
         });
+    });
+  });
+  context('when login service returns an error', () => {
+    const userLogin = { email: 'myemail@mail.com', password: '123456' };
+    it('returns the error', (done) => {
+      sinon.stub(User, 'findOne').rejects();
+      request()
+        .post('/api/v1/user/login')
+        .send(userLogin)
+        .end((err, res) => {
+          expect(res).to.have.status(401);
+          expect(res.body.success).to.be.eql(false);
+          done();
+        });
+
+      User.findOne.restore();
     });
   });
 });

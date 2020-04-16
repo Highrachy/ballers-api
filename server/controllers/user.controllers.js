@@ -1,10 +1,15 @@
 import { addUser, loginUser } from '../services/user.service';
+import { sendMail } from '../services/mailer.service';
+import EMAIL_CONTENT from '../../mailer';
 
 const UserController = {
   register(req, res, next) {
     const user = req.locals;
     addUser(user)
       .then((token) => {
+        sendMail(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
+          link: `http://ballers.ng/activate?token=${token}`,
+        });
         res.status(201).json({ success: true, message: 'User registered', token });
       })
       .catch((error) => next(error));

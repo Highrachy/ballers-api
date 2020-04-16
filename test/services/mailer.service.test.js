@@ -1,6 +1,7 @@
-import { expect } from '../config';
-import { generateEmailTemplate } from '../../server/services/mailer.service';
+import { expect, sinon } from '../config';
+import { generateEmailTemplate, sendMail, MailSender } from '../../server/services/mailer.service';
 import MAILER_CONTENT from '../../mailer';
+import userFactory from '../factories/user.factory';
 
 let options;
 const generateOptions = (newOptions = {}) => ({ ...MAILER_CONTENT.DEFAULT, ...newOptions });
@@ -113,6 +114,70 @@ describe('Mailer Service', () => {
       it('omits buttonText and link in text template', async () => {
         const email = await generateEmailTemplate(options);
         expect(email.text).to.not.contain(options.buttonText);
+      });
+    });
+  });
+
+  describe('#sendMail', () => {
+    const user = userFactory.build();
+    const defaultMailContent = generateOptions();
+    const sandbox = sinon.createSandbox();
+    let mailTrapSpy;
+    let sendGridSpy;
+
+    beforeEach(() => {
+      mailTrapSpy = sandbox.spy(MailSender, 'mailTrap');
+      sendGridSpy = sandbox.spy(MailSender, 'sendGrid');
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    context('on production server', () => {
+      before(() => {
+        process.env.NODE_ENV = 'production';
+      });
+      after(() => {
+        process.env.NODE_ENV = 'test';
+      });
+
+      it('sends mail to email via sendgrid', () => {
+        sendMail(defaultMailContent, user);
+        expect(mailTrapSpy.callCount).to.eq(0);
+        expect(sendGridSpy.callCount).to.eq(1);
+      });
+    });
+
+    context('on development server', () => {
+      before(() => {
+        process.env.NODE_ENV = 'development';
+      });
+      after(() => {
+        process.env.NODE_ENV = 'test';
+      });
+
+      it('sends mail to email via mail trap', () => {
+        sendMail(defaultMailContent, user);
+        expect(mailTrapSpy.callCount).to.eq(1);
+        expect(sendGridSpy.callCount).to.eq(0);
+      });
+    });
+
+    context('when email address is absent', () => {
+      it('throws an error', () => {
+        expect(() => sendMail(defaultMailContent, {})).to.throw('Email is needed to send email');
+        expect(mailTrapSpy.callCount).to.eq(0);
+        expect(sendGridSpy.callCount).to.eq(0);
+      });
+    });
+
+    context('when firstName is absent', () => {
+      it('it sends the mail', () => {
+        const userWithNoFirstName = userFactory.build({ firstName: '' });
+        sendMail(defaultMailContent, userWithNoFirstName);
+        expect(mailTrapSpy.callCount).to.eq(1);
+        expect(sendGridSpy.callCount).to.eq(0);
       });
     });
   });
