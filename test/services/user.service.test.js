@@ -10,6 +10,7 @@ import {
   addUser,
   loginUser,
   comparePassword,
+  activateUser,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -251,6 +252,44 @@ describe('User Service', () => {
         } catch (err) {
           expect(err.statusCode).to.eql(401);
           expect(err.message).to.be.eql('Invalid email or password');
+        }
+      });
+    });
+  });
+
+  describe('#activateUser', () => {
+    context('when a valid token', () => {
+      const user = UserFactory.build({ activated: false });
+      it('activates the user account', async () => {
+        const token = await addUser(user);
+        const activatedUser = await activateUser(token);
+        expect(activatedUser.activated).to.eql(true);
+        expect(activatedUser).to.have.property('activationDate');
+      });
+    });
+
+    context('when an invalid token', () => {
+      it('activates the user account', async () => {
+        const user = UserFactory.build({ activated: false });
+        const token = await addUser(user);
+        try {
+          await activateUser(`${token}1234567`);
+        } catch (err) {
+          expect(err.statusCode).to.eql(404);
+          expect(err.message).to.eql('User not found');
+        }
+      });
+    });
+
+    context('when no token is given', () => {
+      it('activates the user account', async () => {
+        const user = UserFactory.build({ activated: false });
+        await addUser(user);
+        try {
+          await activateUser('');
+        } catch (err) {
+          expect(err.statusCode).to.eql(404);
+          expect(err.message).to.eql('User not found');
         }
       });
     });

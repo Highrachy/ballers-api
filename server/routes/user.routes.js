@@ -65,4 +65,27 @@ router.post('/register', schemaValidation(registerSchema), UserController.regist
 
 router.post('/login', schemaValidation(loginSchema), UserController.login);
 
+/**
+ * @swagger
+ * path:
+ *  /user/activate:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: the auto generated user token via jwt
+ *      summary: Activates a user account via token
+ *      tags: [User]
+ *      responses:
+ *        '200':
+ *          description: Your account has been successfully activated
+ *        '404':
+ *          description: User not found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/activate', UserController.activateToken);
+
 module.exports = router;

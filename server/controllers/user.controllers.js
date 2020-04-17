@@ -1,4 +1,4 @@
-import { addUser, loginUser } from '../services/user.service';
+import { addUser, loginUser, activateUser } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 
@@ -14,11 +14,25 @@ const UserController = {
       })
       .catch((error) => next(error));
   },
+
   login(req, res, next) {
     const loginDetails = req.locals;
     loginUser(loginDetails)
       .then((user) => {
         res.status(200).json({ success: true, message: 'Login successful', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  activateToken(req, res, next) {
+    const { token } = req.query;
+    activateUser(token)
+      .then((user) => {
+        res.status(200).json({
+          success: true,
+          message: 'Your account has been successfully activated',
+          user: { ...user.toJSON(), token },
+        });
       })
       .catch((error) => next(error));
   },

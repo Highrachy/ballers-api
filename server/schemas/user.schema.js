@@ -1,6 +1,5 @@
 import Joi from '@hapi/joi';
 
-// eslint-disable-next-line import/prefer-default-export
 export const registerSchema = Joi.object({
   firstName: Joi.string().label('First Name').required(),
   lastName: Joi.string().label('Last Name').required(),
