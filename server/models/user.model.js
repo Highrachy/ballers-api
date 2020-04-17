@@ -53,8 +53,6 @@ const UserSchema = new mongoose.Schema(
       required: true,
     },
     phone: String,
-    // activated: { type: Boolean, default: false },
-    // activationDate: Date,
   },
   { timestamps: true },
 );

@@ -1,11 +1,13 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import app from '../server';
 
 chai.use(chaiHttp);
+chai.use(sinonChai);
 const { expect } = chai;
 const request = () => chai.request(app);
 

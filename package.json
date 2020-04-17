@@ -50,7 +50,9 @@
     "nodemon": "^2.0.3",
     "nyc": "^15.0.1",
     "prettier": "^2.0.4",
-    "rosie": "^2.0.1"
+    "rosie": "^2.0.1",
+    "sinon": "^9.0.2",
+    "sinon-chai": "^3.5.0"
   },
   "dependencies": {
     "@hapi/joi": "^17.1.1",
@@ -66,7 +68,6 @@
     "mongoose": "^5.9.9",
     "morgan": "^1.10.0",
     "nodemailer": "^6.4.6",
-    "sinon": "^9.0.2",
     "swagger-jsdoc": "^4.0.0",
     "swagger-ui-express": "^4.1.4",
     "winston": "^3.2.1"

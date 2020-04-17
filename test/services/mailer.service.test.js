@@ -146,6 +146,10 @@ describe('Mailer Service', () => {
         sendMail(defaultMailContent, user);
         expect(mailTrapSpy.callCount).to.eq(0);
         expect(sendGridSpy.callCount).to.eq(1);
+        expect(sendGridSpy).to.have.be.calledWith(user.email, {
+          ...defaultMailContent,
+          firstName: user.firstName,
+        });
       });
     });
 
@@ -161,6 +165,10 @@ describe('Mailer Service', () => {
         sendMail(defaultMailContent, user);
         expect(mailTrapSpy.callCount).to.eq(1);
         expect(sendGridSpy.callCount).to.eq(0);
+        expect(mailTrapSpy).to.have.be.calledWith(user.email, {
+          ...defaultMailContent,
+          firstName: user.firstName,
+        });
       });
     });
 
@@ -178,6 +186,10 @@ describe('Mailer Service', () => {
         sendMail(defaultMailContent, userWithNoFirstName);
         expect(mailTrapSpy.callCount).to.eq(1);
         expect(sendGridSpy.callCount).to.eq(0);
+        expect(mailTrapSpy).to.have.be.calledWith(userWithNoFirstName.email, {
+          ...defaultMailContent,
+          firstName: null,
+        });
       });
     });
   });
