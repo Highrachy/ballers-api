@@ -1,11 +1,23 @@
-import { expect, request, useDatabase } from '../config';
+import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
+import * as MailService from '../../server/services/mailer.service';
+import EMAIL_CONTENT from '../../mailer';
 
 useDatabase();
 
 describe('Register Route', () => {
+  let sendMailSpy;
+  const sandbox = sinon.createSandbox();
+  beforeEach(() => {
+    sendMailSpy = sandbox.spy(MailService, 'sendMail');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   context('with valid data', () => {
     it('returns successful token', (done) => {
       const user = UserFactory.build({ email: 'myemail@mail.com' });
@@ -17,6 +29,10 @@ describe('Register Route', () => {
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('User registered');
           expect(res.body).to.have.property('token');
+          expect(sendMailSpy.callCount).to.eq(1);
+          expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
+            link: `http://ballers.ng/activate?token=${res.body.token}`,
+          });
           done();
         });
     });
@@ -35,6 +51,7 @@ describe('Register Route', () => {
           expect(res.body.success).to.be.eql(false);
           expect(res.body.message).to.be.eql('Email is linked to another account');
           expect(res.body.error).to.be.eql('Email is linked to another account');
+          expect(sendMailSpy.callCount).to.eq(0);
           done();
         });
     });
@@ -52,6 +69,7 @@ describe('Register Route', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('"First Name" is not allowed to be empty');
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -68,6 +86,7 @@ describe('Register Route', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('"Last Name" is not allowed to be empty');
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -84,6 +103,7 @@ describe('Register Route', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('"Email Address" is not allowed to be empty');
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -100,6 +120,7 @@ describe('Register Route', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('"Email Address" must be a valid email');
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -116,6 +137,7 @@ describe('Register Route', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('"Password" is not allowed to be empty');
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -134,6 +156,7 @@ describe('Register Route', () => {
             expect(res.body.error).to.be.eql(
               '"Password" length must be at least 6 characters long',
             );
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -150,6 +173,7 @@ describe('Register Route', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('Password does not match');
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -166,6 +190,7 @@ describe('Register Route', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('Password does not match');
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -183,6 +208,7 @@ describe('Register Route', () => {
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('User registered');
           expect(res.body).to.have.property('token');
+          expect(sendMailSpy.callCount).to.eq(1);
           done();
         });
     });
@@ -200,6 +226,7 @@ describe('Register Route', () => {
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('User registered');
           expect(res.body).to.have.property('token');
+          expect(sendMailSpy.callCount).to.eq(1);
           done();
         });
     });
@@ -257,6 +284,22 @@ describe('Login Route', () => {
           expect(res.body.error).to.be.eql('"Password" is not allowed to be empty');
           done();
         });
+    });
+  });
+  context('when login service returns an error', () => {
+    const userLogin = { email: 'myemail@mail.com', password: '123456' };
+    it('returns the error', (done) => {
+      sinon.stub(User, 'findOne').rejects();
+      request()
+        .post('/api/v1/user/login')
+        .send(userLogin)
+        .end((err, res) => {
+          expect(res).to.have.status(401);
+          expect(res.body.success).to.be.eql(false);
+          done();
+        });
+
+      User.findOne.restore();
     });
   });
 });
