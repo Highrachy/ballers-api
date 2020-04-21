@@ -8,6 +8,7 @@ export const getUserByEmail = async (email) => User.findOne({ email });
 export const getUserById = async (id) => User.findById(id);
 
 export const generateToken = (id) => jwt.sign({ id }, USER_SECRET, { expiresIn: '30d' });
+export const decodeToken = (token) => jwt.verify(token, USER_SECRET);
 
 export const hashPassword = async (password) => {
   try {
@@ -50,25 +51,38 @@ export const loginUser = async (user) => {
   });
 
   if (existingUser) {
-    const id = existingUser._id;
-    try {
-      const isMatch = await comparePassword(user.password, existingUser.password);
-      if (isMatch) {
-        const token = generateToken(id);
-        const payload = {
-          firstName: existingUser.firstName,
-          lastName: existingUser.lastName,
-          email: existingUser.email,
-          phone: existingUser.phone,
+    const isMatch = await comparePassword(user.password, existingUser.password).catch((error) => {
+      throw new ErrorHandler(500, 'Internal Server Error', error);
+    });
+
+    if (isMatch) {
+      const savedUser = existingUser.toJSON();
+      const token = generateToken(savedUser.id);
+      delete savedUser.password;
+
+      if (savedUser.activated) {
+        return {
+          ...savedUser,
           token,
         };
-        return payload;
       }
-      throw new ErrorHandler(500, 'Internal Server Error');
-    } catch (error) {
-      throw new ErrorHandler(401, 'Invalid email or password', error);
+      throw new ErrorHandler(401, 'Your account needs to be activated.');
     }
+    throw new ErrorHandler(401, 'Invalid email or password');
   } else {
     throw new ErrorHandler(401, 'Invalid email or password');
+  }
+};
+
+export const activateUser = async (token) => {
+  try {
+    const decoded = await decodeToken(token);
+    return User.findOneAndUpdate(
+      { _id: decoded.id },
+      { $set: { activated: true, activationDate: Date.now() } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(404, 'User not found', error);
   }
 };

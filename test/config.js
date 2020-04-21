@@ -13,7 +13,7 @@ const request = () => chai.request(app);
 
 const useDatabase = () => {
   let mongoServer;
-  const opts = { useUnifiedTopology: true, useNewUrlParser: true };
+  const opts = { useUnifiedTopology: true, useNewUrlParser: true, useFindAndModify: false };
 
   before(async () => {
     mongoServer = new MongoMemoryServer();

@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
 import { addUser } from '../../server/services/user.service';
@@ -234,72 +235,150 @@ describe('Register Route', () => {
 });
 
 describe('Login Route', () => {
-  context('with valid data', () => {
+  describe('when the user has been activated', () => {
     const userLogin = { email: 'myemail@mail.com', password: '123456' };
-    const user = UserFactory.build(userLogin);
-    before(async () => {
+    const user = UserFactory.build({ ...userLogin, activated: true });
+    beforeEach(async () => {
       await addUser(user);
     });
+
+    context('with valid data', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .post('/api/v1/user/login')
+          .send(userLogin)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Login successful');
+            expect(res.body.user.firstName).to.be.eql(user.firstName);
+            expect(res.body.user.lastName).to.be.eql(user.lastName);
+            expect(res.body.user.email).to.be.eql(user.email);
+            expect(res.body.user).to.have.property('token');
+            done();
+          });
+      });
+    });
+
+    context('with empty email', () => {
+      it('returns error', (done) => {
+        request()
+          .post('/api/v1/user/login')
+          .send({ ...userLogin, email: '' })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Email Address" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+
+    context('with empty password', () => {
+      it('returns error', (done) => {
+        request()
+          .post('/api/v1/user/login')
+          .send({ ...userLogin, password: '' })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Password" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+
+    context('when login service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(User, 'findOne').rejects('TypeError');
+        request()
+          .post('/api/v1/user/login')
+          .send(userLogin)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            User.findOne.restore();
+          });
+      });
+    });
+
+    context('when compare error returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(bcrypt, 'compare').throws(new Error('testing'));
+        request()
+          .post('/api/v1/user/login')
+          .send(userLogin)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            bcrypt.compare.restore();
+          });
+      });
+    });
+  });
+
+  describe('when the user has not activated', () => {
+    const userLogin = { email: 'myemail@mail.com', password: '123456' };
+    const user = UserFactory.build({ ...userLogin, activated: false });
+    beforeEach(async () => {
+      await addUser(user);
+    });
+
+    context('with valid data', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .post('/api/v1/user/login')
+          .send(userLogin)
+          .end((err, res) => {
+            expect(res).to.have.status(401);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Your account needs to be activated.');
+            expect(res.body.error).to.be.eql('Your account needs to be activated.');
+            done();
+          });
+      });
+    });
+  });
+});
+
+describe('Activate User Route', () => {
+  let token;
+  const user = UserFactory.build({ activated: false });
+
+  beforeEach(async () => {
+    token = await addUser(user);
+  });
+  context('with a valid token', () => {
     it('returns successful payload', (done) => {
       request()
-        .post('/api/v1/user/login')
-        .send(userLogin)
+        .get(`/api/v1/user/activate?token=${token}`)
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
-          expect(res.body.message).to.be.eql('Login successful');
           expect(res.body.user.firstName).to.be.eql(user.firstName);
           expect(res.body.user.lastName).to.be.eql(user.lastName);
           expect(res.body.user.email).to.be.eql(user.email);
-          expect(res.body.user).to.have.property('token');
+          expect(res.body.user.activated).to.be.eql(true);
+          expect(res.body.user.token).to.be.eql(token);
+          expect(res.body.user).to.have.property('activationDate');
           done();
         });
     });
   });
-  context('with empty email', () => {
-    const userLogin = { email: '', password: '123456' };
-    it('returns error', (done) => {
-      request()
-        .post('/api/v1/user/login')
-        .send(userLogin)
-        .end((err, res) => {
-          expect(res).to.have.status(412);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Validation Error');
-          expect(res.body.error).to.be.eql('"Email Address" is not allowed to be empty');
-          done();
-        });
-    });
-  });
-  context('with empty password', () => {
-    const userLogin = { email: 'myemail@mail.com', password: '' };
-    it('returns error', (done) => {
-      request()
-        .post('/api/v1/user/login')
-        .send(userLogin)
-        .end((err, res) => {
-          expect(res).to.have.status(412);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Validation Error');
-          expect(res.body.error).to.be.eql('"Password" is not allowed to be empty');
-          done();
-        });
-    });
-  });
-  context('when login service returns an error', () => {
-    const userLogin = { email: 'myemail@mail.com', password: '123456' };
-    it('returns the error', (done) => {
-      sinon.stub(User, 'findOne').rejects();
-      request()
-        .post('/api/v1/user/login')
-        .send(userLogin)
-        .end((err, res) => {
-          expect(res).to.have.status(401);
-          expect(res.body.success).to.be.eql(false);
-          done();
-        });
 
-      User.findOne.restore();
+  context('with an invalid token', () => {
+    it('returns successful payload', (done) => {
+      request()
+        .get(`/api/v1/user/activate?token=${token}123456`)
+        .end((err, res) => {
+          expect(res).to.have.status(404);
+          expect(res.body.success).to.be.eql(false);
+          done();
+        });
     });
   });
 });
