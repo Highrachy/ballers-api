@@ -1,4 +1,10 @@
-import { addUser, loginUser, activateUser } from '../services/user.service';
+import {
+  addUser,
+  loginUser,
+  activateUser,
+  forgotPasswordToken,
+  resetPasswordViaToken,
+} from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 
@@ -32,6 +38,38 @@ const UserController = {
           success: true,
           message: 'Your account has been successfully activated',
           user: { ...user.toJSON(), token },
+        });
+      })
+      .catch((error) => next(error));
+  },
+
+  generateResetPasswordLink(req, res, next) {
+    const { email } = req.locals;
+    forgotPasswordToken(email)
+      .then((data) => {
+        sendMail(EMAIL_CONTENT.RESET_PASSWORD_LINK, data.user, {
+          link: `http://ballers.ng/change-password/${data.token}`,
+        });
+        res.status(200).json({
+          success: true,
+          message: 'A password reset link has been sent to your email account',
+        });
+      })
+      .catch((error) => next(error));
+  },
+
+  resetPasswordFromLink(req, res, next) {
+    const { token } = req.params;
+    const { password } = req.locals;
+    resetPasswordViaToken(password, token)
+      .then((user) => {
+        sendMail(EMAIL_CONTENT.CHANGE_PASSWORD, user, {
+          link: `http://ballers.ng/reset-password`,
+        });
+        res.status(200).json({
+          success: true,
+          message: 'Your password has been successfully changed',
+          user,
         });
       })
       .catch((error) => next(error));

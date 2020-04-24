@@ -7,7 +7,8 @@ import { ErrorHandler } from '../helpers/errorHandler';
 export const getUserByEmail = async (email) => User.findOne({ email });
 export const getUserById = async (id) => User.findById(id);
 
-export const generateToken = (id) => jwt.sign({ id }, USER_SECRET, { expiresIn: '30d' });
+export const generateToken = (id, expiresIn = '30d') =>
+  jwt.sign({ id }, USER_SECRET, { expiresIn });
 export const decodeToken = (token) => jwt.verify(token, USER_SECRET);
 
 export const hashPassword = async (password) => {
@@ -80,6 +81,33 @@ export const activateUser = async (token) => {
     return User.findOneAndUpdate(
       { _id: decoded.id },
       { $set: { activated: true, activationDate: Date.now() } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(404, 'User not found', error);
+  }
+};
+
+export const forgotPasswordToken = async (email) => {
+  const existingUser = await getUserByEmail(email).catch((error) => {
+    throw new ErrorHandler(500, 'Internal Server Error', error);
+  });
+
+  if (existingUser) {
+    const savedUser = existingUser.toJSON();
+    return { user: savedUser, token: generateToken(savedUser._id, '1h') };
+  }
+  throw new ErrorHandler(401, 'Your email address is not found. Please check and Try Again.');
+};
+
+export const resetPasswordViaToken = async (password, token) => {
+  try {
+    const decoded = await decodeToken(token);
+    const hashedPassword = await hashPassword(password);
+    console.log('decoded', decoded);
+    return User.findOneAndUpdate(
+      { _id: decoded.id },
+      { $set: { password: hashedPassword } },
       { new: true, fields: '-password' },
     );
   } catch (error) {
