@@ -97,14 +97,13 @@ export const forgotPasswordToken = async (email) => {
     const savedUser = existingUser.toJSON();
     return { user: savedUser, token: generateToken(savedUser._id, '1h') };
   }
-  throw new ErrorHandler(401, 'Your email address is not found. Please check and Try Again.');
+  throw new ErrorHandler(404, 'Your email address is not found.');
 };
 
 export const resetPasswordViaToken = async (password, token) => {
   try {
     const decoded = await decodeToken(token);
     const hashedPassword = await hashPassword(password);
-    console.log('decoded', decoded);
     return User.findOneAndUpdate(
       { _id: decoded.id },
       { $set: { password: hashedPassword } },
