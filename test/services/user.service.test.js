@@ -11,12 +11,20 @@ import {
   loginUser,
   comparePassword,
   activateUser,
+  forgotPasswordToken,
+  resetPasswordViaToken,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
 import User from '../../server/models/user.model';
 
 useDatabase();
+
+const expectsReturnedTokenToBeValid = (token, id) => {
+  const decodedToken = jwt.verify(token, USER_SECRET);
+  const castedId = new mongoose.mongo.ObjectId(decodedToken.id);
+  expect(castedId).to.deep.equal(id);
+};
 
 describe('User Service', () => {
   describe('#hashPassword', () => {
@@ -126,12 +134,6 @@ describe('User Service', () => {
     let countedUsers;
     const email = 'myemail@mail.com';
     const user = UserFactory.build({ email });
-
-    const expectsReturnedTokenToBeValid = (token, id) => {
-      const decodedToken = jwt.verify(token, USER_SECRET);
-      const castedId = new mongoose.mongo.ObjectId(decodedToken.id);
-      expect(castedId).to.deep.equal(id);
-    };
 
     beforeEach(async () => {
       countedUsers = await User.countDocuments({});
@@ -290,6 +292,85 @@ describe('User Service', () => {
         } catch (err) {
           expect(err.statusCode).to.eql(404);
           expect(err.message).to.eql('User not found');
+        }
+      });
+    });
+  });
+
+  describe('#forgotPasswordToken', () => {
+    const email = 'myemail@mail.com';
+    const generatedToken = 'generated token';
+    const user = UserFactory.build({ email });
+
+    before(() => {
+      sinon.stub(jwt, 'sign').returns(generatedToken);
+    });
+
+    after(() => {
+      jwt.sign.restore();
+    });
+
+    context('when a valid user is request for forgot password token', () => {
+      beforeEach(async () => {
+        await addUser(user);
+      });
+
+      it('returns the user token', async () => {
+        const response = await forgotPasswordToken(email);
+        expect(response.token).be.eql(generatedToken);
+        expect(response.user.firstName).be.eql(user.firstName);
+        expect(response.user.email).be.eql(user.email);
+      });
+    });
+
+    context('when user cannot be found', () => {
+      it('returns an error', async () => {
+        try {
+          await forgotPasswordToken(email);
+        } catch (err) {
+          expect(err.statusCode).to.eql(404);
+          expect(err.error).to.be.eql('Your email address is not found.');
+          expect(err.message).to.be.eql('Your email address is not found.');
+        }
+      });
+    });
+
+    context('when the User model returns an error', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findOne').rejects();
+        try {
+          await forgotPasswordToken(email);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        User.findOne.restore();
+      });
+    });
+  });
+
+  describe('#resetPasswordViaToken', () => {
+    const user = UserFactory.build();
+    const oldPassword = user.password;
+
+    context('when a valid user is request for forgot password token', () => {
+      it('returns the user token', async () => {
+        const token = await addUser(user);
+        const newPassword = `${oldPassword}123#`;
+        const response = await resetPasswordViaToken(newPassword, token);
+        expect(response.firstName).be.eql(user.firstName);
+        expect(response.email).be.eql(user.email);
+      });
+    });
+
+    context('with invalid token', () => {
+      it('throws an error', async () => {
+        try {
+          await resetPasswordViaToken(user.password, '123456');
+        } catch (err) {
+          expect(err.statusCode).to.eql(404);
+          expect(err.message).to.be.eql('User not found');
         }
       });
     });

@@ -1,5 +1,10 @@
 import express from 'express';
-import { registerSchema, loginSchema } from '../schemas/user.schema';
+import {
+  registerSchema,
+  loginSchema,
+  resetPasswordSchema,
+  changePasswordSchema,
+} from '../schemas/user.schema';
 import { schemaValidation } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
 
@@ -87,5 +92,79 @@ router.post('/login', schemaValidation(loginSchema), UserController.login);
  *          description: Internal server error
  */
 router.get('/activate', UserController.activateToken);
+
+/**
+ * @swagger
+ * /user/reset-password:
+ *   post:
+ *     tags:
+ *       - User
+ *     description: Sends a reset password link to user
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              email:
+ *                  type: string
+ *                  example: john@mail.com
+ *      description: Generates Reset Password Link
+ *     responses:
+ *      '200':
+ *        description: A password reset link has been sent to your email account
+ *      '401':
+ *        description: Your email address is not found. Please check and Try Again.
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/reset-password',
+  schemaValidation(resetPasswordSchema),
+  UserController.generateResetPasswordLink,
+);
+
+/**
+ * @swagger
+ * /user/change-password:
+ *   post:
+ *     tags:
+ *       - User
+ *     description: Changes a User Password
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *          type: string
+ *         description: the auto generated user token via jwt
+ *       - in: formData
+ *         name: password
+ *         schema:
+ *          type: string
+ *         description: the new password
+ *       - in: formData
+ *         name: confirmPassword
+ *         schema:
+ *          type: string
+ *         description: confirm password
+ *     summary: Changes a user password
+ *     responses:
+ *      '200':
+ *        description: Your password has been successfully changed
+ *      '404':
+ *        description: User not found
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/change-password/:token',
+  schemaValidation(changePasswordSchema),
+  UserController.resetPasswordFromLink,
+);
 
 module.exports = router;
