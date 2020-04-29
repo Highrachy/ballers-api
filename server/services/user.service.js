@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import logger from '../config/winston';
 import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
@@ -74,8 +75,8 @@ export const loginUser = async (user) => {
   }
 };
 
-export const loginViaSocialMedia = async (email) => {
-  const existingUser = await getUserByEmail(email).catch((error) => {
+export const loginViaSocialMedia = async (user) => {
+  const existingUser = await getUserByEmail(user.email).catch((error) => {
     throw new ErrorHandler(500, 'Internal Server Error', error);
   });
 
@@ -89,7 +90,10 @@ export const loginViaSocialMedia = async (email) => {
       phone: existingUser.phone,
       token,
     };
+    logger.info(`payload ${JSON.stringify(payload)}`);
     return payload;
   }
-  throw new ErrorHandler(401, 'Email address is not registered with Ballers');
+  // create a new user
+  const newUser = await addUser(user);
+  return newUser;
 };

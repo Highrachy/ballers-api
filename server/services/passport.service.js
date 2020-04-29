@@ -7,6 +7,7 @@ import { loginViaSocialMedia } from './user.service';
 
 dotenv.config();
 const FacebookStrategy = fbstrategy.Strategy;
+const randomPassword = Math.random().toString(36).substring(2, 15);
 
 passport.use(
   new FacebookStrategy(
@@ -23,6 +24,7 @@ passport.use(
         email,
         firstName: first_name,
         lastName: last_name,
+        password: randomPassword,
       };
 
       done(null, loginViaSocialMedia(faceBookData));
@@ -44,6 +46,7 @@ passport.use(
         email,
         firstName: given_name,
         lastName: family_name,
+        password: randomPassword,
       };
 
       done(null, loginViaSocialMedia(googleData));
