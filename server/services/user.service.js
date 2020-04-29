@@ -76,6 +76,7 @@ export const loginUser = async (user) => {
 };
 
 export const loginViaSocialMedia = async (user) => {
+  // throw an error if user is null
   const existingUser = await getUserByEmail(user.email).catch((error) => {
     throw new ErrorHandler(500, 'Internal Server Error', error);
   });

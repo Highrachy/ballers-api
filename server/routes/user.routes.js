@@ -99,18 +99,8 @@ router.get(
 
 router.get(
   '/auth/google/callback',
-  passport.authenticate('google', {
-    successRedirect: '/api/v1/user/auth/google/success',
-    failureRedirect: '/api/v1/user/auth/google/fail',
-  }),
+  passport.authenticate('google', { session: false }),
+  UserController.socialMediaLogin,
 );
-
-router.get('/auth/google/success', (req, res) => {
-  res.send('Success');
-});
-
-router.get('/auth/google/fail', (req, res) => {
-  res.send('Failed attempt');
-});
 
 export default router;

@@ -42,14 +42,14 @@ passport.use(
     (accessToken, refreshToken, profile, done) => {
       // eslint-disable-next-line camelcase
       const { email, given_name, family_name } = profile._json;
-      const googleData = {
+      const user = {
         email,
         firstName: given_name,
         lastName: family_name,
         password: randomPassword,
       };
 
-      done(null, loginViaSocialMedia(googleData));
+      done(null, user);
     },
   ),
 );

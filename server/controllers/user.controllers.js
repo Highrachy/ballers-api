@@ -1,4 +1,4 @@
-import { addUser, loginUser } from '../services/user.service';
+import { addUser, loginUser, loginViaSocialMedia } from '../services/user.service';
 import '../services/passport.service';
 
 const UserController = {
@@ -15,6 +15,17 @@ const UserController = {
     loginUser(loginDetails)
       .then((user) => {
         res.status(200).json({ success: true, message: 'Login successful', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  socialMediaLogin(req, res, next) {
+    const { user } = req;
+    loginViaSocialMedia(user)
+      .then((payload) => {
+        res
+          .status(200)
+          .json({ success: true, message: 'Authentication Successful', user: payload });
       })
       .catch((error) => next(error));
   },
