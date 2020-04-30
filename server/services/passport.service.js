@@ -3,7 +3,6 @@ import passport from 'passport';
 import dotenv from 'dotenv';
 import fbstrategy from 'passport-facebook';
 import GoogleStrategy from 'passport-google-oauth20';
-import { loginViaSocialMedia } from './user.service';
 
 dotenv.config();
 const FacebookStrategy = fbstrategy.Strategy;
@@ -20,14 +19,13 @@ passport.use(
     (accessToken, refreshToken, profile, done) => {
       // eslint-disable-next-line camelcase
       const { email, first_name, last_name } = profile._json;
-      const faceBookData = {
+      const user = {
         email,
         firstName: first_name,
         lastName: last_name,
         password: randomPassword,
       };
-
-      done(null, loginViaSocialMedia(faceBookData));
+      done(null, user);
     },
   ),
 );
@@ -48,7 +46,6 @@ passport.use(
         lastName: family_name,
         password: randomPassword,
       };
-
       done(null, user);
     },
   ),

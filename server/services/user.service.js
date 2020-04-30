@@ -1,12 +1,12 @@
 /* eslint-disable no-underscore-dangle */
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import logger from '../config/winston';
 import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 
 export const getUserByEmail = async (email) => User.findOne({ email });
+
 export const getUserById = async (id) => User.findById(id);
 
 export const generateToken = (id) => jwt.sign({ id }, USER_SECRET, { expiresIn: '30d' });
@@ -91,7 +91,6 @@ export const loginViaSocialMedia = async (user) => {
       phone: existingUser.phone,
       token,
     };
-    logger.info(`payload ${JSON.stringify(payload)}`);
     return payload;
   }
   // create a new user

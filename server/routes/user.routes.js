@@ -76,19 +76,9 @@ router.get(
 
 router.get(
   '/auth/facebook/callback',
-  passport.authenticate('facebook', {
-    successRedirect: '/api/v1/user/auth/facebook/success',
-    failureRedirect: '/api/v1/user/auth/facebook/fail',
-  }),
+  passport.authenticate('facebook', { session: false }),
+  UserController.socialMediaLogin,
 );
-
-router.get('/auth/facebook/success', (req, res) => {
-  res.send('Success');
-});
-
-router.get('/auth/facebook/fail', (req, res) => {
-  res.send('Failed attempt');
-});
 
 router.get(
   '/auth/google',

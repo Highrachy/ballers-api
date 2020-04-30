@@ -18,7 +18,6 @@ const UserController = {
       })
       .catch((error) => next(error));
   },
-
   socialMediaLogin(req, res, next) {
     const { user } = req;
     loginViaSocialMedia(user)
