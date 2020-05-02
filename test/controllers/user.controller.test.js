@@ -531,3 +531,72 @@ describe('Change Password from Reset Link', () => {
     });
   });
 });
+
+describe('Current User', () => {
+  let token;
+  const user = UserFactory.build();
+
+  beforeEach(async () => {
+    token = await addUser(user);
+  });
+
+  context('with no token', () => {
+    it('returns a forbidden error', (done) => {
+      request()
+        .get('/api/v1/user/who-am-i')
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+
+  context('with invalid token', () => {
+    it('returns an authorization error', (done) => {
+      request()
+        .get('/api/v1/user/who-am-i')
+        .set('authorization', 'invalid-token')
+        .end((err, res) => {
+          expect(res).to.have.status(401);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Authentication Failed');
+          done();
+        });
+    });
+  });
+
+  context('with valid token', () => {
+    it('returns a valid user', (done) => {
+      request()
+        .get('/api/v1/user/who-am-i')
+        .set('authorization', token)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.user.firstName).to.be.eql(user.firstName);
+          expect(res.body.user.lastName).to.be.eql(user.lastName);
+          expect(res.body.user.email).to.be.eql(user.email);
+          done();
+        });
+    });
+  });
+
+  context('when user is not found', () => {
+    beforeEach(async () => {
+      await User.deleteOne({ firstName: user.firstName });
+    });
+    it('returns a valid user', (done) => {
+      request()
+        .get('/api/v1/user/who-am-i')
+        .set('authorization', token)
+        .end((err, res) => {
+          expect(res).to.have.status(404);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('User not found');
+          done();
+        });
+    });
+  });
+});

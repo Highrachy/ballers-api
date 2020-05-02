@@ -5,7 +5,7 @@ import {
   resetPasswordSchema,
   changePasswordSchema,
 } from '../schemas/user.schema';
-import { schemaValidation } from '../helpers/middleware';
+import { schemaValidation, authenticate } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
 
 const router = express.Router();
@@ -166,5 +166,28 @@ router.post(
   schemaValidation(changePasswordSchema),
   UserController.resetPasswordFromLink,
 );
+
+/**
+ * @swagger
+ * path:
+ *  /user/activate:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: the auto generated user token via jwt
+ *      summary: Activates a user account via token
+ *      tags: [User]
+ *      responses:
+ *        '200':
+ *          description: Your account has been successfully activated
+ *        '404':
+ *          description: User not found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/who-am-i', authenticate, UserController.currentUser);
 
 module.exports = router;
