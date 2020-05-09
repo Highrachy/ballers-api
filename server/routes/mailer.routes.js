@@ -1,5 +1,5 @@
 import express from 'express';
-import MailerController from '../controllers/mailer.controllers';
+import MailerController from '../controllers/mailer.controller';
 
 const router = express.Router();
 

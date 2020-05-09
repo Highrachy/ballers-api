@@ -6,7 +6,7 @@ import {
   changePasswordSchema,
 } from '../schemas/user.schema';
 import { schemaValidation, authenticate } from '../helpers/middleware';
-import UserController from '../controllers/user.controllers';
+import UserController from '../controllers/user.controller';
 
 const router = express.Router();
 
