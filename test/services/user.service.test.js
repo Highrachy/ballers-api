@@ -188,7 +188,7 @@ describe('User Service', () => {
 
     context('when getUserbyEmail returns an error', () => {
       it('throws an error', async () => {
-        sinon.stub(User, 'findOne').rejects();
+        sinon.stub(User, 'findOne').throws(new Error('error msg'));
 
         try {
           await addUser(user);
@@ -214,7 +214,7 @@ describe('User Service', () => {
 
     context('when a valid user is entered', () => {
       it('comparePassword should return true', async () => {
-        const hash = (await getUserByEmail(userDetails.email)).password;
+        const hash = (await getUserByEmail(userDetails.email, '+password')).password;
         const compareResponse = await comparePassword(userDetails.password, hash);
         expect(compareResponse).to.eql(true);
       });
@@ -222,7 +222,7 @@ describe('User Service', () => {
 
     context('when the User model returns an error', () => {
       it('throws an error', async () => {
-        sinon.stub(User, 'findOne').rejects();
+        sinon.stub(User, 'findOne').throws(new Error('error msg'));
         try {
           await loginUser(userDetails);
         } catch (err) {
@@ -337,7 +337,7 @@ describe('User Service', () => {
 
     context('when the User model returns an error', () => {
       it('throws an error', async () => {
-        sinon.stub(User, 'findOne').rejects();
+        sinon.stub(User, 'findOne').throws(new Error('error msg'));
         try {
           await forgotPasswordToken(email);
         } catch (err) {

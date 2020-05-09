@@ -7,6 +7,7 @@ import {
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import httpStatus from '../helpers/httpStatus';
 
 const UserController = {
   register(req, res, next) {
@@ -16,7 +17,7 @@ const UserController = {
         sendMail(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
           link: `http://ballers.ng/activate?token=${token}`,
         });
-        res.status(201).json({ success: true, message: 'User registered', token });
+        res.status(httpStatus.CREATED).json({ success: true, message: 'User registered', token });
       })
       .catch((error) => next(error));
   },
@@ -34,7 +35,7 @@ const UserController = {
     const { token } = req.query;
     activateUser(token)
       .then((user) => {
-        res.status(200).json({
+        res.status(httpStatus.OK).json({
           success: true,
           message: 'Your account has been successfully activated',
           user: { ...user.toJSON(), token },
@@ -50,7 +51,7 @@ const UserController = {
         sendMail(EMAIL_CONTENT.RESET_PASSWORD_LINK, data.user, {
           link: `http://ballers.ng/change-password/${data.token}`,
         });
-        res.status(200).json({
+        res.status(httpStatus.OK).json({
           success: true,
           message: 'A password reset link has been sent to your email account',
         });
@@ -66,13 +67,21 @@ const UserController = {
         sendMail(EMAIL_CONTENT.CHANGE_PASSWORD, user, {
           link: `http://ballers.ng/reset-password`,
         });
-        res.status(200).json({
+        res.status(httpStatus.OK).json({
           success: true,
           message: 'Your password has been successfully changed',
           user,
         });
       })
       .catch((error) => next(error));
+  },
+
+  currentUser(req, res) {
+    const { user } = req;
+
+    return res
+      .status(httpStatus.OK)
+      .json({ success: true, message: 'Your information has been successfully retrieved', user });
   },
 };
 
