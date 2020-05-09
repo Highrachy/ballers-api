@@ -5,8 +5,9 @@ import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 
-export const getUserByEmail = async (email) => User.findOne({ email });
-export const getUserById = async (id) => User.findById(id);
+export const getUserByEmail = async (email, fields = null) =>
+  User.findOne({ email }).select(fields);
+export const getUserById = async (id) => User.findById(id).select();
 
 export const generateToken = (id, expiresIn = '30d') =>
   jwt.sign({ id }, USER_SECRET, { expiresIn });
@@ -48,7 +49,7 @@ export const addUser = async (user) => {
 };
 
 export const loginUser = async (user) => {
-  const existingUser = await getUserByEmail(user.email).catch((error) => {
+  const existingUser = await getUserByEmail(user.email, '+password').catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 

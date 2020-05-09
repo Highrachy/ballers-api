@@ -292,7 +292,7 @@ describe('Login Route', () => {
 
     context('when login service returns an error', () => {
       it('returns the error', (done) => {
-        sinon.stub(User, 'findOne').rejects('TypeError');
+        sinon.stub(User, 'findOne').throws(new Error('Type Error'));
         request()
           .post('/api/v1/user/login')
           .send(userLogin)
@@ -578,6 +578,7 @@ describe('Current User', () => {
           expect(res.body.user.firstName).to.be.eql(user.firstName);
           expect(res.body.user.lastName).to.be.eql(user.lastName);
           expect(res.body.user.email).to.be.eql(user.email);
+          expect(res.body.user).to.not.have.property('password');
           done();
         });
     });
