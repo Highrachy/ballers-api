@@ -30,4 +30,4 @@ const EMAIL_CONTENT = {
   },
 };
 
-export default EMAIL_CONTENT;
+module.exports = EMAIL_CONTENT;

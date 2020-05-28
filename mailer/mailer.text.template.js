@@ -1,4 +1,4 @@
-export default ({ greeting, firstName, contentTop, contentBottom, buttonText, link }) => {
+module.exports = ({ greeting, firstName, contentTop, contentBottom, buttonText, link }) => {
   let content = '';
   const hello = greeting || 'Hello';
   const greetings = firstName ? `${hello} ${firstName}` : hello;
