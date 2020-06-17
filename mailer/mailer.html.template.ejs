@@ -1,24 +1,79 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office">
 
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0;">
-  <title><%= subject %></title>
+  <!--[if (gte mso 9)|(IE)]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- So that mobile will display zoomed in -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- enable media queries for windows phone 8 -->
+  <meta name="format-detection" content="telephone=no"> <!-- disable auto telephone linking in iOS -->
+  <meta name="format-detection" content="date=no"> <!-- disable auto date linking in iOS -->
+  <meta name="format-detection" content="address=no"> <!-- disable auto address linking in iOS -->
+  <meta name="format-detection" content="email=no"> <!-- disable auto email linking in iOS -->
+  <title>Blissville Uno</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,900" rel="stylesheet">
 
   <style type="text/css">
-    @import url(http://fonts.googleapis.com/css?family=Barlow);
-
-    div,
-    p,
-    a,
-    li,
-    td {
+    /*Basics*/
+    body {
+      margin: 0px !important;
+      padding: 0px !important;
+      display: block !important;
+      min-width: 100% !important;
+      width: 100% !important;
       -webkit-text-size-adjust: none;
     }
 
-    * {
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+    table {
+      border-spacing: 0;
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+
+    table td {
+      border-collapse: collapse;
+    }
+
+    strong {
+      font-weight: bold !important;
+    }
+
+    td img {
+      -ms-interpolation-mode: bicubic;
+      display: block;
+      width: auto;
+      max-width: auto;
+      height: auto;
+      margin: auto;
+      display: block !important;
+      border: 0px !important;
+    }
+
+    td p {
+      margin: 0 !important;
+      padding: 0 !important;
+      display: inline-block !important;
+      font-family: inherit !important;
+    }
+
+    td a {
+      text-decoration: none !important;
+    }
+
+    /*Outlook*/
+    .ExternalClass {
+      width: 100%;
+    }
+
+    .ExternalClass,
+    .ExternalClass p,
+    .ExternalClass span,
+    .ExternalClass font,
+    .ExternalClass td,
+    .ExternalClass div {
+      line-height: inherit;
     }
 
     .ReadMsgBody {
@@ -26,632 +81,762 @@
       background-color: #ffffff;
     }
 
-    .ExternalClass {
-      width: 100%;
-      background-color: #ffffff;
+    /* iOS BLUE LINKS */
+    a[x-apple-data-detectors] {
+      color: inherit !important;
+      text-decoration: none !important;
+      font-size: inherit !important;
+      font-family: inherit !important;
+      font-weight: inherit !important;
+      line-height: inherit !important;
     }
 
-    body {
-      width: 100%;
-      height: 100%;
-      background-color: #ffffff;
-      margin: 0;
-      padding: 0;
-      -webkit-font-smoothing: antialiased;
+    /*Gmail blue links*/
+    u+#body a {
+      color: inherit;
+      text-decoration: none;
+      font-size: inherit;
+      font-family: inherit;
+      font-weight: inherit;
+      line-height: inherit;
     }
 
-    html {
-      width: 100%;
-      background-color: #ffffff;
+    /*Buttons fix*/
+    .undoreset a,
+    .undoreset a:hover {
+      text-decoration: none !important;
     }
 
-    p {
-      padding: 0 !important;
-      margin-top: 0 !important;
-      margin-right: 0 !important;
-      margin-bottom: 0 !important;
-      margin-left: 0 !important;
+    .yshortcuts a {
+      border-bottom: none !important;
     }
 
-    .hover:hover {
-      opacity: 0.85;
-      filter: alpha(opacity=85);
+    .ios-footer a {
+      color: #aaaaaa !important;
+      text-decoration: none;
     }
 
-    .logo img {
-      width: 75px;
-      height: auto;
+    /*Responsive*/
+    @media screen and (max-width: 768px) {
+      td.img-responsive img {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        margin: auto;
+      }
+
+      table.row {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      table.center-float,
+      td.center-float {
+        float: none !important;
+      }
+
+      td.center-text {
+        text-align: center !important;
+      }
+
+      td.container-padding {
+        width: 100% !important;
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+      }
+
+      table.hide-mobile,
+      tr.hide-mobile,
+      td.hide-mobile,
+      br.hide-mobile {
+        display: none !important;
+      }
+
+      td.menu-container {
+        text-align: center !important;
+      }
+
+      td.autoheight {
+        height: auto !important;
+      }
+
+      table.mobile-padding {
+        margin: 15px 0 !important;
+      }
     }
   </style>
-
-  <!-- @media only screen and (max-width: 640px)
-		   {*/
-		   -->
-  <style type="text/css">
-    @media only screen and (max-width: 640px) {
-      body {
-        width: auto !important;
-      }
-
-      table[class=full2] {
-        width: 100% !important;
-        clear: both;
-      }
-
-      table[class=mobile2] {
-        width: 100% !important;
-        padding-left: 20px;
-        padding-right: 20px;
-        clear: both;
-      }
-
-      table[class=fullCenter2] {
-        width: 100% !important;
-        text-align: center !important;
-        clear: both;
-      }
-
-      td[class=fullCenter2] {
-        width: 100% !important;
-        text-align: center !important;
-        clear: both;
-      }
-
-      td[class=pad15] {
-        width: 100% !important;
-        padding-left: 15px;
-        padding-right: 15px;
-        clear: both;
-      }
-
-    }
-  </style>
-  <!--
-
-@media only screen and (max-width: 479px)
-		   {
-		   -->
-  <style type="text/css">
-    @media only screen and (max-width: 479px) {
-      body {
-        width: auto !important;
-      }
-
-      table[class=full2] {
-        width: 100% !important;
-        clear: both;
-      }
-
-      table[class=mobile2] {
-        width: 100% !important;
-        padding-left: 20px;
-        padding-right: 20px;
-        clear: both;
-      }
-
-      table[class=fullCenter2] {
-        width: 100% !important;
-        text-align: center !important;
-        clear: both;
-      }
-
-      td[class=fullCenter2] {
-        width: 100% !important;
-        text-align: center !important;
-        clear: both;
-      }
-
-      table[class=full] {
-        width: 100% !important;
-        clear: both;
-      }
-
-      table[class=mobile] {
-        width: 100% !important;
-        padding-left: 20px;
-        padding-right: 20px;
-        clear: both;
-      }
-
-      table[class=fullCenter] {
-        width: 100% !important;
-        text-align: center !important;
-        clear: both;
-      }
-
-      td[class=fullCenter] {
-        width: 100% !important;
-        text-align: center !important;
-        clear: both;
-      }
-
-      td[class=pad15] {
-        width: 100% !important;
-        padding-left: 15px;
-        padding-right: 15px;
-        clear: both;
-      }
-
-      .erase {
-        display: none;
-      }
-
-    }
-  </style>
-
 </head>
 
-<body leftmargin="0" topmargin="0" marginwidth="0" marginheight="0">
+<body
+  style="margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; width: 100%; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;"
+  bgcolor="#F4F4F4">
 
-  <!-- Notification 5 -->
-  <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center" class="full" bgcolor="#131722"
-    style="background-color: rgb(19, 23, 34);">
+  <!-- portfolio -->
+
+  <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0" style="width:100%;max-width:100%;">
     <tr>
-      <td>
-        <!-- Mobile Wrapper -->
-        <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile2">
+      <td class="portfolio" align="center" valign="top">
+
+        <!-- body-bg-color -->
+        <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0" class="row"
+          style="width:100%;max-width:100%;">
           <tr>
-            <td width="100%" height="100" align="center">
+            <td class="body-bg-color" align="center" valign="top" bgcolor="#F4F4F4">
 
-              <div class="sortable_inner ui-sortable">
-                <!-- Space -->
-                <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="full"
-                  object="drag-module-small">
-                  <tr>
-                    <td width="352" height="50"></td>
-                  </tr>
-                </table><!-- End Space -->
 
-                <!-- Space -->
-                <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="full"
-                  object="drag-module-small">
-                  <tr>
-                    <td width="352" height="50"></td>
-                  </tr>
-                </table><!-- End Space -->
-
-              </div>
-            </td>
-          </tr>
-        </table>
-
-        <table width="392" border="0" cellpadding="0" cellspacing="0" align="center" class="full">
-          <tr>
-            <td align="center" width="20" valign="middle"></td>
-            <td align="center" width="352" valign="middle">
-
-              <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="full">
+              <!-- space -->
+              <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                style="width:100%;max-width:100%;">
                 <tr>
-                  <td align="center" width="352" valign="middle" bgcolor="#ffffff"
-                    style="background-color: rgb(255, 255, 255);">
-
-                    <div class="sortable_inner ui-sortable">
-
-                      <!-- Start Top -->
-                      <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                        bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                        <tr>
-                          <td width="352" valign="middle">
-                            <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                              style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                              class="fullCenter">
-                              <tr>
-                                <td width="100%" height="45"></td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <!-- Logo -->
-                      <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                        bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                        <tr>
-                          <td width="352" valign="middle" class="icon61" align="center">
-                            <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                              style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                              class="fullCenter">
-                              <tr>
-                                <td width="100%"><span><img
-                                      src="http://cdn.mcauto-images-production.sendgrid.net/639ac6bf36ed5300/f43c7c3c-05c0-4d51-a9f5-1435a967d67f/172x90.png"
-                                      width="100" alt="" border="0"></span>
-                                </td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                      </table>
-                      <!-- /.Logo -->
-
-
-                      <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                        bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                        <tr>
-                          <td width="352" valign="middle">
-                            <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                              style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                              class="fullCenter">
-                              <tr>
-                                <td width="100%" height="30"></td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-
-                      </table>
-
-                      <!-- Intro Message -->
-                      <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                        bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                        <tr>
-                          <td width="352" valign="middle" align="center">
-                            <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                              style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                              class="fullCenter">
-                              <tr>
-                                <td valign="middle" width="100%"
-                                  style="text-align: left; font-family: Helvetica, Arial, sans-serif; font-size: 16px; color: rgb(63, 67, 69); line-height: 28px; font-weight: bold;">
-                                  <!--[if !mso]><!--><span
-                                    style="font-family: 'Roboto', Helvetica; font-weight: normal;">
-                                    <!--<![endif]-->
-                                    <!-- Use FirstName with Greetings if available -->
-                                    <%= (typeof greeting !== "undefined") ? `${greeting}` : 'Hello' %><%= (typeof firstName !== "undefined") ? ` ${firstName},` : ',' %>
-                                    <!--[if !mso]><!--></span>
-                                  <!--<![endif]-->
-                                </td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                        bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                        <tr>
-                          <td width="352" valign="middle">
-                            <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                              style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                              class="fullCenter">
-                              <tr>
-                                <td width="100%" height="20"></td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                      </table>
-                      <!-- /.Intro Message -->
-
-                      <!-- Content -->
-
-                      <!-- Start Paragraph -->
-                      <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                        bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                        <tr>
-                          <td width="352" valign="middle" align="center">
-                            <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                              style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                              class="fullCenter">
-                              <tr>
-                                <td valign="middle" width="100%"
-                                  style="text-align: left; font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: rgb(63, 67, 69); line-height: 24px; font-weight: normal;">
-                                  <!--[if !mso]><!--><span
-                                    style="font-family: 'Roboto', Helvetica; font-weight: normal;">
-                                    <!--<![endif]-->
-                                    <%- (typeof contentTop !== "undefined") ? contentTop : '' %>
-                                    <!--[if !mso]><!--></span>
-                                  <!--<![endif]-->
-                                </td>
-                              </tr>
-                              <tr>
-                                <td valign="middle" width="100%"
-                                  style="text-align: left; font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: rgb(63, 67, 69); line-height: 24px; font-weight: normal;">
-                                  <!--[if !mso]><!--><span
-                                    style="font-family: 'Roboto', Helvetica; font-weight: normal;">
-                                    <!-[endif]-->
-                                      <%= (typeof userSubject !== "undefined") ? `${userSubject}: ${userMessage}` : '' %>
-                                      <!--[if !mso]><!-->
-                                  </span>
-                                  <!--<![endif]-->
-                                </td>
-                              </tr>
-                              <tr>
-                                <td valign="middle" width="100%"
-                                  style="text-align: left; font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: rgb(63, 67, 69); line-height: 24px; font-weight: normal;">
-                                  <!--[if !mso]><!--><span
-                                    style="font-family: 'Roboto', Helvetica; font-weight: normal;">
-                                    <!--<![endif]-->
-                                    <%= (typeof userEmail !== "undefined") ? `Email: ${userEmail}` : '' %>
-                                    <!--[if !mso]><!--></span>
-                                  <!--<![endif]-->
-                                </td>
-                              </tr>
-                        </tr>
-                        <tr>
-                          <td valign="middle" width="100%"
-                            style="text-align: left; font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: rgb(63, 67, 69); line-height: 24px; font-weight: normal;">
-                            <!--[if !mso]><!--><span style="font-family: 'Roboto', Helvetica; font-weight: normal;">
-                              <!--<![endif]-->
-                              <%= (typeof fullName !== "undefined") ? `Fullname: ${fullName}` : '' %>
-                              <!--[if !mso]><!--></span>
-                            <!--<![endif]-->
-                          </td>
-                        </tr>
-                        <tr>
-                          <td valign="middle" width="100%"
-                            style="text-align: left; font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: rgb(63, 67, 69); line-height: 24px; font-weight: normal;">
-                            <!--[if !mso]><!--><span style="font-family: 'Roboto', Helvetica; font-weight: normal;">
-                              <!--<![endif]-->
-                              <%= (typeof phone !== "undefined") ? `Phone: ${phone}` : '' %>
-                              <!--[if !mso]><!--></span>
-                            <!--<![endif]-->
-                          </td>
-                        </tr>
-                      </table>
-                    </div>
-                  </td>
+                  <td valign="middle" align="center" height="60">&nbsp;</td>
                 </tr>
               </table>
-              <!-- /.Paragraph -->
-              <!-- /.Content -->
+              <!-- space -->
 
-              <!-- Content Bottom -->
-              <% if (typeof contentBottom !== "undefined") { %>
-              <!-- Spacer -->
-              <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
+              <!-- bg-color -->
+              <table border="0" width="800" align="center" cellpadding="0" cellspacing="0" class="row"
+                style="width:800px;max-width:800px;">
                 <tr>
-                  <td width="352" valign="middle">
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
-                      <tr>
-                        <td width="100%" height="20"></td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              <!-- /.Spacer -->
-              <!-- Start Paragraph -->
-              <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                <tr>
-                  <td width="352" valign="middle" align="center">
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
-                      <tr>
-                        <td valign="middle" width="100%"
-                          style="text-align: left; font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: rgb(63, 67, 69); line-height: 24px; font-weight: normal;">
-                          <!--[if !mso]><!--><span style="font-family: 'Roboto', Helvetica; font-weight: normal;">
-                            <!--<![endif]-->
-                            <%- contentBottom %>
-                            <!--[if !mso]><!--></span>
-                          <!--<![endif]-->
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              <!-- /.Paragraph -->
-              <!-- /.Content -->
-              <% } %>
-              <!-- /.Content Bottom -->
+                  <td class="bg-color-option-a" align="center" valign="top" bgcolor="#FFFFFF">
 
-              <% if ((typeof link !== "undefined") && (typeof buttonText !== "undefined")) { %>
-              <!-- Spacer -->
-              <table width="352" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff" align="center">
-                <tr>
-                  <td width="352" valign="middle">
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
+                    <!-- container -->
+                    <table width="600" border="0" cellpadding="0" cellspacing="0" align="center" class="row"
+                      style="width:600px;max-width:600px;">
                       <tr>
-                        <td width="100%" height="40"></td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              <!-- /.Spacer -->
-              <!-- START LINK -->
-              <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                <tr>
-                  <td width="352" valign="middle" align="center">
+                        <td align="center" valign="top">
 
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
-                      <!----------------- Button Center ----------------->
-                      <tr>
-                        <td align="center">
-                          <table border="0" cellpadding="0" cellspacing="0" align="center">
+                          <!-- space -->
+                          <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                            style="width:100%;max-width:100%;">
                             <tr>
-                              <td align="center" height="35" bgcolor="#ff0000"
-                                style="padding-top: 10px; padding-bottom: 10px; padding-left: 30px; padding-right: 30px; font-weight: bold; font-family: Helvetica, Arial, sans-serif; color: rgb(255, 255, 255); text-transform: uppercase; background-color: rgb(254, 70, 70);">
-                                <!--[if !mso]><!--><span style="font-family: 'Roboto', Helvetica; font-weight: normal;">
-                                  <!--<![endif]-->
-                                  <a href="<%= (typeof link !== "undefined") ? link : '' %>"
-                                    style="color: rgb(255, 255, 255); font-size: 14px; text-decoration: none; line-height: 35px; width: 100%;">
-                                    <%= (typeof buttonText !== "undefined") ? buttonText : '' %>
-                                  </a>
-                                  <!--[if !mso]><!--></span>
-                                <!--<![endif]-->
+                              <td class="space-control" valign="middle" align="center" height="30">&nbsp;</td>
+                            </tr>
+                          </table>
+                          <!-- space -->
+
+                          <!-- container -->
+                          <table width="600" border="0" cellpadding="0" cellspacing="0" align="center" class="row"
+                            style="width:600px;max-width:600px;">
+                            <tr>
+                              <td align="center" valign="top" class="container-padding">
+
+
+                                <!-- space -->
+                                <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                                  style="width:100%;max-width:100%;">
+                                  <tr>
+                                    <td valign="middle" align="center" height="40">&nbsp;</td>
+                                  </tr>
+                                </table>
+                                <!-- space -->
+
+
+                                <!-- text -->
+                                <table border="0" width="100%" cellpadding="0" cellspacing="0" align="center"
+                                  style="width:100%; max-width:100%;">
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      Good day,
+
+                                    </td>
+                                  </tr>
+
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:20px;line-height:20px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      Hope this mail meets you well.
+
+                                    </td>
+                                  </tr>
+
+
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:20px;line-height:20px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      This is to introduce to you our Investment and Technology Company.
+
+                                    </td>
+                                  </tr>
+
+
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:20px;line-height:20px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      Highrachy Investment & Technology Ltd. is a technology and real estate company and
+                                      our vision is to be a globally known one stop shop for value within the real
+                                      estate and technology industries.
+
+                                    </td>
+                                  </tr>
+
+
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:20px;line-height:20px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      We offer you quality investment opportunities through our top-notch structures
+                                      built with style, taste, and functionality in mind.
+
+                                    </td>
+                                  </tr>
+
+
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:20px;line-height:20px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      We have currently available 4units of 3bedroom flats with a maids quarters located
+                                      off Orchid hotel road Chevron Lekki, Lagos.
+
+                                    </td>
+                                  </tr>
+
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:20px;line-height:20px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      We are available for site inspection whenever you are ready, below are pictures of
+                                      our ongoing project.
+
+                                    </td>
+                                  </tr>
+
+
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:20px;line-height:20px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      To book a visit, please send me an <a
+                                        href="mailto:leonard@highrachy.com">email</a> or call <strong>+234
+                                        7085389504.</strong>
+
+                                    </td>
+                                  </tr>
+
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:20px;line-height:20px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      Looking forward to hearing from you.
+
+                                    </td>
+                                  </tr>
+
+
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:20px;line-height:20px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; font-weight:normal;font-style:normal; color:#333333;text-decoration:none;letter-spacing: 0px;">
+
+                                      Thank you.
+                                      Best Regards
+
+                                    </td>
+                                  </tr>
+
+                                </table>
+                                <!-- text -->
+
+                                <table>
+                                  <tr>
+                                    <td align="center" valign="middle" height="50"
+                                      style="font-size:50px;line-height:50px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+
+
+
+                                <!-- title -->
+                                <table border="0" width="100%" cellpadding="0" cellspacing="0" align="center"
+                                  style="width:100%; max-width:100%;">
+                                  <tr>
+                                    <td class="title center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:16px; line-height:16px; font-weight:bolder;font-style:normal; color:#444444;text-decoration:none;letter-spacing: 2px;">
+
+                                      OUR ONGOING PROJECT
+
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td valign="middle" align="center" height="10"
+                                      style="font-size:10px;line-height:10px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                                <!-- title -->
+
+
+                                <!-- splitter with gaps -->
+                                <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                                  style="width:100%;max-width:100%;">
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:10px;line-height:10px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td valign="middle" align="center" height="1"
+                                      style="font-size:1px;line-height:1px;">
+                                      <!-- line -->
+                                      <table width="80" border="0" cellpadding="0" cellspacing="0" align="left"
+                                        class="center-float" style="width:80px;max-width:80px;">
+                                        <tr>
+                                          <td class="splitter-option-a" align="center" valign="middle" height="1"
+                                            bgcolor="#6979ff" style="font-size:1px;line-height:1px;border-radius:6px;">
+                                            &nbsp;</td>
+                                        </tr>
+                                      </table>
+                                      <!-- line -->
+                                    </td>
+                                  </tr>
+                                </table>
+                                <!-- splitter with gaps -->
+
+
+                                <!-- space -->
+                                <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                                  style="width:100%;max-width:100%;">
+                                  <tr>
+                                    <td valign="middle" align="center" height="30">&nbsp;</td>
+                                  </tr>
+                                </table>
+                                <!-- space -->
+
                               </td>
                             </tr>
                           </table>
+                          <!-- container -->
+
+                          <!-- container-2-columns -->
+                          <table width="600" border="0" cellpadding="0" cellspacing="0" align="center" class="row"
+                            style="width:600px;max-width:600px;">
+                            <tr>
+                              <td align="center" valign="top" class="container-padding">
+
+                                <!--[if (gte mso 9)|(IE)]><table border="0" cellpadding="0" cellspacing="0"><tr><td valign="top"><![endif]-->
+
+                                <!-- column -->
+                                <table width="295" border="0" cellpadding="0" cellspacing="0" align="left" class="row"
+                                  style="width:295px;max-width:295px;">
+                                  <tr>
+                                    <td valign="top" align="center">
+                                      <!-- image-responsive -->
+                                      <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center"
+                                        style="width:100%;max-width:100%;">
+                                        <tr>
+                                          <td align="center" valign="top" class="img-responsive img200">
+                                            <img
+                                              style="display:block;width:100%;max-width:295px;display:block;border:0px;"
+                                              width="295"
+                                              src="http://blissville.com.ng/assets/img/portfolio/ongoing-project-1.jpeg"
+                                              border="0" alt="picture"> </td>
+                                        </tr>
+                                      </table>
+                                      <!-- image-responsive -->
+                                    </td>
+                                  </tr>
+                                </table>
+
+                                <!-- column -->
+                                <table width="5" border="0" cellpadding="0" cellspacing="0" align="left" class="row"
+                                  style="width:5px;max-width:5px;">
+                                  <tr>
+                                    <td valign="top" align="center">
+                                      &nbsp;
+                                    </td>
+                                  </tr>
+                                </table>
+
+                                <!-- column -->
+                                <table width="295" border="0" cellpadding="0" cellspacing="0" align="left" class="row"
+                                  style="width:295px;max-width:295px;">
+                                  <tr>
+                                    <td valign="top" align="center">
+                                      <!-- image-responsive -->
+                                      <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center"
+                                        style="width:100%;max-width:100%;">
+                                        <tr>
+                                          <td align="center" valign="top" class="img-responsive img200">
+                                            <img
+                                              style="display:block;width:100%;max-width:295px;display:block;border:0px;"
+                                              width="295"
+                                              src="http://blissville.com.ng/assets/img/portfolio/ongoing-project-2.jpeg"
+                                              border="0" alt="picture"> </td>
+                                        </tr>
+                                      </table>
+                                      <!-- image-responsive -->
+                                    </td>
+                                  </tr>
+                                </table>
+                                <!-- column -->
+
+
+                              </td>
+                            </tr>
+                          </table>
+                          <!-- container-2-columns -->
+
+
+
+                          <!-- container -->
+                          <table width="600" border="0" cellpadding="0" cellspacing="0" align="center" class="row"
+                            style="width:600px;max-width:600px;">
+                            <tr>
+                              <td align="center" valign="top">
+
+                                <!-- space -->
+                                <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                                  style="width:100%;max-width:100%;">
+                                  <tr>
+                                    <td class="space-control" valign="middle" align="center" height="80">&nbsp;</td>
+                                  </tr>
+                                </table>
+                                <!-- space -->
+
+
+
+
+                                <!-- title -->
+                                <table border="0" width="100%" cellpadding="0" cellspacing="0" align="center"
+                                  style="width:100%; max-width:100%;">
+                                  <tr>
+                                    <td class="title center-text" valign="middle" align="left"
+                                      style="font-family:'Lato',Arial,Helvetica,sans-serif; font-size:16px; line-height:16px; font-weight:bolder;font-style:normal; color:#444444;text-decoration:none;letter-spacing: 2px;">
+
+                                      WORK IN PROGRESS
+
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td valign="middle" align="center" height="10"
+                                      style="font-size:10px;line-height:10px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                                <!-- title -->
+
+
+                                <!-- splitter with gaps -->
+                                <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                                  style="width:100%;max-width:100%;">
+                                  <tr>
+                                    <td align="center" valign="middle" height="10"
+                                      style="font-size:10px;line-height:10px;">&nbsp;</td>
+                                  </tr>
+                                  <tr>
+                                    <td valign="middle" align="center" height="1"
+                                      style="font-size:1px;line-height:1px;">
+                                      <!-- line -->
+                                      <table width="80" border="0" cellpadding="0" cellspacing="0" align="left"
+                                        class="center-float" style="width:80px;max-width:80px;">
+                                        <tr>
+                                          <td class="splitter-option-a" align="center" valign="middle" height="1"
+                                            bgcolor="#6979ff" style="font-size:1px;line-height:1px;border-radius:6px;">
+                                            &nbsp;</td>
+                                        </tr>
+                                      </table>
+                                      <!-- line -->
+                                    </td>
+                                  </tr>
+                                </table>
+                                <!-- splitter with gaps -->
+
+
+                                <!-- space -->
+                                <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                                  style="width:100%;max-width:100%;">
+                                  <tr>
+                                    <td valign="middle" align="center" height="30">&nbsp;</td>
+                                  </tr>
+                                </table>
+                                <!-- space -->
+
+                              </td>
+                            </tr>
+                          </table>
+                          <!-- container -->
+
+                          <!-- container-2-columns -->
+                          <table width="600" border="0" cellpadding="0" cellspacing="0" align="center" class="row"
+                            style="width:600px;max-width:600px;">
+                            <tr>
+                              <td align="center" valign="top" class="container-padding">
+
+                                <!--[if (gte mso 9)|(IE)]><table border="0" cellpadding="0" cellspacing="0"><tr><td valign="top"><![endif]-->
+
+                                <!-- column -->
+                                <table width="295" border="0" cellpadding="0" cellspacing="0" align="left" class="row"
+                                  style="width:295px;max-width:295px;">
+                                  <tr>
+                                    <td valign="top" align="center">
+                                      <!-- image-responsive -->
+                                      <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center"
+                                        style="width:100%;max-width:100%;">
+                                        <tr>
+                                          <td align="center" valign="top" class="img-responsive img200">
+                                            <img
+                                              style="display:block;width:100%;max-width:295px;display:block;border:0px;"
+                                              width="295"
+                                              src="http://blissville.com.ng/assets/img/portfolio/interior-5.jpeg"
+                                              border="0" alt="picture"> </td>
+                                        </tr>
+                                      </table>
+                                      <!-- image-responsive -->
+                                    </td>
+                                  </tr>
+                                </table>
+
+                                <!-- column -->
+                                <table width="5" border="0" cellpadding="0" cellspacing="0" align="left" class="row"
+                                  style="width:5px;max-width:5px;">
+                                  <tr>
+                                    <td valign="top" align="center">
+                                      &nbsp;
+                                    </td>
+                                  </tr>
+                                </table>
+
+                                <!-- column -->
+                                <table width="295" border="0" cellpadding="0" cellspacing="0" align="left" class="row"
+                                  style="width:295px;max-width:295px;">
+                                  <tr>
+                                    <td valign="top" align="center">
+                                      <!-- image-responsive -->
+                                      <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center"
+                                        style="width:100%;max-width:100%;">
+                                        <tr>
+                                          <td align="center" valign="top" class="img-responsive img200">
+                                            <img
+                                              style="display:block;width:100%;max-width:295px;display:block;border:0px;"
+                                              width="295"
+                                              src="http://blissville.com.ng/assets/img/portfolio/interior-6.jpeg"
+                                              border="0" alt="picture"> </td>
+                                        </tr>
+                                      </table>
+                                      <!-- image-responsive -->
+                                    </td>
+                                  </tr>
+                                </table>
+                                <!-- column -->
+
+
+                              </td>
+                            </tr>
+                          </table>
+                          <!-- container-2-columns -->
+
+
+                          <!-- container-2-columns -->
+                          <table width="600" border="0" cellpadding="0" cellspacing="0" align="center" class="row"
+                            style="width:600px;max-width:600px;">
+                            <tr>
+                              <td align="center" valign="top" class="container-padding">
+
+                                <!--[if (gte mso 9)|(IE)]><table border="0" cellpadding="0" cellspacing="0"><tr><td valign="top"><![endif]-->
+
+                                <!-- column -->
+                                <table width="295" border="0" cellpadding="0" cellspacing="0" align="left" class="row"
+                                  style="width:295px;max-width:295px;">
+                                  <tr>
+                                    <td valign="top" align="center">
+                                      <!-- image-responsive -->
+                                      <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center"
+                                        style="width:100%;max-width:100%;">
+                                        <tr>
+                                          <td align="center" valign="top" class="img-responsive img200">
+                                            <img
+                                              style="display:block;width:100%;max-width:295px;display:block;border:0px;margin-top:5px;"
+                                              width="295"
+                                              src="http://blissville.com.ng/assets/img/portfolio/interior-3.jpeg"
+                                              border="0" alt="picture"> </td>
+                                        </tr>
+                                      </table>
+                                      <!-- image-responsive -->
+                                    </td>
+                                  </tr>
+                                </table>
+
+                                <!-- column -->
+                                <table width="5" border="0" cellpadding="0" cellspacing="0" align="left" class="row"
+                                  style="width:5px;max-width:5px;">
+                                  <tr>
+                                    <td valign="top" align="center">
+                                      &nbsp;
+                                    </td>
+                                  </tr>
+                                </table>
+
+                                <!-- column -->
+                                <table width="295" border="0" cellpadding="0" cellspacing="0" align="left" class="row"
+                                  style="width:295px;max-width:295px;">
+                                  <tr>
+                                    <td valign="top" align="center">
+                                      <!-- image-responsive -->
+                                      <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center"
+                                        style="width:100%;max-width:100%;">
+                                        <tr>
+                                          <td align="center" valign="top" class="img-responsive img200">
+                                            <img
+                                              style="display:block;width:100%;max-width:295px;display:block;border:0px;margin-top:5px;"
+                                              width="295"
+                                              src="http://blissville.com.ng/assets/img/portfolio/interior-4.jpeg"
+                                              border="0" alt="picture"> </td>
+                                        </tr>
+                                      </table>
+                                      <!-- image-responsive -->
+                                    </td>
+                                  </tr>
+                                </table>
+                                <!-- column -->
+
+
+                              </td>
+                            </tr>
+                          </table>
+                          <!-- container-2-columns -->
+
+                          <!-- space -->
+                          <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                            style="width:100%;max-width:100%;">
+                            <tr>
+                              <td valign="middle" align="center" height="30">&nbsp;</td>
+                            </tr>
+                          </table>
+                          <!-- space -->
+
+                          <!-- Button-Container -->
+                          <table border="0" width="100%" cellpadding="0" cellspacing="0" align="center"
+                            style="width:100%; max-width:100%;">
+                            <tr>
+                              <td align="center" valign="middle">
+
+                                <!-- Button-Bg -->
+                                <table border="0" cellpadding="0" cellspacing="0" align="left" class="center-float">
+                                  <tr>
+                                    <td align="center" valign="top">
+                                      <!-- Container -->
+                                      <table border="0" cellpadding="0" cellspacing="0" align="center"
+                                        class="center-float">
+                                        <tr>
+                                          <td class="button-bg-option-a" valign="middle" align="center"
+                                            bgcolor="#6979ff" style="border-radius: 24px;">
+                                            <!-- Btn -->
+                                            <table border="0" cellpadding="0" cellspacing="0" align="center"
+                                              class="center-float">
+                                              <tr>
+                                                <td colspan="3" height="15" style="font-size:15px;line-height:15px;">
+                                                  &nbsp;</td>
+                                              </tr>
+                                              <tr>
+                                                <td width="40"></td>
+                                                <td valign="middle" align="center"
+                                                  style="font-family:'Lato',Arial,Helvetica,sans-serif;font-size:13px;line-height:18px;font-weight:bolder;font-style:normal;color:#FFFFFF;text-decoration:none;letter-spacing:0px;">
+
+                                                  <a href="http://blissville.com.ng/our-portfolio.php" target="_blank"
+                                                    style="color:#FFFFFF;"> VIEW OUR PORTFOLIO</a>
+
+                                                </td>
+                                                <td width="40"></td>
+                                              </tr>
+                                              <tr>
+                                                <td colspan="3" height="15" style="font-size:15px;line-height:15px;">
+                                                  &nbsp;</td>
+                                              </tr>
+                                            </table>
+                                            <!-- Btn -->
+                                          </td>
+                                        </tr>
+                                      </table>
+                                      <!-- Container -->
+                                    </td>
+                                  </tr>
+                                </table>
+                                <!-- Button-Bg -->
+                              </td>
+                            </tr>
+                          </table>
+                          <!-- Button-Container -->
+
+
+                          <!-- space -->
+                          <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                            style="width:100%;max-width:100%;">
+                            <tr>
+                              <td valign="middle" align="center" height="80">&nbsp;</td>
+                            </tr>
+                          </table>
+                          <!-- space -->
                         </td>
                       </tr>
-                      <!----------------- End Button Center ----------------->
                     </table>
+                    <!-- container -->
+
                   </td>
                 </tr>
               </table>
+              <!-- bg-color -->
 
-              <!-- Spacer -->
-              <table width="352" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff" align="center">
+
+
+              <!-- space -->
+              <table border="0" width="100%" align="center" cellpadding="0" cellspacing="0"
+                style="width:100%;max-width:100%;">
                 <tr>
-                  <td width="352" valign="middle">
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
-                      <tr>
-                        <td width="100%" height="15"></td>
-                      </tr>
-                    </table>
-                  </td>
+                  <td valign="middle" align="center" height="60">&nbsp;</td>
                 </tr>
               </table>
-              <!-- /.Spacer -->
+              <!-- space -->
 
-              <!-- Start Paragraph -->
-              <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                <tr>
-                  <td width="352" valign="middle" align="center">
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
-                      <tr>
-                        <td valign="middle" width="100%"
-                          style="text-align: center; font-family: Helvetica, Arial, sans-serif; font-size: 13px; color: rgb(63, 67, 69); line-height: 24px; font-weight: normal;">
-                          <!--[if !mso]><!--><span style="font-family: 'Roboto', Helvetica; font-weight: normal;">
-                            <!--<![endif]-->
-                            <p
-                              style="word-break: normal; border-collapse : collapse !important; width: 300px; max-width: 300px; overflow-wrap: break-word !important;
-                                      word-wrap: break-word !important;  word-break: break-all !important; word-break: break-word !important">
-                              or copy this url and view in a web browser (<%= link %>)</p>
-                            <!--[if !mso]><!-->
-                          </span>
-                          <!--<![endif]-->
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              <!-- /.LINK -->
 
-              <!-- Spacer -->
-              <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                <tr>
-                  <td width="352" valign="middle">
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
-                      <tr>
-                        <td width="100%" height="20"></td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              <!-- /.Spacer -->
-              <!-- End Link -->
-              <% } %>
-
-              <!-- Spacer -->
-              <table width="352" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff" align="center">
-                <tr>
-                  <td width="352" valign="middle">
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
-                      <tr>
-                        <td width="100%" height="30"></td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              <!-- /.Spacer -->
-
-              <!-- Content -->
-
-              <!-- Start Paragraph -->
-              <table width="352" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff" align="center">
-                <tr>
-                  <td width="352" valign="middle" align="center">
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
-                      <tr>
-                        <td valign="middle" width="100%"
-                          style="text-align: left; font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: rgb(63, 67, 69); line-height: 24px; font-weight: bold;">
-                          <!--[if !mso]><!--><span style="font-family: 'Roboto', Helvetica; font-weight: bold;">
-                            <!--<![endif]-->Thank you,<br />
-                            <strong>BALLERS TEAM</strong>
-                            <!--[if !mso]><!--></span>
-                          <!--<![endif]-->
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              <!-- /.Paragraph -->
-
-              <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-                bgcolor="#ffffff" object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-                <tr>
-                  <td width="352" valign="middle">
-                    <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                      style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                      class="fullCenter">
-                      <tr>
-                        <td width="100%" height="20"></td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-              <!-- /.Content -->
             </td>
           </tr>
         </table>
+        <!-- body-bg-color -->
 
-
-        <!-- Content -->
-
-        <!-- WHITE BREAK 60PX -->
-        <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile" bgcolor="#ffffff"
-          object="drag-module-small" style="background-color: rgb(255, 255, 255);">
-          <tr>
-            <td width="352" valign="middle">
-              <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                class="fullCenter">
-                <tr>
-                  <td width="100%" height="60"></td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-        <!-- /.WHITE BREAK 60PX -->
-
-        <table width="352" border="0" cellpadding="0" cellspacing="0" align="center" class="mobile"
-          object="drag-module-small">
-          <tr>
-            <td width="352" valign="middle">
-              <table width="300" border="0" cellpadding="0" cellspacing="0" align="center"
-                style="text-align: center; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;"
-                class="fullCenter">
-                <tr>
-                  <td width="100%" height="100"></td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-        <!-- /.Content -->
       </td>
-      <td align="center" width="20" valign="middle"></td>
     </tr>
   </table>
+
+  <!-- portfolio -->
+
+
 </body>
 
 </html>
