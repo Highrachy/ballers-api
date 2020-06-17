@@ -2,9 +2,10 @@ import { initiatePaystackPayment } from '../services/payment.service';
 import httpStatus from '../helpers/httpStatus';
 
 const PaymentController = {
-  register(req, res, next) {
-    const paymentDetails = req.locals;
-    initiatePaystackPayment(paymentDetails)
+  paymentInitiation(req, res, next) {
+    const { amount } = req.locals;
+    const { user } = req;
+    initiatePaystackPayment(amount, user.email)
       .then((payment) => {
         res
           .status(httpStatus.CREATED)

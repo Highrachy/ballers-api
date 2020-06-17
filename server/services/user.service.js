@@ -60,7 +60,7 @@ export const loginUser = async (user) => {
 
     if (isMatch) {
       const savedUser = existingUser.toJSON();
-      const token = generateToken(savedUser.id);
+      const token = generateToken(savedUser._id);
       delete savedUser.password;
 
       if (savedUser.activated) {

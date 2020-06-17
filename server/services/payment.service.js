@@ -1,4 +1,4 @@
-import Axios from 'axios';
+import axios from 'axios';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 
@@ -11,7 +11,7 @@ export const PAYSTACK_URL = {
 
 export const initiatePaystackPayment = async (amount, email) => {
   try {
-    const response = await Axios.post(
+    const response = await axios.post(
       PAYSTACK_URL.INITIALIZE,
       {
         amount: amount * 100,
