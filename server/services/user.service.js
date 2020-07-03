@@ -7,10 +7,12 @@ import httpStatus from '../helpers/httpStatus';
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
+
 export const getUserById = async (id) => User.findById(id).select();
 
 export const generateToken = (id, expiresIn = '30d') =>
   jwt.sign({ id }, USER_SECRET, { expiresIn });
+
 export const decodeToken = (token) => jwt.verify(token, USER_SECRET);
 
 export const hashPassword = async (password) => {
@@ -60,7 +62,7 @@ export const loginUser = async (user) => {
 
     if (isMatch) {
       const savedUser = existingUser.toJSON();
-      const token = generateToken(savedUser.id);
+      const token = generateToken(savedUser._id);
       delete savedUser.password;
 
       if (savedUser.activated) {
