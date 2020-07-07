@@ -54,6 +54,13 @@ const UserSchema = new mongoose.Schema(
       select: false,
     },
     phone: String,
+    role: {
+      type: Number,
+      default: 1,
+    },
+    assignedProperties: {
+      type: [],
+    },
     activated: { type: Boolean, default: false },
     activationDate: Date,
   },

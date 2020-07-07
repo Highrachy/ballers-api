@@ -46,3 +46,17 @@ export const authenticate = async (req, res, next) => {
 
   return null;
 };
+
+export const isAdmin = async (req, res, next) => {
+  const { id } = decodeToken(req.headers.authorization);
+  const user = await getUserById(id);
+  if (user.role === 0) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'Action can only be performed by an Admin',
+    });
+  }
+  return null;
+};

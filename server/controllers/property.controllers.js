@@ -10,8 +10,7 @@ const PropertyController = {
   add(req, res, next) {
     const property = req.locals;
     const { user } = req;
-    property.owner = user._id;
-    addProperty(property)
+    addProperty({ ...property, owner: user._id })
       .then(() => {
         res.status(201).json({ success: true, message: 'Property added' });
       })

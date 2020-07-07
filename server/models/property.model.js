@@ -14,6 +14,7 @@ import mongoose from 'mongoose';
  *          - price
  *          - area
  *          - state
+ *          - units
  *        properties:
  *          refNo:
  *            type: string
@@ -29,6 +30,8 @@ import mongoose from 'mongoose';
  *            type: string
  *          state:
  *            type: string
+ *          units:
+ *            type: number
  *        example:
  *           refNo: 100221
  *           owner: 5e8b3645c9c76504f526c61f
@@ -37,6 +40,7 @@ import mongoose from 'mongoose';
  *           price: 10000000
  *           area: Lekki Phase 1
  *           state: Lagos
+ *           units: 10
  */
 
 const PropertySchema = new mongoose.Schema(
@@ -68,6 +72,10 @@ const PropertySchema = new mongoose.Schema(
     },
     state: {
       type: String,
+      required: true,
+    },
+    units: {
+      type: Number,
       required: true,
     },
   },

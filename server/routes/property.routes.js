@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, schemaValidation } from '../helpers/middleware';
+import { authenticate, schemaValidation, isAdmin } from '../helpers/middleware';
 import { propertySchema } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -30,7 +30,13 @@ const router = express.Router();
  *      '500':
  *       description: Internal server error
  */
-router.post('/add', authenticate, schemaValidation(propertySchema), PropertyController.add);
+router.post(
+  '/add',
+  authenticate,
+  isAdmin,
+  schemaValidation(propertySchema),
+  PropertyController.add,
+);
 
 /**
  * @swagger
