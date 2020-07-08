@@ -1,14 +1,30 @@
 import Joi from '@hapi/joi';
 
-export const propertySchema = Joi.object({
-  refNo: Joi.string().label('Reference number').required(),
-  category: Joi.string().label('Product category').required(),
-  type: Joi.string().label('Product type').required(),
-  price: Joi.number().label('Product price').required(),
-  area: Joi.string().label('Product area').required(),
-  state: Joi.string().label('Product state').required(),
+export const addPropertySchema = Joi.object({
+  name: Joi.string().label('Property name').required(),
+  location: Joi.string().label('Property location').required(),
+  price: Joi.number().label('Property price').required(),
+  units: Joi.number().label('Property units').required(),
+  houseType: Joi.string().label('Property type').required(),
+  bedrooms: Joi.number().label('Bedroom number').required(),
+  toilets: Joi.number().label('Toilet number').required(),
+  description: Joi.string().label('Property description').required(),
+  floorPlans: Joi.boolean().label('Property floor plans').required(),
+  mapLocation: Joi.string().label('Map location').required(),
+  neighborhood: Joi.string().label('Map location').required(),
 });
 
-export const propertyUpdateSchema = Joi.object({
-  email: Joi.string().label('Email Address').email().required(),
+export const updatePropertySchema = Joi.object({
+  id: Joi.string().label('Property id').required(),
+  name: Joi.string().label('Property name').required(),
+  location: Joi.string().label('Property location').required(),
+  price: Joi.number().label('Property price').required(),
+  units: Joi.number().label('Property units').required(),
+  houseType: Joi.string().label('Property type').required(),
+  bedrooms: Joi.number().label('Bedroom number').required(),
+  toilets: Joi.number().label('Toilet number').required(),
+  description: Joi.string().label('Property description').required(),
+  floorPlans: Joi.boolean().label('Property floor plans').required(),
+  mapLocation: Joi.string().label('Map location').required(),
+  neighborhood: Joi.string().label('Map location').required(),
 });

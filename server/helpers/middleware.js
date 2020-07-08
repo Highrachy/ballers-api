@@ -1,4 +1,5 @@
 import httpStatus from './httpStatus';
+import userRole from './userRole';
 import { decodeToken, getUserById } from '../services/user.service';
 
 export const schemaValidation = (schema) => {
@@ -33,7 +34,7 @@ export const authenticate = async (req, res, next) => {
     } else {
       return res.status(httpStatus.NOT_FOUND).json({
         success: false,
-        message: 'User not found',
+        message: 'Invalid token',
       });
     }
   } catch (error) {
@@ -43,14 +44,12 @@ export const authenticate = async (req, res, next) => {
       error,
     });
   }
-
   return null;
 };
 
 export const isAdmin = async (req, res, next) => {
-  const { id } = decodeToken(req.headers.authorization);
-  const user = await getUserById(id);
-  if (user.role === 0) {
+  const { user } = req;
+  if (user.role === userRole.ADMIN) {
     next();
   } else {
     return res.status(httpStatus.FORBIDDEN).json({

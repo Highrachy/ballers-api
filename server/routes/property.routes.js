@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin } from '../helpers/middleware';
-import { propertySchema } from '../schemas/property.schema';
+import { addPropertySchema, updatePropertySchema } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
 const router = express.Router();
@@ -34,7 +34,7 @@ router.post(
   '/add',
   authenticate,
   isAdmin,
-  schemaValidation(propertySchema),
+  schemaValidation(addPropertySchema),
   PropertyController.add,
 );
 
@@ -61,58 +61,17 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.put('/update', authenticate, schemaValidation(propertySchema), PropertyController.update);
+router.put(
+  '/update',
+  authenticate,
+  isAdmin,
+  schemaValidation(updatePropertySchema),
+  PropertyController.update,
+);
 
 /**
  * @swagger
- * /property/all:
- *   get:
- *     tags:
- *       - Property
- *     description: Get all owned properties
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/Property'
- *      description: Get all owned properties
- *     responses:
- *      '200':
- *        description: returns object of properties
- *      '404':
- *        description: No properties available
- *      '500':
- *       description: Internal server error
- */
-router.get('/all', authenticate, PropertyController.getAll);
-
-/**
- * @swagger
- * path:
- *  /property/:refNo:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: verifies user access
- *      tags: [Property]
- *      responses:
- *        '200':
- *          description: Gets specific property
- *        '404':
- *          description: Property does not exist
- *        '500':
- *          description: Internal server error
- */
-router.get('/:refNo', authenticate, PropertyController.get);
-
-/**
- * @swagger
- * /property/delete/:refNo:
+ * /property/delete/:id:
  *   delete:
  *     tags:
  *       - Property
@@ -131,6 +90,53 @@ router.get('/:refNo', authenticate, PropertyController.get);
  *      '500':
  *       description: Internal server error
  */
-router.delete('/delete/:refNo', authenticate, PropertyController.delete);
+router.delete('/delete/:id', authenticate, isAdmin, PropertyController.delete);
+
+/**
+ * @swagger
+ * /property/all:
+ *   get:
+ *     tags:
+ *       - Property
+ *     description: Get all properties
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Get all owned properties
+ *     responses:
+ *      '200':
+ *        description: returns object of properties
+ *      '404':
+ *        description: No properties available
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/all', authenticate, isAdmin, PropertyController.getMultiple);
+
+/**
+ * @swagger
+ * path:
+ *  /property/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      tags: [Property]
+ *      responses:
+ *        '200':
+ *          description: Gets specific property
+ *        '404':
+ *          description: Property does not exist
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/:id', authenticate, isAdmin, PropertyController.getOne);
 
 module.exports = router;

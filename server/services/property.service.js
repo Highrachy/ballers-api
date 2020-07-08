@@ -1,40 +1,38 @@
 import Property from '../models/property.model';
 import { ErrorHandler } from '../helpers/errorHandler';
-
-export const getPropertyByRefNo = async (refNo) => Property.findOne({ refNo });
+import httpStatus from '../helpers/httpStatus';
 
 export const getPropertyById = async (id) => Property.findById(id);
 
-export const getOwnedProperties = async (owner) => Property.find({ owner });
-
 export const addProperty = async (property) => {
-  const existingProperty = await getPropertyByRefNo(property.refNo).catch((error) => {
-    throw new ErrorHandler(500, 'Internal Server Error', error);
-  });
-  if (existingProperty) {
-    throw new ErrorHandler(412, 'Property already exists');
-  }
   try {
-    return new Property(property).save();
+    const addedProperty = await new Property(property).save();
+    return addedProperty;
   } catch (error) {
-    throw new ErrorHandler(400, 'Error adding property', error);
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding property', error);
   }
 };
 
 export const updateProperty = async (updatedProperty) => {
-  const property = await getPropertyByRefNo(updatedProperty.refNo).catch((error) => {
-    throw new ErrorHandler(500, 'Internal Server Error', error);
+  const property = await getPropertyById(updatedProperty.id).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
   try {
-    return Property.findOneAndUpdate({ refNo: property.refNo }, updatedProperty);
+    return Property.findByIdAndUpdate(property.id, updatedProperty);
   } catch (error) {
-    throw new ErrorHandler(400, 'Error updating property', error);
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating property', error);
   }
 };
 
-export const deleteProperty = async (refNo) => {
-  const property = await getPropertyByRefNo(refNo).catch((error) => {
-    throw new ErrorHandler(500, 'Internal Server Error', error);
+export const deleteProperty = async (id) => {
+  const property = await getPropertyById(id).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
-  return Property.findOneAndDelete({ refNo: property.refNo });
+  try {
+    return Property.findByIdAndDelete(property.id);
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting property', error);
+  }
 };
+
+export const getAllProperties = async () => Property.find();

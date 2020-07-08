@@ -7,75 +7,114 @@ import mongoose from 'mongoose';
  *      Property:
  *        type: object
  *        required:
- *          - refNo
- *          - owner
- *          - category
- *          - type
+ *          - name
+ *          - location
  *          - price
- *          - area
- *          - state
  *          - units
+ *          - houseType
+ *          - bedrooms
+ *          - toilets
+ *          - description
+ *          - floorPlans
+ *          - mapLocation
+ *          - neighborhood
+ *          - addedBy
+ *          - updatedBy
  *        properties:
- *          refNo:
+ *          name:
  *            type: string
- *          owner:
- *            type: string
- *          category:
- *            type: string
- *          type:
+ *          location:
  *            type: string
  *          price:
- *            type: string
- *          area:
- *            type: string
- *          state:
- *            type: string
+ *            type: number
  *          units:
  *            type: number
+ *          houseType:
+ *            type: string
+ *          bedrooms:
+ *            type: number
+ *          toilets:
+ *            type: number
+ *          description:
+ *            type: string
+ *          floorPlans:
+ *            type: boolean
+ *          mapLocation:
+ *            type: string
+ *          neighborhood:
+ *            type: string
+ *          addedBy:
+ *            type: string
+ *          updatedBy:
+ *            type: string
  *        example:
- *           refNo: 100221
- *           owner: 5e8b3645c9c76504f526c61f
- *           category: For Sale
- *           type: 1 bedroom
+ *           name: 3 bedroom semi-detached duplex
+ *           location: Lagos
  *           price: 10000000
- *           area: Lekki Phase 1
- *           state: Lagos
- *           units: 10
+ *           units: 15
+ *           houseType: 3 bedroom semi-detached duplex
+ *           bedrooms: 3
+ *           toilets: 4
+ *           description: Newly built 3 bedroom semi-detached duplex
+ *           floorPlans: true
+ *           mapLocation: 10000000
+ *           neighborhood: Lekki Phase 1
+ *           addedBy: 5f05baaca6eb370d309f4e19
+ *           updatedBy: 5f05baaca6eb370d309f4e19
  */
 
 const PropertySchema = new mongoose.Schema(
   {
-    refNo: {
-      type: String,
-      unique: true,
-      required: true,
-    },
-    owner: {
+    name: {
       type: String,
       required: true,
     },
-    category: {
-      type: String,
-      required: true,
-    },
-    type: {
+    location: {
       type: String,
       required: true,
     },
     price: {
-      type: String,
-      required: true,
-    },
-    area: {
-      type: String,
-      required: true,
-    },
-    state: {
-      type: String,
+      type: Number,
       required: true,
     },
     units: {
       type: Number,
+      required: true,
+    },
+    houseType: {
+      type: String,
+      required: true,
+    },
+    bedrooms: {
+      type: Number,
+      required: true,
+    },
+    toilets: {
+      type: Number,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    floorPlans: {
+      type: Boolean,
+      required: true,
+    },
+    mapLocation: {
+      type: String,
+      required: true,
+    },
+    neighborhood: {
+      type: String,
+      required: true,
+    },
+    addedBy: {
+      type: String,
+      required: true,
+    },
+    updatedBy: {
+      type: String,
       required: true,
     },
   },
