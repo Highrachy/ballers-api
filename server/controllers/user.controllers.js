@@ -4,6 +4,7 @@ import {
   activateUser,
   forgotPasswordToken,
   resetPasswordViaToken,
+  assignPropertyToUser,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -80,10 +81,19 @@ const UserController = {
 
   currentUser(req, res) {
     const { user } = req;
-
     return res
       .status(httpStatus.OK)
       .json({ success: true, message: 'Your information has been successfully retrieved', user });
+  },
+
+  assignProperty(req, res, next) {
+    const toBeAssigned = req.locals;
+    const { user } = req;
+    assignPropertyToUser({ ...toBeAssigned, assignedBy: user._id })
+      .then(() => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Property assigned' });
+      })
+      .catch((error) => next(error));
   },
 };
 

@@ -4,6 +4,7 @@ import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+import { getPropertyById, updateProperty } from './property.service';
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -38,7 +39,7 @@ export const addUser = async (user) => {
   });
 
   if (existingUser) {
-    throw new ErrorHandler(412, 'Email is linked to another account');
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Email is linked to another account');
   }
 
   try {
@@ -115,5 +116,42 @@ export const resetPasswordViaToken = async (password, token) => {
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found', error);
+  }
+};
+
+export const assignPropertyToUser = async (toBeAssigned) => {
+  const assignedProperty = {
+    propertyId: toBeAssigned.propertyId,
+    assignedBy: toBeAssigned.assignedBy,
+    assignedDate: Date.now(),
+  };
+  const property = await getPropertyById(toBeAssigned.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (property.units < 1) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'No available units');
+  }
+
+  const owner = await getUserById(toBeAssigned.userId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    const newUnitCount = {
+      id: property.id,
+      units: property.units - 1,
+    };
+    const updatePropertyUnit = await updateProperty(newUnitCount).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+
+    if (updatePropertyUnit) {
+      return User.findByIdAndUpdate(owner.id, { $push: { assignedProperties: assignedProperty } });
+    }
+
+    return new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property');
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property', error);
   }
 };

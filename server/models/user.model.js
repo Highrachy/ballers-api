@@ -62,9 +62,19 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       default: 1,
     },
-    assignedProperties: {
-      type: [],
-    },
+    assignedProperties: [
+      {
+        propertyId: String,
+        assignedBy: String,
+        assignedDate: Date,
+        approved: {
+          type: Boolean,
+          default: false,
+        },
+        approvedBy: String,
+        approvedDate: Date,
+      },
+    ],
     activated: {
       type: Boolean,
       default: false,
