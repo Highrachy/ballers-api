@@ -229,4 +229,29 @@ router.post(
   UserController.assignProperty,
 );
 
+/**
+ * @swagger
+ * /user/properties:
+ *   get:
+ *     tags:
+ *       - User
+ *     description: Returns all assigned properties
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Returns all assigned properties
+ *     responses:
+ *      '200':
+ *        description: returns array of assigned properties
+ *      '404':
+ *        description: No properties available
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/properties', authenticate, UserController.getOwnedProperties);
+
 module.exports = router;

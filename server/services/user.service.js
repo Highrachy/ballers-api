@@ -155,3 +155,14 @@ export const assignPropertyToUser = async (toBeAssigned) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property', error);
   }
 };
+
+export const getOwnedProperties = async (id) => {
+  try {
+    const owner = await getUserById(id).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+    return owner.assignedProperties;
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found', error);
+  }
+};
