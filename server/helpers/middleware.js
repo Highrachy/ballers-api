@@ -49,12 +49,12 @@ export const authenticate = async (req, res, next) => {
 
 export const isAdmin = async (req, res, next) => {
   const { user } = req;
-  if (user.role === userRole.ADMIN) {
+  if (user && user.role === userRole.ADMIN) {
     next();
   } else {
     return res.status(httpStatus.FORBIDDEN).json({
       success: false,
-      message: 'Action can only be performed by an Admin',
+      message: 'You are not permitted to perform this action',
     });
   }
   return null;

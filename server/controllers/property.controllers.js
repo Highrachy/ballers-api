@@ -13,7 +13,7 @@ const PropertyController = {
     const { user } = req;
     addProperty({ ...property, addedBy: user._id, updatedBy: user._id })
       .then(() => {
-        res.status(httpStatus.CREATED).json({ success: true, message: 'Property added' });
+        res.status(httpStatus.CREATED).json({ success: true, message: 'Property added', property });
       })
       .catch((error) => next(error));
   },

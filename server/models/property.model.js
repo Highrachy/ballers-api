@@ -38,7 +38,7 @@ import mongoose from 'mongoose';
  *          description:
  *            type: string
  *          floorPlans:
- *            type: boolean
+ *            type: string
  *          mapLocation:
  *            type: string
  *          neighborhood:
@@ -56,12 +56,14 @@ import mongoose from 'mongoose';
  *           bedrooms: 3
  *           toilets: 4
  *           description: Newly built 3 bedroom semi-detached duplex
- *           floorPlans: true
+ *           floorPlans: http://linktoplan.ng
  *           mapLocation: 10000000
  *           neighborhood: Lekki Phase 1
  *           addedBy: 5f05baaca6eb370d309f4e19
  *           updatedBy: 5f05baaca6eb370d309f4e19
  */
+
+const { ObjectId } = mongoose.Schema.Types;
 
 const PropertySchema = new mongoose.Schema(
   {
@@ -98,23 +100,22 @@ const PropertySchema = new mongoose.Schema(
       required: true,
     },
     floorPlans: {
-      type: Boolean,
-      required: true,
+      type: String,
     },
     mapLocation: {
       type: String,
       required: true,
     },
     neighborhood: {
-      type: String,
+      type: [String],
       required: true,
     },
     addedBy: {
-      type: String,
+      type: ObjectId,
       required: true,
     },
     updatedBy: {
-      type: String,
+      type: ObjectId,
       required: true,
     },
   },
