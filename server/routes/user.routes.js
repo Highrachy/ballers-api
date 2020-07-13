@@ -4,6 +4,7 @@ import {
   loginSchema,
   resetPasswordSchema,
   changePasswordSchema,
+  updateUserSchema,
 } from '../schemas/user.schema';
 import { schemaValidation, authenticate } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
@@ -189,5 +190,30 @@ router.post(
  *          description: Internal server error
  */
 router.get('/who-am-i', authenticate, UserController.currentUser);
+
+/**
+ * @swagger
+ * /user/update:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Updates existing user
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Updates existing user
+ *     responses:
+ *      '200':
+ *        description: User updated
+ *      '400':
+ *        description: Error updating user
+ *      '500':
+ *       description: Internal server error
+ */
+router.put('/update', authenticate, schemaValidation(updateUserSchema), UserController.update);
 
 module.exports = router;

@@ -4,6 +4,7 @@ import {
   activateUser,
   forgotPasswordToken,
   resetPasswordViaToken,
+  updateUser,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -82,6 +83,16 @@ const UserController = {
     return res
       .status(httpStatus.OK)
       .json({ success: true, message: 'Your information has been successfully retrieved', user });
+  },
+
+  update(req, res, next) {
+    const updateduser = req.locals;
+    const { user } = req;
+    updateUser({ ...updateduser, id: user._id })
+      .then(() => {
+        res.status(httpStatus.OK).json({ success: true, message: 'User updated' });
+      })
+      .catch((error) => next(error));
   },
 };
 

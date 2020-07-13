@@ -30,3 +30,9 @@ export const changePasswordSchema = Joi.object({
   password,
   confirmPassword,
 });
+
+export const updateUserSchema = Joi.object({
+  firstName: requiredString('First Name'),
+  lastName: requiredString('Last Name'),
+  phone,
+});
