@@ -18,8 +18,6 @@ import mongoose from 'mongoose';
  *          - floorPlans
  *          - mapLocation
  *          - neighborhood
- *          - addedBy
- *          - updatedBy
  *        properties:
  *          name:
  *            type: string
@@ -40,12 +38,8 @@ import mongoose from 'mongoose';
  *          floorPlans:
  *            type: string
  *          mapLocation:
- *            type: string
+ *            type: object
  *          neighborhood:
- *            type: string
- *          addedBy:
- *            type: string
- *          updatedBy:
  *            type: string
  *        example:
  *           name: 3 bedroom semi-detached duplex
@@ -57,10 +51,8 @@ import mongoose from 'mongoose';
  *           toilets: 4
  *           description: Newly built 3 bedroom semi-detached duplex
  *           floorPlans: http://linktoplan.ng
- *           mapLocation: 10000000
- *           neighborhood: Lekki Phase 1
- *           addedBy: 5f05baaca6eb370d309f4e19
- *           updatedBy: 5f05baaca6eb370d309f4e19
+ *           mapLocation: {longitude: 1.23456, latitude: 2.34567}
+ *           neighborhood: ['Lekki Phase 1']
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -103,8 +95,14 @@ const PropertySchema = new mongoose.Schema(
       type: String,
     },
     mapLocation: {
-      type: String,
-      required: true,
+      longitude: {
+        type: String,
+        required: true,
+      },
+      latitude: {
+        type: String,
+        required: true,
+      },
     },
     neighborhood: {
       type: [String],
