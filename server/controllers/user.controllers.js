@@ -90,7 +90,7 @@ const UserController = {
     const { user } = req;
     updateUser({ ...updateduser, id: user._id })
       .then(() => {
-        res.status(httpStatus.OK).json({ success: true, message: 'User updated' });
+        res.status(httpStatus.OK).json({ success: true, message: 'User updated', updateduser });
       })
       .catch((error) => next(error));
   },

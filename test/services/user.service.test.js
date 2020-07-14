@@ -13,6 +13,7 @@ import {
   activateUser,
   forgotPasswordToken,
   resetPasswordViaToken,
+  updateUser,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -373,6 +374,28 @@ describe('User Service', () => {
           expect(err.message).to.be.eql('User not found');
         }
       });
+    });
+  });
+
+  describe('#updateUser', () => {
+    const _id = mongoose.Types.ObjectId();
+
+    before(async () => {
+      await User.create(UserFactory.build({ _id }));
+    });
+
+    it('returns a valid updated user', async () => {
+      const updatedDetails = {
+        id: _id,
+        firstName: 'Updated firstname',
+        lastName: 'Updated lastname',
+        phone: '08012345678',
+      };
+      const updatedUser = updateUser(updatedDetails);
+      const user = getUserById(updatedDetails.id);
+      expect(user.firstName).to.eql(updatedUser.firstName);
+      expect(user.lastName).to.eql(updatedUser.lastName);
+      expect(user.phone).to.eql(updatedUser.phone);
     });
   });
 });
