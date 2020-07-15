@@ -626,6 +626,9 @@ describe('Update User', () => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
           expect(res.body).to.have.property('updateduser');
+          expect(res.body.updateduser.firstName).to.be.eql(newUser.firstName);
+          expect(res.body.updateduser.lastName).to.be.eql(newUser.lastName);
+          expect(res.body.updateduser.phone).to.be.eql(newUser.phone);
           done();
         });
     });
@@ -639,6 +642,7 @@ describe('Update User', () => {
         .end((err, res) => {
           expect(res).to.have.status(403);
           expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
           done();
         });
     });
@@ -652,6 +656,7 @@ describe('Update User', () => {
         .end((err, res) => {
           expect(res).to.have.status(412);
           expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Validation Error');
           done();
         });
     });
