@@ -18,6 +18,8 @@ import mongoose from 'mongoose';
  *          - floorPlans
  *          - mapLocation
  *          - neighborhood
+ *          - mainImage
+ *          - gallery
  *        properties:
  *          name:
  *            type: string
@@ -41,6 +43,10 @@ import mongoose from 'mongoose';
  *            type: object
  *          neighborhood:
  *            type: string
+ *          mainImage:
+ *            type: string
+ *          gallery:
+ *            type: array
  *        example:
  *           name: 3 bedroom semi-detached duplex
  *           location: Lagos
@@ -53,6 +59,8 @@ import mongoose from 'mongoose';
  *           floorPlans: http://linktoplan.ng
  *           mapLocation: {longitude: 1.23456, latitude: 2.34567}
  *           neighborhood: ['Lekki Phase 1']
+ *           mainImage: https://picsum.photos/200
+ *           gallery: ['https://picsum.photos/200', 'https://picsum.photos/200', 'https://picsum.photos/200']
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -97,14 +105,19 @@ const PropertySchema = new mongoose.Schema(
     mapLocation: {
       longitude: {
         type: String,
-        required: true,
       },
       latitude: {
         type: String,
-        required: true,
       },
     },
     neighborhood: {
+      type: [String],
+    },
+    mainImage: {
+      type: String,
+      required: true,
+    },
+    gallery: {
       type: [String],
       required: true,
     },
