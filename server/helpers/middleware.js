@@ -43,6 +43,5 @@ export const authenticate = async (req, res, next) => {
       error,
     });
   }
-
   return null;
 };

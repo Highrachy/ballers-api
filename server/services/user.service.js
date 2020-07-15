@@ -7,10 +7,12 @@ import httpStatus from '../helpers/httpStatus';
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
+
 export const getUserById = async (id) => User.findById(id).select();
 
 export const generateToken = (id, expiresIn = '30d') =>
   jwt.sign({ id }, USER_SECRET, { expiresIn });
+
 export const decodeToken = (token) => jwt.verify(token, USER_SECRET);
 
 export const hashPassword = async (password) => {
@@ -36,7 +38,7 @@ export const addUser = async (user) => {
   });
 
   if (existingUser) {
-    throw new ErrorHandler(412, 'Email is linked to another account');
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Email is linked to another account');
   }
 
   try {
@@ -60,7 +62,7 @@ export const loginUser = async (user) => {
 
     if (isMatch) {
       const savedUser = existingUser.toJSON();
-      const token = generateToken(savedUser.id);
+      const token = generateToken(savedUser._id);
       delete savedUser.password;
 
       if (savedUser.activated) {
@@ -113,5 +115,16 @@ export const resetPasswordViaToken = async (password, token) => {
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found', error);
+  }
+};
+
+export const updateUser = async (updatedUser) => {
+  const user = await getUserById(updatedUser.id).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+  try {
+    return User.findByIdAndUpdate(user.id, updatedUser);
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
 };

@@ -588,7 +588,7 @@ describe('Current User', () => {
     beforeEach(async () => {
       await User.deleteOne({ firstName: user.firstName });
     });
-    it('returns a valid user', (done) => {
+    it('returns token error', (done) => {
       request()
         .get('/api/v1/user/who-am-i')
         .set('authorization', token)
@@ -597,6 +597,83 @@ describe('Current User', () => {
           expect(res.body.success).to.be.eql(false);
           expect(res.body.message).to.be.eql('User not found');
           done();
+        });
+    });
+  });
+});
+
+describe('Update User', () => {
+  let token;
+  const user = UserFactory.build();
+
+  beforeEach(async () => {
+    token = await addUser(user);
+  });
+
+  const newUser = {
+    firstName: 'John',
+    lastName: 'Doe',
+    phone: '08012345678',
+  };
+
+  context('with valid token', () => {
+    it('returns a updated user', (done) => {
+      request()
+        .put('/api/v1/user/update')
+        .set('authorization', token)
+        .send(newUser)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body).to.have.property('updateduser');
+          expect(res.body.updateduser.firstName).to.be.eql(newUser.firstName);
+          expect(res.body.updateduser.lastName).to.be.eql(newUser.lastName);
+          expect(res.body.updateduser.phone).to.be.eql(newUser.phone);
+          done();
+        });
+    });
+  });
+
+  context('without token', () => {
+    it('returns error', (done) => {
+      request()
+        .put('/api/v1/user/update')
+        .send(newUser)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+
+  context('with invalid updated user', () => {
+    it('returns a updated user', (done) => {
+      request()
+        .put('/api/v1/user/update')
+        .set('authorization', token)
+        .end((err, res) => {
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Validation Error');
+          done();
+        });
+    });
+  });
+
+  context('when update service returns an error', () => {
+    it('returns the error', (done) => {
+      sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+      request()
+        .put('/api/v1/user/update')
+        .set('authorization', token)
+        .send(newUser)
+        .end((err, res) => {
+          expect(res).to.have.status(400);
+          expect(res.body.success).to.be.eql(false);
+          done();
+          User.findByIdAndUpdate.restore();
         });
     });
   });
