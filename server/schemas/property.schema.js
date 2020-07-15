@@ -1,8 +1,8 @@
 import Joi from '@hapi/joi';
 
 const mapLocation = Joi.object().keys({
-  longitude: Joi.string().label('Map location longitude'),
-  latitude: Joi.string().label('Map location latitude'),
+  longitude: Joi.string().label('Map location longitude').optional(),
+  latitude: Joi.string().label('Map location latitude').optional(),
 });
 
 const product = {
@@ -14,11 +14,11 @@ const product = {
   bedrooms: Joi.number().label('Bedroom number').required(),
   toilets: Joi.number().label('Toilet number').required(),
   description: Joi.string().label('Property description').required(),
-  floorPlans: Joi.string().label('Property floor plans'),
+  floorPlans: Joi.string().label('Property floor plans').optional(),
   mapLocation,
-  neighborhood: Joi.array().label('Property neighborhood'),
-  mainImage: Joi.string().label('Property neighborhood').required(),
-  gallery: Joi.array().label('Property neighborhood').required(),
+  neighborhood: Joi.array().label('Property neighborhood').optional(),
+  mainImage: Joi.string().label('Property neighborhood').optional(),
+  gallery: Joi.array().label('Property neighborhood').optional(),
 };
 
 export const addPropertySchema = Joi.object({ ...product });
