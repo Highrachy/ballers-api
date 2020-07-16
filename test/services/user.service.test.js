@@ -14,6 +14,8 @@ import {
   forgotPasswordToken,
   resetPasswordViaToken,
   updateUser,
+  getUserByReferralCode,
+  generateReferralCode,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -379,23 +381,75 @@ describe('User Service', () => {
 
   describe('#updateUser', () => {
     const _id = mongoose.Types.ObjectId();
+    const updatedDetails = {
+      id: _id,
+      firstName: 'Updated firstname',
+      lastName: 'Updated lastname',
+      phone: '08012345678',
+      referralCode: 'abc123',
+    };
 
     before(async () => {
       await User.create(UserFactory.build({ _id }));
     });
 
-    it('returns a valid updated user', async () => {
-      const updatedDetails = {
-        id: _id,
-        firstName: 'Updated firstname',
-        lastName: 'Updated lastname',
-        phone: '08012345678',
-      };
-      const updatedUser = updateUser(updatedDetails);
-      const user = getUserById(updatedDetails.id);
-      expect(user.firstName).to.eql(updatedUser.firstName);
-      expect(user.lastName).to.eql(updatedUser.lastName);
-      expect(user.phone).to.eql(updatedUser.phone);
+    context('when generateReferralCode fails', () => {
+      it('returns a valid updated user', async () => {
+        const updatedUser = updateUser(updatedDetails);
+        const user = getUserById(updatedDetails.id);
+        expect(user.firstName).to.eql(updatedUser.firstName);
+        expect(user.lastName).to.eql(updatedUser.lastName);
+        expect(user.phone).to.eql(updatedUser.phone);
+      });
+    });
+
+    context('when getUserById fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findById').throws(new Error('error msg'));
+
+        try {
+          await updateUser(updatedDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        User.findById.restore();
+      });
+    });
+  });
+
+  describe('#getUserByReferralCode', () => {
+    const referralCode = 'abc123';
+    before(async () => {
+      await User.create(UserFactory.build({ referralCode }));
+    });
+
+    it('returns a valid user by referralCode', async () => {
+      const user = await getUserByReferralCode(referralCode);
+      expect(user.referralCode).to.eql(referralCode);
+    });
+  });
+
+  describe('#generateReferralCode', () => {
+    const referralCode = 'abc123';
+    before(async () => {
+      await User.create(UserFactory.build({ referralCode }));
+    });
+
+    context('when getUserbyEmail returns an error', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findOne').throws(new Error('error msg'));
+
+        try {
+          await generateReferralCode(referralCode);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        User.findOne.restore();
+      });
     });
   });
 });

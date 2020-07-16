@@ -54,6 +54,9 @@ const UserSchema = new mongoose.Schema(
       select: false,
     },
     phone: String,
+    referralCode: {
+      type: String,
+    },
     activated: { type: Boolean, default: false },
     activationDate: Date,
   },

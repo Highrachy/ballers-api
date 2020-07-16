@@ -32,8 +32,46 @@ export const comparePassword = async (password, hashedPassword) => {
   }
 };
 
+export const getUserByReferralCode = async (referralCode, fields = null) =>
+  User.findOne({ referralCode }).select(fields);
+
+export const generateReferralCode = async (firstName) => {
+  const name = firstName.substring(0, 3).toLowerCase();
+  let code = name;
+  let charsToAdd = 4;
+
+  if (firstName.length < 3) {
+    charsToAdd = 7 - firstName.length;
+  }
+
+  function generateCode(pre) {
+    const possible = '0123456789';
+    let fullCode = pre;
+    for (let i = 0; i < charsToAdd; i += 1) {
+      fullCode += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return fullCode;
+  }
+
+  code = generateCode(code);
+
+  const referralCodeIsUsed = await getUserByReferralCode(code).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (referralCodeIsUsed) {
+    code = name;
+    code = generateCode(code);
+  }
+  return code;
+};
+
 export const addUser = async (user) => {
   const existingUser = await getUserByEmail(user.email).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  const referralCode = await generateReferralCode(user.firstName).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
@@ -43,7 +81,7 @@ export const addUser = async (user) => {
 
   try {
     const password = await hashPassword(user.password);
-    const savedUser = await new User({ ...user, password }).save();
+    const savedUser = await new User({ ...user, password, referralCode }).save();
     return generateToken(savedUser._id);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding user', error);
