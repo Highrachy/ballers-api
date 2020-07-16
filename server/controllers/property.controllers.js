@@ -9,10 +9,10 @@ import httpStatus from '../helpers/httpStatus';
 
 const PropertyController = {
   add(req, res, next) {
-    const property = req.locals;
+    const newProperty = req.locals;
     const { user } = req;
-    addProperty({ ...property, addedBy: user._id, updatedBy: user._id })
-      .then(() => {
+    addProperty({ ...newProperty, addedBy: user._id, updatedBy: user._id })
+      .then((property) => {
         res.status(httpStatus.CREATED).json({ success: true, message: 'Property added', property });
       })
       .catch((error) => next(error));

@@ -25,5 +25,17 @@ export const addPropertySchema = Joi.object({ ...product });
 
 export const updatePropertySchema = Joi.object({
   id: Joi.string().label('Property id').required(),
-  ...product,
+  units: Joi.number().label('Property units').required(),
+  name: Joi.string().label('Property name').optional(),
+  location: Joi.string().label('Property location').optional(),
+  price: Joi.number().label('Property price').optional(),
+  houseType: Joi.string().label('Property type').optional(),
+  bedrooms: Joi.number().label('Bedroom number').optional(),
+  toilets: Joi.number().label('Toilet number').optional(),
+  description: Joi.string().label('Property description').optional(),
+  floorPlans: Joi.string().label('Property floor plans').optional(),
+  mapLocation,
+  neighborhood: Joi.array().label('Property neighborhood').optional(),
+  mainImage: Joi.string().label('Property neighborhood').optional(),
+  gallery: Joi.array().label('Property neighborhood').optional(),
 });

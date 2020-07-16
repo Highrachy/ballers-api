@@ -104,10 +104,10 @@ const PropertySchema = new mongoose.Schema(
     },
     mapLocation: {
       longitude: {
-        type: String,
+        type: Number,
       },
       latitude: {
-        type: String,
+        type: Number,
       },
     },
     neighborhood: {
