@@ -25,7 +25,7 @@ export const addPropertySchema = Joi.object({ ...product });
 
 export const updatePropertySchema = Joi.object({
   id: Joi.string().label('Property id').required(),
-  units: Joi.number().label('Property units').required(),
+  units: Joi.number().label('Property units').optional(),
   name: Joi.string().label('Property name').optional(),
   location: Joi.string().label('Property location').optional(),
   price: Joi.number().label('Property price').optional(),
