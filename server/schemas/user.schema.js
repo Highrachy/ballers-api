@@ -31,7 +31,8 @@ export const changePasswordSchema = Joi.object({
   confirmPassword,
 });
 
-export const assignPropertySchema = Joi.object({
-  propertyId: Joi.string().label('Property id').required(),
-  userId: Joi.string().label('User id').required(),
+export const updateUserSchema = Joi.object({
+  firstName: requiredString('First Name'),
+  lastName: requiredString('Last Name'),
+  phone,
 });

@@ -119,50 +119,13 @@ export const resetPasswordViaToken = async (password, token) => {
   }
 };
 
-export const assignPropertyToUser = async (toBeAssigned) => {
-  const assignedProperty = {
-    propertyId: toBeAssigned.propertyId,
-    assignedBy: toBeAssigned.assignedBy,
-    assignedDate: Date.now(),
-  };
-  const property = await getPropertyById(toBeAssigned.propertyId).catch((error) => {
+export const updateUser = async (updatedUser) => {
+  const user = await getUserById(updatedUser.id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
-
-  if (property.units < 1) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'No available units');
-  }
-
-  const owner = await getUserById(toBeAssigned.userId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
   try {
-    const newUnitCount = {
-      id: property.id,
-      units: property.units - 1,
-    };
-    const updatePropertyUnit = await updateProperty(newUnitCount).catch((error) => {
-      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-    });
-
-    if (updatePropertyUnit) {
-      return User.findByIdAndUpdate(owner.id, { $push: { assignedProperties: assignedProperty } });
-    }
-
-    return new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property');
+    return User.findByIdAndUpdate(user.id, updatedUser);
   } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property', error);
-  }
-};
-
-export const getOwnedProperties = async (id) => {
-  try {
-    const owner = await getUserById(id).catch((error) => {
-      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-    });
-    return owner.assignedProperties;
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found', error);
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
 };

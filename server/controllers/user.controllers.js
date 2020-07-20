@@ -4,8 +4,7 @@ import {
   activateUser,
   forgotPasswordToken,
   resetPasswordViaToken,
-  assignPropertyToUser,
-  getOwnedProperties,
+  updateUser,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -87,25 +86,12 @@ const UserController = {
       .json({ success: true, message: 'Your information has been successfully retrieved', user });
   },
 
-  assignProperty(req, res, next) {
-    const toBeAssigned = req.locals;
+  update(req, res, next) {
+    const updateduser = req.locals;
     const { user } = req;
-    assignPropertyToUser({ ...toBeAssigned, assignedBy: user._id })
+    updateUser({ ...updateduser, id: user._id })
       .then(() => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Property assigned' });
-      })
-      .catch((error) => next(error));
-  },
-
-  getOwnedProperties(req, res, next) {
-    const { user } = req;
-    getOwnedProperties({ _id: user._id })
-      .then((properties) => {
-        if (properties.length < 1) {
-          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'No property found' });
-        } else {
-          res.status(httpStatus.OK).json({ success: true, properties });
-        }
+        res.status(httpStatus.OK).json({ success: true, message: 'User updated', updateduser });
       })
       .catch((error) => next(error));
   },

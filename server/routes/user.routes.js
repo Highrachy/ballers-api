@@ -4,9 +4,9 @@ import {
   loginSchema,
   resetPasswordSchema,
   changePasswordSchema,
-  assignPropertySchema,
+  updateUserSchema,
 } from '../schemas/user.schema';
-import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
+import { schemaValidation, authenticate } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
 
 const router = express.Router();
@@ -193,49 +193,11 @@ router.get('/who-am-i', authenticate, UserController.currentUser);
 
 /**
  * @swagger
- * /user/assign-property:
- *   post:
+ * /user/update:
+ *   put:
  *     tags:
  *       - User
- *     description: Assigns property to a user
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            type: object
- *            properties:
- *              userId:
- *                  type: string
- *              propertyId:
- *                  type: string
- *      description: ID of property owner and ID of property to be assigned
- *     responses:
- *      '200':
- *        description: Property assigned
- *      '404':
- *        description: No units available
- *      '400':
- *        description: Bad request
- *      '500':
- *       description: Internal server error
- */
-router.post(
-  '/assign-property',
-  authenticate,
-  isAdmin,
-  schemaValidation(assignPropertySchema),
-  UserController.assignProperty,
-);
-
-/**
- * @swagger
- * /user/properties:
- *   get:
- *     tags:
- *       - User
- *     description: Returns all assigned properties
+ *     description: Updates existing user
  *     produces:
  *       - application/json
  *     requestBody:
@@ -243,15 +205,15 @@ router.post(
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/User'
- *      description: Returns all assigned properties
+ *      description: Updates existing user
  *     responses:
  *      '200':
- *        description: returns array of assigned properties
- *      '404':
- *        description: No properties available
+ *        description: User updated
+ *      '400':
+ *        description: Error updating user
  *      '500':
  *       description: Internal server error
  */
-router.get('/properties', authenticate, UserController.getOwnedProperties);
+router.put('/update', authenticate, schemaValidation(updateUserSchema), UserController.update);
 
 module.exports = router;
