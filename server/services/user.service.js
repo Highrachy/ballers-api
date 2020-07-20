@@ -4,7 +4,6 @@ import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { getPropertyById, updateProperty } from './property.service';
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);

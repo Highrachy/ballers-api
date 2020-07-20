@@ -27,9 +27,7 @@ const UserController = {
     const loginDetails = req.locals;
     loginUser(loginDetails)
       .then((user) => {
-        res
-          .status(httpStatus.OK)
-          .json({ success: true, message: 'Login successful', token: user.token });
+        res.status(httpStatus.OK).json({ success: true, message: 'Login successful', user });
       })
       .catch((error) => next(error));
   },
