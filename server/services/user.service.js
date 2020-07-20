@@ -35,35 +35,33 @@ export const comparePassword = async (password, hashedPassword) => {
 export const getUserByReferralCode = async (referralCode, fields = null) =>
   User.findOne({ referralCode }).select(fields);
 
+export const generateCode = (name) => {
+  const firstName = name.replace(/\s/g, '');
+  const possible = '0123456789';
+  const charsToAdd = firstName.length < 2 ? 6 - firstName.length : 4;
+  let referralCode = firstName.substring(0, 2).toLowerCase();
+
+  for (let i = 0; i < charsToAdd; i += 1) {
+    referralCode += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return referralCode;
+};
+
 export const generateReferralCode = async (firstName) => {
-  const name = firstName.substring(0, 3).toLowerCase();
-  let code = name;
-  let charsToAdd = 4;
+  let referralCode = generateCode(firstName);
 
-  if (firstName.length < 3) {
-    charsToAdd = 7 - firstName.length;
-  }
-
-  function generateCode(pre) {
-    const possible = '0123456789';
-    let fullCode = pre;
-    for (let i = 0; i < charsToAdd; i += 1) {
-      fullCode += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return fullCode;
-  }
-
-  code = generateCode(code);
-
-  const referralCodeIsUsed = await getUserByReferralCode(code).catch((error) => {
+  let referralCodeIsUsed = await getUserByReferralCode(referralCode).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (referralCodeIsUsed) {
-    code = name;
-    code = generateCode(code);
+  while (referralCodeIsUsed) {
+    referralCode = generateCode(firstName);
+    const invalidReferralCode = getUserByReferralCode(referralCode);
+    if (!invalidReferralCode) {
+      referralCodeIsUsed = false;
+    }
   }
-  return code;
+  return referralCode;
 };
 
 export const addUser = async (user) => {

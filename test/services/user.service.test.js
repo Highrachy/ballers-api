@@ -16,6 +16,7 @@ import {
   updateUser,
   getUserByReferralCode,
   generateReferralCode,
+  generateCode,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -449,6 +450,32 @@ describe('User Service', () => {
           expect(err.message).to.be.eql('Internal Server Error');
         }
         User.findOne.restore();
+      });
+    });
+  });
+
+  describe('#generateCode', () => {
+    context('when firstname is longer than 2 characters', () => {
+      it('returns 6 digit code starting with first two letters of name', async () => {
+        const code = generateCode('abc');
+        expect(code).to.have.lengthOf(6);
+        expect(code.substring(0, 2)).to.have.string('ab');
+      });
+    });
+
+    context('when firstname is equal to 2 characters', () => {
+      it('returns 6 digit code starting with first two letters of name', async () => {
+        const code = generateCode('ab');
+        expect(code).to.have.lengthOf(6);
+        expect(code.substring(0, 2)).to.have.string('ab');
+      });
+    });
+
+    context('when firstname is shorter than 2 characters', () => {
+      it('returns 6 digit code starting with first letter of name', async () => {
+        const code = generateCode('a');
+        expect(code).to.have.lengthOf(6);
+        expect(code.substring(0, 1)).to.have.string('a');
       });
     });
   });
