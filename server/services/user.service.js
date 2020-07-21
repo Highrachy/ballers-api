@@ -48,16 +48,16 @@ export const generateCode = (name) => {
 };
 
 export const generateReferralCode = async (firstName) => {
-  let referralCode = generateCode(firstName);
-
-  let referralCodeIsUsed = await getUserByReferralCode(referralCode).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
+  let referralCode;
+  let referralCodeIsUsed = true;
 
   while (referralCodeIsUsed) {
     referralCode = generateCode(firstName);
-    const invalidReferralCode = getUserByReferralCode(referralCode);
-    if (!invalidReferralCode) {
+    // eslint-disable-next-line no-await-in-loop
+    const invalidReferralCode = await getUserByReferralCode(referralCode).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+    if (invalidReferralCode === null) {
       referralCodeIsUsed = false;
     }
   }
@@ -65,11 +65,11 @@ export const generateReferralCode = async (firstName) => {
 };
 
 export const addUser = async (user) => {
-  const existingUser = await getUserByEmail(user.email).catch((error) => {
+  const referralCode = await generateReferralCode(user.firstName).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  const referralCode = await generateReferralCode(user.firstName).catch((error) => {
+  const existingUser = await getUserByEmail(user.email).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 

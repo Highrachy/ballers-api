@@ -33,7 +33,7 @@ export const authenticate = async (req, res, next) => {
     } else {
       return res.status(httpStatus.NOT_FOUND).json({
         success: false,
-        message: 'User not found',
+        message: 'Invalid token',
       });
     }
   } catch (error) {

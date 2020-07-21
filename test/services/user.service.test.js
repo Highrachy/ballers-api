@@ -203,7 +203,23 @@ describe('User Service', () => {
           expect(err.message).to.be.eql('Internal Server Error');
           expect(currentCountedUsers).to.eql(countedUsers);
         }
+        User.findOne.restore();
+      });
+    });
 
+    context('when generateReferralCode returns an error', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findOne').throws(new Error('error msg'));
+
+        try {
+          await addUser(user);
+        } catch (err) {
+          const currentCountedUsers = await User.countDocuments({});
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+          expect(currentCountedUsers).to.eql(countedUsers);
+        }
         User.findOne.restore();
       });
     });
@@ -394,7 +410,7 @@ describe('User Service', () => {
       await User.create(UserFactory.build({ _id }));
     });
 
-    context('when generateReferralCode fails', () => {
+    context('when getUserById works', () => {
       it('returns a valid updated user', async () => {
         const updatedUser = updateUser(updatedDetails);
         const user = getUserById(updatedDetails.id);
@@ -418,6 +434,21 @@ describe('User Service', () => {
         User.findById.restore();
       });
     });
+
+    context('when findByIdAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('error msg'));
+
+        try {
+          await updateUser(updatedDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Error updating user');
+        }
+        User.findByIdAndUpdate.restore();
+      });
+    });
   });
 
   describe('#getUserByReferralCode', () => {
@@ -438,7 +469,7 @@ describe('User Service', () => {
       await User.create(UserFactory.build({ referralCode }));
     });
 
-    context('when getUserbyEmail returns an error', () => {
+    context('when getUserByReferralCode returns an error', () => {
       it('throws an error', async () => {
         sinon.stub(User, 'findOne').throws(new Error('error msg'));
 
@@ -456,7 +487,7 @@ describe('User Service', () => {
 
   describe('#generateCode', () => {
     context('when firstname is longer than 2 characters', () => {
-      it('returns 6 digit code starting with first two letters of name', async () => {
+      it('returns 6 digit code starting with first two letters of name', () => {
         const code = generateCode('abc');
         expect(code).to.have.lengthOf(6);
         expect(code.substring(0, 2)).to.have.string('ab');
@@ -464,7 +495,7 @@ describe('User Service', () => {
     });
 
     context('when firstname is equal to 2 characters', () => {
-      it('returns 6 digit code starting with first two letters of name', async () => {
+      it('returns 6 digit code starting with first two letters of name', () => {
         const code = generateCode('ab');
         expect(code).to.have.lengthOf(6);
         expect(code.substring(0, 2)).to.have.string('ab');
@@ -472,7 +503,7 @@ describe('User Service', () => {
     });
 
     context('when firstname is shorter than 2 characters', () => {
-      it('returns 6 digit code starting with first letter of name', async () => {
+      it('returns 6 digit code starting with first letter of name', () => {
         const code = generateCode('a');
         expect(code).to.have.lengthOf(6);
         expect(code.substring(0, 1)).to.have.string('a');
