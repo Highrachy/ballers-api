@@ -21,8 +21,8 @@ const PropertyController = {
     const updatedproperty = req.locals;
     const { user } = req;
     updateProperty({ ...updatedproperty, updatedBy: user._id })
-      .then(() => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Property updated' });
+      .then((property) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Property updated', property });
       })
       .catch((error) => next(error));
   },

@@ -595,7 +595,7 @@ describe('Current User', () => {
         .end((err, res) => {
           expect(res).to.have.status(404);
           expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('User not found');
+          expect(res.body.message).to.be.eql('Invalid token');
           done();
         });
     });

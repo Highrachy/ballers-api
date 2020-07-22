@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
-import { expect, useDatabase } from '../config';
+import { expect, sinon, useDatabase } from '../config';
 import {
   getPropertyById,
   addProperty,
-  //   updateProperty,
-  //   deleteProperty,
-  //   getAllProperties,
+  updateProperty,
+  deleteProperty,
+  // getAllProperties,
 } from '../../server/services/property.service';
 import PropertyFactory from '../factories/property.factory';
 import Property from '../../server/models/property.model';
@@ -57,6 +57,99 @@ describe('Property Service', () => {
           expect(err.message).to.be.eql('Error adding property');
           expect(currentCountedProperties).to.eql(countedProperties);
         }
+      });
+    });
+  });
+
+  describe('#updateProperty', () => {
+    const _id = mongoose.Types.ObjectId();
+    const updatedDetails = {
+      id: _id,
+      units: 11,
+    };
+    before(async () => {
+      await Property.create(PropertyFactory.build({ _id }));
+    });
+
+    context('when property is updated', () => {
+      it('returns a valid updated user', async () => {
+        const updatedProperty = updateProperty(updatedDetails);
+        const property = getPropertyById(updatedDetails.id);
+        expect(property.units).to.eql(updatedProperty.units);
+        expect(property.description).to.eql(updatedProperty.description);
+      });
+    });
+
+    context('when getPropertyById fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Property, 'findById').throws(new Error('error msg'));
+        try {
+          await updateProperty(updatedDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        Property.findById.restore();
+      });
+    });
+
+    context('when findByIdAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('error msg'));
+        try {
+          await updateProperty(updatedDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Error updating property');
+        }
+        Property.findByIdAndUpdate.restore();
+      });
+    });
+  });
+
+  describe('#deleteProperty', () => {
+    const _id = mongoose.Types.ObjectId();
+    before(async () => {
+      await Property.create(PropertyFactory.build({ _id }));
+    });
+
+    context('when property is deleted', () => {
+      it('returns a valid updated user', async () => {
+        // eslint-disable-next-line no-unused-vars
+        const deletedProperty = deleteProperty(_id);
+        const property = getPropertyById(_id);
+        // eslint-disable-next-line no-unused-expressions
+        expect(property).to.be.empty;
+      });
+    });
+
+    context('when getPropertyById fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Property, 'findById').throws(new Error('error msg'));
+        try {
+          await deleteProperty(_id);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        Property.findById.restore();
+      });
+    });
+
+    context('when findByIdAndDelete fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Property, 'findByIdAndDelete').throws(new Error('error msg'));
+        try {
+          await deleteProperty(_id);
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Error deleting property');
+        }
+        Property.findByIdAndDelete.restore();
       });
     });
   });
