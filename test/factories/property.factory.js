@@ -14,11 +14,10 @@ export default new Factory()
     longitude: '1.23456',
     latitude: '2.34567',
   })
-  .attr('neighborhood', `['Lekki Phase 1']`)
+  .attr('neighborhood', ['Lekki Phase 1'])
   .attr('mainImage', 'https://picsum.photos/200')
-  .attr(
-    'gallery',
-    `['https://picsum.photos/200', 'https://picsum.photos/200', 'https://picsum.photos/200']`,
-  )
-  .attr('addedBy', '5f05af5e8b468f0a68eaa05c')
-  .attr('updatedBy', '5f05af5e8b468f0a68eaa05c');
+  .attr('gallery', [
+    'https://picsum.photos/200',
+    'https://picsum.photos/200',
+    'https://picsum.photos/200',
+  ]);

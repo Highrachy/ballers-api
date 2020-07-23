@@ -17,7 +17,7 @@ describe('Property Service', () => {
     const _id = mongoose.Types.ObjectId();
 
     before(async () => {
-      await Property.create(PropertyFactory.build({ _id }));
+      await Property.create(PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id }));
     });
 
     it('returns a valid property by Id', async () => {
@@ -28,7 +28,8 @@ describe('Property Service', () => {
 
   describe('#addProperty', () => {
     let countedProperties;
-    const property = PropertyFactory.build();
+    const _id = mongoose.Types.ObjectId();
+    const property = PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id });
 
     beforeEach(async () => {
       countedProperties = await Property.countDocuments({});
@@ -68,7 +69,7 @@ describe('Property Service', () => {
       units: 11,
     };
     before(async () => {
-      await Property.create(PropertyFactory.build({ _id }));
+      await Property.create(PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id }));
     });
 
     context('when property is updated', () => {
@@ -112,7 +113,7 @@ describe('Property Service', () => {
   describe('#deleteProperty', () => {
     const _id = mongoose.Types.ObjectId();
     before(async () => {
-      await Property.create(PropertyFactory.build({ _id }));
+      await Property.create(PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id }));
     });
 
     context('when property is deleted', () => {

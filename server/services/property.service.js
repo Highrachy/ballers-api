@@ -2,7 +2,7 @@ import Property from '../models/property.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 
-export const getPropertyById = async (id) => Property.findById(id);
+export const getPropertyById = async (id) => Property.findById(id).select();
 
 export const addProperty = async (property) => {
   try {
@@ -18,7 +18,7 @@ export const updateProperty = async (updatedProperty) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
   try {
-    return Property.findByIdAndUpdate(property.id, updatedProperty);
+    return Property.findByIdAndUpdate(property.id, updatedProperty, { new: true });
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating property', error);
   }

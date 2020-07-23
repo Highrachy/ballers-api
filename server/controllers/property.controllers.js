@@ -50,7 +50,7 @@ const PropertyController = {
   getOne(req, res, next) {
     getPropertyById(req.params.id)
       .then((property) => {
-        if (property.length < 1) {
+        if (!property) {
           res
             .status(httpStatus.NOT_FOUND)
             .json({ success: false, message: 'Property does not exist' });
