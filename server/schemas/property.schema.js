@@ -17,8 +17,8 @@ const product = {
   floorPlans: Joi.string().label('Property floor plans').optional(),
   mapLocation,
   neighborhood: Joi.array().label('Property neighborhood').optional(),
-  mainImage: Joi.string().label('Property neighborhood').optional(),
-  gallery: Joi.array().label('Property neighborhood').optional(),
+  mainImage: Joi.string().label('Property mainImage').optional(),
+  gallery: Joi.array().label('Property gallery').optional(),
 };
 
 export const addPropertySchema = Joi.object({ ...product });
@@ -36,6 +36,6 @@ export const updatePropertySchema = Joi.object({
   floorPlans: Joi.string().label('Property floor plans').optional(),
   mapLocation,
   neighborhood: Joi.array().label('Property neighborhood').optional(),
-  mainImage: Joi.string().label('Property neighborhood').optional(),
-  gallery: Joi.array().label('Property neighborhood').optional(),
+  mainImage: Joi.string().label('Property mainImage').optional(),
+  gallery: Joi.array().label('Property gallery').optional(),
 });

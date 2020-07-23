@@ -5,7 +5,7 @@ import {
   addProperty,
   updateProperty,
   deleteProperty,
-  // getAllProperties,
+  getAllProperties,
 } from '../../server/services/property.service';
 import PropertyFactory from '../factories/property.factory';
 import Property from '../../server/models/property.model';
@@ -152,6 +152,19 @@ describe('Property Service', () => {
         }
         Property.findByIdAndDelete.restore();
       });
+    });
+  });
+
+  describe('#getAllProperties', () => {
+    const _id = mongoose.Types.ObjectId();
+
+    before(async () => {
+      await Property.create(PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id }));
+    });
+
+    it('returns a valid property by Id', async () => {
+      const property = await getAllProperties();
+      expect(property).to.be.an('array');
     });
   });
 });
