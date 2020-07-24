@@ -59,6 +59,10 @@ const UserSchema = new mongoose.Schema(
       select: false,
     },
     phone: String,
+    referralCode: {
+      type: String,
+      unique: true,
+    },
     role: {
       type: Number,
       default: 1,

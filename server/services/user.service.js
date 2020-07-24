@@ -32,7 +32,43 @@ export const comparePassword = async (password, hashedPassword) => {
   }
 };
 
+export const getUserByReferralCode = async (referralCode, fields = null) =>
+  User.findOne({ referralCode }).select(fields);
+
+export const generateCode = (name) => {
+  const firstName = name.replace(/\s/g, '');
+  const possible = '0123456789';
+  const charsToAdd = firstName.length < 2 ? 6 - firstName.length : 4;
+  let referralCode = firstName.substring(0, 2).toLowerCase();
+
+  for (let i = 0; i < charsToAdd; i += 1) {
+    referralCode += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return referralCode;
+};
+
+export const generateReferralCode = async (firstName) => {
+  let referralCode;
+  let referralCodeIsUsed = true;
+
+  while (referralCodeIsUsed) {
+    referralCode = generateCode(firstName);
+    // eslint-disable-next-line no-await-in-loop
+    const invalidReferralCode = await getUserByReferralCode(referralCode).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+    if (invalidReferralCode === null) {
+      referralCodeIsUsed = false;
+    }
+  }
+  return referralCode;
+};
+
 export const addUser = async (user) => {
+  const referralCode = await generateReferralCode(user.firstName).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
   const existingUser = await getUserByEmail(user.email).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -43,7 +79,7 @@ export const addUser = async (user) => {
 
   try {
     const password = await hashPassword(user.password);
-    const savedUser = await new User({ ...user, password }).save();
+    const savedUser = await new User({ ...user, password, referralCode }).save();
     return generateToken(savedUser._id);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding user', error);

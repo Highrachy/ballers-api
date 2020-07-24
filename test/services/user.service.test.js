@@ -14,6 +14,9 @@ import {
   forgotPasswordToken,
   resetPasswordViaToken,
   updateUser,
+  getUserByReferralCode,
+  generateReferralCode,
+  generateCode,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -200,7 +203,23 @@ describe('User Service', () => {
           expect(err.message).to.be.eql('Internal Server Error');
           expect(currentCountedUsers).to.eql(countedUsers);
         }
+        User.findOne.restore();
+      });
+    });
 
+    context('when generateReferralCode returns an error', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findOne').throws(new Error('error msg'));
+
+        try {
+          await addUser(user);
+        } catch (err) {
+          const currentCountedUsers = await User.countDocuments({});
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+          expect(currentCountedUsers).to.eql(countedUsers);
+        }
         User.findOne.restore();
       });
     });
@@ -379,23 +398,116 @@ describe('User Service', () => {
 
   describe('#updateUser', () => {
     const _id = mongoose.Types.ObjectId();
+    const updatedDetails = {
+      id: _id,
+      firstName: 'Updated firstname',
+      lastName: 'Updated lastname',
+      phone: '08012345678',
+      referralCode: 'abc123',
+    };
 
     before(async () => {
       await User.create(UserFactory.build({ _id }));
     });
 
-    it('returns a valid updated user', async () => {
-      const updatedDetails = {
-        id: _id,
-        firstName: 'Updated firstname',
-        lastName: 'Updated lastname',
-        phone: '08012345678',
-      };
-      const updatedUser = updateUser(updatedDetails);
-      const user = getUserById(updatedDetails.id);
-      expect(user.firstName).to.eql(updatedUser.firstName);
-      expect(user.lastName).to.eql(updatedUser.lastName);
-      expect(user.phone).to.eql(updatedUser.phone);
+    context('when getUserById works', () => {
+      it('returns a valid updated user', async () => {
+        const updatedUser = updateUser(updatedDetails);
+        const user = getUserById(updatedDetails.id);
+        expect(user.firstName).to.eql(updatedUser.firstName);
+        expect(user.lastName).to.eql(updatedUser.lastName);
+        expect(user.phone).to.eql(updatedUser.phone);
+      });
+    });
+
+    context('when getUserById fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findById').throws(new Error('error msg'));
+
+        try {
+          await updateUser(updatedDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        User.findById.restore();
+      });
+    });
+
+    context('when findByIdAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('error msg'));
+
+        try {
+          await updateUser(updatedDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Error updating user');
+        }
+        User.findByIdAndUpdate.restore();
+      });
+    });
+  });
+
+  describe('#getUserByReferralCode', () => {
+    const referralCode = 'abc123';
+    before(async () => {
+      await User.create(UserFactory.build({ referralCode }));
+    });
+
+    it('returns a valid user by referralCode', async () => {
+      const user = await getUserByReferralCode(referralCode);
+      expect(user.referralCode).to.eql(referralCode);
+    });
+  });
+
+  describe('#generateReferralCode', () => {
+    const referralCode = 'abc123';
+    before(async () => {
+      await User.create(UserFactory.build({ referralCode }));
+    });
+
+    context('when getUserByReferralCode returns an error', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findOne').throws(new Error('error msg'));
+
+        try {
+          await generateReferralCode(referralCode);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        User.findOne.restore();
+      });
+    });
+  });
+
+  describe('#generateCode', () => {
+    context('when firstname is longer than 2 characters', () => {
+      it('returns 6 digit code starting with first two letters of name', () => {
+        const code = generateCode('abc');
+        expect(code).to.have.lengthOf(6);
+        expect(code.substring(0, 2)).to.have.string('ab');
+      });
+    });
+
+    context('when firstname is equal to 2 characters', () => {
+      it('returns 6 digit code starting with first two letters of name', () => {
+        const code = generateCode('ab');
+        expect(code).to.have.lengthOf(6);
+        expect(code.substring(0, 2)).to.have.string('ab');
+      });
+    });
+
+    context('when firstname is shorter than 2 characters', () => {
+      it('returns 6 digit code starting with first letter of name', () => {
+        const code = generateCode('a');
+        expect(code).to.have.lengthOf(6);
+        expect(code.substring(0, 1)).to.have.string('a');
+      });
     });
   });
 });
