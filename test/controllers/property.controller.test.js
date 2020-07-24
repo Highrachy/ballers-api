@@ -234,6 +234,22 @@ describe('Add Property Route', () => {
           });
       });
     });
+    context('when neighborhood is an empty array', () => {
+      it('returns successful property', (done) => {
+        const property = PropertyFactory.build({ neighborhood: [] });
+        request()
+          .post('/api/v1/property/add')
+          .set('authorization', adminToken)
+          .send(property)
+          .end((err, res) => {
+            expect(res).to.have.status(201);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Property added');
+            expect(res.body).to.have.property('property');
+            done();
+          });
+      });
+    });
     context('when mainImage is empty', () => {
       it('returns an error', (done) => {
         const property = PropertyFactory.build({ mainImage: '' });
@@ -245,7 +261,7 @@ describe('Add Property Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property mainImage" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Property main image" is not allowed to be empty');
             done();
           });
       });
@@ -262,6 +278,22 @@ describe('Add Property Route', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('"Property gallery" must be an array');
+            done();
+          });
+      });
+    });
+    context('when gallery is empty array', () => {
+      it('returns successful property', (done) => {
+        const property = PropertyFactory.build({ gallery: [] });
+        request()
+          .post('/api/v1/property/add')
+          .set('authorization', adminToken)
+          .send(property)
+          .end((err, res) => {
+            expect(res).to.have.status(201);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Property added');
+            expect(res.body).to.have.property('property');
             done();
           });
       });
@@ -555,6 +587,22 @@ describe('Update Property', () => {
           });
       });
     });
+    context('when neighborhood is empty array', () => {
+      it('returns an error', (done) => {
+        const invalidProperty = PropertyFactory.build({ id, neighborhood: [] });
+        request()
+          .put('/api/v1/property/update')
+          .set('authorization', adminToken)
+          .send(invalidProperty)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('property');
+            expect(res.body.property.neighborhood).to.be.eql(invalidProperty.neighborhood);
+            done();
+          });
+      });
+    });
     context('when mainImage is empty', () => {
       it('returns an error', (done) => {
         const invalidProperty = PropertyFactory.build({ id, mainImage: '' });
@@ -566,7 +614,7 @@ describe('Update Property', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property mainImage" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Property main image" is not allowed to be empty');
             done();
           });
       });
@@ -583,6 +631,22 @@ describe('Update Property', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('"Property gallery" must be an array');
+            done();
+          });
+      });
+    });
+    context('when gallery is empty array', () => {
+      it('returns an error', (done) => {
+        const invalidProperty = PropertyFactory.build({ id, gallery: [] });
+        request()
+          .put('/api/v1/property/update')
+          .set('authorization', adminToken)
+          .send(invalidProperty)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('property');
+            expect(res.body.property.neighborhood).to.be.eql(invalidProperty.neighborhood);
             done();
           });
       });
@@ -739,7 +803,7 @@ describe('Get all properties', () => {
       });
     });
 
-    context('when user token is used', () => {
+    context('when token is used', () => {
       beforeEach(async () => {
         await User.findByIdAndDelete(_id);
       });
@@ -794,7 +858,7 @@ describe('Delete property', () => {
     });
   });
 
-  context('when user token is used', () => {
+  context('when token is used', () => {
     beforeEach(async () => {
       await User.findByIdAndDelete(_id);
     });

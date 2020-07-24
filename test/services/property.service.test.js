@@ -157,14 +157,28 @@ describe('Property Service', () => {
 
   describe('#getAllProperties', () => {
     const _id = mongoose.Types.ObjectId();
+    const propertyToAdd = PropertyFactory.build({ addedBy: _id, updatedBy: _id });
 
-    before(async () => {
-      await Property.create(PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id }));
+    beforeEach(async () => {
+      await Property.create(propertyToAdd);
+      await Property.create(propertyToAdd);
     });
-
-    it('returns a valid property by Id', async () => {
-      const property = await getAllProperties();
-      expect(property).to.be.an('array');
+    context('when property added is valid', () => {
+      it('returns 2 properties', async () => {
+        const property = await getAllProperties();
+        expect(property).to.be.an('array');
+        expect(property.length).to.be.eql(2);
+      });
+    });
+    context('when new property is added', () => {
+      before(async () => {
+        await Property.create(propertyToAdd);
+      });
+      it('returns 3 properties', async () => {
+        const property = await getAllProperties();
+        expect(property).to.be.an('array');
+        expect(property.length).to.be.eql(3);
+      });
     });
   });
 });
