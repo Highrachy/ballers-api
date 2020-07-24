@@ -1,4 +1,5 @@
 import httpStatus from './httpStatus';
+import userRole from './userRole';
 import { decodeToken, getUserById } from '../services/user.service';
 
 export const schemaValidation = (schema) => {
@@ -41,6 +42,19 @@ export const authenticate = async (req, res, next) => {
       success: false,
       message: 'Authentication Failed',
       error,
+    });
+  }
+  return null;
+};
+
+export const isAdmin = async (req, res, next) => {
+  const { user } = req;
+  if (user && user.role === userRole.ADMIN) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
     });
   }
   return null;

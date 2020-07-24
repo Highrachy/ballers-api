@@ -37,6 +37,7 @@ import mongoose from 'mongoose';
  *           phone: 08012345678
  */
 
+const { ObjectId } = mongoose.Schema.Types;
 const UserSchema = new mongoose.Schema(
   {
     firstName: {
@@ -62,6 +63,23 @@ const UserSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
+    role: {
+      type: Number,
+      default: 1,
+    },
+    assignedProperties: [
+      {
+        propertyId: ObjectId,
+        assignedBy: ObjectId,
+        assignedDate: Date,
+        approved: {
+          type: Boolean,
+          default: false,
+        },
+        approvedBy: ObjectId,
+        approvedDate: Date,
+      },
+    ],
     activated: {
       type: Boolean,
       default: false,

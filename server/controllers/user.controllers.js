@@ -27,7 +27,7 @@ const UserController = {
     const loginDetails = req.locals;
     loginUser(loginDetails)
       .then((user) => {
-        res.status(200).json({ success: true, message: 'Login successful', user });
+        res.status(httpStatus.OK).json({ success: true, message: 'Login successful', user });
       })
       .catch((error) => next(error));
   },
@@ -79,7 +79,6 @@ const UserController = {
 
   currentUser(req, res) {
     const { user } = req;
-
     return res
       .status(httpStatus.OK)
       .json({ success: true, message: 'Your information has been successfully retrieved', user });
