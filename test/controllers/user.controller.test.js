@@ -373,7 +373,7 @@ describe('Activate User Route', () => {
   context('with an invalid token', () => {
     it('returns successful payload', (done) => {
       request()
-        .get(`/api/v1/user/activate?token=${token}123456`)
+        .get(`/api/v1/user/activate?token=${token}1234a56`)
         .end((err, res) => {
           expect(res).to.have.status(404);
           expect(res.body.success).to.be.eql(false);
@@ -595,7 +595,7 @@ describe('Current User', () => {
         .end((err, res) => {
           expect(res).to.have.status(404);
           expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('User not found');
+          expect(res.body.message).to.be.eql('Invalid token');
           done();
         });
     });
