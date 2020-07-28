@@ -36,3 +36,5 @@ export const deleteProperty = async (id) => {
 };
 
 export const getAllProperties = async () => Property.find();
+
+export const getAdminAddedProperties = async (adminId) => Property.find({ addedBy: adminId });

@@ -106,7 +106,7 @@ router.delete('/delete/:id', authenticate, isAdmin, PropertyController.delete);
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/Property'
- *      description: Get all owned properties
+ *      description: Get all properties in DB
  *     responses:
  *      '200':
  *        description: returns object of properties
@@ -128,15 +128,39 @@ router.get('/all', authenticate, isAdmin, PropertyController.getMultiple);
  *          schema:
  *            type: string
  *          description: verifies user access
+ *      summary: Gets a property based by its ID
  *      tags: [Property]
  *      responses:
  *        '200':
- *          description: Gets specific property
+ *          description: Property found
  *        '404':
  *          description: Property does not exist
  *        '500':
  *          description: Internal server error
  */
 router.get('/:id', authenticate, isAdmin, PropertyController.getOne);
+
+/**
+ * @swagger
+ * path:
+ *  /property/added-by/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: the auto generated user token via jwt
+ *      summary: Gets all properties added by an admin(ID)
+ *      tags: [Property]
+ *      responses:
+ *        '200':
+ *          description: Properties found
+ *        '404':
+ *          description: No Properties found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/added-by/:id', authenticate, isAdmin, PropertyController.getAllAddedByAdmin);
 
 module.exports = router;

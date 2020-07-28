@@ -4,6 +4,7 @@ import {
   deleteProperty,
   getPropertyById,
   getAllProperties,
+  getAdminAddedProperties,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -48,7 +49,8 @@ const PropertyController = {
       .catch((error) => next(error));
   },
   getOne(req, res, next) {
-    getPropertyById(req.params.id)
+    const propertId = req.params.id;
+    getPropertyById(propertId)
       .then((property) => {
         if (!property) {
           res
@@ -56,6 +58,20 @@ const PropertyController = {
             .json({ success: false, message: 'Property does not exist' });
         } else {
           res.status(httpStatus.OK).json({ success: true, property });
+        }
+      })
+      .catch((error) => next(error));
+  },
+  getAllAddedByAdmin(req, res, next) {
+    const adminId = req.params.id;
+    getAdminAddedProperties(adminId)
+      .then((properties) => {
+        if (properties.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, properties });
+        } else {
+          res
+            .status(httpStatus.NOT_FOUND)
+            .json({ success: false, message: 'No properties available' });
         }
       })
       .catch((error) => next(error));
