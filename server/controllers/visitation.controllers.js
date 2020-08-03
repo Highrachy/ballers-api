@@ -1,15 +1,15 @@
-import scheduleVisit from '../services/visit.service';
+import scheduleVisitation from '../services/visitation.service';
 // import { sendMail } from '../services/mailer.service';
 // import EMAIL_CONTENT from '../../mailer';
 import httpStatus from '../helpers/httpStatus';
 
-const VisitController = {
+const VisitationController = {
   book(req, res, next) {
     const booking = req.locals;
     const { user } = req;
-    scheduleVisit({ ...booking, visitorId: user._id })
+    scheduleVisitation({ ...booking, userId: user._id })
       .then((schedule) => {
-        // sendMail(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
+        // sendMail(EMAIL_CONTENT.SCHEDULE_VISIT, user, {
         //   link: `http://ballers.ng/activate?token=${token}`,
         // });
         res
@@ -20,4 +20,4 @@ const VisitController = {
   },
 };
 
-export default VisitController;
+export default VisitationController;

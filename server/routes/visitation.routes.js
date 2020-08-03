@@ -1,16 +1,16 @@
 import express from 'express';
-import propertyVisitationSchema from '../schemas/visit.schema';
+import propertyVisitationSchema from '../schemas/visitation.schema';
 import { schemaValidation, authenticate } from '../helpers/middleware';
-import VisitController from '../controllers/visit.controllers';
+import VisitationController from '../controllers/visitation.controllers';
 
 const router = express.Router();
 
 /**
  * @swagger
- * /visit/book:
+ * visitation/schedule:
  *   post:
  *     tags:
- *       - Visit
+ *       - Visitation
  *     description: Allows a visitor apply to visit a specific property
  *     produces:
  *       - application/json
@@ -29,10 +29,10 @@ const router = express.Router();
  *       description: Internal server error
  */
 router.post(
-  '/book',
+  '/schedule',
   authenticate,
   schemaValidation(propertyVisitationSchema),
-  VisitController.book,
+  VisitationController.book,
 );
 
 module.exports = router;
