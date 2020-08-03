@@ -2,6 +2,7 @@ import { Factory } from 'rosie';
 
 export default new Factory()
   .sequence('name', (i) => `${i} bedroom apartment`)
+  .attr('titleDocument', 'https://ballers.ng/sampletitledocument.pdf')
   .attr('location', 'lagos')
   .sequence('price', (i) => `${i}5000000`)
   .attr('units', '5')
