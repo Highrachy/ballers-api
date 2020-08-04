@@ -6,16 +6,17 @@ import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
+import userRole from '../../server/helpers/userRole';
 
 useDatabase();
 
-let adminToken;
+let userToken;
 
 const userId = mongoose.Types.ObjectId();
-const admin = UserFactory.build({ _id: userId, role: 0, activated: true });
+const user = UserFactory.build({ _id: userId, role: userRole.USER, activated: true });
 
 beforeEach(async () => {
-  adminToken = await addUser(admin);
+  userToken = await addUser(user);
 });
 
 describe('Schedule Visit Route', () => {
@@ -31,19 +32,22 @@ describe('Schedule Visit Route', () => {
       const booking = VisitationFactory.build({ propertyId: propId });
       request()
         .post('/api/v1/visitation/schedule')
-        .set('authorization', adminToken)
+        .set('authorization', userToken)
         .send(booking)
         .end((err, res) => {
           expect(res).to.have.status(201);
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('Visit scheduled successfully');
           expect(res.body).to.have.property('schedule');
+          expect(res.body).to.have.property('schedule');
+          expect(res.body.schedule).to.have.property('propertyId');
+          expect(res.body.schedule).to.have.property('userId');
           done();
         });
     });
   });
 
-  context('when user token is used', () => {
+  context('when user token is not available', () => {
     beforeEach(async () => {
       await User.findByIdAndDelete(userId);
     });
@@ -51,7 +55,7 @@ describe('Schedule Visit Route', () => {
       const booking = VisitationFactory.build({ propertyId: propId });
       request()
         .post('/api/v1/visitation/schedule')
-        .set('authorization', adminToken)
+        .set('authorization', userToken)
         .send(booking)
         .end((err, res) => {
           expect(res).to.have.status(404);
@@ -62,36 +66,12 @@ describe('Schedule Visit Route', () => {
     });
   });
 
-  context('when user token is not an admin', () => {
-    let userToken;
-    const id = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: id, role: 0, activated: true });
-
-    beforeEach(async () => {
-      userToken = await addUser(user);
-    });
-    it('returns successful property', (done) => {
-      const booking = VisitationFactory.build({ propertyId: propId });
-      request()
-        .post('/api/v1/visitation/schedule')
-        .set('authorization', userToken)
-        .send(booking)
-        .end((err, res) => {
-          expect(res).to.have.status(201);
-          expect(res.body.success).to.be.eql(true);
-          expect(res.body.message).to.be.eql('Visit scheduled successfully');
-          expect(res.body).to.have.property('schedule');
-          done();
-        });
-    });
-  });
-
   context('when property does not exist', () => {
     it('returns a property not found error', (done) => {
       const booking = VisitationFactory.build();
       request()
         .post('/api/v1/visitation/schedule')
-        .set('authorization', adminToken)
+        .set('authorization', userToken)
         .send(booking)
         .end((err, res) => {
           expect(res).to.have.status(404);
@@ -108,7 +88,7 @@ describe('Schedule Visit Route', () => {
         const booking = VisitationFactory.build({ propertyId: '' });
         request()
           .post('/api/v1/visitation/schedule')
-          .set('authorization', adminToken)
+          .set('authorization', userToken)
           .send(booking)
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -124,7 +104,7 @@ describe('Schedule Visit Route', () => {
         const property = VisitationFactory.build({ visitorName: '' });
         request()
           .post('/api/v1/visitation/schedule')
-          .set('authorization', adminToken)
+          .set('authorization', userToken)
           .send(property)
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -140,7 +120,7 @@ describe('Schedule Visit Route', () => {
         const property = VisitationFactory.build({ visitorEmail: '' });
         request()
           .post('/api/v1/visitation/schedule')
-          .set('authorization', adminToken)
+          .set('authorization', userToken)
           .send(property)
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -156,7 +136,7 @@ describe('Schedule Visit Route', () => {
         const booking = VisitationFactory.build({ visitorPhone: '' });
         request()
           .post('/api/v1/visitation/schedule')
-          .set('authorization', adminToken)
+          .set('authorization', userToken)
           .send(booking)
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -172,7 +152,7 @@ describe('Schedule Visit Route', () => {
         const booking = VisitationFactory.build({ visitorPhone: '1234567890' });
         request()
           .post('/api/v1/visitation/schedule')
-          .set('authorization', adminToken)
+          .set('authorization', userToken)
           .send(booking)
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -188,7 +168,7 @@ describe('Schedule Visit Route', () => {
         const booking = VisitationFactory.build({ visitorPhone: '123456789012345' });
         request()
           .post('/api/v1/visitation/schedule')
-          .set('authorization', adminToken)
+          .set('authorization', userToken)
           .send(booking)
           .end((err, res) => {
             expect(res).to.have.status(412);

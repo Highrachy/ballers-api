@@ -29,7 +29,7 @@ describe('Visitation Service', () => {
       });
     });
 
-    context('when an invalid data (visitor name) is entered', () => {
+    context('when the visitor name is invalid', () => {
       it('throws a validation error', async () => {
         try {
           const invalidBooking = VisitationFactory.build({ propertyId: id, visitorName: '' });
@@ -44,7 +44,7 @@ describe('Visitation Service', () => {
       });
     });
 
-    context('when an invalid data (visitor email) is entered', () => {
+    context('when the visitor email is invalid', () => {
       it('throws a validation error', async () => {
         try {
           const invalidBooking = VisitationFactory.build({ propertyId: id, visitorEmail: '' });
@@ -59,7 +59,7 @@ describe('Visitation Service', () => {
       });
     });
 
-    context('when an invalid data (visitor phone) is entered', () => {
+    context('when the visitor phone number is invalid', () => {
       it('throws a validation error', async () => {
         try {
           const invalidBooking = VisitationFactory.build({ propertyId: id, visitorPhone: '' });
@@ -74,7 +74,7 @@ describe('Visitation Service', () => {
       });
     });
 
-    context('when an invalid data (property id) is entered', () => {
+    context('when property id is empty', () => {
       it('throws a cast error', async () => {
         try {
           const invalidBooking = VisitationFactory.build({ propertyId: '' });
