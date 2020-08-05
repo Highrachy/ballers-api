@@ -1,28 +1,32 @@
 import mongoose from 'mongoose';
-import { expect, request, useDatabase } from '../config';
+import { expect, request, useDatabase, sinon } from '../config';
 import User from '../../server/models/user.model';
+import Visitation from '../../server/models/visitation.model';
 import VisitationFactory from '../factories/visitation.factory';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
+import { scheduleVisitation } from '../../server/services/visitation.service';
 import userRole from '../../server/helpers/userRole';
 
 useDatabase();
 
 let userToken;
+let adminToken;
 
-const userId = mongoose.Types.ObjectId();
-const user = UserFactory.build({ _id: userId, role: userRole.USER, activated: true });
+const user = UserFactory.build({ role: userRole.USER, activated: true });
+const adminId = mongoose.Types.ObjectId();
+const admin = UserFactory.build({ _id: adminId, role: userRole.ADMIN, activated: true });
+const propId = mongoose.Types.ObjectId();
+const demoProperty = PropertyFactory.build({ _id: propId, addedBy: adminId, updatedBy: adminId });
 
 beforeEach(async () => {
   userToken = await addUser(user);
+  adminToken = await addUser(admin);
 });
 
 describe('Schedule Visit Route', () => {
-  const propId = mongoose.Types.ObjectId();
-  const demoProperty = PropertyFactory.build({ _id: propId, addedBy: userId, updatedBy: userId });
-
   beforeEach(async () => {
     await addProperty(demoProperty);
   });
@@ -48,14 +52,24 @@ describe('Schedule Visit Route', () => {
   });
 
   context('when user token is not available', () => {
-    beforeEach(async () => {
-      await User.findByIdAndDelete(userId);
+    let invalidUserToken;
+    const invalidUserId = mongoose.Types.ObjectId();
+    const invalidUser = UserFactory.build({
+      _id: invalidUserId,
+      role: userRole.USER,
+      activated: true,
     });
+
+    beforeEach(async () => {
+      invalidUserToken = await addUser(invalidUser);
+      await User.findByIdAndDelete(invalidUserId);
+    });
+
     it('returns token error', (done) => {
       const booking = VisitationFactory.build({ propertyId: propId });
       request()
         .post('/api/v1/visitation/schedule')
-        .set('authorization', userToken)
+        .set('authorization', invalidUserToken)
         .send(booking)
         .end((err, res) => {
           expect(res).to.have.status(404);
@@ -178,6 +192,105 @@ describe('Schedule Visit Route', () => {
               '"Phone" length must be less than or equal to 14 characters long',
             );
             done();
+          });
+      });
+    });
+  });
+});
+
+describe('Get all properties', () => {
+  const booking = VisitationFactory.build({ propertyId: propId, userId: adminId });
+
+  context('when no schedule exists', () => {
+    it('returns not found', (done) => {
+      request()
+        .get('/api/v1/visitation/all')
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(404);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('No scheduled visits available');
+          done();
+        });
+    });
+  });
+
+  describe('when scheduled visits exist in db', () => {
+    beforeEach(async () => {
+      await addProperty(demoProperty);
+    });
+
+    context('with a valid token & id', () => {
+      beforeEach(async () => {
+        await scheduleVisitation(booking);
+      });
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/visitation/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('schedules');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/visitation/all')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when admin token is not available', () => {
+      beforeEach(async () => {
+        await User.findByIdAndDelete(adminId);
+      });
+      it('returns token error', (done) => {
+        request()
+          .get('/api/v1/visitation/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid token');
+            done();
+          });
+      });
+    });
+
+    context('when user token is is used', () => {
+      it('returns forbidden', (done) => {
+        request()
+          .get('/api/v1/visitation/all')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when getAllVisitations service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Visitation, 'find').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/visitation/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Visitation.find.restore();
           });
       });
     });

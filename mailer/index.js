@@ -31,8 +31,6 @@ const EMAIL_CONTENT = {
   SCHEDULE_VISIT: {
     subject: 'Property Visit Requested',
     contentTop: 'A new propery visit has been requested',
-    contentBottom:
-      'The property at [property information], has been requested to be visited by: [User firstname], [User phone number]',
   },
 };
 

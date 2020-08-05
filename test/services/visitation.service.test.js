@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { expect, sinon, useDatabase } from '../config';
-import scheduleVisitation from '../../server/services/visitation.service';
+import { scheduleVisitation, getAllVisitations } from '../../server/services/visitation.service';
 import VisitationFactory from '../factories/visitation.factory';
 import PropertyFactory from '../factories/property.factory';
 import Visitation from '../../server/models/visitation.model';
@@ -116,6 +116,36 @@ describe('Visitation Service', () => {
           expect(err.message).to.be.eql('Internal Server Error');
         }
         Property.findById.restore();
+      });
+    });
+  });
+
+  describe('#getAllVisitations', () => {
+    const id = mongoose.Types.ObjectId();
+    const property = PropertyFactory.build({ _id: id, addedBy: id, updatedBy: id });
+    const validBooking = VisitationFactory.build({ propertyId: id, userId: id });
+
+    beforeEach(async () => {
+      await Property.create(property);
+      await scheduleVisitation(validBooking);
+      await scheduleVisitation(validBooking);
+    });
+
+    context('when schedule added is valid', () => {
+      it('returns 2 schedules', async () => {
+        const schedule = await getAllVisitations();
+        expect(schedule).to.be.an('array');
+        expect(schedule.length).to.be.eql(2);
+      });
+    });
+    context('when new schedule is added', () => {
+      beforeEach(async () => {
+        await scheduleVisitation(validBooking);
+      });
+      it('returns 3 schedules', async () => {
+        const schedule = await getAllVisitations();
+        expect(schedule).to.be.an('array');
+        expect(schedule.length).to.be.eql(3);
       });
     });
   });

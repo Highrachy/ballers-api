@@ -3,7 +3,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById } from './property.service';
 
-const scheduleVisitation = async (schedule) => {
+export const scheduleVisitation = async (schedule) => {
   const property = await getPropertyById(schedule.propertyId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -19,4 +19,4 @@ const scheduleVisitation = async (schedule) => {
   }
 };
 
-export default scheduleVisitation;
+export const getAllVisitations = async () => Visitation.find();

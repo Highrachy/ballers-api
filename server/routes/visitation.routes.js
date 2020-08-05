@@ -1,6 +1,6 @@
 import express from 'express';
 import propertyVisitationSchema from '../schemas/visitation.schema';
-import { schemaValidation, authenticate } from '../helpers/middleware';
+import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
 import VisitationController from '../controllers/visitation.controllers';
 
 const router = express.Router();
@@ -34,5 +34,27 @@ router.post(
   schemaValidation(propertyVisitationSchema),
   VisitationController.book,
 );
+
+/**
+ * @swagger
+ * path:
+ *  /visitation/all:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      tags: [Visitation]
+ *      responses:
+ *        '200':
+ *          description: Gets all scheduled visitations
+ *        '404':
+ *          description: No scheduled visitation
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/all', authenticate, isAdmin, VisitationController.getAll);
 
 module.exports = router;
