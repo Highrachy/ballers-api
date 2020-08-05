@@ -1,12 +1,9 @@
-import dotenv from 'dotenv';
 import { scheduleVisitation, getAllVisitations } from '../services/visitation.service';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
 import httpStatus from '../helpers/httpStatus';
 
-dotenv.config();
-
-const { BALLERS_EMAIL } = process.env;
+const BALLERS_EMAIL = process.env.BALLERS_EMAIL || 'dev@highrachy.com';
 
 const VisitationController = {
   book(req, res, next) {
@@ -15,9 +12,9 @@ const VisitationController = {
     scheduleVisitation({ ...booking, userId: user._id })
       .then((schedule) => {
         const contentBottom = `
-          <strong> Name: </strong>: ${schedule.visitorName}\n, 
-          <strong> Phone: </strong> ${schedule.visitorPhone}\n.
-          Kindly check your dashboard for details
+          <strong> Name: </strong>: ${schedule.visitorName}<br>, 
+          <strong> Phone: </strong> ${schedule.visitorPhone}<br>.
+          <strong> Email: </strong> ${schedule.visitorEmail}<br>.
         `;
         sendMail(EMAIL_CONTENT.SCHEDULE_VISIT, { email: BALLERS_EMAIL }, { contentBottom });
         res
@@ -33,8 +30,8 @@ const VisitationController = {
           res.status(httpStatus.OK).json({ success: true, schedules });
         } else {
           res
-            .status(httpStatus.NOT_FOUND)
-            .json({ success: false, message: 'No scheduled visits available' });
+            .status(httpStatus.OK)
+            .json({ success: true, message: 'No scheduled visits available', schedules });
         }
       })
       .catch((error) => next(error));

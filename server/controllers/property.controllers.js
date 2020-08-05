@@ -41,8 +41,8 @@ const PropertyController = {
           res.status(httpStatus.OK).json({ success: true, properties });
         } else {
           res
-            .status(httpStatus.NOT_FOUND)
-            .json({ success: false, message: 'No properties available' });
+            .status(httpStatus.OK)
+            .json({ success: true, message: 'No properties available', properties });
         }
       })
       .catch((error) => next(error));
