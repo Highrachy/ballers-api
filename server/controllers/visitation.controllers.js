@@ -14,7 +14,9 @@ const VisitationController = {
         const contentBottom = `
           <strong> Name: </strong>: ${schedule.visitorName}<br>, 
           <strong> Phone: </strong> ${schedule.visitorPhone}<br>.
-          <strong> Email: </strong> ${schedule.visitorEmail}<br>.
+          <strong> Email: </strong> ${
+            schedule.visitorEmail ? schedule.visitorEmail : 'no email provided'
+          } <br>.
         `;
         sendMail(EMAIL_CONTENT.SCHEDULE_VISIT, { email: BALLERS_EMAIL }, { contentBottom });
         res
