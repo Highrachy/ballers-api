@@ -17,9 +17,7 @@ export const approveEnquiry = async (approvedEnquiry) => {
   const enquiry = await getEnquiryById(approvedEnquiry.enquiryId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
-  if (!enquiry) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Enquiry not found');
-  }
+
   try {
     return Enquiry.findOneAndUpdate(
       { _id: enquiry.id },
