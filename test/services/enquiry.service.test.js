@@ -16,7 +16,7 @@ describe('Enquiry Service', () => {
     const id = mongoose.Types.ObjectId();
 
     before(async () => {
-      await Enquiry.create(EnquiryFactory.build({ _id: id }));
+      await Enquiry.create(EnquiryFactory.build({ _id: id, userId: id }));
     });
 
     it('returns a valid enquiry by Id', async () => {
@@ -67,16 +67,17 @@ describe('Enquiry Service', () => {
       enquiryId: id,
       adminId: id,
     };
-    before(async () => {
-      await Enquiry.create(EnquiryFactory.build({ _id: id }));
+    beforeEach(async () => {
+      await addEnquiry(EnquiryFactory.build({ _id: id, userId: id, approved: false }));
     });
 
     context('when enquiry is approved', () => {
       it('returns a valid approved enquiry', async () => {
-        const approvedEnquiry = approveEnquiry(updatedEnquiry);
-        const enquiry = getEnquiryById(updatedEnquiry.enquiryId);
+        const approvedEnquiry = await approveEnquiry(updatedEnquiry);
+        const enquiry = await getEnquiryById(id);
         expect(enquiry.id).to.eql(approvedEnquiry.id);
-        expect(enquiry.approvedBy).to.eql(updatedEnquiry.approvedBy);
+        expect(updatedEnquiry.adminId.equals(enquiry.approvedBy)).to.eql(true);
+        expect(enquiry.approved).to.eql(true);
       });
     });
 
@@ -100,7 +101,7 @@ describe('Enquiry Service', () => {
         try {
           await approveEnquiry(updatedEnquiry);
         } catch (err) {
-          //   expect(err.statusCode).to.eql(400);
+          expect(err.statusCode).to.eql(400);
           expect(err.error).to.be.an('Error');
           expect(err.message).to.be.eql('Error approving enquiry');
         }

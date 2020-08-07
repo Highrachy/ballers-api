@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
  *        type: object
  *        required:
  *          - title
+ *          - propertyId
  *          - firstName
  *          - otherName
  *          - lastName
@@ -24,6 +25,8 @@ import mongoose from 'mongoose';
  *          - investmentStartDate
  *        properties:
  *          title:
+ *            type: string
+ *          propertyId:
  *            type: string
  *          firstName:
  *            type: string
@@ -55,6 +58,7 @@ import mongoose from 'mongoose';
  *            type: date
  *        example:
  *           title: Mr
+ *           propertyId: 5f2b39035a086cfc4b7fa7f6
  *           firstName: John
  *           otherName: Francis
  *           lastName: Doe
@@ -76,6 +80,10 @@ const EnquirySchema = new mongoose.Schema(
   {
     title: {
       type: String,
+      required: true,
+    },
+    propertyId: {
+      type: ObjectId,
       required: true,
     },
     userId: {

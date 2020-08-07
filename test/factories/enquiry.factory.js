@@ -2,7 +2,7 @@ import { Factory } from 'rosie';
 
 export default new Factory()
   .sequence('title', (i) => `title-${i}`)
-  .attr('userId', '5f2b39035a086cfc4b7fa7f6')
+  .attr('propertyId', '5f2b39035a086cfc4b7fa7f6')
   .sequence('firstName', (i) => `firstName-${i}`)
   .sequence('otherName', (i) => `otherName-${i}`)
   .sequence('lastName', (i) => `lastName-${i}`)
