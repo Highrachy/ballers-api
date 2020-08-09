@@ -10,8 +10,6 @@ export const addEnquirySchema = Joi.object({
   occupation: Joi.string().label('Occupation').required(),
   phone: Joi.string().label('Phone').required(),
   email: Joi.string().label('Email Address').email().required(),
-  preferredPropertyLocation: Joi.string().label('Preferred location').required(),
-  propertyType: Joi.string().label('Property type').required(),
   nameOnTitleDocument: Joi.string().label('Name on title document').required(),
   investmentFrequency: Joi.string().label('Investment frequency').required(),
   initialInvestmentAmount: Joi.number().label('Initial investment amount').required(),

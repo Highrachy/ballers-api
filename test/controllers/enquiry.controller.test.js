@@ -202,38 +202,6 @@ describe('Add Enquiry Route', () => {
           });
       });
     });
-    context('when preferred location is empty', () => {
-      it('returns an error', (done) => {
-        const enquiry = EnquiryFactory.build({ preferredPropertyLocation: '' });
-        request()
-          .post('/api/v1/enquiry/add')
-          .set('authorization', userToken)
-          .send(enquiry)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Preferred location" is not allowed to be empty');
-            done();
-          });
-      });
-    });
-    context('when property type is empty', () => {
-      it('returns an error', (done) => {
-        const enquiry = EnquiryFactory.build({ propertyType: '' });
-        request()
-          .post('/api/v1/enquiry/add')
-          .set('authorization', userToken)
-          .send(enquiry)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property type" is not allowed to be empty');
-            done();
-          });
-      });
-    });
     context('when name on title document is empty', () => {
       it('returns an error', (done) => {
         const enquiry = EnquiryFactory.build({ nameOnTitleDocument: '' });

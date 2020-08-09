@@ -16,8 +16,6 @@ import mongoose from 'mongoose';
  *          - occupation
  *          - phone
  *          - email
- *          - preferredPropertyLocation
- *          - propertyType
  *          - nameOnTitleDocument
  *          - investmentFrequency
  *          - initialInvestmentAmount
@@ -42,10 +40,6 @@ import mongoose from 'mongoose';
  *            type: string
  *          email:
  *            type: string
- *          preferredPropertyLocation:
- *            type: string
- *          propertyType:
- *            type: string
  *          nameOnTitleDocument:
  *            type: string
  *          investmentFrequency:
@@ -66,8 +60,6 @@ import mongoose from 'mongoose';
  *           occupation: Lawyer
  *           phone: 08012345678
  *           email: johndoe@email.com
- *           preferredPropertyLocation: Lekki phase 1
- *           propertyType: 3 bedroom flat
  *           nameOnTitleDocument: John F. Doe
  *           investmentFrequency: Monthly
  *           initialInvestmentAmount: 25000000
@@ -114,14 +106,6 @@ const EnquirySchema = new mongoose.Schema(
       required: true,
     },
     email: {
-      type: String,
-      required: true,
-    },
-    preferredPropertyLocation: {
-      type: String,
-      required: true,
-    },
-    propertyType: {
       type: String,
       required: true,
     },
