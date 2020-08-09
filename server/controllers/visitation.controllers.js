@@ -12,11 +12,11 @@ const VisitationController = {
     scheduleVisitation({ ...booking, userId: user._id })
       .then((schedule) => {
         const contentBottom = `
-          <strong> Name: </strong>: ${schedule.visitorName}<br>, 
-          <strong> Phone: </strong> ${schedule.visitorPhone}<br>.
+          <strong> Name: </strong>: ${schedule.visitorName}<br /> 
+          <strong> Phone: </strong> ${schedule.visitorPhone}<br />
           <strong> Email: </strong> ${
-            schedule.visitorEmail ? schedule.visitorEmail : 'no email provided'
-          } <br>.
+            schedule.visitorEmail ? schedule.visitorEmail : 'No email provided'
+          } <br />
         `;
         sendMail(EMAIL_CONTENT.SCHEDULE_VISIT, { email: BALLERS_EMAIL }, { contentBottom });
         res
