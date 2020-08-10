@@ -6,7 +6,7 @@ import {
   changePasswordSchema,
   updateUserSchema,
 } from '../schemas/user.schema';
-import { schemaValidation, authenticate } from '../helpers/middleware';
+import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
 
 const router = express.Router();
@@ -215,5 +215,28 @@ router.get('/who-am-i', authenticate, UserController.currentUser);
  *       description: Internal server error
  */
 router.put('/update', authenticate, schemaValidation(updateUserSchema), UserController.update);
+
+/**
+ * @swagger
+ * /user/view-users:
+ *   get:
+ *     tags:
+ *       - User
+ *     description: Get all registered users
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Get all registered users
+ *     responses:
+ *      '200':
+ *        description: returns object of users
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/view-users', authenticate, isAdmin, UserController.getAllRegisteredUsers);
 
 module.exports = router;

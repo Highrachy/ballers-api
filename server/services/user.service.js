@@ -164,3 +164,5 @@ export const updateUser = async (updatedUser) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
 };
+
+export const getAllRegisteredUsers = async () => User.find();

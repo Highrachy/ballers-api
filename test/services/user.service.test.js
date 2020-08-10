@@ -17,6 +17,7 @@ import {
   getUserByReferralCode,
   generateReferralCode,
   generateCode,
+  getAllRegisteredUsers,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -507,6 +508,33 @@ describe('User Service', () => {
         const code = generateCode('a');
         expect(code).to.have.lengthOf(6);
         expect(code.substring(0, 1)).to.have.string('a');
+      });
+    });
+  });
+
+  describe('#getAllRegisteredUsers', async () => {
+    let countedUsers;
+
+    beforeEach(async () => {
+      await addUser(UserFactory.build());
+      await addUser(UserFactory.build());
+    });
+    context('when user added is valid', async () => {
+      it('returns total users', async () => {
+        countedUsers = await User.countDocuments({});
+        const users = await getAllRegisteredUsers();
+        expect(users).to.be.an('array');
+        expect(users.length).to.be.eql(countedUsers);
+      });
+    });
+    context('when new user is added', async () => {
+      before(async () => {
+        await User.create(UserFactory.build());
+      });
+      it('returns total users plus one', async () => {
+        const users = await getAllRegisteredUsers();
+        expect(users).to.be.an('array');
+        expect(users.length).to.be.eql(countedUsers + 1);
       });
     });
   });

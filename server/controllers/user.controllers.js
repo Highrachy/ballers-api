@@ -5,6 +5,7 @@ import {
   forgotPasswordToken,
   resetPasswordViaToken,
   updateUser,
+  getAllRegisteredUsers,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -90,6 +91,18 @@ const UserController = {
     updateUser({ ...updateduser, id: user._id })
       .then(() => {
         res.status(httpStatus.OK).json({ success: true, message: 'User updated', updateduser });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAllRegisteredUsers(req, res, next) {
+    getAllRegisteredUsers()
+      .then((users) => {
+        if (users.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, users });
+        } else {
+          res.status(httpStatus.OK).json({ success: false, message: 'No users registered', users });
+        }
       })
       .catch((error) => next(error));
   },
