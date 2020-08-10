@@ -120,7 +120,7 @@ const PropertySchema = new mongoose.Schema(
       type: [String],
     },
     assignedTo: {
-      type: [String],
+      type: [ObjectId],
     },
     addedBy: {
       type: ObjectId,

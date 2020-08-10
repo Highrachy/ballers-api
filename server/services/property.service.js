@@ -1,6 +1,9 @@
+import mongoose from 'mongoose';
 import Property from '../models/property.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+
+const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getPropertyById = async (id) => Property.findById(id).select();
 
@@ -35,6 +38,39 @@ export const deleteProperty = async (id) => {
   }
 };
 
-export const getAllProperties = async () => Property.find();
+export const getAdminAddedProperties = async (adminId) =>
+  Property.aggregate([
+    { $match: { addedBy: ObjectId(adminId) } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'addedBy',
+        foreignField: '_id',
+        as: 'adminInfo',
+      },
+    },
+  ]);
 
-export const getAdminAddedProperties = async (adminId) => Property.find({ addedBy: adminId });
+export const getAllUserProperties = async () =>
+  Property.aggregate([
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'addedBy',
+        foreignField: '_id',
+        as: 'adminInfo',
+      },
+    },
+  ]);
+
+export const getAllAdminAddedProperties = async () =>
+  Property.aggregate([
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'assignedTo',
+        foreignField: '_id',
+        as: 'assignedUsers',
+      },
+    },
+  ]);

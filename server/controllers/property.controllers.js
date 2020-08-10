@@ -3,8 +3,8 @@ import {
   updateProperty,
   deleteProperty,
   getPropertyById,
-  getAllProperties,
   getAdminAddedProperties,
+  getAllUserProperties,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -36,7 +36,7 @@ const PropertyController = {
       .catch((error) => next(error));
   },
   getMultiple(req, res, next) {
-    getAllProperties()
+    getAllUserProperties()
       .then((properties) => {
         if (properties.length > 0) {
           res.status(httpStatus.OK).json({ success: true, properties });

@@ -820,16 +820,16 @@ describe('Get all properties', () => {
       });
     });
 
-    context('when getAllProperties service fails', () => {
+    context('when getAllUserProperties service fails', () => {
       it('returns the error', (done) => {
-        sinon.stub(Property, 'find').throws(new Error('Type Error'));
+        sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
         request()
           .get('/api/v1/property/all')
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
-            Property.find.restore();
+            Property.aggregate.restore();
           });
       });
     });

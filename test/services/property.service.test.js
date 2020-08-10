@@ -5,7 +5,7 @@ import {
   addProperty,
   updateProperty,
   deleteProperty,
-  getAllProperties,
+  getAllUserProperties,
 } from '../../server/services/property.service';
 import PropertyFactory from '../factories/property.factory';
 import Property from '../../server/models/property.model';
@@ -155,7 +155,7 @@ describe('Property Service', () => {
     });
   });
 
-  describe('#getAllProperties', () => {
+  describe('#getAllUserProperties', () => {
     const _id = mongoose.Types.ObjectId();
     const propertyToAdd = PropertyFactory.build({ addedBy: _id, updatedBy: _id });
 
@@ -165,7 +165,7 @@ describe('Property Service', () => {
     });
     context('when property added is valid', () => {
       it('returns 2 properties', async () => {
-        const property = await getAllProperties();
+        const property = await getAllUserProperties();
         expect(property).to.be.an('array');
         expect(property.length).to.be.eql(2);
       });
@@ -175,7 +175,7 @@ describe('Property Service', () => {
         await Property.create(propertyToAdd);
       });
       it('returns 3 properties', async () => {
-        const property = await getAllProperties();
+        const property = await getAllUserProperties();
         expect(property).to.be.an('array');
         expect(property.length).to.be.eql(3);
       });
