@@ -9,16 +9,11 @@ import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { scheduleVisitation } from '../../server/services/visitation.service';
 import userRole from '../../server/helpers/userRole';
-// import * as MailService from '../../server/services/mailer.service';
-// import EMAIL_CONTENT from '../../mailer';
 
 useDatabase();
 
 let userToken;
 let adminToken;
-// let sendMailSpy;
-
-// const sandbox = sinon.createSandbox();
 
 const user = UserFactory.build({ role: userRole.USER, activated: true });
 const adminId = mongoose.Types.ObjectId();
@@ -27,14 +22,9 @@ const propId = mongoose.Types.ObjectId();
 const demoProperty = PropertyFactory.build({ _id: propId, addedBy: adminId, updatedBy: adminId });
 
 beforeEach(async () => {
-  // sendMailSpy = sandbox.spy(MailService, 'sendMail');
   userToken = await addUser(user);
   adminToken = await addUser(admin);
 });
-
-// afterEach(() => {
-//   sandbox.restore();
-// });
 
 describe('Schedule Visit Route', () => {
   beforeEach(async () => {
@@ -53,8 +43,8 @@ describe('Schedule Visit Route', () => {
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('Visit scheduled successfully');
           expect(res.body).to.have.property('schedule');
-          // expect(sendMailSpy.callCount).to.eq(1);
           expect(propId.equals(res.body.schedule.propertyId)).to.be.eql(true);
+          // TODO: add test for mail service
           done();
         });
     });
