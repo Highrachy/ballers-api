@@ -664,7 +664,7 @@ describe('Update User', () => {
 
   context('when update service returns an error', () => {
     it('returns the error', (done) => {
-      sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+      sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
       request()
         .put('/api/v1/user/update')
         .set('authorization', token)
@@ -673,7 +673,73 @@ describe('Update User', () => {
           expect(res).to.have.status(400);
           expect(res.body.success).to.be.eql(false);
           done();
-          User.findByIdAndUpdate.restore();
+          User.findOneAndUpdate.restore();
+        });
+    });
+  });
+});
+
+describe('Update User', () => {
+  let token;
+  const user = UserFactory.build();
+
+  const preferences = {
+    preferences: {
+      type: '3 bedroom apartment',
+      location: 'lekki phase 1',
+      maxPrice: 20000000,
+      minPrice: 10000000,
+    },
+  };
+
+  beforeEach(async () => {
+    token = await addUser(user);
+  });
+
+  context('with valid token', () => {
+    it('returns a updated user', (done) => {
+      request()
+        .put('/api/v1/user/update/preferences')
+        .set('authorization', token)
+        .send(preferences)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body).to.have.property('preferences');
+          expect(res.body.preferences.location).to.be.eql(preferences.preferences.location);
+          expect(res.body.preferences.maxPrice).to.be.eql(preferences.preferences.maxPrice);
+          expect(res.body.preferences.minPrice).to.be.eql(preferences.preferences.minPrice);
+          expect(res.body.preferences.type).to.be.eql(preferences.preferences.type);
+          done();
+        });
+    });
+  });
+
+  context('without token', () => {
+    it('returns error', (done) => {
+      request()
+        .put('/api/v1/user/update/preferences')
+        .send(preferences)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+
+  context('with invalid preferences', () => {
+    it('returns not found', (done) => {
+      request()
+        .put('/api/v1/user/update/preferences')
+        .set('authorization', token)
+        .send({})
+        .end((err, res) => {
+          expect(res).to.have.status(404);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('User not found');
+          done();
         });
     });
   });

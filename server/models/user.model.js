@@ -28,6 +28,14 @@ import mongoose from 'mongoose';
  *            description: Should match password.
  *          phone:
  *            type: string
+ *          phone2:
+ *            type: string
+ *          address:
+ *            type: object
+ *          preferences:
+ *            type: object
+ *          notification:
+ *            type: array
  *        example:
  *           firstName: John
  *           lastName: Doe
@@ -35,6 +43,10 @@ import mongoose from 'mongoose';
  *           password: johnd007
  *           confirmPassword: johnd007
  *           phone: 08012345678
+ *           phone2: 08012345678
+ *           address: {street1: 1 sesame street, street2: 12 solomon close, city: Ikeja, state: Lagos, country: Nigeria}
+ *           preferences: {type: 3 bedroom apartment, location: lekki phase 1, maxPrice: 50000000, minPrice: 15000000}
+ *           notification: ['Your account has been activated']
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -59,6 +71,39 @@ const UserSchema = new mongoose.Schema(
       select: false,
     },
     phone: String,
+    phone2: String,
+    address: {
+      street1: {
+        type: String,
+      },
+      street2: {
+        type: String,
+      },
+      city: {
+        type: String,
+      },
+      state: {
+        type: String,
+      },
+      country: {
+        type: String,
+      },
+    },
+    preferences: {
+      type: {
+        type: String,
+      },
+      location: {
+        type: String,
+      },
+      maxPrice: {
+        type: Number,
+      },
+      minPrice: {
+        type: Number,
+      },
+    },
+    notification: [String],
     referralCode: {
       type: String,
       unique: true,

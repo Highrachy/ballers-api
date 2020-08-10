@@ -17,6 +17,7 @@ import {
   getUserByReferralCode,
   generateReferralCode,
   generateCode,
+  updatePreferences,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -404,40 +405,33 @@ describe('User Service', () => {
       lastName: 'Updated lastname',
       phone: '08012345678',
       referralCode: 'abc123',
+      phone2: '08012345678',
+      address: {
+        street1: '123 sesame street',
+        city: 'Epe',
+        state: 'Lagos',
+        country: 'Nigeria',
+      },
     };
+    let updatedUser;
 
-    before(async () => {
+    beforeEach(async () => {
       await User.create(UserFactory.build({ _id }));
     });
 
-    context('when getUserById works', () => {
+    context('when all is valid', () => {
       it('returns a valid updated user', async () => {
-        const updatedUser = updateUser(updatedDetails);
-        const user = getUserById(updatedDetails.id);
-        expect(user.firstName).to.eql(updatedUser.firstName);
-        expect(user.lastName).to.eql(updatedUser.lastName);
-        expect(user.phone).to.eql(updatedUser.phone);
+        updatedUser = await updateUser(updatedDetails);
+        expect(updatedDetails.firstName).to.eql(updatedUser.firstName);
+        expect(updatedDetails.lastName).to.eql(updatedUser.lastName);
+        expect(updatedDetails.phone).to.eql(updatedUser.phone);
+        expect(updatedDetails.address.street1).to.eql(updatedUser.address.street1);
       });
     });
 
-    context('when getUserById fails', () => {
+    context('when findOneAndUpdate fails', () => {
       it('throws an error', async () => {
-        sinon.stub(User, 'findById').throws(new Error('error msg'));
-
-        try {
-          await updateUser(updatedDetails);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        User.findById.restore();
-      });
-    });
-
-    context('when findByIdAndUpdate fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('error msg'));
+        sinon.stub(User, 'findOneAndUpdate').throws(new Error('error msg'));
 
         try {
           await updateUser(updatedDetails);
@@ -446,7 +440,7 @@ describe('User Service', () => {
           expect(err.error).to.be.an('Error');
           expect(err.message).to.be.eql('Error updating user');
         }
-        User.findByIdAndUpdate.restore();
+        User.findOneAndUpdate.restore();
       });
     });
   });
@@ -507,6 +501,48 @@ describe('User Service', () => {
         const code = generateCode('a');
         expect(code).to.have.lengthOf(6);
         expect(code.substring(0, 1)).to.have.string('a');
+      });
+    });
+  });
+
+  describe('#updatePreferences', () => {
+    const _id = mongoose.Types.ObjectId();
+    const preferences = {
+      id: _id,
+      preferences: {
+        type: '3 bedroom apartment',
+        location: 'lekki phase 1',
+        maxPrice: 20000000,
+        minPrice: 10000000,
+      },
+    };
+
+    before(async () => {
+      await User.create(UserFactory.build({ _id }));
+    });
+
+    context('when findByIdAndUpdate works', () => {
+      it('returns a valid updated user', async () => {
+        const updatedPreferences = await updatePreferences(preferences);
+        const user = await getUserById(preferences.id);
+        expect(user.preferences.location).to.eql(updatedPreferences.preferences.location);
+        expect(user.preferences.minPrice).to.eql(updatedPreferences.preferences.minPrice);
+        expect(user.preferences.maxPrice).to.eql(updatedPreferences.preferences.maxPrice);
+        expect(user.preferences.type).to.eql(updatedPreferences.preferences.type);
+      });
+    });
+
+    context('when findOneAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findOneAndUpdate').throws(new Error('error msg'));
+        try {
+          await updatePreferences(preferences);
+        } catch (err) {
+          expect(err.statusCode).to.eql(404);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('User not found');
+        }
+        User.findOneAndUpdate.restore();
       });
     });
   });
