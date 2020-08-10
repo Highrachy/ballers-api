@@ -98,11 +98,7 @@ const UserController = {
   getAllRegisteredUsers(req, res, next) {
     getAllRegisteredUsers()
       .then((users) => {
-        if (users.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, users });
-        } else {
-          res.status(httpStatus.OK).json({ success: false, message: 'No users registered', users });
-        }
+        res.status(httpStatus.OK).json({ success: true, users });
       })
       .catch((error) => next(error));
   },

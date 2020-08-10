@@ -734,7 +734,7 @@ describe('Get all users', () => {
       });
     });
 
-    context('when token is used', () => {
+    context('when token is invalid', () => {
       beforeEach(async () => {
         await User.findByIdAndDelete(_id);
       });

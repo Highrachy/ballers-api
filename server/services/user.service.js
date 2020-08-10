@@ -165,4 +165,5 @@ export const updateUser = async (updatedUser) => {
   }
 };
 
-export const getAllRegisteredUsers = async () => User.find();
+export const getAllRegisteredUsers = async () =>
+  User.find({}, '-preferences -password -notification');
