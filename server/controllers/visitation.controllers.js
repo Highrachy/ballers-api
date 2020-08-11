@@ -28,13 +28,7 @@ const VisitationController = {
   getAll(req, res, next) {
     getAllVisitations()
       .then((schedules) => {
-        if (schedules.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, schedules });
-        } else {
-          res
-            .status(httpStatus.OK)
-            .json({ success: true, message: 'No scheduled visits available', schedules });
-        }
+        res.status(httpStatus.OK).json({ success: true, schedules });
       })
       .catch((error) => next(error));
   },

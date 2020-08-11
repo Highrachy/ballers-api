@@ -208,7 +208,6 @@ describe('Get all properties', () => {
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
-          expect(res.body.message).to.be.eql('No scheduled visits available');
           expect(res.body).to.have.property('schedules');
           expect(res.body.schedules.length).to.be.eql(0);
           done();
@@ -284,14 +283,14 @@ describe('Get all properties', () => {
 
     context('when getAllVisitations service fails', () => {
       it('returns the error', (done) => {
-        sinon.stub(Visitation, 'find').throws(new Error('Type Error'));
+        sinon.stub(Visitation, 'aggregate').throws(new Error('Type Error'));
         request()
           .get('/api/v1/visitation/all')
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
-            Visitation.find.restore();
+            Visitation.aggregate.restore();
           });
       });
     });

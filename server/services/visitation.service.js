@@ -19,4 +19,14 @@ export const scheduleVisitation = async (schedule) => {
   }
 };
 
-export const getAllVisitations = async () => Visitation.find();
+export const getAllVisitations = async () =>
+  Visitation.aggregate([
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+  ]);
