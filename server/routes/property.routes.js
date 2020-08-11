@@ -94,6 +94,32 @@ router.delete('/delete/:id', authenticate, isAdmin, PropertyController.delete);
 
 /**
  * @swagger
+ * path:
+ *  /property/added-by/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: the auto generated user token via jwt
+ *      summary: Gets all properties added by an admin(ID)
+ *      tags: [Property]
+ *      responses:
+ *        '200':
+ *          description: Properties found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get(
+  '/added-by/:id',
+  authenticate,
+  isAdmin,
+  PropertyController.getAllPropertiesAddedByAnAdmin,
+);
+
+/**
+ * @swagger
  * /property/all:
  *   get:
  *     tags:
@@ -110,12 +136,10 @@ router.delete('/delete/:id', authenticate, isAdmin, PropertyController.delete);
  *     responses:
  *      '200':
  *        description: returns object of properties
- *      '404':
- *        description: No properties available
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, PropertyController.getMultiple);
+router.get('/all', authenticate, isAdmin, PropertyController.getAllProperties);
 
 /**
  * @swagger
@@ -133,34 +157,9 @@ router.get('/all', authenticate, isAdmin, PropertyController.getMultiple);
  *      responses:
  *        '200':
  *          description: Property found
- *        '404':
- *          description: Property does not exist
  *        '500':
  *          description: Internal server error
  */
-router.get('/:id', authenticate, isAdmin, PropertyController.getOne);
-
-/**
- * @swagger
- * path:
- *  /property/added-by/:id:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: the auto generated user token via jwt
- *      summary: Gets all properties added by an admin(ID)
- *      tags: [Property]
- *      responses:
- *        '200':
- *          description: Properties found
- *        '404':
- *          description: No Properties found
- *        '500':
- *          description: Internal server error
- */
-router.get('/added-by/:id', authenticate, isAdmin, PropertyController.getAllAddedByAdmin);
+router.get('/:id', authenticate, PropertyController.getOneProperty);
 
 module.exports = router;

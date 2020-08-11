@@ -686,6 +686,72 @@ describe('Update Property', () => {
   });
 });
 
+describe('Delete property', () => {
+  const id = mongoose.Types.ObjectId();
+  const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+
+  beforeEach(async () => {
+    await addProperty(property);
+  });
+
+  context('with a valid token & id', () => {
+    it('successfully deletes property', (done) => {
+      request()
+        .delete(`/api/v1/property/delete/${id}`)
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.message).to.be.eql('Property deleted');
+          done();
+        });
+    });
+  });
+
+  context('when token is used', () => {
+    beforeEach(async () => {
+      await User.findByIdAndDelete(_id);
+    });
+    it('returns token error', (done) => {
+      request()
+        .delete(`/api/v1/property/delete/${id}`)
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(404);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Invalid token');
+          done();
+        });
+    });
+  });
+
+  context('with an invalid property id', () => {
+    it('returns an error', (done) => {
+      request()
+        .delete(`/api/v1/property/delete/${_id}`)
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(400);
+          expect(res.body.success).to.be.eql(false);
+          done();
+        });
+    });
+  });
+
+  context('without token', () => {
+    it('returns error', (done) => {
+      request()
+        .delete(`/api/v1/property/delete/${id}`)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+});
+
 describe('Get one property', () => {
   const id = mongoose.Types.ObjectId();
   const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
@@ -763,9 +829,9 @@ describe('Get all properties', () => {
         .get('/api/v1/property/all')
         .set('authorization', adminToken)
         .end((err, res) => {
-          expect(res).to.have.status(404);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('No properties available');
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.properties.length).to.be.eql(0);
           done();
         });
     });
@@ -836,68 +902,85 @@ describe('Get all properties', () => {
   });
 });
 
-describe('Delete property', () => {
+describe('Get all properties added by an admin', () => {
   const id = mongoose.Types.ObjectId();
   const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
 
-  beforeEach(async () => {
-    await addProperty(property);
-  });
-
-  context('with a valid token & id', () => {
-    it('successfully deletes property', (done) => {
+  context('when no property is found', () => {
+    it('returns not found', (done) => {
       request()
-        .delete(`/api/v1/property/delete/${id}`)
+        .get(`/api/v1/property/added-by/${_id}`)
         .set('authorization', adminToken)
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
-          expect(res.body.message).to.be.eql('Property deleted');
+          expect(res.body.properties.length).to.be.eql(0);
           done();
         });
     });
   });
 
-  context('when token is used', () => {
+  describe('when properties exist in db', () => {
     beforeEach(async () => {
-      await User.findByIdAndDelete(_id);
+      await addProperty(property);
     });
-    it('returns token error', (done) => {
-      request()
-        .delete(`/api/v1/property/delete/${id}`)
-        .set('authorization', adminToken)
-        .end((err, res) => {
-          expect(res).to.have.status(404);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Invalid token');
-          done();
-        });
-    });
-  });
 
-  context('with an invalid property id', () => {
-    it('returns an error', (done) => {
-      request()
-        .delete(`/api/v1/property/delete/${_id}`)
-        .set('authorization', adminToken)
-        .end((err, res) => {
-          expect(res).to.have.status(400);
-          expect(res.body.success).to.be.eql(false);
-          done();
-        });
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get(`/api/v1/property/added-by/${_id}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('properties');
+            done();
+          });
+      });
     });
-  });
 
-  context('without token', () => {
-    it('returns error', (done) => {
-      request()
-        .delete(`/api/v1/property/delete/${id}`)
-        .end((err, res) => {
-          expect(res).to.have.status(403);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Token needed to access resources');
-          done();
-        });
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/property/added-by/${_id}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when token is used', () => {
+      beforeEach(async () => {
+        await User.findByIdAndDelete(_id);
+      });
+      it('returns token error', (done) => {
+        request()
+          .get(`/api/v1/property/added-by/${_id}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid token');
+            done();
+          });
+      });
+    });
+
+    context('when getAllPropertiesAddedByAnAdmin service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/property/added-by/${_id}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Property.aggregate.restore();
+          });
+      });
     });
   });
 });

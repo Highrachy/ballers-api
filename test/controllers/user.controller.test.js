@@ -1,8 +1,11 @@
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
 import { addUser } from '../../server/services/user.service';
+import { addProperty } from '../../server/services/property.service';
 import UserFactory from '../factories/user.factory';
+import PropertyFactory from '../factories/property.factory';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 
@@ -602,7 +605,7 @@ describe('Current User', () => {
   });
 });
 
-describe('Update User', () => {
+describe('Update User route', () => {
   let token;
   const user = UserFactory.build();
 
@@ -674,6 +677,172 @@ describe('Update User', () => {
           expect(res.body.success).to.be.eql(false);
           done();
           User.findByIdAndUpdate.restore();
+        });
+    });
+  });
+});
+
+describe('Assign property route', () => {
+  let adminToken;
+  let userToken;
+  const _id = mongoose.Types.ObjectId();
+  const propertyId = mongoose.Types.ObjectId();
+  const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+  const adminUser = UserFactory.build({ _id, role: 0, activated: true });
+  const regualarUser = UserFactory.build({ role: 1, activated: true });
+
+  beforeEach(async () => {
+    adminToken = await addUser(adminUser);
+    userToken = await addUser(regualarUser);
+    await addProperty(property);
+  });
+
+  const toAssign = {
+    userId: _id,
+    propertyId,
+  };
+
+  context('with admin token', () => {
+    it('returns property assigned', (done) => {
+      request()
+        .post('/api/v1/user/assign-property')
+        .set('authorization', adminToken)
+        .send(toAssign)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.message).to.be.eql('Property assigned');
+          done();
+        });
+    });
+  });
+
+  context('with user access token', () => {
+    it('returns a updated user', (done) => {
+      request()
+        .post('/api/v1/user/assign-property')
+        .set('authorization', userToken)
+        .send(toAssign)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+          done();
+        });
+    });
+  });
+
+  context('without token', () => {
+    it('returns error', (done) => {
+      request()
+        .post('/api/v1/user/assign-property')
+        .send(toAssign)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+
+  context('with invalid updated user', () => {
+    it('returns a updated user', (done) => {
+      request()
+        .post('/api/v1/user/assign-property')
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Validation Error');
+          done();
+        });
+    });
+  });
+
+  context('when assignPropertyToUser service returns an error', () => {
+    it('returns the error', (done) => {
+      sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+      request()
+        .post('/api/v1/user/assign-property')
+        .set('authorization', adminToken)
+        .send(toAssign)
+        .end((err, res) => {
+          expect(res).to.have.status(400);
+          expect(res.body.success).to.be.eql(false);
+          done();
+          User.findByIdAndUpdate.restore();
+        });
+    });
+  });
+});
+
+describe('Get Owned Properties route', () => {
+  let adminToken;
+  let userToken;
+  const _id = mongoose.Types.ObjectId();
+  const propertyId = mongoose.Types.ObjectId();
+  const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+  const adminUser = UserFactory.build({ _id, role: 0, activated: true });
+  const regualarUser = UserFactory.build({ role: 1, activated: true });
+
+  beforeEach(async () => {
+    adminToken = await addUser(adminUser);
+    userToken = await addUser(regualarUser);
+    await addProperty(property);
+  });
+
+  context('with admin token', () => {
+    it('returns property assigned', (done) => {
+      request()
+        .get('/api/v1/user/my-properties')
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.message).to.be.eql('Properties found');
+          done();
+        });
+    });
+  });
+
+  context('with user access token', () => {
+    it('returns a updated user', (done) => {
+      request()
+        .get('/api/v1/user/my-properties')
+        .set('authorization', userToken)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.message).to.be.eql('Properties found');
+          done();
+        });
+    });
+  });
+
+  context('without token', () => {
+    it('returns error', (done) => {
+      request()
+        .get('/api/v1/user/my-properties')
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+
+  context('when getAllUserProperties service returns an error', () => {
+    it('returns the error', (done) => {
+      sinon.stub(User, 'aggregate').throws(new Error('Type Error'));
+      request()
+        .get('/api/v1/user/my-properties')
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(500);
+          done();
+          User.aggregate.restore();
         });
     });
   });

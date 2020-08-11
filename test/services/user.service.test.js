@@ -17,10 +17,14 @@ import {
   getUserByReferralCode,
   generateReferralCode,
   generateCode,
+  assignPropertyToUser,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
 import User from '../../server/models/user.model';
+import Property from '../../server/models/property.model';
+import PropertyFactory from '../factories/property.factory';
+import { updateProperty } from '../../server/services/property.service';
 
 useDatabase();
 
@@ -412,11 +416,10 @@ describe('User Service', () => {
 
     context('when getUserById works', () => {
       it('returns a valid updated user', async () => {
-        const updatedUser = updateUser(updatedDetails);
-        const user = getUserById(updatedDetails.id);
-        expect(user.firstName).to.eql(updatedUser.firstName);
-        expect(user.lastName).to.eql(updatedUser.lastName);
-        expect(user.phone).to.eql(updatedUser.phone);
+        const updatedUser = await updateUser(updatedDetails);
+        expect(updatedDetails.firstName).to.eql(updatedUser.firstName);
+        expect(updatedDetails.lastName).to.eql(updatedUser.lastName);
+        expect(updatedDetails.phone).to.eql(updatedUser.phone);
       });
     });
 
@@ -507,6 +510,92 @@ describe('User Service', () => {
         const code = generateCode('a');
         expect(code).to.have.lengthOf(6);
         expect(code.substring(0, 1)).to.have.string('a');
+      });
+    });
+  });
+
+  describe('#assignPropertyToUser', () => {
+    const _id = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const toBeAssigned = {
+      propertyId,
+      userId: _id,
+      assignedBy: _id,
+    };
+
+    describe('when property units is less than one', () => {
+      beforeEach(async () => {
+        await updateProperty({ id: propertyId, units: 0 });
+      });
+      context('when units are less than one', () => {
+        it('returns no units available', async () => {
+          try {
+            await assignPropertyToUser(toBeAssigned);
+          } catch (err) {
+            expect(err.statusCode).to.eql(404);
+            expect(err.message).to.be.eql('No available units');
+          }
+        });
+      });
+    });
+
+    beforeEach(async () => {
+      await User.create(UserFactory.build({ _id }));
+      await Property.create(
+        PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id }),
+      );
+    });
+
+    context('when getUserById works', () => {
+      it('returns a valid updated user', async () => {
+        await assignPropertyToUser(toBeAssigned);
+        const user = await getUserById(_id);
+        expect(user.assignedProperties[0].propertyId).to.eql(propertyId);
+      });
+    });
+
+    context('when getPropertyById fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Property, 'findById').throws(new Error('error msg'));
+
+        try {
+          await assignPropertyToUser(toBeAssigned);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        Property.findById.restore();
+      });
+    });
+
+    context('when getPropertyById fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findById').throws(new Error('error msg'));
+
+        try {
+          await assignPropertyToUser(toBeAssigned);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        User.findById.restore();
+      });
+    });
+
+    context('when findByIdAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('error msg'));
+
+        try {
+          await assignPropertyToUser(toBeAssigned);
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Error assigning property');
+        }
+        Property.findByIdAndUpdate.restore();
       });
     });
   });

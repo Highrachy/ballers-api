@@ -1,10 +1,13 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
+
+const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -198,18 +201,36 @@ export const updateUser = async (updatedUser) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
   try {
-    return User.findByIdAndUpdate(user.id, updatedUser);
+    return User.findByIdAndUpdate(user.id, updatedUser, { new: true, fields: '-password' });
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
 };
 
-export const getAllUserProperties = async (userId) => {
-  const user = await getUserById(userId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-  if (user) {
-    return user.assignedProperties;
-  }
-  throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
-};
+export const getAllUserProperties = async (userId) =>
+  User.aggregate([
+    { $match: { _id: ObjectId(userId) } },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'assignedProperties.propertyId',
+        foreignField: '_id',
+        as: 'ownedProperties',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        'ownedProperties._id': 1,
+        'ownedProperties.neighborhood': 1,
+        'ownedProperties.gallery': 1,
+        'ownedProperties.name': 1,
+        'ownedProperties.location': 1,
+        'ownedProperties.price': 1,
+        'ownedProperties.description': 1,
+        'ownedProperties.toilets': 1,
+        'ownedProperties.bedrooms': 1,
+        'ownedProperties.houseType': 1,
+      },
+    },
+  ]);
