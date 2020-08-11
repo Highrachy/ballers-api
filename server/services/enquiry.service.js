@@ -29,4 +29,14 @@ export const approveEnquiry = async (approvedEnquiry) => {
   }
 };
 
-export const getAllEnquiries = async () => Enquiry.find();
+export const getAllEnquiries = async () =>
+  Enquiry.aggregate([
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+  ]);

@@ -430,14 +430,14 @@ describe('Get all enquiries', () => {
 
     context('when getAllEnquiries service fails', () => {
       it('returns the error', (done) => {
-        sinon.stub(Enquiry, 'find').throws(new Error('Type Error'));
+        sinon.stub(Enquiry, 'aggregate').throws(new Error('Type Error'));
         request()
           .get('/api/v1/enquiry/all')
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
-            Enquiry.find.restore();
+            Enquiry.aggregate.restore();
           });
       });
     });
