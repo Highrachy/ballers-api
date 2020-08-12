@@ -33,10 +33,12 @@ import mongoose from 'mongoose';
  *          lastName:
  *            type: string
  *          address:
- *            type: string
+ *            type: object
  *          occupation:
  *            type: string
  *          phone:
+ *            type: string
+ *          phone2:
  *            type: string
  *          email:
  *            type: string
@@ -56,9 +58,10 @@ import mongoose from 'mongoose';
  *           firstName: John
  *           otherName: Francis
  *           lastName: Doe
- *           address: 1, sesame street, ajah.
- *           occupation: Lawyer
  *           phone: 08012345678
+ *           phone2: 08012345678
+ *           address: {street1: 1 sesame street, street2: 12 solomon close, city: Ikeja, state: Lagos, country: Nigeria}
+ *           occupation: Lawyer
  *           email: johndoe@email.com
  *           nameOnTitleDocument: John F. Doe
  *           investmentFrequency: Monthly
@@ -94,8 +97,25 @@ const EnquirySchema = new mongoose.Schema(
       required: true,
     },
     address: {
-      type: String,
-      required: true,
+      street1: {
+        type: String,
+        required: true,
+      },
+      street2: {
+        type: String,
+      },
+      city: {
+        type: String,
+        required: true,
+      },
+      state: {
+        type: String,
+        required: true,
+      },
+      country: {
+        type: String,
+        required: true,
+      },
     },
     occupation: {
       type: String,
@@ -104,6 +124,9 @@ const EnquirySchema = new mongoose.Schema(
     phone: {
       type: String,
       required: true,
+    },
+    phone2: {
+      type: String,
     },
     email: {
       type: String,

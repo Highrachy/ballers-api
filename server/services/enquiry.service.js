@@ -39,6 +39,20 @@ export const getAllEnquiries = async () =>
         as: 'propertyInfo',
       },
     },
-    { $unwind: '$propertyInfo' },
-    { $project: { 'propertyInfo.assignedTo': 0 } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'approvedBy',
+        foreignField: '_id',
+        as: 'approvedBy',
+      },
+    },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+        'approvedBy.assignedProperties': 0,
+        'approvedBy.password': 0,
+        'approvedBy.referralCode': 0,
+      },
+    },
   ]);

@@ -103,7 +103,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Firstname" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"First name" is not allowed to be empty');
             done();
           });
       });
@@ -119,7 +119,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Othername" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Other name" is not allowed to be empty');
             done();
           });
       });
@@ -135,12 +135,12 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Lastname" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Last name" is not allowed to be empty');
             done();
           });
       });
     });
-    context('when address is empty', () => {
+    context('when address is empty string ', () => {
       it('returns an error', (done) => {
         const enquiry = EnquiryFactory.build({ address: '' });
         request()
@@ -151,7 +151,166 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Address" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"address" must be of type object');
+            done();
+          });
+      });
+    });
+    context('when address is empty object', () => {
+      it('returns an error', (done) => {
+        const enquiry = EnquiryFactory.build({ address: {} });
+        request()
+          .post('/api/v1/enquiry/add')
+          .set('authorization', userToken)
+          .send(enquiry)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Street 1" is required');
+            done();
+          });
+      });
+    });
+    context('when street 1 is empty', () => {
+      it('returns an error', (done) => {
+        const enquiry = EnquiryFactory.build({
+          address: {
+            street1: '',
+            street2: 'sesame street',
+            city: 'Ikeja',
+            state: 'Lagos',
+            country: 'Nigeria',
+          },
+        });
+        request()
+          .post('/api/v1/enquiry/add')
+          .set('authorization', userToken)
+          .send(enquiry)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Street 1" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when street 2 is empty', () => {
+      it('returns an error', (done) => {
+        const enquiry = EnquiryFactory.build({
+          address: {
+            street1: 'opebi street',
+            street2: '',
+            city: 'Ikeja',
+            state: 'Lagos',
+            country: 'Nigeria',
+          },
+        });
+        request()
+          .post('/api/v1/enquiry/add')
+          .set('authorization', userToken)
+          .send(enquiry)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Street 2" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when street 2 is not sent', () => {
+      it('returns enquiry', (done) => {
+        const enquiry = EnquiryFactory.build({
+          address: {
+            street1: 'opebi street',
+            city: 'Ikeja',
+            state: 'Lagos',
+            country: 'Nigeria',
+          },
+        });
+        request()
+          .post('/api/v1/enquiry/add')
+          .set('authorization', userToken)
+          .send(enquiry)
+          .end((err, res) => {
+            expect(res).to.have.status(201);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Enquiry added');
+            expect(res.body).to.have.property('enquiry');
+            done();
+          });
+      });
+    });
+    context('when city is empty', () => {
+      it('returns an error', (done) => {
+        const enquiry = EnquiryFactory.build({
+          address: {
+            street1: 'opebi street',
+            street2: 'sesame street',
+            city: '',
+            state: 'Lagos',
+            country: 'Nigeria',
+          },
+        });
+        request()
+          .post('/api/v1/enquiry/add')
+          .set('authorization', userToken)
+          .send(enquiry)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"City" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when state is empty', () => {
+      it('returns an error', (done) => {
+        const enquiry = EnquiryFactory.build({
+          address: {
+            street1: 'opebi street',
+            street2: 'sesame street',
+            city: 'Ikeja',
+            state: '',
+            country: 'Nigeria',
+          },
+        });
+        request()
+          .post('/api/v1/enquiry/add')
+          .set('authorization', userToken)
+          .send(enquiry)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"State" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when country is empty', () => {
+      it('returns an error', (done) => {
+        const enquiry = EnquiryFactory.build({
+          address: {
+            street1: 'opebi street',
+            street2: 'sesame street',
+            city: 'Ikeja',
+            state: 'Lagos',
+            country: '',
+          },
+        });
+        request()
+          .post('/api/v1/enquiry/add')
+          .set('authorization', userToken)
+          .send(enquiry)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Country" is not allowed to be empty');
             done();
           });
       });
@@ -410,7 +569,7 @@ describe('Get all enquiries', () => {
             expect(id.equals(res.body.enquiries[0]._id)).to.be.eql(true);
             expect(_id.equals(res.body.enquiries[0].userId)).to.be.eql(true);
             expect(res.body.enquiries[0].propertyId).to.be.eql(
-              res.body.enquiries[0].propertyInfo._id,
+              res.body.enquiries[0].propertyInfo[0]._id,
             );
             done();
           });

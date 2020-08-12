@@ -9,6 +9,13 @@ export default new Factory()
   .attr('address', '1, sesame street, ajah')
   .attr('occupation', 'developer')
   .attr('phone', '08012345678')
+  .attr('address', {
+    street1: 'opebi street',
+    street2: 'sesame street',
+    city: 'Ikeja',
+    state: 'Lagos',
+    country: 'Nigeria',
+  })
   .sequence('email', (i) => `email-${i}@mail.com`)
   .attr('nameOnTitleDocument', 'John F. Doe')
   .attr('investmentFrequency', 'weekly')
