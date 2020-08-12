@@ -232,6 +232,9 @@ describe('Get all properties', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('schedules');
+            expect(propId.equals(res.body.schedules[0].propertyId)).to.be.eql(true);
+            expect(adminId.equals(res.body.schedules[0].userId)).to.be.eql(true);
+            expect(propId.equals(res.body.schedules[0].propertyInfo[0]._id)).to.be.eql(true);
             done();
           });
       });

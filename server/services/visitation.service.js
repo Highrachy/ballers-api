@@ -29,4 +29,9 @@ export const getAllVisitations = async () =>
         as: 'propertyInfo',
       },
     },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+      },
+    },
   ]);
