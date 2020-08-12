@@ -25,13 +25,7 @@ const EnquiryController = {
   getAll(req, res, next) {
     getAllEnquiries()
       .then((enquiries) => {
-        if (enquiries.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, enquiries });
-        } else {
-          res
-            .status(httpStatus.OK)
-            .json({ success: true, message: 'No enquiries available', enquiries });
-        }
+        res.status(httpStatus.OK).json({ success: true, enquiries });
       })
       .catch((error) => next(error));
   },

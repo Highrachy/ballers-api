@@ -6,7 +6,9 @@ import {
   approveEnquiry,
   getAllEnquiries,
 } from '../../server/services/enquiry.service';
+import { addProperty } from '../../server/services/property.service';
 import EnquiryFactory from '../factories/enquiry.factory';
+import PropertyFactory from '../factories/property.factory';
 import Enquiry from '../../server/models/enquiry.model';
 
 useDatabase();
@@ -112,9 +114,12 @@ describe('Enquiry Service', () => {
 
   describe('#getAllEnquiries', () => {
     const id = mongoose.Types.ObjectId();
-    const enquiryToAdd = EnquiryFactory.build({ userId: id });
+    const propertyId = mongoose.Types.ObjectId();
+    const enquiryToAdd = EnquiryFactory.build({ userId: id, propertyId });
+    const property = PropertyFactory.build({ _id: propertyId, addedBy: id, updatedBy: id });
 
     beforeEach(async () => {
+      await addProperty(property);
       await Enquiry.create(enquiryToAdd);
       await Enquiry.create(enquiryToAdd);
     });

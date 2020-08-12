@@ -4,8 +4,10 @@ import Enquiry from '../../server/models/enquiry.model';
 import User from '../../server/models/user.model';
 import EnquiryFactory from '../factories/enquiry.factory';
 import UserFactory from '../factories/user.factory';
+import PropertyFactory from '../factories/property.factory';
 import { addUser } from '../../server/services/user.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
+import { addProperty } from '../../server/services/property.service';
 
 useDatabase();
 
@@ -366,7 +368,15 @@ describe('Approve Enquiry', () => {
 
 describe('Get all enquiries', () => {
   const id = mongoose.Types.ObjectId();
-  const enquiry = EnquiryFactory.build({ _id: id, userId: id, addedBy: _id, updatedBy: _id });
+  const propertyId = mongoose.Types.ObjectId();
+  const enquiry = EnquiryFactory.build({
+    _id: id,
+    propertyId,
+    userId: _id,
+    addedBy: _id,
+    updatedBy: _id,
+  });
+  const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
 
   context('when no enquiry is found', () => {
     it('returns empty array of enquiries', (done) => {
@@ -385,9 +395,10 @@ describe('Get all enquiries', () => {
   describe('when enquiries exist in db', () => {
     beforeEach(async () => {
       await addEnquiry(enquiry);
+      await addProperty(property);
     });
 
-    context('with a valid token & id', () => {
+    context('with a valid token & id', async () => {
       it('returns successful payload', (done) => {
         request()
           .get('/api/v1/enquiry/all')
@@ -396,6 +407,11 @@ describe('Get all enquiries', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('enquiries');
+            expect(id.equals(res.body.enquiries[0]._id)).to.be.eql(true);
+            expect(_id.equals(res.body.enquiries[0].userId)).to.be.eql(true);
+            expect(res.body.enquiries[0].propertyId).to.be.eql(
+              res.body.enquiries[0].propertyInfo._id,
+            );
             done();
           });
       });

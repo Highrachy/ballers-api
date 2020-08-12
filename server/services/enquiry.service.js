@@ -39,4 +39,6 @@ export const getAllEnquiries = async () =>
         as: 'propertyInfo',
       },
     },
+    { $unwind: '$propertyInfo' },
+    { $project: { 'propertyInfo.assignedTo': 0 } },
   ]);
