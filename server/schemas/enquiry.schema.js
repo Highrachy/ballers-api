@@ -11,19 +11,19 @@ const address = Joi.object().keys({
 export const addEnquirySchema = Joi.object({
   title: Joi.string().label('Title').required(),
   propertyId: Joi.string().label('Property ID').required(),
-  firstName: Joi.string().label('First name').required(),
-  otherName: Joi.string().label('Other name').optional(),
-  lastName: Joi.string().label('Last name').required(),
+  firstName: Joi.string().label('First Name').required(),
+  otherName: Joi.string().label('Other Name').optional(),
+  lastName: Joi.string().label('Last Name').required(),
   address,
   phone2: Joi.string().label('Phone 2').optional(),
   occupation: Joi.string().label('Occupation').required(),
   phone: Joi.string().label('Phone').required(),
   email: Joi.string().label('Email Address').email().required(),
-  nameOnTitleDocument: Joi.string().label('Name on title document').required(),
-  investmentFrequency: Joi.string().label('Investment frequency').required(),
-  initialInvestmentAmount: Joi.number().label('Initial investment amount').required(),
-  periodicInvestmentAmount: Joi.number().label('Periodic investment amount').required(),
-  investmentStartDate: Joi.date().label('Investment start date').required(),
+  nameOnTitleDocument: Joi.string().label('Name on Title Document').required(),
+  investmentFrequency: Joi.string().label('Investment Frequency').required(),
+  initialInvestmentAmount: Joi.number().label('Initial Investment Amount').required(),
+  periodicInvestmentAmount: Joi.number().label('Periodic Investment Amount').required(),
+  investmentStartDate: Joi.date().label('Investment Start Date').required(),
 });
 
 export const approveEnquirySchema = Joi.object({

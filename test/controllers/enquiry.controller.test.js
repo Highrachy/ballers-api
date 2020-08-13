@@ -103,7 +103,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"First name" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"First Name" is not allowed to be empty');
             done();
           });
       });
@@ -119,7 +119,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Other name" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Other Name" is not allowed to be empty');
             done();
           });
       });
@@ -135,7 +135,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Last name" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Last Name" is not allowed to be empty');
             done();
           });
       });
@@ -374,7 +374,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Name on title document" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Name on Title Document" is not allowed to be empty');
             done();
           });
       });
@@ -390,7 +390,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Investment frequency" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Investment Frequency" is not allowed to be empty');
             done();
           });
       });
@@ -406,7 +406,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Initial investment amount" must be a number');
+            expect(res.body.error).to.be.eql('"Initial Investment Amount" must be a number');
             done();
           });
       });
@@ -422,7 +422,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Periodic investment amount" must be a number');
+            expect(res.body.error).to.be.eql('"Periodic Investment Amount" must be a number');
             done();
           });
       });
@@ -438,7 +438,7 @@ describe('Add Enquiry Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Investment start date" must be a valid date');
+            expect(res.body.error).to.be.eql('"Investment Start Date" must be a valid date');
             done();
           });
       });
@@ -571,6 +571,19 @@ describe('Get all enquiries', () => {
             expect(res.body.enquiries[0].propertyId).to.be.eql(
               res.body.enquiries[0].propertyInfo[0]._id,
             );
+            expect(res.body.enquiries[0].firstName).to.be.eql(enquiry.firstName);
+            expect(res.body.enquiries[0].otherName).to.be.eql(enquiry.otherName);
+            expect(res.body.enquiries[0].nameOnTitleDocument).to.be.eql(
+              enquiry.nameOnTitleDocument,
+            );
+            expect(res.body.enquiries[0].initialInvestmentAmount).to.be.eql(
+              enquiry.initialInvestmentAmount,
+            );
+            expect(propertyId.equals(res.body.enquiries[0].propertyInfo[0]._id)).to.be.eql(true);
+            expect(
+              property.addedBy.equals(res.body.enquiries[0].propertyInfo[0].addedBy),
+            ).to.be.eql(true);
+            expect(res.body.enquiries[0].propertyInfo[0].name).to.be.eql(property.name);
             done();
           });
       });
