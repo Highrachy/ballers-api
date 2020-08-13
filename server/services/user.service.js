@@ -166,4 +166,14 @@ export const updateUser = async (updatedUser) => {
 };
 
 export const getAllRegisteredUsers = async () =>
-  User.find({}, '-preferences -password -notification');
+  User.aggregate([
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'assignedProperties.propertyId',
+        foreignField: '_id',
+        as: 'assignedProperties',
+      },
+    },
+    { $project: { preferences: 0, password: 0, notification: 0 } },
+  ]);

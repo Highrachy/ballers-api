@@ -218,7 +218,7 @@ router.put('/update', authenticate, schemaValidation(updateUserSchema), UserCont
 
 /**
  * @swagger
- * /user/view-users:
+ * /user/all:
  *   get:
  *     tags:
  *       - User
@@ -237,6 +237,6 @@ router.put('/update', authenticate, schemaValidation(updateUserSchema), UserCont
  *      '500':
  *       description: Internal server error
  */
-router.get('/view-users', authenticate, isAdmin, UserController.getAllRegisteredUsers);
+router.get('/all', authenticate, isAdmin, UserController.getAllRegisteredUsers);
 
 module.exports = router;

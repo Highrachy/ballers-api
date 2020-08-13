@@ -696,7 +696,7 @@ describe('Get all users', () => {
     context('with a valid token & id', () => {
       it('returns successful payload', (done) => {
         request()
-          .get('/api/v1/user/view-users')
+          .get('/api/v1/user/all')
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -710,7 +710,7 @@ describe('Get all users', () => {
     context('with a user access token', () => {
       it('returns successful payload', (done) => {
         request()
-          .get('/api/v1/user/view-users')
+          .get('/api/v1/user/all')
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(403);
@@ -724,7 +724,7 @@ describe('Get all users', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get('/api/v1/user/view-users')
+          .get('/api/v1/user/all')
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -740,7 +740,7 @@ describe('Get all users', () => {
       });
       it('returns token error', (done) => {
         request()
-          .get('/api/v1/user/view-users')
+          .get('/api/v1/user/all')
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(404);
@@ -753,14 +753,14 @@ describe('Get all users', () => {
 
     context('when getAllRegisteredUsers service fails', () => {
       it('returns the error', (done) => {
-        sinon.stub(User, 'find').throws(new Error('Type Error'));
+        sinon.stub(User, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get('/api/v1/user/view-users')
+          .get('/api/v1/user/all')
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
-            User.find.restore();
+            User.aggregate.restore();
           });
       });
     });
