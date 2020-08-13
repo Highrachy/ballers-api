@@ -45,8 +45,8 @@ import mongoose from 'mongoose';
  *           phone: 08012345678
  *           phone2: 08012345678
  *           address: {street1: 1 sesame street, street2: 12 solomon close, city: Ikeja, state: Lagos, country: Nigeria}
- *           preferences: {type: 3 bedroom apartment, location: lekki phase 1, maxPrice: 50000000, minPrice: 15000000}
- *           notification: ['Your account has been activated']
+ *           preferences: {houseType: 3 bedroom apartment, location: lekki phase 1, maxPrice: 50000000, minPrice: 15000000}
+ *           notification: [description: Your account has been activated, type: info, URL: app.ballers.ng/dashboard, status: 0, dateAdded: 22-03-2021]
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -90,7 +90,7 @@ const UserSchema = new mongoose.Schema(
       },
     },
     preferences: {
-      type: {
+      houseType: {
         type: String,
       },
       location: {
@@ -103,7 +103,23 @@ const UserSchema = new mongoose.Schema(
         type: Number,
       },
     },
-    notification: [String],
+    notification: [
+      {
+        description: {
+          type: String,
+        },
+        type: {
+          type: String,
+        },
+        URL: {
+          type: String,
+        },
+        status: {
+          type: Number,
+        },
+        dateAdded: Date,
+      },
+    ],
     referralCode: {
       type: String,
       unique: true,

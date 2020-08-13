@@ -5,7 +5,6 @@ import {
   resetPasswordSchema,
   changePasswordSchema,
   updateUserSchema,
-  userPreferenceSchema,
 } from '../schemas/user.schema';
 import { schemaValidation, authenticate } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
@@ -216,35 +215,5 @@ router.get('/who-am-i', authenticate, UserController.currentUser);
  *       description: Internal server error
  */
 router.put('/update', authenticate, schemaValidation(updateUserSchema), UserController.update);
-
-/**
- * @swagger
- * /user/update/preferences:
- *   put:
- *     tags:
- *       - User
- *     description: Updates existing user preferences
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/User'
- *      description: Updates existing user preferences
- *     responses:
- *      '200':
- *        description: Preferences updated
- *      '400':
- *        description: Error updating preferences
- *      '500':
- *       description: Internal server error
- */
-router.put(
-  '/update/preferences',
-  authenticate,
-  schemaValidation(userPreferenceSchema),
-  UserController.updatePreferences,
-);
 
 module.exports = router;

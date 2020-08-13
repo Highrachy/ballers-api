@@ -5,7 +5,6 @@ import {
   forgotPasswordToken,
   resetPasswordViaToken,
   updateUser,
-  updatePreferences,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -86,25 +85,11 @@ const UserController = {
   },
 
   update(req, res, next) {
-    const updateduser = req.locals;
-    const { user } = req;
-    updateUser({ ...updateduser, id: user._id })
-      .then(() => {
-        res.status(httpStatus.OK).json({ success: true, message: 'User updated', updateduser });
-      })
-      .catch((error) => next(error));
-  },
-
-  updatePreferences(req, res, next) {
-    const updatedPreferences = req.locals;
-    const { user } = req;
-    updatePreferences({ ...updatedPreferences, id: user._id })
-      .then((preferences) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          message: 'Preferences updated',
-          preferences: preferences.preferences,
-        });
+    const updatedUser = req.locals;
+    const userId = req.user._id;
+    updateUser({ ...updatedUser, id: userId })
+      .then((user) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'User updated', user });
       })
       .catch((error) => next(error));
   },

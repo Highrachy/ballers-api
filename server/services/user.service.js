@@ -164,24 +164,3 @@ export const updateUser = async (updatedUser) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
 };
-
-export const updatePreferences = async (preferences) => {
-  try {
-    return User.findOneAndUpdate(
-      { _id: preferences.id },
-      {
-        $set: {
-          preferences: {
-            type: preferences.preferences.type,
-            location: preferences.preferences.location,
-            maxPrice: preferences.preferences.maxPrice,
-            minPrice: preferences.preferences.minPrice,
-          },
-        },
-      },
-      { new: true, fields: '-password' },
-    );
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found', error);
-  }
-};

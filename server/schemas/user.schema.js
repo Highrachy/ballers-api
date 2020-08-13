@@ -39,21 +39,18 @@ const address = Joi.object().keys({
   country: Joi.string().label('Country').optional(),
 });
 
+const preferences = Joi.object().keys({
+  houseType: Joi.string().label('Property House Type').optional(),
+  location: Joi.string().label('Property Location').optional(),
+  maxPrice: Joi.number().label('Property Maximum Price').optional(),
+  minPrice: Joi.number().label('Property Minimum Price').optional(),
+});
+
 export const updateUserSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
   phone,
   phone2: Joi.string().label('Phone 2').optional(),
   address,
-});
-
-const preferences = Joi.object().keys({
-  type: Joi.string().label('Property type').required(),
-  location: Joi.string().label('Property location').required(),
-  maxPrice: Joi.number().label('Property maxiimum price').required(),
-  minPrice: Joi.number().label('Property minimum price').required(),
-});
-
-export const userPreferenceSchema = Joi.object({
   preferences,
 });

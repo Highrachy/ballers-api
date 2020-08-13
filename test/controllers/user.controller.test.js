@@ -625,10 +625,10 @@ describe('Update User', () => {
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
-          expect(res.body).to.have.property('updateduser');
-          expect(res.body.updateduser.firstName).to.be.eql(newUser.firstName);
-          expect(res.body.updateduser.lastName).to.be.eql(newUser.lastName);
-          expect(res.body.updateduser.phone).to.be.eql(newUser.phone);
+          expect(res.body).to.have.property('user');
+          expect(res.body.user.firstName).to.be.eql(newUser.firstName);
+          expect(res.body.user.lastName).to.be.eql(newUser.lastName);
+          expect(res.body.user.phone).to.be.eql(newUser.phone);
           done();
         });
     });
@@ -677,70 +677,88 @@ describe('Update User', () => {
         });
     });
   });
-});
 
-describe('Update User', () => {
-  let token;
-  const user = UserFactory.build();
-
-  const preferences = {
-    preferences: {
-      type: '3 bedroom apartment',
-      location: 'lekki phase 1',
-      maxPrice: 20000000,
-      minPrice: 10000000,
-    },
-  };
-
-  beforeEach(async () => {
-    token = await addUser(user);
-  });
-
-  context('with valid token', () => {
-    it('returns a updated user', (done) => {
-      request()
-        .put('/api/v1/user/update/preferences')
-        .set('authorization', token)
-        .send(preferences)
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body.success).to.be.eql(true);
-          expect(res.body).to.have.property('preferences');
-          expect(res.body.preferences.location).to.be.eql(preferences.preferences.location);
-          expect(res.body.preferences.maxPrice).to.be.eql(preferences.preferences.maxPrice);
-          expect(res.body.preferences.minPrice).to.be.eql(preferences.preferences.minPrice);
-          expect(res.body.preferences.type).to.be.eql(preferences.preferences.type);
-          done();
-        });
+  context('with invalid data', () => {
+    context('when first name is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ firstName: '' });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"First Name" is not allowed to be empty');
+            done();
+          });
+      });
     });
-  });
 
-  context('without token', () => {
-    it('returns error', (done) => {
-      request()
-        .put('/api/v1/user/update/preferences')
-        .send(preferences)
-        .end((err, res) => {
-          expect(res).to.have.status(403);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Token needed to access resources');
-          done();
-        });
+    context('when preferences house type is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { houseType: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property House Type" is not allowed to be empty');
+            done();
+          });
+      });
     });
-  });
-
-  context('with invalid preferences', () => {
-    it('returns not found', (done) => {
-      request()
-        .put('/api/v1/user/update/preferences')
-        .set('authorization', token)
-        .send({})
-        .end((err, res) => {
-          expect(res).to.have.status(404);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('User not found');
-          done();
-        });
+    context('when preferences location is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { location: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property Location" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when preferences max price is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { maxPrice: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property Maximum Price" must be a number');
+            done();
+          });
+      });
+    });
+    context('when preferences min price is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { minPrice: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property Minimum Price" must be a number');
+            done();
+          });
+      });
     });
   });
 });

@@ -17,7 +17,6 @@ import {
   getUserByReferralCode,
   generateReferralCode,
   generateCode,
-  updatePreferences,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -501,48 +500,6 @@ describe('User Service', () => {
         const code = generateCode('a');
         expect(code).to.have.lengthOf(6);
         expect(code.substring(0, 1)).to.have.string('a');
-      });
-    });
-  });
-
-  describe('#updatePreferences', () => {
-    const _id = mongoose.Types.ObjectId();
-    const preferences = {
-      id: _id,
-      preferences: {
-        type: '3 bedroom apartment',
-        location: 'lekki phase 1',
-        maxPrice: 20000000,
-        minPrice: 10000000,
-      },
-    };
-
-    before(async () => {
-      await User.create(UserFactory.build({ _id }));
-    });
-
-    context('when findByIdAndUpdate works', () => {
-      it('returns a valid updated user', async () => {
-        const updatedPreferences = await updatePreferences(preferences);
-        const user = await getUserById(preferences.id);
-        expect(user.preferences.location).to.eql(updatedPreferences.preferences.location);
-        expect(user.preferences.minPrice).to.eql(updatedPreferences.preferences.minPrice);
-        expect(user.preferences.maxPrice).to.eql(updatedPreferences.preferences.maxPrice);
-        expect(user.preferences.type).to.eql(updatedPreferences.preferences.type);
-      });
-    });
-
-    context('when findOneAndUpdate fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(User, 'findOneAndUpdate').throws(new Error('error msg'));
-        try {
-          await updatePreferences(preferences);
-        } catch (err) {
-          expect(err.statusCode).to.eql(404);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('User not found');
-        }
-        User.findOneAndUpdate.restore();
       });
     });
   });
