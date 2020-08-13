@@ -234,7 +234,15 @@ describe('Get all properties', () => {
             expect(res.body).to.have.property('schedules');
             expect(propId.equals(res.body.schedules[0].propertyId)).to.be.eql(true);
             expect(adminId.equals(res.body.schedules[0].userId)).to.be.eql(true);
+            expect(res.body.schedules[0].visitorName).to.be.eql(booking.visitorName);
+            expect(res.body.schedules[0].visitorEmail).to.be.eql(booking.visitorEmail);
+            expect(res.body.schedules[0].visitorPhone).to.be.eql(booking.visitorPhone);
             expect(propId.equals(res.body.schedules[0].propertyInfo[0]._id)).to.be.eql(true);
+            expect(res.body.schedules[0].propertyInfo[0].name).to.be.eql(demoProperty.name);
+            expect(res.body.schedules[0].propertyInfo[0].price).to.be.eql(demoProperty.price);
+            expect(res.body.schedules[0].propertyInfo[0].description).to.be.eql(
+              demoProperty.description,
+            );
             done();
           });
       });
