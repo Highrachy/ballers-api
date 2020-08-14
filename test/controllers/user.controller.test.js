@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
 import { addUser } from '../../server/services/user.service';
@@ -675,6 +676,94 @@ describe('Update User', () => {
           done();
           User.findByIdAndUpdate.restore();
         });
+    });
+  });
+});
+
+describe('Get all users', () => {
+  describe('when users exist in db', () => {
+    let adminToken;
+    let userToken;
+    const _id = mongoose.Types.ObjectId();
+    const adminUser = UserFactory.build({ _id, role: 0, activated: true });
+    const regualarUser = UserFactory.build({ role: 1, activated: true });
+
+    beforeEach(async () => {
+      adminToken = await addUser(adminUser);
+      userToken = await addUser(regualarUser);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/user/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('users');
+            expect(res.body.users[0]).to.have.property('assignedProperties');
+            done();
+          });
+      });
+    });
+
+    context('with a user access token', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/user/all')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/user/all')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when token is invalid', () => {
+      beforeEach(async () => {
+        await User.findByIdAndDelete(_id);
+      });
+      it('returns token error', (done) => {
+        request()
+          .get('/api/v1/user/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid token');
+            done();
+          });
+      });
+    });
+
+    context('when getAllRegisteredUsers service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(User, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/user/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            User.aggregate.restore();
+          });
+      });
     });
   });
 });

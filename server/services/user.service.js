@@ -164,3 +164,16 @@ export const updateUser = async (updatedUser) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
 };
+
+export const getAllRegisteredUsers = async () =>
+  User.aggregate([
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'assignedProperties.propertyId',
+        foreignField: '_id',
+        as: 'assignedProperties',
+      },
+    },
+    { $project: { preferences: 0, password: 0, notifications: 0 } },
+  ]);
