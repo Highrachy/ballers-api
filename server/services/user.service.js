@@ -175,5 +175,5 @@ export const getAllRegisteredUsers = async () =>
         as: 'assignedProperties',
       },
     },
-    { $project: { preferences: 0, password: 0, notification: 0 } },
+    { $project: { preferences: 0, password: 0, notifications: 0 } },
   ]);

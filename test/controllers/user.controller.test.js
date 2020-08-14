@@ -702,6 +702,7 @@ describe('Get all users', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('users');
+            expect(res.body.users[0]).to.have.property('assignedProperties');
             done();
           });
       });
