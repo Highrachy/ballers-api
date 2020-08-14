@@ -28,6 +28,10 @@ const EMAIL_CONTENT = {
       "You (or someone pretending to be you) requested a password reset for your account. If you didn't made this request you can ignore this email.",
     subject: 'Password Reset',
   },
+  SCHEDULE_VISIT: {
+    subject: 'Property Visit Requested',
+    contentTop: 'A new propery visit has been requested',
+  },
 };
 
 module.exports = EMAIL_CONTENT;
