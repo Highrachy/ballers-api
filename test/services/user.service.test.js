@@ -417,7 +417,6 @@ describe('User Service', () => {
         country: 'Nigeria',
       },
     };
-    let updatedUser;
 
     beforeEach(async () => {
       await User.create(UserFactory.build({ _id }));
@@ -426,25 +425,6 @@ describe('User Service', () => {
     context('when all is valid', () => {
       it('returns a valid updated user', async () => {
         const updatedUser = await updateUser(updatedDetails);
-        expect(updatedDetails.firstName).to.eql(updatedUser.firstName);
-        expect(updatedDetails.lastName).to.eql(updatedUser.lastName);
-        expect(updatedDetails.phone).to.eql(updatedUser.phone);
-      });
-    });
-
-    context('when getUserById fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(User, 'findById').throws(new Error('error msg'));
-
-        try {
-          await updateUser(updatedDetails);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        User.findById.restore();
-        updatedUser = await updateUser(updatedDetails);
         expect(updatedDetails.firstName).to.eql(updatedUser.firstName);
         expect(updatedDetails.lastName).to.eql(updatedUser.lastName);
         expect(updatedDetails.phone).to.eql(updatedUser.phone);
@@ -610,6 +590,10 @@ describe('User Service', () => {
           expect(err.message).to.be.eql('Error assigning property');
         }
         Property.findByIdAndUpdate.restore();
+      });
+    });
+  });
+
   describe('#getAllRegisteredUsers', async () => {
     let countedUsers;
 

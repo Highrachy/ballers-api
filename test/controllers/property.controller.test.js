@@ -835,6 +835,20 @@ describe('Get one property', () => {
         });
     });
   });
+
+  context('when getOneProperty service fails', () => {
+    it('returns the error', (done) => {
+      sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
+      request()
+        .get(`/api/v1/property/${id}`)
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(500);
+          done();
+          Property.aggregate.restore();
+        });
+    });
+  });
 });
 
 describe('Get all properties', () => {
