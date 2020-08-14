@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import httpStatus from './httpStatus';
 import userRole from './userRole';
 import { decodeToken, getUserById } from '../services/user.service';
@@ -55,6 +56,21 @@ export const isAdmin = async (req, res, next) => {
     return res.status(httpStatus.FORBIDDEN).json({
       success: false,
       message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
+
+export const paramIdIsValid = async (req, res, next) => {
+  const { id } = req.params;
+  const { ObjectId } = mongoose.Types;
+
+  if (ObjectId.isValid(id)) {
+    next();
+  } else {
+    return res.status(httpStatus.PRECONDITION_FAILED).json({
+      success: false,
+      message: 'ID should be a valid mongo object ID',
     });
   }
   return null;

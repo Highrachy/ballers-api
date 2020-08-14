@@ -971,6 +971,20 @@ describe('Get all properties added by an admin', () => {
       });
     });
 
+    context('with id is not a valid mongo id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get(`/api/v1/property/added-by/${_id}a`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('ID should be a valid mongo object ID');
+            done();
+          });
+      });
+    });
+
     context('without token', () => {
       it('returns error', (done) => {
         request()

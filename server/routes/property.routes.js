@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, schemaValidation, isAdmin } from '../helpers/middleware';
+import { authenticate, schemaValidation, isAdmin, paramIdIsValid } from '../helpers/middleware';
 import { addPropertySchema, updatePropertySchema } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -90,7 +90,7 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.delete('/delete/:id', authenticate, isAdmin, PropertyController.delete);
+router.delete('/delete/:id', authenticate, paramIdIsValid, isAdmin, PropertyController.delete);
 
 /**
  * @swagger
@@ -114,6 +114,7 @@ router.delete('/delete/:id', authenticate, isAdmin, PropertyController.delete);
 router.get(
   '/added-by/:id',
   authenticate,
+  paramIdIsValid,
   isAdmin,
   PropertyController.getAllPropertiesAddedByAnAdmin,
 );
@@ -160,6 +161,6 @@ router.get('/all', authenticate, isAdmin, PropertyController.getAllProperties);
  *        '500':
  *          description: Internal server error
  */
-router.get('/:id', authenticate, PropertyController.getOneProperty);
+router.get('/:id', authenticate, paramIdIsValid, PropertyController.getOneProperty);
 
 module.exports = router;

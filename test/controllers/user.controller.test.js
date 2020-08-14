@@ -578,10 +578,10 @@ describe('Current User', () => {
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
-          expect(res.body.user.firstName).to.be.eql(user.firstName);
-          expect(res.body.user.lastName).to.be.eql(user.lastName);
-          expect(res.body.user.email).to.be.eql(user.email);
-          expect(res.body.user).to.not.have.property('password');
+          expect(res.body.user[0].firstName).to.be.eql(user.firstName);
+          expect(res.body.user[0].lastName).to.be.eql(user.lastName);
+          expect(res.body.user[0].email).to.be.eql(user.email);
+          expect(res.body.user[0]).to.not.have.property('password');
           done();
         });
     });

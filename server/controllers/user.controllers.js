@@ -8,6 +8,7 @@ import {
   assignPropertyToUser,
   getAllUserProperties,
   getAllRegisteredUsers,
+  getUserInfo,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -80,11 +81,17 @@ const UserController = {
       .catch((error) => next(error));
   },
 
-  currentUser(req, res) {
-    const { user } = req;
-    return res
-      .status(httpStatus.OK)
-      .json({ success: true, message: 'Your information has been successfully retrieved', user });
+  currentUser(req, res, next) {
+    const id = req.user._id;
+    getUserInfo(id)
+      .then((user) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          message: 'Your information has been successfully retrieved',
+          user,
+        });
+      })
+      .catch((error) => next(error));
   },
 
   assignProperty(req, res, next) {
