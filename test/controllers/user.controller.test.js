@@ -626,10 +626,10 @@ describe('Update User', () => {
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
-          expect(res.body).to.have.property('updateduser');
-          expect(res.body.updateduser.firstName).to.be.eql(newUser.firstName);
-          expect(res.body.updateduser.lastName).to.be.eql(newUser.lastName);
-          expect(res.body.updateduser.phone).to.be.eql(newUser.phone);
+          expect(res.body).to.have.property('user');
+          expect(res.body.user.firstName).to.be.eql(newUser.firstName);
+          expect(res.body.user.lastName).to.be.eql(newUser.lastName);
+          expect(res.body.user.phone).to.be.eql(newUser.phone);
           done();
         });
     });
@@ -665,7 +665,7 @@ describe('Update User', () => {
 
   context('when update service returns an error', () => {
     it('returns the error', (done) => {
-      sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+      sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
       request()
         .put('/api/v1/user/update')
         .set('authorization', token)
@@ -674,8 +674,92 @@ describe('Update User', () => {
           expect(res).to.have.status(400);
           expect(res.body.success).to.be.eql(false);
           done();
-          User.findByIdAndUpdate.restore();
+          User.findOneAndUpdate.restore();
         });
+    });
+  });
+
+  context('with invalid data', () => {
+    context('when first name is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ firstName: '' });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"First Name" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+
+    context('when preferences house type is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { houseType: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property House Type" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when preferences location is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { location: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property Location" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when preferences max price is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { maxPrice: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property Maximum Price" must be a number');
+            done();
+          });
+      });
+    });
+    context('when preferences min price is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { minPrice: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property Minimum Price" must be a number');
+            done();
+          });
+      });
     });
   });
 });

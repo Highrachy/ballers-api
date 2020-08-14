@@ -86,11 +86,11 @@ const UserController = {
   },
 
   update(req, res, next) {
-    const updateduser = req.locals;
-    const { user } = req;
-    updateUser({ ...updateduser, id: user._id })
-      .then(() => {
-        res.status(httpStatus.OK).json({ success: true, message: 'User updated', updateduser });
+    const updatedUser = req.locals;
+    const userId = req.user._id;
+    updateUser({ ...updatedUser, id: userId })
+      .then((user) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'User updated', user });
       })
       .catch((error) => next(error));
   },

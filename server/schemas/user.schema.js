@@ -31,8 +31,27 @@ export const changePasswordSchema = Joi.object({
   confirmPassword,
 });
 
+const address = Joi.object().keys({
+  street1: Joi.string().label('Street 1').optional(),
+  street2: Joi.string().label('Street 2').optional(),
+  city: Joi.string().label('City').optional(),
+  state: Joi.string().label('State').optional(),
+  country: Joi.string().label('Country').optional(),
+});
+
+const preferences = Joi.object().keys({
+  houseType: Joi.string().label('Property House Type').optional(),
+  location: Joi.string().label('Property Location').optional(),
+  maxPrice: Joi.number().label('Property Maximum Price').optional(),
+  minPrice: Joi.number().label('Property Minimum Price').optional(),
+  paymentPlan: Joi.string().label('Payment Plan').optional(),
+});
+
 export const updateUserSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
   phone,
+  phone2: Joi.string().label('Phone 2').optional(),
+  address,
+  preferences,
 });

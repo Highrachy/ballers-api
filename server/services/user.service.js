@@ -155,11 +155,11 @@ export const resetPasswordViaToken = async (password, token) => {
 };
 
 export const updateUser = async (updatedUser) => {
-  const user = await getUserById(updatedUser.id).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
   try {
-    return User.findByIdAndUpdate(user.id, updatedUser);
+    return User.findOneAndUpdate({ _id: updatedUser.id }, updatedUser, {
+      new: true,
+      fields: '-password',
+    });
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
