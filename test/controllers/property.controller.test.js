@@ -781,9 +781,11 @@ describe('Get all properties', () => {
         .get('/api/v1/property/all')
         .set('authorization', adminToken)
         .end((err, res) => {
-          expect(res).to.have.status(404);
-          expect(res.body.success).to.be.eql(false);
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('No properties available');
+          expect(res.body).to.have.property('properties');
+          expect(res.body.properties.length).to.be.eql(0);
           done();
         });
     });
