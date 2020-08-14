@@ -44,6 +44,7 @@ const preferences = Joi.object().keys({
   location: Joi.string().label('Property Location').optional(),
   maxPrice: Joi.number().label('Property Maximum Price').optional(),
   minPrice: Joi.number().label('Property Minimum Price').optional(),
+  paymentPlan: Joi.string().label('Payment Plan').optional(),
 });
 
 export const updateUserSchema = Joi.object({

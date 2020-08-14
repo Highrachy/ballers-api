@@ -34,7 +34,7 @@ import mongoose from 'mongoose';
  *            type: object
  *          preferences:
  *            type: object
- *          notification:
+ *          notifications:
  *            type: array
  *        example:
  *           firstName: John
@@ -45,8 +45,8 @@ import mongoose from 'mongoose';
  *           phone: 08012345678
  *           phone2: 08012345678
  *           address: {street1: 1 sesame street, street2: 12 solomon close, city: Ikeja, state: Lagos, country: Nigeria}
- *           preferences: {houseType: 3 bedroom apartment, location: lekki phase 1, maxPrice: 50000000, minPrice: 15000000}
- *           notification: [description: Your account has been activated, type: info, URL: app.ballers.ng/dashboard, status: 0, dateAdded: 22-03-2021]
+ *           preferences: {houseType: 3 bedroom apartment, location: lekki phase 1, maxPrice: 50000000, minPrice: 15000000, paymentPlan: Outright Payment}
+ *           notifications: [description: Your account has been activated, type: info, URL: app.ballers.ng/dashboard, status: 0, dateAdded: 2021-03-22]
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -102,8 +102,11 @@ const UserSchema = new mongoose.Schema(
       minPrice: {
         type: Number,
       },
+      paymentPlan: {
+        String,
+      },
     },
-    notification: [
+    notifications: [
       {
         description: {
           type: String,
