@@ -628,10 +628,10 @@ describe('Update User route', () => {
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
-          expect(res.body).to.have.property('updateduser');
-          expect(res.body.updateduser.firstName).to.be.eql(newUser.firstName);
-          expect(res.body.updateduser.lastName).to.be.eql(newUser.lastName);
-          expect(res.body.updateduser.phone).to.be.eql(newUser.phone);
+          expect(res.body).to.have.property('user');
+          expect(res.body.user.firstName).to.be.eql(newUser.firstName);
+          expect(res.body.user.lastName).to.be.eql(newUser.lastName);
+          expect(res.body.user.phone).to.be.eql(newUser.phone);
           done();
         });
     });
@@ -667,7 +667,7 @@ describe('Update User route', () => {
 
   context('when update service returns an error', () => {
     it('returns the error', (done) => {
-      sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+      sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
       request()
         .put('/api/v1/user/update')
         .set('authorization', token)
@@ -676,8 +676,180 @@ describe('Update User route', () => {
           expect(res).to.have.status(400);
           expect(res.body.success).to.be.eql(false);
           done();
-          User.findByIdAndUpdate.restore();
+          User.findOneAndUpdate.restore();
         });
+    });
+  });
+
+  context('with invalid data', () => {
+    context('when first name is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ firstName: '' });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"First Name" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+
+    context('when preferences house type is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { houseType: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property House Type" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when preferences location is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { location: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property Location" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when preferences max price is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { maxPrice: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property Maximum Price" must be a number');
+            done();
+          });
+      });
+    });
+    context('when preferences min price is empty', () => {
+      it('returns an error', (done) => {
+        const invalidUser = UserFactory.build({ preferences: { minPrice: '' } });
+        request()
+          .put('/api/v1/user/update')
+          .set('authorization', token)
+          .send(invalidUser)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Property Minimum Price" must be a number');
+            done();
+          });
+      });
+    });
+  });
+});
+
+describe('Get all users', () => {
+  describe('when users exist in db', () => {
+    let adminToken;
+    let userToken;
+    const _id = mongoose.Types.ObjectId();
+    const adminUser = UserFactory.build({ _id, role: 0, activated: true });
+    const regualarUser = UserFactory.build({ role: 1, activated: true });
+
+    beforeEach(async () => {
+      adminToken = await addUser(adminUser);
+      userToken = await addUser(regualarUser);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/user/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('users');
+            expect(res.body.users[0]).to.have.property('assignedProperties');
+            done();
+          });
+      });
+    });
+
+    context('with a user access token', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/user/all')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/user/all')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when token is invalid', () => {
+      beforeEach(async () => {
+        await User.findByIdAndDelete(_id);
+      });
+      it('returns token error', (done) => {
+        request()
+          .get('/api/v1/user/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid token');
+            done();
+          });
+      });
+    });
+
+    context('when getAllRegisteredUsers service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(User, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/user/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            User.aggregate.restore();
+          });
+      });
     });
   });
 });

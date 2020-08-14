@@ -278,4 +278,27 @@ router.put('/update', authenticate, schemaValidation(updateUserSchema), UserCont
  */
 router.get('/my-properties', authenticate, UserController.getOwnedProperties);
 
+/**
+ * @swagger
+ * /user/all:
+ *   get:
+ *     tags:
+ *       - User
+ *     description: Get all registered users
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Get all registered users
+ *     responses:
+ *      '200':
+ *        description: returns object of users
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/all', authenticate, isAdmin, UserController.getAllRegisteredUsers);
+
 module.exports = router;

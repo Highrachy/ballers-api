@@ -90,6 +90,24 @@ describe('Add Property Route', () => {
           });
       });
     });
+    context('when title document is empty', () => {
+      it('returns successful property', (done) => {
+        const property = PropertyFactory.build({ titleDocument: '' });
+        request()
+          .post('/api/v1/property/add')
+          .set('authorization', adminToken)
+          .send(property)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql(
+              '"Property title document" is not allowed to be empty',
+            );
+            done();
+          });
+      });
+    });
     context('when location is empty', () => {
       it('returns an error', (done) => {
         const property = PropertyFactory.build({ location: '' });

@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
  *        type: object
  *        required:
  *          - name
+ *          - titleDocument
  *          - location
  *          - price
  *          - units
@@ -22,6 +23,8 @@ import mongoose from 'mongoose';
  *          - gallery
  *        properties:
  *          name:
+ *            type: string
+ *          titleDocument:
  *            type: string
  *          location:
  *            type: string
@@ -49,6 +52,7 @@ import mongoose from 'mongoose';
  *            type: array
  *        example:
  *           name: 3 bedroom semi-detached duplex
+ *           titleDocument: https://ballers.ng/sampletitledocument.pdf
  *           location: Lagos
  *           price: 10000000
  *           units: 15
@@ -70,6 +74,9 @@ const PropertySchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+    },
+    titleDocument: {
+      type: String,
     },
     location: {
       type: String,

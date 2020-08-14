@@ -197,40 +197,54 @@ export const resetPasswordViaToken = async (password, token) => {
 };
 
 export const updateUser = async (updatedUser) => {
-  const user = await getUserById(updatedUser.id).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
   try {
-    return User.findByIdAndUpdate(user.id, updatedUser, { new: true, fields: '-password' });
+    return User.findOneAndUpdate({ _id: updatedUser.id }, updatedUser, {
+      new: true,
+      fields: '-password',
+    });
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
 };
 
+
 export const getAllUserProperties = async (userId) =>
+User.aggregate([
+  { $match: { _id: ObjectId(userId) } },
+  {
+    $lookup: {
+      from: 'properties',
+      localField: 'assignedProperties.propertyId',
+      foreignField: '_id',
+      as: 'ownedProperties',
+    },
+  },
+  {
+    $project: {
+      _id: 0,
+      'ownedProperties._id': 1,
+      'ownedProperties.neighborhood': 1,
+      'ownedProperties.gallery': 1,
+      'ownedProperties.name': 1,
+      'ownedProperties.location': 1,
+      'ownedProperties.price': 1,
+      'ownedProperties.description': 1,
+      'ownedProperties.toilets': 1,
+      'ownedProperties.bedrooms': 1,
+      'ownedProperties.houseType': 1,
+    },
+  },
+]);
+
+export const getAllRegisteredUsers = async () =>
   User.aggregate([
-    { $match: { _id: ObjectId(userId) } },
     {
       $lookup: {
         from: 'properties',
         localField: 'assignedProperties.propertyId',
         foreignField: '_id',
-        as: 'ownedProperties',
+        as: 'assignedProperties',
       },
     },
-    {
-      $project: {
-        _id: 0,
-        'ownedProperties._id': 1,
-        'ownedProperties.neighborhood': 1,
-        'ownedProperties.gallery': 1,
-        'ownedProperties.name': 1,
-        'ownedProperties.location': 1,
-        'ownedProperties.price': 1,
-        'ownedProperties.description': 1,
-        'ownedProperties.toilets': 1,
-        'ownedProperties.bedrooms': 1,
-        'ownedProperties.houseType': 1,
-      },
-    },
+    { $project: { preferences: 0, password: 0, notifications: 0 } },
   ]);

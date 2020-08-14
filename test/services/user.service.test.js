@@ -18,6 +18,7 @@ import {
   generateReferralCode,
   generateCode,
   assignPropertyToUser,
+  getAllRegisteredUsers,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -408,13 +409,21 @@ describe('User Service', () => {
       lastName: 'Updated lastname',
       phone: '08012345678',
       referralCode: 'abc123',
+      phone2: '08012345678',
+      address: {
+        street1: '123 sesame street',
+        city: 'Epe',
+        state: 'Lagos',
+        country: 'Nigeria',
+      },
     };
+    let updatedUser;
 
-    before(async () => {
+    beforeEach(async () => {
       await User.create(UserFactory.build({ _id }));
     });
 
-    context('when getUserById works', () => {
+    context('when all is valid', () => {
       it('returns a valid updated user', async () => {
         const updatedUser = await updateUser(updatedDetails);
         expect(updatedDetails.firstName).to.eql(updatedUser.firstName);
@@ -435,12 +444,17 @@ describe('User Service', () => {
           expect(err.message).to.be.eql('Internal Server Error');
         }
         User.findById.restore();
+        updatedUser = await updateUser(updatedDetails);
+        expect(updatedDetails.firstName).to.eql(updatedUser.firstName);
+        expect(updatedDetails.lastName).to.eql(updatedUser.lastName);
+        expect(updatedDetails.phone).to.eql(updatedUser.phone);
+        expect(updatedDetails.address.street1).to.eql(updatedUser.address.street1);
       });
     });
 
-    context('when findByIdAndUpdate fails', () => {
+    context('when findOneAndUpdate fails', () => {
       it('throws an error', async () => {
-        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('error msg'));
+        sinon.stub(User, 'findOneAndUpdate').throws(new Error('error msg'));
 
         try {
           await updateUser(updatedDetails);
@@ -449,7 +463,7 @@ describe('User Service', () => {
           expect(err.error).to.be.an('Error');
           expect(err.message).to.be.eql('Error updating user');
         }
-        User.findByIdAndUpdate.restore();
+        User.findOneAndUpdate.restore();
       });
     });
   });
@@ -596,6 +610,29 @@ describe('User Service', () => {
           expect(err.message).to.be.eql('Error assigning property');
         }
         Property.findByIdAndUpdate.restore();
+  describe('#getAllRegisteredUsers', async () => {
+    let countedUsers;
+
+    beforeEach(async () => {
+      await addUser(UserFactory.build());
+      await addUser(UserFactory.build());
+    });
+    context('when user added is valid', async () => {
+      it('returns total users', async () => {
+        countedUsers = await User.countDocuments({});
+        const users = await getAllRegisteredUsers();
+        expect(users).to.be.an('array');
+        expect(users.length).to.be.eql(countedUsers);
+      });
+    });
+    context('when new user is added', async () => {
+      before(async () => {
+        await User.create(UserFactory.build());
+      });
+      it('returns total users plus one', async () => {
+        const users = await getAllRegisteredUsers();
+        expect(users).to.be.an('array');
+        expect(users.length).to.be.eql(countedUsers + 1);
       });
     });
   });
