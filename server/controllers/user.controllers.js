@@ -83,7 +83,7 @@ const UserController = {
 
   currentUser(req, res, next) {
     const id = req.user._id;
-    getUserInfo(id)
+    getUserInfo('_id', id)
       .then((user) => {
         res.status(httpStatus.OK).json({
           success: true,

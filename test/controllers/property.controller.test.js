@@ -979,7 +979,7 @@ describe('Get all properties added by an admin', () => {
           .end((err, res) => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('ID should be a valid mongo object ID');
+            expect(res.body.message).to.be.eql('Invalid Id supplied');
             done();
           });
       });

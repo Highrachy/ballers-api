@@ -90,9 +90,9 @@ export const addUser = async (user) => {
   }
 };
 
-export const getUserInfo = async (userId) =>
+export const getUserInfo = async (key, value) =>
   User.aggregate([
-    { $match: { _id: ObjectId(userId) } },
+    { $match: { [key]: value } },
     {
       $lookup: {
         from: 'properties',
@@ -109,7 +109,9 @@ export const getUserInfo = async (userId) =>
         'assignedProperties.updatedBy': 0,
       },
     },
-  ]);
+  ]).then((user) => {
+    return Promise.resolve(user[0]);
+  });
 
 export const loginUser = async (user) => {
   const existingUser = await getUserByEmail(user.email, '+password').catch((error) => {
@@ -127,8 +129,8 @@ export const loginUser = async (user) => {
       delete savedUser.password;
 
       if (savedUser.activated) {
-        const userInfo = await getUserInfo(savedUser._id);
-        return { ...userInfo[0], token };
+        const userInfo = await getUserInfo('_id', savedUser._id);
+        return { ...userInfo, token };
       }
       throw new ErrorHandler(httpStatus.UNAUTHORIZED, 'Your account needs to be activated.');
     }

@@ -62,7 +62,7 @@ const PropertyController = {
         if (property.length > 0) {
           res.status(httpStatus.OK).json({ success: true, property });
         } else {
-          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'No property found' });
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Property not found' });
         }
       })
       .catch((error) => next(error));

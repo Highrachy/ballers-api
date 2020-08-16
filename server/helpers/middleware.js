@@ -61,7 +61,7 @@ export const isAdmin = async (req, res, next) => {
   return null;
 };
 
-export const paramIdIsValid = async (req, res, next) => {
+export const hasValidObjectId = async (req, res, next) => {
   const { id } = req.params;
   const { ObjectId } = mongoose.Types;
 
@@ -70,7 +70,7 @@ export const paramIdIsValid = async (req, res, next) => {
   } else {
     return res.status(httpStatus.PRECONDITION_FAILED).json({
       success: false,
-      message: 'ID should be a valid mongo object ID',
+      message: 'Invalid Id supplied',
     });
   }
   return null;
