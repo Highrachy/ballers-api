@@ -126,6 +126,9 @@ const PropertySchema = new mongoose.Schema(
     gallery: {
       type: [String],
     },
+    assignedTo: {
+      type: [ObjectId],
+    },
     addedBy: {
       type: ObjectId,
       required: true,

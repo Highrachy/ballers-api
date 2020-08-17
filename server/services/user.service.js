@@ -1,9 +1,13 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+import { getPropertyById, updateProperty } from './property.service';
+
+const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -86,6 +90,29 @@ export const addUser = async (user) => {
   }
 };
 
+export const getUserInfo = async (key, value) =>
+  User.aggregate([
+    { $match: { [key]: value } },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'assignedProperties.propertyId',
+        foreignField: '_id',
+        as: 'assignedProperties',
+      },
+    },
+    {
+      $project: {
+        password: 0,
+        'assignedProperties.assignedTo': 0,
+        'assignedProperties.addedBy': 0,
+        'assignedProperties.updatedBy': 0,
+      },
+    },
+  ]).then((user) => {
+    return Promise.resolve(user[0]);
+  });
+
 export const loginUser = async (user) => {
   const existingUser = await getUserByEmail(user.email, '+password').catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -102,10 +129,8 @@ export const loginUser = async (user) => {
       delete savedUser.password;
 
       if (savedUser.activated) {
-        return {
-          ...savedUser,
-          token,
-        };
+        const userInfo = await getUserInfo('_id', savedUser._id);
+        return { ...userInfo, token };
       }
       throw new ErrorHandler(httpStatus.UNAUTHORIZED, 'Your account needs to be activated.');
     }
@@ -125,6 +150,44 @@ export const activateUser = async (token) => {
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found', error);
+  }
+};
+
+export const assignPropertyToUser = async (toBeAssigned) => {
+  const assignedProperty = {
+    propertyId: toBeAssigned.propertyId,
+    assignedBy: toBeAssigned.assignedBy,
+    assignedDate: Date.now(),
+  };
+  const property = await getPropertyById(toBeAssigned.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (property.units < 1) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'No available units');
+  }
+
+  const owner = await getUserById(toBeAssigned.userId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    const updatedProperty = {
+      id: property.id,
+      units: property.units - 1,
+      $push: { assignedTo: toBeAssigned.userId },
+    };
+    const updatePropertyUnit = await updateProperty(updatedProperty).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+
+    if (updatePropertyUnit) {
+      return User.findByIdAndUpdate(owner.id, { $push: { assignedProperties: assignedProperty } });
+    }
+
+    return new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property');
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property', error);
   }
 };
 
@@ -164,6 +227,34 @@ export const updateUser = async (updatedUser) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
 };
+
+export const getAllUserProperties = async (userId) =>
+  User.aggregate([
+    { $match: { _id: ObjectId(userId) } },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'assignedProperties.propertyId',
+        foreignField: '_id',
+        as: 'ownedProperties',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        'ownedProperties._id': 1,
+        'ownedProperties.neighborhood': 1,
+        'ownedProperties.gallery': 1,
+        'ownedProperties.name': 1,
+        'ownedProperties.location': 1,
+        'ownedProperties.price': 1,
+        'ownedProperties.description': 1,
+        'ownedProperties.toilets': 1,
+        'ownedProperties.bedrooms': 1,
+        'ownedProperties.houseType': 1,
+      },
+    },
+  ]);
 
 export const getAllRegisteredUsers = async () =>
   User.aggregate([

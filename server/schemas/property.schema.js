@@ -1,5 +1,7 @@
 import Joi from '@hapi/joi';
 
+Joi.objectId = require('joi-objectid')(Joi);
+
 const mapLocation = Joi.object().keys({
   longitude: Joi.string().label('Map location longitude').optional(),
   latitude: Joi.string().label('Map location latitude').optional(),
@@ -25,7 +27,7 @@ const product = {
 export const addPropertySchema = Joi.object({ ...product });
 
 export const updatePropertySchema = Joi.object({
-  id: Joi.string().label('Property id').required(),
+  id: Joi.objectId().label('Property id').required(),
   units: Joi.number().label('Property units').optional(),
   name: Joi.string().label('Property name').optional(),
   titleDocument: Joi.string().label('Property title document').optional(),

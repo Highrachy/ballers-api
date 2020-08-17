@@ -5,7 +5,10 @@ import {
   forgotPasswordToken,
   resetPasswordViaToken,
   updateUser,
+  assignPropertyToUser,
+  getAllUserProperties,
   getAllRegisteredUsers,
+  getUserInfo,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -78,11 +81,27 @@ const UserController = {
       .catch((error) => next(error));
   },
 
-  currentUser(req, res) {
+  currentUser(req, res, next) {
+    const id = req.user._id;
+    getUserInfo('_id', id)
+      .then((user) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          message: 'Your information has been successfully retrieved',
+          user,
+        });
+      })
+      .catch((error) => next(error));
+  },
+
+  assignProperty(req, res, next) {
+    const toBeAssigned = req.locals;
     const { user } = req;
-    return res
-      .status(httpStatus.OK)
-      .json({ success: true, message: 'Your information has been successfully retrieved', user });
+    assignPropertyToUser({ ...toBeAssigned, assignedBy: user._id })
+      .then(() => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Property assigned' });
+      })
+      .catch((error) => next(error));
   },
 
   update(req, res, next) {
@@ -99,6 +118,15 @@ const UserController = {
     getAllRegisteredUsers()
       .then((users) => {
         res.status(httpStatus.OK).json({ success: true, users });
+      })
+      .catch((error) => next(error));
+  },
+
+  getOwnedProperties(req, res, next) {
+    const { user } = req;
+    getAllUserProperties(user._id)
+      .then((properties) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Properties found', properties });
       })
       .catch((error) => next(error));
   },

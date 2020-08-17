@@ -1,5 +1,7 @@
 import Joi from '@hapi/joi';
 
+Joi.objectId = require('joi-objectid')(Joi);
+
 const address = Joi.object().keys({
   street1: Joi.string().label('Street 1').required(),
   street2: Joi.string().label('Street 2').optional(),
@@ -10,7 +12,7 @@ const address = Joi.object().keys({
 
 export const addEnquirySchema = Joi.object({
   title: Joi.string().label('Title').required(),
-  propertyId: Joi.string().label('Property ID').required(),
+  propertyId: Joi.objectId().label('Property ID').required(),
   firstName: Joi.string().label('First Name').required(),
   otherName: Joi.string().label('Other Name').optional(),
   lastName: Joi.string().label('Last Name').required(),
@@ -27,5 +29,5 @@ export const addEnquirySchema = Joi.object({
 });
 
 export const approveEnquirySchema = Joi.object({
-  enquiryId: Joi.string().label('Enquiry Id').required(),
+  enquiryId: Joi.objectId().label('Enquiry Id').required(),
 });
