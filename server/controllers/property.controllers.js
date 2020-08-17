@@ -2,9 +2,10 @@ import {
   addProperty,
   updateProperty,
   deleteProperty,
-  getPropertyById,
+  getAllPropertiesAddedByAnAdmin,
   getAllProperties,
   searchThroughProperties,
+  getOneProperty,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -18,6 +19,7 @@ const PropertyController = {
       })
       .catch((error) => next(error));
   },
+
   update(req, res, next) {
     const updatedproperty = req.locals;
     const { user } = req;
@@ -27,6 +29,7 @@ const PropertyController = {
       })
       .catch((error) => next(error));
   },
+
   delete(req, res, next) {
     const { id } = req.params;
     deleteProperty(id)
@@ -35,28 +38,32 @@ const PropertyController = {
       })
       .catch((error) => next(error));
   },
-  getMultiple(req, res, next) {
-    getAllProperties()
+
+  getAllPropertiesAddedByAnAdmin(req, res, next) {
+    const adminId = req.params.id;
+    getAllPropertiesAddedByAnAdmin(adminId)
       .then((properties) => {
-        if (properties.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, properties });
-        } else {
-          res
-            .status(httpStatus.OK)
-            .json({ success: true, message: 'No properties available', properties });
-        }
+        res.status(httpStatus.OK).json({ success: true, properties });
       })
       .catch((error) => next(error));
   },
-  getOne(req, res, next) {
-    getPropertyById(req.params.id)
+
+  getAllProperties(req, res, next) {
+    getAllProperties()
+      .then((properties) => {
+        res.status(httpStatus.OK).json({ success: true, properties });
+      })
+      .catch((error) => next(error));
+  },
+
+  getOneProperty(req, res, next) {
+    const propertId = req.params.id;
+    getOneProperty(propertId)
       .then((property) => {
-        if (!property) {
-          res
-            .status(httpStatus.NOT_FOUND)
-            .json({ success: false, message: 'Property does not exist' });
-        } else {
+        if (property.length > 0) {
           res.status(httpStatus.OK).json({ success: true, property });
+        } else {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Property not found' });
         }
       })
       .catch((error) => next(error));

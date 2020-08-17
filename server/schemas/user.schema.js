@@ -1,5 +1,7 @@
 import Joi from '@hapi/joi';
 
+Joi.objectId = require('joi-objectid')(Joi);
+
 const email = Joi.string().label('Email Address').email().required();
 const password = Joi.string().label('Password').min(6).required().strict();
 const confirmPassword = Joi.string().valid(Joi.ref('password')).required().strict().messages({
@@ -29,6 +31,11 @@ export const resetPasswordSchema = Joi.object({
 export const changePasswordSchema = Joi.object({
   password,
   confirmPassword,
+});
+
+export const assignPropertySchema = Joi.object({
+  propertyId: Joi.objectId().label('Property id').required(),
+  userId: Joi.string().label('User id').required(),
 });
 
 const address = Joi.object().keys({

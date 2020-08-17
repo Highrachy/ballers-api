@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, schemaValidation, isAdmin } from '../helpers/middleware';
+import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
 import { addPropertySchema, updatePropertySchema } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -90,7 +90,34 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.delete('/delete/:id', authenticate, isAdmin, PropertyController.delete);
+router.delete('/delete/:id', authenticate, hasValidObjectId, isAdmin, PropertyController.delete);
+
+/**
+ * @swagger
+ * path:
+ *  /property/added-by/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: the auto generated user token via jwt
+ *      summary: Gets all properties added by an admin(ID)
+ *      tags: [Property]
+ *      responses:
+ *        '200':
+ *          description: Properties found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get(
+  '/added-by/:id',
+  authenticate,
+  hasValidObjectId,
+  isAdmin,
+  PropertyController.getAllPropertiesAddedByAnAdmin,
+);
 
 /**
  * @swagger
@@ -106,16 +133,14 @@ router.delete('/delete/:id', authenticate, isAdmin, PropertyController.delete);
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/Property'
- *      description: Get all owned properties
+ *      description: Get all properties in DB
  *     responses:
  *      '200':
  *        description: returns object of properties
- *      '404':
- *        description: No properties available
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, PropertyController.getMultiple);
+router.get('/all', authenticate, isAdmin, PropertyController.getAllProperties);
 
 /**
  * @swagger
@@ -128,16 +153,15 @@ router.get('/all', authenticate, isAdmin, PropertyController.getMultiple);
  *          schema:
  *            type: string
  *          description: verifies user access
+ *      summary: Gets a property based by its ID
  *      tags: [Property]
  *      responses:
  *        '200':
- *          description: Gets specific property
- *        '404':
- *          description: Property does not exist
+ *          description: Property found
  *        '500':
  *          description: Internal server error
  */
-router.get('/:id', authenticate, isAdmin, PropertyController.getOne);
+router.get('/:id', authenticate, hasValidObjectId, PropertyController.getOneProperty);
 
 /**
  * @swagger
