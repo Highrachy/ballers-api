@@ -36,3 +36,58 @@ export const deleteProperty = async (id) => {
 };
 
 export const getAllProperties = async () => Property.find();
+
+export const searchThroughProperties = async (filter) =>
+  Property.aggregate([
+    {
+      $match: {
+        $and: [
+          { houseType: filter.houseType },
+          { location: filter.location },
+          { price: { $gte: filter.minPrice, $lte: filter.maxPrice } },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'assignedTo',
+        foreignField: '_id',
+        as: 'assignedTo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'addedBy',
+        foreignField: '_id',
+        as: 'addedBy',
+      },
+    },
+    {
+      $unwind: '$addedBy',
+    },
+    {
+      $project: {
+        _id: 1,
+        neighborhood: 1,
+        gallery: 1,
+        name: 1,
+        location: 1,
+        price: 1,
+        units: 1,
+        houseType: 1,
+        bedrooms: 1,
+        toilets: 1,
+        description: 1,
+        'assignedTo._id': 1,
+        'assignedTo.firstName': 1,
+        'assignedTo.lastName': 1,
+        'assignedTo.email': 1,
+        'addedBy._id': 1,
+        'addedBy.firstName': 1,
+        'addedBy.lastName': 1,
+        'addedBy.email': 1,
+      },
+    },
+  ]);

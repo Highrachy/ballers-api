@@ -4,6 +4,7 @@ import {
   deleteProperty,
   getPropertyById,
   getAllProperties,
+  searchThroughProperties,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -57,6 +58,19 @@ const PropertyController = {
         } else {
           res.status(httpStatus.OK).json({ success: true, property });
         }
+      })
+      .catch((error) => next(error));
+  },
+  search(req, res, next) {
+    const filter = {
+      houseType: req.query.type,
+      location: req.query.location,
+      minPrice: Number(req.query.min),
+      maxPrice: Number(req.query.max),
+    };
+    searchThroughProperties(filter)
+      .then((properties) => {
+        res.status(httpStatus.OK).json({ success: true, properties });
       })
       .catch((error) => next(error));
   },

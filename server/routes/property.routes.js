@@ -139,4 +139,24 @@ router.get('/all', authenticate, isAdmin, PropertyController.getMultiple);
  */
 router.get('/:id', authenticate, isAdmin, PropertyController.getOne);
 
+/**
+ * @swagger
+ * path:
+ *  /property/:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      tags: [Property]
+ *      responses:
+ *        '200':
+ *          description: Gets properties based on search parameters
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/', authenticate, PropertyController.search);
+
 module.exports = router;
