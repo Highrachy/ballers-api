@@ -1030,3 +1030,91 @@ describe('Get all properties added by an admin', () => {
     });
   });
 });
+
+describe('Search Through Properties', () => {
+  const id = mongoose.Types.ObjectId();
+  const property = PropertyFactory.build({
+    _id: id,
+    addedBy: _id,
+    updatedBy: _id,
+    houseType: '3 bedroom duplex',
+    location: 'lagos',
+    price: 40000000,
+  });
+  const filter = {
+    type: '3 bedroom duplex',
+    location: 'lagos',
+    min: property.price - 10000000,
+    max: property.price + 10000000,
+  };
+
+  context('when no property is found', () => {
+    it('returns not found', (done) => {
+      request()
+        .get(
+          `/api/v1/property/?type=${filter.type}&location=${filter.location}&min=${filter.min}&max=${filter.max}`,
+        )
+        .set('authorization', userToken)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.properties.length).to.be.eql(0);
+          done();
+        });
+    });
+  });
+
+  describe('when properties exist in db', () => {
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get(
+            `/api/v1/property/?type=${filter.type}&location=${filter.location}&min=${filter.min}&max=${filter.max}`,
+          )
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('properties');
+            expect(property._id.equals(res.body.properties[0]._id)).to.be.eql(true);
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(
+            `/api/v1/property/?type=${filter.type}&location=${filter.location}&min=${filter.min}&max=${filter.max}`,
+          )
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when searchThroughProperties service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(
+            `/api/v1/property/?type=${filter.type}&location=${filter.location}&min=${filter.min}&max=${filter.max}`,
+          )
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Property.aggregate.restore();
+          });
+      });
+    });
+  });
+});
