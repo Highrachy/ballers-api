@@ -9,6 +9,7 @@ import {
   getAllUserProperties,
   getAllRegisteredUsers,
   getUserInfo,
+  addPropertyToFavorites,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -127,6 +128,16 @@ const UserController = {
     getAllUserProperties(user._id)
       .then((properties) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Properties found', properties });
+      })
+      .catch((error) => next(error));
+  },
+
+  addPropertyToFavorites(req, res, next) {
+    const property = req.locals;
+    const { user } = req;
+    addPropertyToFavorites({ ...property, userId: user._id })
+      .then(() => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Property added to favorites' });
       })
       .catch((error) => next(error));
   },

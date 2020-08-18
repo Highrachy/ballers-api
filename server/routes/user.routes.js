@@ -6,6 +6,7 @@ import {
   changePasswordSchema,
   assignPropertySchema,
   updateUserSchema,
+  favoritePropertySchema,
 } from '../schemas/user.schema';
 import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
@@ -300,5 +301,40 @@ router.get('/my-properties', authenticate, UserController.getOwnedProperties);
  *       description: Internal server error
  */
 router.get('/all', authenticate, isAdmin, UserController.getAllRegisteredUsers);
+
+/**
+ * @swagger
+ * /user/add-to-favorites:
+ *   post:
+ *     tags:
+ *       - User
+ *     description: Add a property to a user favorites
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              propertyId:
+ *                  type: string
+ *      description: ID of property to be added to favorites
+ *     responses:
+ *      '200':
+ *        description: Property added to favorites
+ *      '404':
+ *        description: Property not available
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/add-to-favorites',
+  authenticate,
+  schemaValidation(favoritePropertySchema),
+  UserController.addPropertyToFavorites,
+);
 
 module.exports = router;

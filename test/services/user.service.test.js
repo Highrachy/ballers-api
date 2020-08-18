@@ -19,6 +19,7 @@ import {
   generateCode,
   assignPropertyToUser,
   getAllRegisteredUsers,
+  addPropertyToFavorites,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -563,7 +564,7 @@ describe('User Service', () => {
       });
     });
 
-    context('when getPropertyById fails', () => {
+    context('when getUserById fails', () => {
       it('throws an error', async () => {
         sinon.stub(User, 'findById').throws(new Error('error msg'));
 
@@ -617,6 +618,77 @@ describe('User Service', () => {
         const users = await getAllRegisteredUsers();
         expect(users).to.be.an('array');
         expect(users.length).to.be.eql(countedUsers + 1);
+      });
+    });
+  });
+
+  describe('#addPropertyToFavorites', () => {
+    const _id = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const favorite = {
+      propertyId,
+      userId: _id,
+    };
+    const invalidFavorite = {
+      propertyId: mongoose.Types.ObjectId(),
+      userId: _id,
+    };
+
+    describe('when property does not exist in db', () => {
+      context('when property id does not exist in db', () => {
+        it('returns no units available', async () => {
+          try {
+            await addPropertyToFavorites(invalidFavorite);
+          } catch (err) {
+            expect(err.statusCode).to.eql(404);
+            expect(err.message).to.be.eql('Property not found');
+          }
+        });
+      });
+    });
+
+    beforeEach(async () => {
+      await User.create(UserFactory.build({ _id }));
+      await Property.create(
+        PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id }),
+      );
+    });
+
+    context('when getUserById works', () => {
+      it('returns a valid updated user', async () => {
+        await addPropertyToFavorites(favorite);
+        const user = await getUserById(_id);
+        expect(user.favorites[0]).to.eql(propertyId);
+      });
+    });
+
+    context('when getPropertyById fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Property, 'findById').throws(new Error('error msg'));
+
+        try {
+          await addPropertyToFavorites(favorite);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        Property.findById.restore();
+      });
+    });
+
+    context('when findByIdAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('error msg'));
+
+        try {
+          await addPropertyToFavorites(favorite);
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Error adding property to favorites');
+        }
+        User.findByIdAndUpdate.restore();
       });
     });
   });

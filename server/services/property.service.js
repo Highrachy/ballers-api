@@ -55,7 +55,8 @@ export const getAllPropertiesAddedByAnAdmin = async (adminId) =>
         neighborhood: 1,
         gallery: 1,
         name: 1,
-        location: 1,
+        state: 1,
+        area: 1,
         price: 1,
         units: 1,
         houseType: 1,
@@ -97,7 +98,8 @@ export const getAllProperties = async () =>
         neighborhood: 1,
         gallery: 1,
         name: 1,
-        location: 1,
+        state: 1,
+        area: 1,
         price: 1,
         units: 1,
         houseType: 1,
@@ -136,7 +138,8 @@ export const getOneProperty = async (propertId) =>
         neighborhood: 1,
         gallery: 1,
         name: 1,
-        location: 1,
+        state: 1,
+        area: 1,
         price: 1,
         units: 1,
         houseType: 1,
@@ -151,14 +154,20 @@ export const getOneProperty = async (propertId) =>
     },
   ]);
 
-  export const searchThroughProperties = async (filter) =>
+export const searchThroughProperties = async (filter) =>
   Property.aggregate([
     {
       $match: {
         $and: [
-          { houseType: filter.houseType },
-          { location: filter.location },
-          { price: { $gte: filter.minPrice, $lte: filter.maxPrice } },
+          { state: filter.state ? filter.state : /.*/ },
+          { area: filter.area ? filter.area : /.*/ },
+          { houseType: filter.houseType ? filter.houseType : /.*/ },
+          {
+            price: {
+              $gte: filter.minPrice ? filter.minPrice : 0,
+              $lte: filter.maxPrice ? filter.maxPrice : 10000000000000,
+            },
+          },
         ],
       },
     },
@@ -187,7 +196,8 @@ export const getOneProperty = async (propertId) =>
         neighborhood: 1,
         gallery: 1,
         name: 1,
-        location: 1,
+        state: 1,
+        area: 1,
         price: 1,
         units: 1,
         houseType: 1,

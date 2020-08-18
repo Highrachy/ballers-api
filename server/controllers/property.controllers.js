@@ -69,12 +69,7 @@ const PropertyController = {
       .catch((error) => next(error));
   },
   search(req, res, next) {
-    const filter = {
-      houseType: req.query.type,
-      location: req.query.location,
-      minPrice: Number(req.query.min),
-      maxPrice: Number(req.query.max),
-    };
+    const filter = req.locals;
     searchThroughProperties(filter)
       .then((properties) => {
         res.status(httpStatus.OK).json({ success: true, properties });

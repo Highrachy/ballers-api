@@ -1019,3 +1019,79 @@ describe('Get Owned Properties route', () => {
     });
   });
 });
+
+describe('Add property to favorite route', () => {
+  let userToken;
+  const _id = mongoose.Types.ObjectId();
+  const propertyId = mongoose.Types.ObjectId();
+  const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+  const regualarUser = UserFactory.build({ role: 1, activated: true });
+
+  beforeEach(async () => {
+    userToken = await addUser(regualarUser);
+    await addProperty(property);
+  });
+
+  const favorite = {
+    propertyId,
+  };
+
+  context('with right details', () => {
+    it('returns property added to favorites', (done) => {
+      request()
+        .post('/api/v1/user/add-to-favorites')
+        .set('authorization', userToken)
+        .send(favorite)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.message).to.be.eql('Property added to favorites');
+          done();
+        });
+    });
+  });
+
+  context('without token', () => {
+    it('returns error', (done) => {
+      request()
+        .post('/api/v1/user/add-to-favorites')
+        .send(favorite)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+
+  context('with invalid property id sent', () => {
+    it('returns a updated user', (done) => {
+      request()
+        .post('/api/v1/user/add-to-favorites')
+        .set('authorization', userToken)
+        .end((err, res) => {
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Validation Error');
+          done();
+        });
+    });
+  });
+
+  context('when addPropertyToFavorites service returns an error', () => {
+    it('returns the error', (done) => {
+      sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+      request()
+        .post('/api/v1/user/add-to-favorites')
+        .set('authorization', userToken)
+        .send(favorite)
+        .end((err, res) => {
+          expect(res).to.have.status(400);
+          expect(res.body.success).to.be.eql(false);
+          done();
+          User.findByIdAndUpdate.restore();
+        });
+    });
+  });
+});

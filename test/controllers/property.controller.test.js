@@ -108,9 +108,9 @@ describe('Add Property Route', () => {
           });
       });
     });
-    context('when location is empty', () => {
+    context('when state is empty', () => {
       it('returns an error', (done) => {
-        const property = PropertyFactory.build({ location: '' });
+        const property = PropertyFactory.build({ state: '' });
         request()
           .post('/api/v1/property/add')
           .set('authorization', adminToken)
@@ -119,7 +119,7 @@ describe('Add Property Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property location" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Property state" is not allowed to be empty');
             done();
           });
       });
@@ -461,9 +461,9 @@ describe('Update Property', () => {
           });
       });
     });
-    context('when location is empty', () => {
+    context('when state is empty', () => {
       it('returns an error', (done) => {
-        const invalidProperty = PropertyFactory.build({ id, location: '' });
+        const invalidProperty = PropertyFactory.build({ id, state: '' });
         request()
           .put('/api/v1/property/update')
           .set('authorization', adminToken)
@@ -472,7 +472,7 @@ describe('Update Property', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property location" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Property state" is not allowed to be empty');
             done();
           });
       });
@@ -1038,23 +1038,22 @@ describe('Search Through Properties', () => {
     addedBy: _id,
     updatedBy: _id,
     houseType: '3 bedroom duplex',
-    location: 'lagos',
-    price: 40000000,
+    state: 'lagos',
+    area: 'lekki',
   });
+
   const filter = {
-    type: '3 bedroom duplex',
-    location: 'lagos',
-    min: property.price - 10000000,
-    max: property.price + 10000000,
+    houseType: '3 bedroom duplex',
+    state: 'lagos',
+    area: 'lekki',
   };
 
   context('when no property is found', () => {
     it('returns not found', (done) => {
       request()
-        .get(
-          `/api/v1/property/?type=${filter.type}&location=${filter.location}&min=${filter.min}&max=${filter.max}`,
-        )
+        .post('/api/v1/property/search')
         .set('authorization', userToken)
+        .send(filter)
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
@@ -1072,10 +1071,25 @@ describe('Search Through Properties', () => {
     context('with a valid token & id', () => {
       it('returns successful payload', (done) => {
         request()
-          .get(
-            `/api/v1/property/?type=${filter.type}&location=${filter.location}&min=${filter.min}&max=${filter.max}`,
-          )
+          .post('/api/v1/property/search')
           .set('authorization', userToken)
+          .send(filter)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('properties');
+            expect(property._id.equals(res.body.properties[0]._id)).to.be.eql(true);
+            done();
+          });
+      });
+    });
+
+    context('when filter is empty', () => {
+      it('returns all properties', (done) => {
+        request()
+          .post('/api/v1/property/search')
+          .set('authorization', userToken)
+          .send({})
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
@@ -1089,9 +1103,8 @@ describe('Search Through Properties', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(
-            `/api/v1/property/?type=${filter.type}&location=${filter.location}&min=${filter.min}&max=${filter.max}`,
-          )
+          .post('/api/v1/property/search')
+          .send(filter)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -1105,10 +1118,9 @@ describe('Search Through Properties', () => {
       it('returns the error', (done) => {
         sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(
-            `/api/v1/property/?type=${filter.type}&location=${filter.location}&min=${filter.min}&max=${filter.max}`,
-          )
+          .post('/api/v1/property/search')
           .set('authorization', userToken)
+          .send(filter)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();

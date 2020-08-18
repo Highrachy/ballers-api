@@ -1,6 +1,10 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import { addPropertySchema, updatePropertySchema } from '../schemas/property.schema';
+import {
+  addPropertySchema,
+  updatePropertySchema,
+  searchPropertySchema,
+} from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
 const router = express.Router();
@@ -165,22 +169,30 @@ router.get('/:id', authenticate, hasValidObjectId, PropertyController.getOneProp
 
 /**
  * @swagger
- * path:
- *  /property/:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
+ * /property/search:
+ *   post:
+ *     tags:
+ *       - Property
+ *     description: Search for properties based on state, area & location
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
  *          schema:
- *            type: string
- *          description: verifies user access
- *      tags: [Property]
- *      responses:
- *        '200':
- *          description: Gets properties based on search parameters
- *        '500':
- *          description: Internal server error
+ *            $ref: '#/components/schemas/Property'
+ *      description: Search for properties based on state, area & location
+ *     responses:
+ *      '201':
+ *        description: Properties found
+ *      '500':
+ *       description: Internal server error
  */
-router.get('/', authenticate, PropertyController.search);
+router.post(
+  '/search',
+  authenticate,
+  schemaValidation(searchPropertySchema),
+  PropertyController.search,
+);
 
 module.exports = router;
