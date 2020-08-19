@@ -27,10 +27,8 @@ import mongoose from 'mongoose';
  *            type: string
  *          titleDocument:
  *            type: string
- *          state:
- *            type: string
- *          area:
- *            type: string
+ *          address:
+ *            type: object
  *          price:
  *            type: number
  *          units:
@@ -56,8 +54,7 @@ import mongoose from 'mongoose';
  *        example:
  *           name: 3 bedroom semi-detached duplex
  *           titleDocument: https://ballers.ng/sampletitledocument.pdf
- *           state: Lagos
- *           area: Lekki Phase 1
+ *           address: {street1: 1 sesame street, street2: 12 solomon close, city: Ikeja, state: Lagos, country: Nigeria}
  *           price: 10000000
  *           units: 15
  *           houseType: 3 bedroom semi-detached duplex
@@ -82,13 +79,22 @@ const PropertySchema = new mongoose.Schema(
     titleDocument: {
       type: String,
     },
-    state: {
-      type: String,
-      required: true,
-    },
-    area: {
-      type: String,
-      required: true,
+    address: {
+      street1: {
+        type: String,
+      },
+      street2: {
+        type: String,
+      },
+      city: {
+        type: String,
+      },
+      state: {
+        type: String,
+      },
+      country: {
+        type: String,
+      },
     },
     price: {
       type: Number,

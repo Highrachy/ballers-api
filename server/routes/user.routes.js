@@ -337,4 +337,39 @@ router.post(
   UserController.addPropertyToFavorites,
 );
 
+/**
+ * @swagger
+ * /user/remove-favorite:
+ *   post:
+ *     tags:
+ *       - User
+ *     description: Remove a property from favorites
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              propertyId:
+ *                  type: string
+ *      description: ID of property to be removed tofrom favorites
+ *     responses:
+ *      '200':
+ *        description: Property removed from favorites
+ *      '404':
+ *        description: Property not available
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/remove-favorite',
+  authenticate,
+  schemaValidation(favoritePropertySchema),
+  UserController.removePropertyFromFavorites,
+);
+
 module.exports = router;

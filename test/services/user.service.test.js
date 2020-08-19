@@ -20,6 +20,7 @@ import {
   assignPropertyToUser,
   getAllRegisteredUsers,
   addPropertyToFavorites,
+  removePropertyFromFavorites,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_SECRET } from '../../server/config';
@@ -687,6 +688,45 @@ describe('User Service', () => {
           expect(err.statusCode).to.eql(400);
           expect(err.error).to.be.an('Error');
           expect(err.message).to.be.eql('Error adding property to favorites');
+        }
+        User.findByIdAndUpdate.restore();
+      });
+    });
+  });
+
+  describe('#removePropertyFromFavorites', () => {
+    const _id = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const favorite = {
+      propertyId,
+      userId: _id,
+    };
+
+    beforeEach(async () => {
+      await User.create(UserFactory.build({ _id }));
+      await Property.create(
+        PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id }),
+      );
+    });
+
+    context('when findByIdAndUpdate works', () => {
+      it('returns a valid updated user', async () => {
+        await removePropertyFromFavorites(favorite);
+        const user = await getUserById(_id);
+        expect(user.favorites.length).to.be.eql(0);
+      });
+    });
+
+    context('when findByIdAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('error msg'));
+
+        try {
+          await removePropertyFromFavorites(favorite);
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Error removing property from favorites');
         }
         User.findByIdAndUpdate.restore();
       });

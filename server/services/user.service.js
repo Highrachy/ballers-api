@@ -295,3 +295,11 @@ export const addPropertyToFavorites = async (favorite) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding property to favorites', error);
   }
 };
+
+export const removePropertyFromFavorites = async (favorite) => {
+  try {
+    return User.findByIdAndUpdate(favorite.userId, { $pull: { favorites: favorite.propertyId } });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error removing property from favorites', error);
+  }
+};

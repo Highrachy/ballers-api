@@ -1066,7 +1066,7 @@ describe('Add property to favorite route', () => {
   });
 
   context('with invalid property id sent', () => {
-    it('returns a updated user', (done) => {
+    it('returns a validation error', (done) => {
       request()
         .post('/api/v1/user/add-to-favorites')
         .set('authorization', userToken)
@@ -1084,6 +1084,79 @@ describe('Add property to favorite route', () => {
       sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
       request()
         .post('/api/v1/user/add-to-favorites')
+        .set('authorization', userToken)
+        .send(favorite)
+        .end((err, res) => {
+          expect(res).to.have.status(400);
+          expect(res.body.success).to.be.eql(false);
+          done();
+          User.findByIdAndUpdate.restore();
+        });
+    });
+  });
+});
+
+describe('Remove property from favorite route', () => {
+  let userToken;
+  const propertyId = mongoose.Types.ObjectId();
+  const regualarUser = UserFactory.build({ role: 1, activated: true });
+
+  beforeEach(async () => {
+    userToken = await addUser(regualarUser);
+  });
+
+  const favorite = {
+    propertyId,
+  };
+
+  context('with right details', () => {
+    it('returns property added to favorites', (done) => {
+      request()
+        .post('/api/v1/user/remove-favorite')
+        .set('authorization', userToken)
+        .send(favorite)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.message).to.be.eql('Property removed from favorites');
+          done();
+        });
+    });
+  });
+
+  context('without token', () => {
+    it('returns error', (done) => {
+      request()
+        .post('/api/v1/user/remove-favorite')
+        .send(favorite)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+
+  context('with invalid property id sent', () => {
+    it('returns a validation error', (done) => {
+      request()
+        .post('/api/v1/user/remove-favorite')
+        .set('authorization', userToken)
+        .end((err, res) => {
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Validation Error');
+          done();
+        });
+    });
+  });
+
+  context('when removePropertyFromFavorites service returns an error', () => {
+    it('returns the error', (done) => {
+      sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+      request()
+        .post('/api/v1/user/remove-favorite')
         .set('authorization', userToken)
         .send(favorite)
         .end((err, res) => {

@@ -154,18 +154,18 @@ export const getOneProperty = async (propertId) =>
     },
   ]);
 
-export const searchThroughProperties = async (filter) =>
+export const searchThroughProperties = async ({ state, city, houseType, minPrice, maxPrice }) =>
   Property.aggregate([
     {
       $match: {
         $and: [
-          { state: filter.state ? filter.state : /.*/ },
-          { area: filter.area ? filter.area : /.*/ },
-          { houseType: filter.houseType ? filter.houseType : /.*/ },
+          { 'address.state': state || /.*/ },
+          { 'address.city': city || /.*/ },
+          { houseType: houseType || /.*/ },
           {
             price: {
-              $gte: filter.minPrice ? filter.minPrice : 0,
-              $lte: filter.maxPrice ? filter.maxPrice : 10000000000000,
+              $gte: minPrice || 0,
+              $lte: maxPrice || 10000000000000,
             },
           },
         ],
@@ -204,6 +204,7 @@ export const searchThroughProperties = async (filter) =>
         bedrooms: 1,
         toilets: 1,
         description: 1,
+        address: 1,
         'assignedTo._id': 1,
         'assignedTo.firstName': 1,
         'assignedTo.lastName': 1,
