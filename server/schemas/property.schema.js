@@ -7,18 +7,26 @@ const mapLocation = Joi.object().keys({
   latitude: Joi.string().label('Map location latitude').optional(),
 });
 
-const address = Joi.object().keys({
-  street1: Joi.string().label('Property Street 1').optional(),
-  street2: Joi.string().label('Property Street 2').optional(),
-  city: Joi.string().label('Property City').optional(),
-  state: Joi.string().label('Property state').optional(),
-  country: Joi.string().label('Property Country').optional(),
+const addressAdd = Joi.object().keys({
+  street1: Joi.string().label('Street 1').required(),
+  street2: Joi.string().label('Street 2').allow(null, ''),
+  city: Joi.string().label('City').required(),
+  state: Joi.string().label('State').required(),
+  country: Joi.string().label('Country').default('Nigeria'),
+});
+
+const addressUpdate = Joi.object().keys({
+  street1: Joi.string().label('Street 1').optional(),
+  street2: Joi.string().label('Street 2').optional(),
+  city: Joi.string().label('City').optional(),
+  state: Joi.string().label('State').optional(),
+  country: Joi.string().label('Country').optional(),
 });
 
 const property = {
   name: Joi.string().label('Property name').required(),
   titleDocument: Joi.string().label('Property title document').optional(),
-  address,
+  address: addressAdd,
   price: Joi.number().label('Property price').required(),
   units: Joi.number().label('Property units').required(),
   houseType: Joi.string().label('Property type').required(),
@@ -39,7 +47,7 @@ export const updatePropertySchema = Joi.object({
   units: Joi.number().label('Property units').optional(),
   name: Joi.string().label('Property name').optional(),
   titleDocument: Joi.string().label('Property title document').optional(),
-  address,
+  address: addressUpdate,
   price: Joi.number().label('Property price').optional(),
   houseType: Joi.string().label('Property type').optional(),
   bedrooms: Joi.number().label('Bedroom number').optional(),

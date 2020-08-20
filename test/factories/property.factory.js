@@ -5,6 +5,13 @@ export default new Factory()
   .attr('titleDocument', 'https://ballers.ng/sampletitledocument.pdf')
   .attr('price', 55000000)
   .attr('units', 5)
+  .attr('address', {
+    street1: 'sesame street',
+    street2: 'oxford street',
+    city: 'ikeja',
+    state: 'oyo',
+    country: 'nigeria',
+  })
   .sequence('houseType', (i) => `${i} bedroom apartment`)
   .sequence('bedrooms', (i) => `${i}`)
   .sequence('toilets', (i) => `${i + 1}`)

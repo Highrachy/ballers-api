@@ -108,9 +108,17 @@ describe('Add Property Route', () => {
           });
       });
     });
-    context('when state is empty', () => {
+    context('when street1 is empty', () => {
       it('returns an error', (done) => {
-        const property = PropertyFactory.build({ address: { state: '' } });
+        const property = PropertyFactory.build({
+          address: {
+            street1: '',
+            street2: 'miracle street',
+            city: 'ilorin',
+            state: 'kwara',
+            country: 'nigeria',
+          },
+        });
         request()
           .post('/api/v1/property/add')
           .set('authorization', adminToken)
@@ -119,7 +127,103 @@ describe('Add Property Route', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property state" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Street 1" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when street2 is empty', () => {
+      it('returns an error', (done) => {
+        const property = PropertyFactory.build({
+          address: {
+            street1: 'sesame street',
+            street2: '',
+            city: 'ilorin',
+            state: 'kwara',
+            country: 'nigeria',
+          },
+        });
+        request()
+          .post('/api/v1/property/add')
+          .set('authorization', adminToken)
+          .send(property)
+          .end((err, res) => {
+            expect(res).to.have.status(201);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Property added');
+            expect(res.body).to.have.property('property');
+            done();
+          });
+      });
+    });
+    context('when city is empty', () => {
+      it('returns an error', (done) => {
+        const property = PropertyFactory.build({
+          address: {
+            street1: 'sesame street',
+            street2: 'miracle street',
+            city: '',
+            state: 'kwara',
+            country: 'nigeria',
+          },
+        });
+        request()
+          .post('/api/v1/property/add')
+          .set('authorization', adminToken)
+          .send(property)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"City" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when state is empty', () => {
+      it('returns an error', (done) => {
+        const property = PropertyFactory.build({
+          address: {
+            street1: 'sesame street',
+            street2: 'miracle street',
+            city: 'ilorin',
+            state: '',
+            country: 'nigeria',
+          },
+        });
+        request()
+          .post('/api/v1/property/add')
+          .set('authorization', adminToken)
+          .send(property)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"State" is not allowed to be empty');
+            done();
+          });
+      });
+    });
+    context('when country is empty', () => {
+      it('returns an error', (done) => {
+        const property = PropertyFactory.build({
+          address: {
+            street1: 'sesame street',
+            street2: 'miracle street',
+            city: 'ilorin',
+            state: 'kwara',
+            country: '',
+          },
+        });
+        request()
+          .post('/api/v1/property/add')
+          .set('authorization', adminToken)
+          .send(property)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Country" is not allowed to be empty');
             done();
           });
       });
@@ -473,7 +577,7 @@ describe('Update Property', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property Street 1" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Street 1" is not allowed to be empty');
             done();
           });
       });
@@ -489,7 +593,7 @@ describe('Update Property', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property Street 2" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Street 2" is not allowed to be empty');
             done();
           });
       });
@@ -505,7 +609,7 @@ describe('Update Property', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property City" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"City" is not allowed to be empty');
             done();
           });
       });
@@ -521,7 +625,7 @@ describe('Update Property', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property state" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"State" is not allowed to be empty');
             done();
           });
       });
@@ -537,7 +641,7 @@ describe('Update Property', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property Country" is not allowed to be empty');
+            expect(res.body.error).to.be.eql('"Country" is not allowed to be empty');
             done();
           });
       });
@@ -1108,6 +1212,24 @@ describe('Search Through Properties', () => {
       city: 'lekki',
     },
   });
+  const property2 = PropertyFactory.build({
+    addedBy: _id,
+    updatedBy: _id,
+    houseType: '4 bedroom detatched duplex',
+    address: {
+      state: 'oyo',
+      city: 'epe',
+    },
+  });
+  const property3 = PropertyFactory.build({
+    addedBy: _id,
+    updatedBy: _id,
+    houseType: '3 bedroom duplex',
+    address: {
+      state: 'ogun',
+      city: 'ajah',
+    },
+  });
 
   const filter = {
     houseType: '3 bedroom duplex',
@@ -1133,6 +1255,8 @@ describe('Search Through Properties', () => {
   describe('when properties exist in db', () => {
     beforeEach(async () => {
       await addProperty(property);
+      await addProperty(property2);
+      await addProperty(property3);
     });
 
     context('with a valid token & id', () => {
@@ -1145,7 +1269,7 @@ describe('Search Through Properties', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('properties');
-            expect(property._id.toString()).to.be.eql(res.body.properties[0]._id);
+            expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
             done();
           });
       });
@@ -1161,7 +1285,8 @@ describe('Search Through Properties', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('properties');
-            expect(property._id.toString()).to.be.eql(res.body.properties[0]._id);
+            expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+            expect(res.body.properties.length).to.be.eql(3);
             done();
           });
       });
@@ -1177,7 +1302,7 @@ describe('Search Through Properties', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('properties');
-            expect(property._id.toString()).to.be.eql(res.body.properties[0]._id);
+            expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
             done();
           });
       });
@@ -1193,7 +1318,7 @@ describe('Search Through Properties', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('properties');
-            expect(property._id.toString()).to.be.eql(res.body.properties[0]._id);
+            expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
             done();
           });
       });
@@ -1209,7 +1334,7 @@ describe('Search Through Properties', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('properties');
-            expect(property._id.toString()).to.be.eql(res.body.properties[0]._id);
+            expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
             done();
           });
       });
