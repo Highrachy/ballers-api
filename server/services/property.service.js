@@ -55,7 +55,8 @@ export const getAllPropertiesAddedByAnAdmin = async (adminId) =>
         neighborhood: 1,
         gallery: 1,
         name: 1,
-        location: 1,
+        state: 1,
+        area: 1,
         price: 1,
         units: 1,
         houseType: 1,
@@ -97,7 +98,8 @@ export const getAllProperties = async () =>
         neighborhood: 1,
         gallery: 1,
         name: 1,
-        location: 1,
+        state: 1,
+        area: 1,
         price: 1,
         units: 1,
         houseType: 1,
@@ -136,7 +138,8 @@ export const getOneProperty = async (propertId) =>
         neighborhood: 1,
         gallery: 1,
         name: 1,
-        location: 1,
+        state: 1,
+        area: 1,
         price: 1,
         units: 1,
         houseType: 1,
@@ -147,6 +150,69 @@ export const getOneProperty = async (propertId) =>
         'adminInfo.firstName': 1,
         'adminInfo.lastName': 1,
         'adminInfo.email': 1,
+      },
+    },
+  ]);
+
+export const searchThroughProperties = async ({ state, city, houseType, minPrice, maxPrice }) =>
+  Property.aggregate([
+    {
+      $match: {
+        $and: [
+          { 'address.state': state || /.*/ },
+          { 'address.city': city || /.*/ },
+          { houseType: houseType || /.*/ },
+          {
+            price: {
+              $gte: minPrice || 0,
+              $lte: maxPrice || 10000000000000,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'assignedTo',
+        foreignField: '_id',
+        as: 'assignedTo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'addedBy',
+        foreignField: '_id',
+        as: 'addedBy',
+      },
+    },
+    {
+      $unwind: '$addedBy',
+    },
+    {
+      $project: {
+        _id: 1,
+        neighborhood: 1,
+        gallery: 1,
+        name: 1,
+        state: 1,
+        area: 1,
+        price: 1,
+        units: 1,
+        houseType: 1,
+        bedrooms: 1,
+        toilets: 1,
+        description: 1,
+        address: 1,
+        'assignedTo._id': 1,
+        'assignedTo.firstName': 1,
+        'assignedTo.lastName': 1,
+        'assignedTo.email': 1,
+        'addedBy._id': 1,
+        'addedBy.firstName': 1,
+        'addedBy.lastName': 1,
+        'addedBy.email': 1,
       },
     },
   ]);

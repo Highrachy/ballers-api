@@ -4,6 +4,7 @@ import {
   deleteProperty,
   getAllPropertiesAddedByAnAdmin,
   getAllProperties,
+  searchThroughProperties,
   getOneProperty,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
@@ -64,6 +65,14 @@ const PropertyController = {
         } else {
           res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Property not found' });
         }
+      })
+      .catch((error) => next(error));
+  },
+  search(req, res, next) {
+    const filter = req.locals;
+    searchThroughProperties(filter)
+      .then((properties) => {
+        res.status(httpStatus.OK).json({ success: true, properties });
       })
       .catch((error) => next(error));
   },

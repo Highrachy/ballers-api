@@ -102,11 +102,22 @@ export const getUserInfo = async (key, value) =>
       },
     },
     {
+      $lookup: {
+        from: 'properties',
+        localField: 'favorites',
+        foreignField: '_id',
+        as: 'favorites',
+      },
+    },
+    {
       $project: {
         password: 0,
         'assignedProperties.assignedTo': 0,
         'assignedProperties.addedBy': 0,
         'assignedProperties.updatedBy': 0,
+        'favorites.assignedTo': 0,
+        'favorites.addedBy': 0,
+        'favorites.updatedBy': 0,
       },
     },
   ]).then((user) => {
@@ -268,3 +279,27 @@ export const getAllRegisteredUsers = async () =>
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },
   ]);
+
+export const addPropertyToFavorites = async (favorite) => {
+  const property = await getPropertyById(favorite.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Property not found');
+  }
+
+  try {
+    return User.findByIdAndUpdate(favorite.userId, { $push: { favorites: favorite.propertyId } });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding property to favorites', error);
+  }
+};
+
+export const removePropertyFromFavorites = async (favorite) => {
+  try {
+    return User.findByIdAndUpdate(favorite.userId, { $pull: { favorites: favorite.propertyId } });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error removing property from favorites', error);
+  }
+};
