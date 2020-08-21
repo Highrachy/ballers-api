@@ -1217,7 +1217,7 @@ describe('Search Through Properties', () => {
     updatedBy: _id,
     houseType: '4 bedroom detatched duplex',
     address: {
-      state: 'oyo',
+      state: 'lagos',
       city: 'epe',
     },
   });
@@ -1349,6 +1349,24 @@ describe('Search Through Properties', () => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when state is lagos', () => {
+      it('returns properties 1 & 2', (done) => {
+        request()
+          .post('/api/v1/property/search')
+          .set('authorization', userToken)
+          .send({ state: 'lagos' })
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('properties');
+            expect(res.body.properties.length).to.be.eql(2);
+            expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+            expect(res.body.properties[1].houseType).to.be.eql(property2.houseType);
             done();
           });
       });
