@@ -129,6 +129,9 @@ const PropertySchema = new mongoose.Schema(
     assignedTo: {
       type: [ObjectId],
     },
+    paymentPlan: {
+      type: ObjectId,
+    },
     addedBy: {
       type: ObjectId,
       required: true,

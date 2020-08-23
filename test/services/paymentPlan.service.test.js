@@ -5,6 +5,7 @@ import {
   addPaymentPlan,
   deletePaymentPlan,
   getAllPaymentPlans,
+  updatePaymentPlan,
 } from '../../server/services/paymentPlan.service';
 import PaymentPlanFactory from '../factories/paymentPlan.factory';
 import PaymentPlan from '../../server/models/paymentPlan.model';
@@ -48,7 +49,7 @@ describe('PaymentPlan Service', () => {
     context('when an invalid data is entered', () => {
       it('throws an error', async () => {
         try {
-          const invalidPaymentPlan = PaymentPlanFactory.build({ planName: '', addedBy: id });
+          const invalidPaymentPlan = PaymentPlanFactory.build({ name: '', addedBy: id });
           await addPaymentPlan(invalidPaymentPlan);
         } catch (err) {
           const currentCountedPlans = await PaymentPlan.countDocuments({});
@@ -127,6 +128,62 @@ describe('PaymentPlan Service', () => {
           expect(err.message).to.be.eql('Error deleting payment plan');
         }
         PaymentPlan.findByIdAndDelete.restore();
+      });
+    });
+  });
+
+  describe('#updatePaymentPlan', () => {
+    const _id = mongoose.Types.ObjectId();
+    const updatedPaymentPlan = {
+      id: _id,
+      name: 'updated monthly plan name',
+      description: 'updated monthly description',
+    };
+    before(async () => {
+      await PaymentPlan.create(
+        PaymentPlanFactory.build({
+          _id,
+          name: 'test monthly plan',
+          description: 'test monthly description',
+          addedBy: _id,
+        }),
+      );
+    });
+
+    context('when paymentPlan is updated', () => {
+      it('returns a valid updated user', async () => {
+        const updatedProperty = updatePaymentPlan(updatedPaymentPlan);
+        const paymentPlan = getPaymentPlanById(updatedPaymentPlan.id);
+        expect(paymentPlan.name).to.eql(updatedProperty.name);
+        expect(paymentPlan.description).to.eql(updatedProperty.description);
+      });
+    });
+
+    context('when getPaymentPlanById fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(PaymentPlan, 'findById').throws(new Error('error msg'));
+        try {
+          await updatePaymentPlan(updatedPaymentPlan);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        PaymentPlan.findById.restore();
+      });
+    });
+
+    context('when findByIdAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(PaymentPlan, 'findByIdAndUpdate').throws(new Error('error msg'));
+        try {
+          await updatePaymentPlan(updatedPaymentPlan);
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Error updating payment plan');
+        }
+        PaymentPlan.findByIdAndUpdate.restore();
       });
     });
   });

@@ -7,40 +7,46 @@ import mongoose from 'mongoose';
  *      PaymentPlan:
  *        type: object
  *        required:
- *          - planName
- *          - planDescription
+ *          - name
+ *          - description
  *          - paymentFrequency
  *        properties:
- *          planName:
+ *          name:
  *            type: string
- *          planDescription:
+ *          description:
  *            type: string
  *          paymentFrequency:
- *            type: string
+ *            type: number
  *        example:
- *           planName: Weekly payment
- *           planDescription: payment is made once a week
- *           paymentFrequency: weekly
+ *           name: Weekly payment
+ *           description: payment is made once a week
+ *           paymentFrequency: 4
  */
 
 const { ObjectId } = mongoose.Schema.Types;
 const PaymentPlanSchema = new mongoose.Schema(
   {
-    planName: {
+    name: {
       type: String,
       required: true,
     },
-    planDescription: {
+    description: {
       type: String,
       required: true,
     },
     paymentFrequency: {
-      type: String,
+      type: Number,
       required: true,
+    },
+    propertiesAssignedTo: {
+      type: [ObjectId],
     },
     addedBy: {
       type: ObjectId,
       required: true,
+    },
+    updatedBy: {
+      type: ObjectId,
     },
   },
   { timestamps: true },
