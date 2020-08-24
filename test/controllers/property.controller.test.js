@@ -1052,6 +1052,13 @@ describe('Get all properties', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('properties');
+            expect(res.body.properties[0]).to.have.property('name');
+            expect(res.body.properties[0]).to.have.property('address');
+            expect(res.body.properties[0]).to.have.property('mainImage');
+            expect(res.body.properties[0]).to.have.property('gallery');
+            expect(res.body.properties[0]).to.have.property('price');
+            expect(res.body.properties[0]).to.have.property('houseType');
+            expect(res.body.properties[0]).to.have.property('description');
             done();
           });
       });
