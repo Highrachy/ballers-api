@@ -149,7 +149,7 @@ router.get('/all', authenticate, isAdmin, PropertyController.getAllProperties);
 /**
  * @swagger
  * path:
- *  /property/:id:
+ *  /property/one/:id:
  *    get:
  *      parameters:
  *        - in: query
@@ -165,7 +165,7 @@ router.get('/all', authenticate, isAdmin, PropertyController.getAllProperties);
  *        '500':
  *          description: Internal server error
  */
-router.get('/:id', authenticate, hasValidObjectId, PropertyController.getOneProperty);
+router.get('/one/:id', authenticate, hasValidObjectId, PropertyController.getOneProperty);
 
 /**
  * @swagger
@@ -194,5 +194,28 @@ router.post(
   schemaValidation(searchPropertySchema),
   PropertyController.search,
 );
+
+/**
+ * @swagger
+ * /property/available:
+ *   get:
+ *     tags:
+ *       - Property
+ *     description: Get distince state and house types of all properties
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Get distince state and house types of all properties
+ *     responses:
+ *      '200':
+ *        description: returns object of available fields
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/available', authenticate, PropertyController.getDistinct);
 
 module.exports = router;

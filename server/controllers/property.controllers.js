@@ -6,6 +6,7 @@ import {
   getAllProperties,
   searchThroughProperties,
   getOneProperty,
+  getDistinctPropertyStatesAndTypes,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -73,6 +74,14 @@ const PropertyController = {
     searchThroughProperties(filter)
       .then((properties) => {
         res.status(httpStatus.OK).json({ success: true, properties });
+      })
+      .catch((error) => next(error));
+  },
+
+  getDistinct(req, res, next) {
+    getDistinctPropertyStatesAndTypes()
+      .then((availableFields) => {
+        res.status(httpStatus.OK).json({ success: true, availableFields });
       })
       .catch((error) => next(error));
   },
