@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
-import { addUser } from '../../server/services/user.service';
+import { addUser, assignPropertyToUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
@@ -954,14 +954,16 @@ describe('Get Owned Properties route', () => {
   let userToken;
   const _id = mongoose.Types.ObjectId();
   const propertyId = mongoose.Types.ObjectId();
+  const userId = mongoose.Types.ObjectId();
   const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
   const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-  const regualarUser = UserFactory.build({ role: 1, activated: true });
+  const regualarUser = UserFactory.build({ _id: userId, role: 1, activated: true });
 
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regualarUser);
     await addProperty(property);
+    await assignPropertyToUser({ propertyId, userId, assignedBy: _id });
   });
 
   context('with admin token', () => {
@@ -979,7 +981,7 @@ describe('Get Owned Properties route', () => {
   });
 
   context('with user access token', () => {
-    it('returns a updated user', (done) => {
+    it('returns owned properties', (done) => {
       request()
         .get('/api/v1/user/my-properties')
         .set('authorization', userToken)
@@ -987,6 +989,14 @@ describe('Get Owned Properties route', () => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
           expect(res.body.message).to.be.eql('Properties found');
+          expect(res.body).to.have.property('properties');
+          expect(res.body.properties[0]).to.have.property('name');
+          expect(res.body.properties[0]).to.have.property('address');
+          expect(res.body.properties[0]).to.have.property('mainImage');
+          expect(res.body.properties[0]).to.have.property('gallery');
+          expect(res.body.properties[0]).to.have.property('price');
+          expect(res.body.properties[0]).to.have.property('houseType');
+          expect(res.body.properties[0]).to.have.property('description');
           done();
         });
     });
