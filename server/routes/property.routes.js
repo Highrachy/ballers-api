@@ -148,27 +148,6 @@ router.get('/all', authenticate, isAdmin, PropertyController.getAllProperties);
 
 /**
  * @swagger
- * path:
- *  /property/:id:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: verifies user access
- *      summary: Gets a property based by its ID
- *      tags: [Property]
- *      responses:
- *        '200':
- *          description: Property found
- *        '500':
- *          description: Internal server error
- */
-router.get('/:id', authenticate, hasValidObjectId, PropertyController.getOneProperty);
-
-/**
- * @swagger
  * /property/search:
  *   post:
  *     tags:
@@ -194,5 +173,49 @@ router.post(
   schemaValidation(searchPropertySchema),
   PropertyController.search,
 );
+
+/**
+ * @swagger
+ * /property/available-options:
+ *   get:
+ *     tags:
+ *       - Property
+ *     description: Get distince state and house types of all properties
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Get distince state and house types of all properties
+ *     responses:
+ *      '200':
+ *        description: returns object of available fields
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/available-options', authenticate, PropertyController.getDistinctPropertyOptions);
+
+/**
+ * @swagger
+ * path:
+ *  /property/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets a property based by its ID
+ *      tags: [Property]
+ *      responses:
+ *        '200':
+ *          description: Property found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/:id', authenticate, hasValidObjectId, PropertyController.getOneProperty);
 
 module.exports = router;

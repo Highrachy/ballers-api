@@ -6,6 +6,7 @@ import {
   getAllProperties,
   searchThroughProperties,
   getOneProperty,
+  getAvailablePropertyOptions,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -73,6 +74,18 @@ const PropertyController = {
     searchThroughProperties(filter)
       .then((properties) => {
         res.status(httpStatus.OK).json({ success: true, properties });
+      })
+      .catch((error) => next(error));
+  },
+
+  getDistinctPropertyOptions(req, res, next) {
+    getAvailablePropertyOptions()
+      .then((availableFields) => {
+        const options = {
+          houseTypes: availableFields[0].houseTypes,
+          states: availableFields[0].states,
+        };
+        res.status(httpStatus.OK).json({ success: true, availableFields: options });
       })
       .catch((error) => next(error));
   },

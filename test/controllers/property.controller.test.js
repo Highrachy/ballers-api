@@ -1402,3 +1402,83 @@ describe('Search Through Properties', () => {
     });
   });
 });
+
+describe('Get distinct property states & types', () => {
+  const property1 = PropertyFactory.build({
+    houseType: '2 bedroom apartment',
+    address: { state: 'taraba' },
+    addedBy: _id,
+    updatedBy: _id,
+  });
+  const property2 = PropertyFactory.build({
+    houseType: '4 bedroom semi-detatched',
+    address: { state: 'taraba' },
+    addedBy: _id,
+    updatedBy: _id,
+  });
+  const property3 = PropertyFactory.build({
+    houseType: '4 bedroom semi-detatched',
+    address: { state: 'kano' },
+    addedBy: _id,
+    updatedBy: _id,
+  });
+
+  describe('when properties exist in db', () => {
+    beforeEach(async () => {
+      await addProperty(property1);
+      await addProperty(property2);
+      await addProperty(property3);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/property/available-options')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('availableFields');
+            expect(res.body.availableFields.houseTypes.length).to.be.eql(2);
+            expect(res.body.availableFields.states.length).to.be.eql(2);
+            expect(res.body.availableFields.houseTypes)
+              .to.be.an('array')
+              .that.includes('4 bedroom semi-detatched');
+            expect(res.body.availableFields.houseTypes)
+              .to.be.an('array')
+              .that.includes('2 bedroom apartment');
+            expect(res.body.availableFields.states).to.be.an('array').that.includes('taraba');
+            expect(res.body.availableFields.states).to.be.an('array').that.includes('kano');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/property/available-options')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getAvailablePropertyOptions service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/property/available-options')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Property.aggregate.restore();
+          });
+      });
+    });
+  });
+});
