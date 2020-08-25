@@ -148,27 +148,6 @@ router.get('/all', authenticate, isAdmin, PropertyController.getAllProperties);
 
 /**
  * @swagger
- * path:
- *  /property/one/:id:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: verifies user access
- *      summary: Gets a property based by its ID
- *      tags: [Property]
- *      responses:
- *        '200':
- *          description: Property found
- *        '500':
- *          description: Internal server error
- */
-router.get('/one/:id', authenticate, hasValidObjectId, PropertyController.getOneProperty);
-
-/**
- * @swagger
  * /property/search:
  *   post:
  *     tags:
@@ -197,7 +176,7 @@ router.post(
 
 /**
  * @swagger
- * /property/available:
+ * /property/available-options:
  *   get:
  *     tags:
  *       - Property
@@ -216,6 +195,27 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.get('/available', authenticate, PropertyController.getDistinct);
+router.get('/available-options', authenticate, PropertyController.getDistinct);
+
+/**
+ * @swagger
+ * path:
+ *  /property/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets a property based by its ID
+ *      tags: [Property]
+ *      responses:
+ *        '200':
+ *          description: Property found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/:id', authenticate, hasValidObjectId, PropertyController.getOneProperty);
 
 module.exports = router;

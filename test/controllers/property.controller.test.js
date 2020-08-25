@@ -950,7 +950,7 @@ describe('Get one property', () => {
   context('with a valid token & id', () => {
     it('returns successful payload', (done) => {
       request()
-        .get(`/api/v1/property/one/${id}`)
+        .get(`/api/v1/property/${id}`)
         .set('authorization', adminToken)
         .end((err, res) => {
           expect(res).to.have.status(200);
@@ -967,7 +967,7 @@ describe('Get one property', () => {
     });
     it('returns token error', (done) => {
       request()
-        .get(`/api/v1/property/one/${id}`)
+        .get(`/api/v1/property/${id}`)
         .set('authorization', adminToken)
         .send(property)
         .end((err, res) => {
@@ -982,7 +982,7 @@ describe('Get one property', () => {
   context('with an invalid property id', () => {
     it('returns not found', (done) => {
       request()
-        .get(`/api/v1/property/one/${_id}`)
+        .get(`/api/v1/property/${_id}`)
         .set('authorization', adminToken)
         .end((err, res) => {
           expect(res).to.have.status(404);
@@ -995,7 +995,7 @@ describe('Get one property', () => {
   context('without token', () => {
     it('returns error', (done) => {
       request()
-        .get(`/api/v1/property/one/${id}`)
+        .get(`/api/v1/property/${id}`)
         .end((err, res) => {
           expect(res).to.have.status(403);
           expect(res.body.success).to.be.eql(false);
@@ -1009,7 +1009,7 @@ describe('Get one property', () => {
     it('returns the error', (done) => {
       sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
       request()
-        .get(`/api/v1/property/one/${id}`)
+        .get(`/api/v1/property/${id}`)
         .set('authorization', adminToken)
         .end((err, res) => {
           expect(res).to.have.status(500);
@@ -1390,26 +1390,51 @@ describe('Search Through Properties', () => {
 });
 
 describe('Get distinct property states & types', () => {
-  const property = PropertyFactory.build({ addedBy: _id, updatedBy: _id });
+  const property1 = PropertyFactory.build({
+    houseType: '2 bedroom apartment',
+    address: { state: 'taraba' },
+    addedBy: _id,
+    updatedBy: _id,
+  });
+  const property2 = PropertyFactory.build({
+    houseType: '4 bedroom semi-detatched',
+    address: { state: 'taraba' },
+    addedBy: _id,
+    updatedBy: _id,
+  });
+  const property3 = PropertyFactory.build({
+    houseType: '4 bedroom semi-detatched',
+    address: { state: 'kano' },
+    addedBy: _id,
+    updatedBy: _id,
+  });
 
   describe('when properties exist in db', () => {
     beforeEach(async () => {
-      await addProperty(property);
-      await addProperty(property);
-      await addProperty(property);
+      await addProperty(property1);
+      await addProperty(property2);
+      await addProperty(property3);
     });
 
     context('with a valid token & id', () => {
       it('returns successful payload', (done) => {
         request()
-          .get('/api/v1/property/available')
+          .get('/api/v1/property/available-options')
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('availableFields');
-            expect(res.body.availableFields).to.have.property('states');
-            expect(res.body.availableFields).to.have.property('houseTypes');
+            expect(res.body.availableFields.houseTypes.length).to.be.eql(2);
+            expect(res.body.availableFields.states.length).to.be.eql(2);
+            expect(res.body.availableFields.houseTypes)
+              .to.be.an('array')
+              .that.includes('4 bedroom semi-detatched');
+            expect(res.body.availableFields.houseTypes)
+              .to.be.an('array')
+              .that.includes('2 bedroom apartment');
+            expect(res.body.availableFields.states).to.be.an('array').that.includes('taraba');
+            expect(res.body.availableFields.states).to.be.an('array').that.includes('kano');
             done();
           });
       });
@@ -1418,7 +1443,7 @@ describe('Get distinct property states & types', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get('/api/v1/property/available')
+          .get('/api/v1/property/available-options')
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -1428,16 +1453,16 @@ describe('Get distinct property states & types', () => {
       });
     });
 
-    context('when getDistinctPropertyStatesAndTypes service fails', () => {
+    context('when getAvailablePropertyOptions service fails', () => {
       it('returns the error', (done) => {
-        sinon.stub(Property, 'distinct').throws(new Error('Type Error'));
+        sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get('/api/v1/property/available')
+          .get('/api/v1/property/available-options')
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
-            Property.distinct.restore();
+            Property.aggregate.restore();
           });
       });
     });

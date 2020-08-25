@@ -217,12 +217,13 @@ export const searchThroughProperties = async ({ state, city, houseType, minPrice
     },
   ]);
 
-export const getDistinctPropertyStatesAndTypes = async () => {
-  const states = await Property.distinct('address.state');
-  const houseTypes = await Property.distinct('houseType');
-  const availableFields = {
-    states,
-    houseTypes,
-  };
-  return availableFields;
-};
+export const getAvailablePropertyOptions = async () =>
+  Property.aggregate([
+    {
+      $group: {
+        _id: null,
+        houseTypes: { $addToSet: '$houseType' },
+        states: { $addToSet: '$address.state' },
+      },
+    },
+  ]);
