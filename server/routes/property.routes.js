@@ -195,7 +195,7 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.get('/available-options', authenticate, PropertyController.getDistinct);
+router.get('/available-options', authenticate, PropertyController.getDistinctPropertyOptions);
 
 /**
  * @swagger

@@ -78,7 +78,7 @@ const PropertyController = {
       .catch((error) => next(error));
   },
 
-  getDistinct(req, res, next) {
+  getDistinctPropertyOptions(req, res, next) {
     getAvailablePropertyOptions()
       .then((availableFields) => {
         const options = {
