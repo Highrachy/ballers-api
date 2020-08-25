@@ -128,7 +128,11 @@ const UserController = {
     const { user } = req;
     getAllUserProperties(user._id)
       .then((properties) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Properties found', properties });
+        res.status(httpStatus.OK).json({
+          success: true,
+          message: 'Properties found',
+          properties: properties[0].ownedProperties,
+        });
       })
       .catch((error) => next(error));
   },
