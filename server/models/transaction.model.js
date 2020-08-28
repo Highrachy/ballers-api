@@ -23,12 +23,18 @@ import mongoose from 'mongoose';
  *            type: string
  *          amount:
  *            type: number
+ *          referenceNumber:
+ *            type: string
+ *          paidOn:
+ *            type: date
+ *          additionalInfo:
+ *            type: number
  *        example:
  *           propertyId: 5f22f7f8c790039da1242381
  *           userId: 5f22f7f8c790039da1242381
  *           adminId: 5f22f7f8c790039da1242381
  *           paymentSource: bank transfer
- *           amount: 08012345678
+ *           amount: 15000000
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -57,9 +63,12 @@ const TransactionSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    date: {
+    paidOn: {
       type: Date,
       required: true,
+    },
+    additionalInfo: {
+      type: String,
     },
   },
   { timestamps: true },

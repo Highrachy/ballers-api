@@ -44,7 +44,7 @@ export const addTransaction = async (transaction) => {
     const newTransaction = await new Transaction({
       ...transaction,
       referenceNumber,
-      date: Date.now(),
+      paidOn: Date.now(),
     }).save();
     return newTransaction;
   } catch (error) {
@@ -92,10 +92,10 @@ export const getAllTransactions = async () =>
         'propertyInfo.assignedTo': 0,
         'userInfo.assignedProperties': 0,
         'userInfo.password': 0,
-        'userInfo.referenceNumber': 0,
+        'userInfo.referralCode': 0,
         'adminInfo.assignedProperties': 0,
         'adminInfo.password': 0,
-        'adminInfo.referenceNumber': 0,
+        'adminInfo.referralCode': 0,
       },
     },
   ]);

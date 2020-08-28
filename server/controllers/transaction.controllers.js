@@ -4,12 +4,6 @@ import httpStatus from '../helpers/httpStatus';
 const TransactionController = {
   add(req, res, next) {
     const newTransaction = req.locals;
-    const { user } = req;
-    if (newTransaction.userId) {
-      newTransaction.adminId = user._id.toString();
-    } else {
-      newTransaction.userId = user._id.toString();
-    }
     addTransaction(newTransaction)
       .then((transaction) => {
         res

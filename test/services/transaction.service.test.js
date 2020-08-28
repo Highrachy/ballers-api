@@ -33,9 +33,12 @@ describe('Transaction Service', () => {
 
   describe('#getTransactionByReferenceNumber', () => {
     const referenceNumber = 'abc123';
+    const adminId = mongoose.Types.ObjectId();
 
     before(async () => {
-      await Transaction.create(TransactionFactory.build({ referenceNumber, date: Date.now() }));
+      await Transaction.create(
+        TransactionFactory.build({ referenceNumber, paidOn: Date.now(), adminId }),
+      );
     });
 
     it('returns a valid transaction by reference number', async () => {
