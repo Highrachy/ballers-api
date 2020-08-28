@@ -6,12 +6,11 @@ import {
   deletePaymentPlan,
   getAllPaymentPlans,
   updatePaymentPlan,
-  assignPaymentPlanToProperty,
 } from '../../server/services/paymentPlan.service';
 import PaymentPlanFactory from '../factories/paymentPlan.factory';
 import PaymentPlan from '../../server/models/paymentPlan.model';
-import Property from '../../server/models/property.model';
 import PropertyFactory from '../factories/property.factory';
+import Property from '../../server/models/property.model';
 
 useDatabase();
 
@@ -96,16 +95,24 @@ describe('PaymentPlan Service', () => {
     const id = mongoose.Types.ObjectId();
 
     describe('when payment plan has been assigned to a property', () => {
-      const demoId = mongoose.Types.ObjectId();
+      const planId = mongoose.Types.ObjectId();
+      const propId = mongoose.Types.ObjectId();
+
       beforeEach(async () => {
-        await PaymentPlan.create(
-          PaymentPlanFactory.build({ _id: demoId, addedBy: id, propertiesAssignedTo: [id] }),
+        await PaymentPlan.create(PaymentPlanFactory.build({ _id: planId, addedBy: id }));
+        await Property.create(
+          PropertyFactory.build({
+            _id: propId,
+            addedBy: propId,
+            updatedBy: propId,
+            paymentPlan: [planId],
+          }),
         );
       });
       context('when payment plan has been assigned to a property', () => {
         it('returns unable to delete payment plan', async () => {
           try {
-            await deletePaymentPlan(demoId);
+            await deletePaymentPlan(planId);
           } catch (err) {
             expect(err.statusCode).to.eql(412);
             expect(err.message).to.be.eql('Cannot delete payment plan with properties assigned');
@@ -157,7 +164,7 @@ describe('PaymentPlan Service', () => {
 
   describe('#updatePaymentPlan', () => {
     const _id = mongoose.Types.ObjectId();
-    const updatedPaymentPlan = {
+    const paymentPlanToUpdate = {
       id: _id,
       name: 'updated monthly plan name',
       description: 'updated monthly description',
@@ -175,10 +182,10 @@ describe('PaymentPlan Service', () => {
 
     context('when paymentPlan is updated', () => {
       it('returns a valid updated user', async () => {
-        const updatedProperty = updatePaymentPlan(updatedPaymentPlan);
-        const paymentPlan = getPaymentPlanById(updatedPaymentPlan.id);
-        expect(paymentPlan.name).to.eql(updatedProperty.name);
-        expect(paymentPlan.description).to.eql(updatedProperty.description);
+        const updatedPlan = updatePaymentPlan(paymentPlanToUpdate);
+        const paymentPlan = getPaymentPlanById(paymentPlanToUpdate.id);
+        expect(paymentPlan.name).to.eql(updatedPlan.name);
+        expect(paymentPlan.description).to.eql(updatedPlan.description);
       });
     });
 
@@ -186,7 +193,7 @@ describe('PaymentPlan Service', () => {
       it('throws an error', async () => {
         sinon.stub(PaymentPlan, 'findById').throws(new Error('error msg'));
         try {
-          await updatePaymentPlan(updatedPaymentPlan);
+          await updatePaymentPlan(paymentPlanToUpdate);
         } catch (err) {
           expect(err.statusCode).to.eql(500);
           expect(err.error).to.be.an('Error');
@@ -200,96 +207,13 @@ describe('PaymentPlan Service', () => {
       it('throws an error', async () => {
         sinon.stub(PaymentPlan, 'findByIdAndUpdate').throws(new Error('error msg'));
         try {
-          await updatePaymentPlan(updatedPaymentPlan);
+          await updatePaymentPlan(paymentPlanToUpdate);
         } catch (err) {
           expect(err.statusCode).to.eql(400);
           expect(err.error).to.be.an('Error');
           expect(err.message).to.be.eql('Error updating payment plan');
         }
         PaymentPlan.findByIdAndUpdate.restore();
-      });
-    });
-  });
-
-  describe('#assignPaymentPlanToProperty', () => {
-    const id = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const paymentPlanId = mongoose.Types.ObjectId();
-    const toBeAssigned = {
-      propertyId,
-      paymentPlanId,
-    };
-
-    beforeEach(async () => {
-      await PaymentPlan.create(PaymentPlanFactory.build({ _id: paymentPlanId, addedBy: id }));
-      await Property.create(PropertyFactory.build({ _id: propertyId, addedBy: id, updatedBy: id }));
-    });
-
-    context('when assignPaymentPlanToProperty works', () => {
-      it('returns a valid updated payment plan', async () => {
-        await assignPaymentPlanToProperty(toBeAssigned);
-        const paymentPlan = await getPaymentPlanById(paymentPlanId);
-        expect(paymentPlan.propertiesAssignedTo[0]).to.eql(propertyId);
-      });
-    });
-
-    context('when getPropertyById fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Property, 'findById').throws(new Error('error msg'));
-
-        try {
-          await assignPaymentPlanToProperty(toBeAssigned);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        Property.findById.restore();
-      });
-    });
-
-    context('when getPaymentPlanById fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(PaymentPlan, 'findById').throws(new Error('error msg'));
-
-        try {
-          await assignPaymentPlanToProperty(toBeAssigned);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        PaymentPlan.findById.restore();
-      });
-    });
-
-    context('when findByIdAndUpdate fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(PaymentPlan, 'findByIdAndUpdate').throws(new Error('error msg'));
-
-        try {
-          await assignPaymentPlanToProperty(toBeAssigned);
-        } catch (err) {
-          expect(err.statusCode).to.eql(400);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Error assigning payment plan to property');
-        }
-        PaymentPlan.findByIdAndUpdate.restore();
-      });
-    });
-
-    context('when updateProperty service fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('error msg'));
-
-        try {
-          await assignPaymentPlanToProperty(toBeAssigned);
-        } catch (err) {
-          expect(err.statusCode).to.eql(400);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Error assigning payment plan to property');
-        }
-        Property.findByIdAndUpdate.restore();
       });
     });
   });

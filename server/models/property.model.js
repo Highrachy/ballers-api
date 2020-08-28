@@ -130,7 +130,7 @@ const PropertySchema = new mongoose.Schema(
       type: [ObjectId],
     },
     paymentPlan: {
-      type: ObjectId,
+      type: [ObjectId],
     },
     addedBy: {
       type: ObjectId,

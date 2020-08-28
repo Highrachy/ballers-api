@@ -3,7 +3,6 @@ import {
   deletePaymentPlan,
   getAllPaymentPlans,
   updatePaymentPlan,
-  assignPaymentPlanToProperty,
 } from '../services/paymentPlan.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -41,17 +40,6 @@ const PaymentPlanController = {
     updatePaymentPlan({ ...updatedPaymentPlan, updatedBy: user._id })
       .then((plan) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Payment plan updated', plan });
-      })
-      .catch((error) => next(error));
-  },
-
-  assignPaymentPlan(req, res, next) {
-    const toBeAssigned = req.locals;
-    assignPaymentPlanToProperty(toBeAssigned)
-      .then(() => {
-        res
-          .status(httpStatus.OK)
-          .json({ success: true, message: 'Payment plan assigned to property' });
       })
       .catch((error) => next(error));
   },

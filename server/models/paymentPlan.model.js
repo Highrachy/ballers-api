@@ -38,9 +38,6 @@ const PaymentPlanSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    propertiesAssignedTo: {
-      type: [ObjectId],
-    },
     addedBy: {
       type: ObjectId,
       required: true,

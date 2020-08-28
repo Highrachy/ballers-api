@@ -4,10 +4,8 @@ import PaymentPlan from '../../server/models/paymentPlan.model';
 import User from '../../server/models/user.model';
 import PaymentPlanFactory from '../factories/paymentPlan.factory';
 import UserFactory from '../factories/user.factory';
-import PropertyFactory from '../factories/property.factory';
 import { addUser } from '../../server/services/user.service';
 import { addPaymentPlan } from '../../server/services/paymentPlan.service';
-import { addProperty } from '../../server/services/property.service';
 
 useDatabase();
 
@@ -373,116 +371,6 @@ describe('Update Payment Plan', () => {
             done();
           });
       });
-    });
-  });
-});
-
-describe('Assign payment plan to property route', () => {
-  const id = mongoose.Types.ObjectId();
-  const propertyId = mongoose.Types.ObjectId();
-  const paymentPlanId = mongoose.Types.ObjectId();
-  const paymentPlan = PaymentPlanFactory.build({ _id: paymentPlanId, addedBy: id });
-  const property = PropertyFactory.build({ _id: propertyId, addedBy: id, updatedBy: id });
-
-  beforeEach(async () => {
-    await addProperty(property);
-    await addPaymentPlan(paymentPlan);
-  });
-
-  const toAssign = {
-    paymentPlanId,
-    propertyId,
-  };
-
-  context('with admin token', () => {
-    it('returns property assigned', (done) => {
-      request()
-        .post('/api/v1/payment-plan/assign-payment-plan')
-        .set('authorization', adminToken)
-        .send(toAssign)
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body.success).to.be.eql(true);
-          expect(res.body.message).to.be.eql('Payment plan assigned to property');
-          done();
-        });
-    });
-  });
-
-  context('when property id is empty', () => {
-    it('returns an error', (done) => {
-      request()
-        .post('/api/v1/payment-plan/assign-payment-plan')
-        .set('authorization', adminToken)
-        .send({ paymentPlanId, propertyId: '' })
-        .end((err, res) => {
-          expect(res).to.have.status(412);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Validation Error');
-          expect(res.body.error).to.be.eql('"Property ID" is not allowed to be empty');
-          done();
-        });
-    });
-  });
-
-  context('when property plan id is empty', () => {
-    it('returns an error', (done) => {
-      request()
-        .post('/api/v1/payment-plan/assign-payment-plan')
-        .set('authorization', adminToken)
-        .send({ paymentPlanId: '', propertyId })
-        .end((err, res) => {
-          expect(res).to.have.status(412);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Validation Error');
-          expect(res.body.error).to.be.eql('"Payment Plan ID" is not allowed to be empty');
-          done();
-        });
-    });
-  });
-
-  context('with user access token', () => {
-    it('returns a updated user', (done) => {
-      request()
-        .post('/api/v1/payment-plan/assign-payment-plan')
-        .set('authorization', userToken)
-        .send(toAssign)
-        .end((err, res) => {
-          expect(res).to.have.status(403);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-          done();
-        });
-    });
-  });
-
-  context('without token', () => {
-    it('returns error', (done) => {
-      request()
-        .post('/api/v1/payment-plan/assign-payment-plan')
-        .send(toAssign)
-        .end((err, res) => {
-          expect(res).to.have.status(403);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Token needed to access resources');
-          done();
-        });
-    });
-  });
-
-  context('when assignPaymentPlanToProperty service returns an error', () => {
-    it('returns the error', (done) => {
-      sinon.stub(PaymentPlan, 'findByIdAndUpdate').throws(new Error('Type Error'));
-      request()
-        .post('/api/v1/payment-plan/assign-payment-plan')
-        .set('authorization', adminToken)
-        .send(toAssign)
-        .end((err, res) => {
-          expect(res).to.have.status(400);
-          expect(res.body.success).to.be.eql(false);
-          done();
-          PaymentPlan.findByIdAndUpdate.restore();
-        });
     });
   });
 });

@@ -1,10 +1,6 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import {
-  addPaymentPlanSchema,
-  updatePaymentPlanSchema,
-  assignPaymentPlanSchema,
-} from '../schemas/paymentPlan.schema';
+import { addPaymentPlanSchema, updatePaymentPlanSchema } from '../schemas/paymentPlan.schema';
 import PaymentPlanController from '../controllers/paymentPlan.controllers';
 
 const router = express.Router();
@@ -115,42 +111,6 @@ router.put(
   isAdmin,
   schemaValidation(updatePaymentPlanSchema),
   PaymentPlanController.update,
-);
-
-/**
- * @swagger
- * /payment-plan/assign-payment-plan:
- *   post:
- *     tags:
- *       - User
- *     description: Assigns payment plan to a property
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            type: object
- *            properties:
- *              paymentPlanId:
- *                  type: string
- *              propertyId:
- *                  type: string
- *      description: ID of payment plan and ID of property to be assigned
- *     responses:
- *      '200':
- *        description: Payment plan assigned
- *      '400':
- *        description: Bad request
- *      '500':
- *       description: Internal server error
- */
-router.post(
-  '/assign-payment-plan',
-  authenticate,
-  isAdmin,
-  schemaValidation(assignPaymentPlanSchema),
-  PaymentPlanController.assignPaymentPlan,
 );
 
 module.exports = router;
