@@ -23,8 +23,6 @@ import mongoose from 'mongoose';
  *            type: string
  *          amount:
  *            type: number
- *          referenceNumber:
- *            type: string
  *          paidOn:
  *            type: date
  *          additionalInfo:
@@ -57,10 +55,6 @@ const TransactionSchema = new mongoose.Schema(
     },
     amount: {
       type: Number,
-      required: true,
-    },
-    referenceNumber: {
-      type: String,
       required: true,
     },
     paidOn: {

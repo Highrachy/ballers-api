@@ -4,46 +4,10 @@ import httpStatus from '../helpers/httpStatus';
 
 export const getTransactionById = async (id) => Transaction.findById(id).select();
 
-export const getTransactionByReferenceNumber = async (referenceNumber, fields = null) =>
-  Transaction.findOne({ referenceNumber }).select(fields);
-
-export const generateReference = () => {
-  let referenceNumber = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
-  for (let i = 0; i < 6; i += 1) {
-    referenceNumber += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return referenceNumber;
-};
-
-export const generateReferenceNumber = async () => {
-  let referenceNumber;
-  let referenceNumberIsUsed = true;
-
-  while (referenceNumberIsUsed) {
-    referenceNumber = generateReference();
-    // eslint-disable-next-line no-await-in-loop
-    const invalidReferenceNumber = await getTransactionByReferenceNumber(referenceNumber).catch(
-      (error) => {
-        throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-      },
-    );
-    if (invalidReferenceNumber === null) {
-      referenceNumberIsUsed = false;
-    }
-  }
-  return referenceNumber;
-};
-
 export const addTransaction = async (transaction) => {
-  const referenceNumber = await generateReferenceNumber().catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
   try {
     const newTransaction = await new Transaction({
       ...transaction,
-      referenceNumber,
       paidOn: Date.now(),
     }).save();
     return newTransaction;

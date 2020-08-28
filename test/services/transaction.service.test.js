@@ -1,12 +1,9 @@
 import mongoose from 'mongoose';
-import { expect, useDatabase, sinon } from '../config';
+import { expect, useDatabase } from '../config';
 import {
   getTransactionById,
   addTransaction,
   getAllTransactions,
-  generateReference,
-  generateReferenceNumber,
-  getTransactionByReferenceNumber,
 } from '../../server/services/transaction.service';
 import TransactionFactory from '../factories/transaction.factory';
 import Transaction from '../../server/models/transaction.model';
@@ -28,54 +25,6 @@ describe('Transaction Service', () => {
     it('returns a valid transaction by Id', async () => {
       const transaction = await getTransactionById(id);
       expect(transaction._id).to.be.eql(id);
-    });
-  });
-
-  describe('#getTransactionByReferenceNumber', () => {
-    const referenceNumber = 'abc123';
-    const adminId = mongoose.Types.ObjectId();
-
-    before(async () => {
-      await Transaction.create(
-        TransactionFactory.build({ referenceNumber, paidOn: Date.now(), adminId }),
-      );
-    });
-
-    it('returns a valid transaction by reference number', async () => {
-      const transaction = await getTransactionByReferenceNumber(referenceNumber);
-      expect(transaction.referenceNumber).to.eql(referenceNumber);
-    });
-  });
-
-  describe('#generateReference', () => {
-    context('when code is generated', () => {
-      it('returns 6 digit reference code', () => {
-        const code = generateReference();
-        expect(code).to.have.lengthOf(6);
-      });
-    });
-  });
-
-  describe('#generateReferenceNumber', () => {
-    context('when reference number is generated', () => {
-      it('returns 6 digit reference code', async () => {
-        const code = await generateReferenceNumber();
-        expect(code).to.have.lengthOf(6);
-      });
-    });
-
-    context('when getUserByReferralCode returns an error', () => {
-      it('throws an error', async () => {
-        sinon.stub(Transaction, 'findOne').throws(new Error('error msg'));
-        try {
-          await generateReferenceNumber();
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        Transaction.findOne.restore();
-      });
     });
   });
 
@@ -110,21 +59,6 @@ describe('Transaction Service', () => {
           expect(err.message).to.be.eql('Error adding transaction');
           expect(currentCountedTransactions).to.eql(countedTransactions);
         }
-      });
-    });
-
-    context('when generateReferenceNumber returns an error', () => {
-      it('throws an error', async () => {
-        sinon.stub(Transaction, 'findOne').throws(new Error('error msg'));
-
-        try {
-          await await addTransaction(transaction);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        Transaction.findOne.restore();
       });
     });
   });
