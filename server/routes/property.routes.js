@@ -1,6 +1,10 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import { addPropertySchema, updatePropertySchema } from '../schemas/property.schema';
+import {
+  addPropertySchema,
+  updatePropertySchema,
+  searchPropertySchema,
+} from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
 const router = express.Router();
@@ -141,6 +145,57 @@ router.get(
  *       description: Internal server error
  */
 router.get('/all', authenticate, isAdmin, PropertyController.getAllProperties);
+
+/**
+ * @swagger
+ * /property/search:
+ *   post:
+ *     tags:
+ *       - Property
+ *     description: Search for properties based on state, area & location
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Search for properties based on state, area & location
+ *     responses:
+ *      '201':
+ *        description: Properties found
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/search',
+  authenticate,
+  schemaValidation(searchPropertySchema),
+  PropertyController.search,
+);
+
+/**
+ * @swagger
+ * /property/available-options:
+ *   get:
+ *     tags:
+ *       - Property
+ *     description: Get distince state and house types of all properties
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Get distince state and house types of all properties
+ *     responses:
+ *      '200':
+ *        description: returns object of available fields
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/available-options', authenticate, PropertyController.getDistinctPropertyOptions);
 
 /**
  * @swagger
