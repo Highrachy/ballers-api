@@ -115,7 +115,9 @@ describe('PaymentPlan Service', () => {
             await deletePaymentPlan(planId);
           } catch (err) {
             expect(err.statusCode).to.eql(412);
-            expect(err.message).to.be.eql('Cannot delete payment plan with properties assigned');
+            expect(err.message).to.be.eql(
+              'Payment plan cannot be deleted as it is currently assigned to 1 property',
+            );
           }
         });
       });

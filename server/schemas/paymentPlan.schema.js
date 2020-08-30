@@ -13,8 +13,3 @@ export const updatePaymentPlanSchema = Joi.object({
   name: Joi.string().label('Plan Name').optional(),
   description: Joi.string().label('Plan Description').optional(),
 });
-
-export const assignPaymentPlanSchema = Joi.object({
-  propertyId: Joi.objectId().label('Property ID').required(),
-  paymentPlanId: Joi.objectId().label('Payment Plan ID').required(),
-});

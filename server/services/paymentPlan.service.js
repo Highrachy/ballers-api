@@ -19,12 +19,16 @@ export const deletePaymentPlan = async (id) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
   const propertiesAssignedTo = await getPropertiesWithPaymentPlanId(id);
+
   if (propertiesAssignedTo.length > 0) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
-      'Cannot delete payment plan with properties assigned',
+      `Payment plan cannot be deleted as it is currently assigned to ${
+        propertiesAssignedTo.length
+      } ${propertiesAssignedTo.length === 1 ? 'property' : 'properties'}`,
     );
   }
+
   try {
     return PaymentPlan.findByIdAndDelete(plan.id);
   } catch (error) {
