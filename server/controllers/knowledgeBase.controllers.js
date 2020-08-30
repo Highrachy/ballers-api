@@ -50,7 +50,7 @@ const KnowledgeBaseController = {
     getOnePostFromKnowledgeBase(id)
       .then((post) => {
         if (post.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, post });
+          res.status(httpStatus.OK).json({ success: true, post: post[0] });
         } else {
           res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Post not found' });
         }
