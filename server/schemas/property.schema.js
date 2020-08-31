@@ -38,6 +38,7 @@ const property = {
   neighborhood: Joi.array().label('Property neighborhood').optional(),
   mainImage: Joi.string().label('Property main image').optional(),
   gallery: Joi.array().label('Property gallery').optional(),
+  paymentPlan: Joi.array().label('Payment plan').optional(),
 };
 
 export const addPropertySchema = Joi.object({ ...property });
@@ -58,6 +59,7 @@ export const updatePropertySchema = Joi.object({
   neighborhood: Joi.array().label('Property neighborhood').optional(),
   mainImage: Joi.string().label('Property main image').optional(),
   gallery: Joi.array().label('Property gallery').optional(),
+  paymentPlan: Joi.array().label('Payment plan').optional(),
 });
 
 export const searchPropertySchema = Joi.object({
