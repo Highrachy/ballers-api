@@ -5,21 +5,34 @@ import httpStatus from '../helpers/httpStatus';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
+export const estimateReadingTime = (text) => {
+  const time = Math.round(text.split(' ').length / 150);
+  return time < 1 ? 1 : time;
+};
+
 export const getPostInKnowledgeBaseById = async (id) => KnowledgeBase.findById(id).select();
 
 export const addPostToKnowledgeBase = async (post) => {
   try {
-    const newKnowledgeBase = await new KnowledgeBase(post).save();
+    const newKnowledgeBase = await new KnowledgeBase({
+      ...post,
+      readLength: estimateReadingTime(post.body),
+    }).save();
     return newKnowledgeBase;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding post to knowledge base', error);
   }
 };
 
-export const updatePostInKnowledgeBase = async (post) => {
+export const updatePostInKnowledgeBase = async (body) => {
+  const post = body;
   const story = await getPostInKnowledgeBaseById(post.id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
+  if (post.body) {
+    post.readLength = estimateReadingTime(post.body);
+  }
 
   try {
     return KnowledgeBase.findByIdAndUpdate(story.id, post, { new: true });

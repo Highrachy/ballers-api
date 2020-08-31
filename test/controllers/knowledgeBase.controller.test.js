@@ -97,22 +97,7 @@ describe('Add post to knowledge base Route', () => {
           });
       });
     });
-    context('when author is empty', () => {
-      it('returns an error', (done) => {
-        const post = KnowledgeBaseFactory.build({ author: '' });
-        request()
-          .post('/api/v1/knowledge-base/add')
-          .set('authorization', adminToken)
-          .send(post)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Author" is not allowed to be empty');
-            done();
-          });
-      });
-    });
+
     context('when body is empty', () => {
       it('returns an error', (done) => {
         const post = KnowledgeBaseFactory.build({ body: '' });
@@ -129,32 +114,15 @@ describe('Add post to knowledge base Route', () => {
           });
       });
     });
-    context('when read length is empty', () => {
-      it('returns an error', (done) => {
-        const post = KnowledgeBaseFactory.build({ readLength: '' });
-        request()
-          .post('/api/v1/knowledge-base/add')
-          .set('authorization', adminToken)
-          .send(post)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Read Length" must be a number');
-            done();
-          });
-      });
-    });
   });
 });
 
 describe('Update Knowledgebase', () => {
   const id = mongoose.Types.ObjectId();
-  const post = KnowledgeBaseFactory.build({ _id: id, updatedBy: adminId });
+  const post = KnowledgeBaseFactory.build({ _id: id, author: 'John Doe', updatedBy: adminId });
   const newPost = {
     id,
-    author: 'Sam Ben',
-    readLength: 15,
+    body: 'Lorem ipsum dolor, nsequuntur recusandae maiores soluta nostrum',
   };
 
   beforeEach(async () => {
@@ -171,8 +139,7 @@ describe('Update Knowledgebase', () => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
           expect(res.body).to.have.property('post');
-          expect(res.body.post.author).to.be.eql(newPost.author);
-          expect(res.body.post.readLength).to.be.eql(newPost.readLength);
+          expect(res.body.post.body).to.be.eql(newPost.body);
           done();
         });
     });
@@ -289,22 +256,6 @@ describe('Update Knowledgebase', () => {
           });
       });
     });
-    context('when author is empty', () => {
-      it('returns an error', (done) => {
-        const invalidPost = KnowledgeBaseFactory.build({ id, author: '' });
-        request()
-          .put('/api/v1/knowledge-base/update')
-          .set('authorization', adminToken)
-          .send(invalidPost)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Author" is not allowed to be empty');
-            done();
-          });
-      });
-    });
     context('when body is empty', () => {
       it('returns an error', (done) => {
         const invalidPost = KnowledgeBaseFactory.build({ id, body: '' });
@@ -317,22 +268,6 @@ describe('Update Knowledgebase', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('"Body" is not allowed to be empty');
-            done();
-          });
-      });
-    });
-    context('when read length is empty', () => {
-      it('returns an error', (done) => {
-        const invalidPost = KnowledgeBaseFactory.build({ id, readLength: '' });
-        request()
-          .put('/api/v1/knowledge-base/update')
-          .set('authorization', adminToken)
-          .send(invalidPost)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Read Length" must be a number');
             done();
           });
       });
@@ -390,7 +325,7 @@ describe('Update Knowledgebase', () => {
 
 describe('Delete post', () => {
   const id = mongoose.Types.ObjectId();
-  const post = KnowledgeBaseFactory.build({ _id: id, updatedBy: adminId });
+  const post = KnowledgeBaseFactory.build({ _id: id, author: 'John Doe', updatedBy: adminId });
 
   beforeEach(async () => {
     await addPostToKnowledgeBase(post);
@@ -457,9 +392,9 @@ describe('Delete post', () => {
 
 describe('Get all posts', () => {
   const id = mongoose.Types.ObjectId();
-  const post = KnowledgeBaseFactory.build({ _id: id, updatedBy: adminId });
-  const post2 = KnowledgeBaseFactory.build({ updatedBy: adminId });
-  const post3 = KnowledgeBaseFactory.build({ updatedBy: adminId });
+  const post = KnowledgeBaseFactory.build({ _id: id, author: 'John Doe', updatedBy: adminId });
+  const post2 = KnowledgeBaseFactory.build({ author: 'John Doe', updatedBy: adminId });
+  const post3 = KnowledgeBaseFactory.build({ author: 'John Doe', updatedBy: adminId });
 
   context('when no post is found', () => {
     it('returns not found', (done) => {
@@ -552,7 +487,7 @@ describe('Get all posts', () => {
 
 describe('Get one post', () => {
   const postId = mongoose.Types.ObjectId();
-  const post = KnowledgeBaseFactory.build({ _id: postId, updatedBy: adminId });
+  const post = KnowledgeBaseFactory.build({ _id: postId, author: 'John Doe', updatedBy: adminId });
 
   beforeEach(async () => {
     await addPostToKnowledgeBase(post);

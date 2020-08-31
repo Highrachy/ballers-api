@@ -23,10 +23,6 @@ import mongoose from 'mongoose';
  *            type: string
  *          tags:
  *            type: string
- *          dateAdded:
- *            type: string
- *          lastUpdated:
- *            type: string
  *        example:
  *           title: How to create your account
  *           author: John Doe
@@ -34,8 +30,6 @@ import mongoose from 'mongoose';
  *           readLength: 2 (in minutes)
  *           image: https://picsum.photos/200
  *           tags: [product design, culture]
- *           dateAdded: 2020-01-01
- *           lastUpdated: 2020-01-01
  */
 
 const { ObjectId } = mongoose.Schema.Types;

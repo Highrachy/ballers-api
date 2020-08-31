@@ -11,7 +11,11 @@ const KnowledgeBaseController = {
   add(req, res, next) {
     const newKnowledgeBase = req.locals;
     const { user } = req;
-    addPostToKnowledgeBase({ ...newKnowledgeBase, updatedBy: user._id })
+    addPostToKnowledgeBase({
+      ...newKnowledgeBase,
+      author: `${user.firstName} ${user.lastName}`,
+      updatedBy: user._id,
+    })
       .then((post) => {
         res.status(httpStatus.CREATED).json({ success: true, message: 'Post added', post });
       })
