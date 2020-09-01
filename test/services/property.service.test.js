@@ -5,6 +5,7 @@ import {
   addProperty,
   updateProperty,
   deleteProperty,
+  getPropertiesWithPaymentPlanId,
 } from '../../server/services/property.service';
 import PropertyFactory from '../factories/property.factory';
 import Property from '../../server/models/property.model';
@@ -151,6 +152,23 @@ describe('Property Service', () => {
         }
         Property.findByIdAndDelete.restore();
       });
+    });
+  });
+
+  describe('#getPropertiesWithPaymentPlanId', () => {
+    const _id = mongoose.Types.ObjectId();
+    const planId = mongoose.Types.ObjectId();
+
+    before(async () => {
+      await Property.create(
+        PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id, paymentPlan: [planId] }),
+      );
+    });
+
+    it('returns a valid property by payment plan id', async () => {
+      const properties = await getPropertiesWithPaymentPlanId(planId);
+      expect(properties[0]._id).to.eql(_id);
+      expect(properties[0].paymentPlan[0]).to.eql(planId);
     });
   });
 });

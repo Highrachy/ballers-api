@@ -51,6 +51,14 @@ export const getAllPropertiesAddedByAnAdmin = async (adminId) =>
       },
     },
     {
+      $lookup: {
+        from: 'paymentplans',
+        localField: 'paymentPlan',
+        foreignField: '_id',
+        as: 'paymentPlan',
+      },
+    },
+    {
       $project: {
         name: 1,
         titleDocument: 1,
@@ -65,6 +73,7 @@ export const getAllPropertiesAddedByAnAdmin = async (adminId) =>
         bedrooms: 1,
         toilets: 1,
         description: 1,
+        paymentPlan: 1,
         floorPlans: 1,
         'assignedUsers._id': 1,
         'assignedUsers.firstName': 1,
@@ -94,6 +103,14 @@ export const getAllProperties = async () =>
       },
     },
     {
+      $lookup: {
+        from: 'paymentplans',
+        localField: 'paymentPlan',
+        foreignField: '_id',
+        as: 'paymentPlan',
+      },
+    },
+    {
       $unwind: '$adminInfo',
     },
     {
@@ -111,6 +128,7 @@ export const getAllProperties = async () =>
         bedrooms: 1,
         toilets: 1,
         description: 1,
+        paymentPlan: 1,
         floorPlans: 1,
         'assignedUsers._id': 1,
         'assignedUsers.firstName': 1,
@@ -137,6 +155,14 @@ export const getOneProperty = async (propertId) =>
       },
     },
     {
+      $lookup: {
+        from: 'paymentplans',
+        localField: 'paymentPlan',
+        foreignField: '_id',
+        as: 'paymentPlan',
+      },
+    },
+    {
       $unwind: '$adminInfo',
     },
     {
@@ -154,6 +180,7 @@ export const getOneProperty = async (propertId) =>
         bedrooms: 1,
         toilets: 1,
         description: 1,
+        paymentPlan: 1,
         floorPlans: 1,
         'adminInfo._id': 1,
         'adminInfo.firstName': 1,
@@ -235,3 +262,6 @@ export const getAvailablePropertyOptions = async () =>
       },
     },
   ]);
+
+export const getPropertiesWithPaymentPlanId = async (id) =>
+  Property.find({ paymentPlan: { $in: [id] } });
