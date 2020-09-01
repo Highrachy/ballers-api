@@ -1,18 +1,29 @@
+import mongoose from 'mongoose';
 import Transaction from '../models/transaction.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+
+const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getTransactionById = async (id) => Transaction.findById(id).select();
 
 export const addTransaction = async (transaction) => {
   try {
-    const newTransaction = await new Transaction({
-      ...transaction,
-      paidOn: Date.now(),
-    }).save();
+    const newTransaction = await new Transaction(transaction).save();
     return newTransaction;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding transaction', error);
+  }
+};
+
+export const updateTransaction = async ({ transactionId, paidOn }) => {
+  const transaction = await getTransactionById(transactionId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+  try {
+    return Transaction.findByIdAndUpdate(transaction.id, { $set: { paidOn } }, { new: true });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating transaction', error);
   }
 };
 
@@ -49,7 +60,10 @@ export const getAllTransactions = async () =>
       $unwind: '$userInfo',
     },
     {
-      $unwind: '$adminInfo',
+      $unwind: {
+        path: '$adminInfo',
+        preserveNullAndEmptyArrays: true,
+      },
     },
     {
       $project: {
@@ -60,6 +74,31 @@ export const getAllTransactions = async () =>
         'adminInfo.assignedProperties': 0,
         'adminInfo.password': 0,
         'adminInfo.referralCode': 0,
+      },
+    },
+  ]);
+
+export const getUserTransactionsByPropertyAndUser = async (filter) =>
+  Transaction.aggregate([
+    {
+      $match: {
+        $and: [{ propertyId: ObjectId(filter.propertyId) }, { userId: ObjectId(filter.userId) }],
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $unwind: '$propertyInfo',
+    },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
       },
     },
   ]);

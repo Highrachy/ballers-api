@@ -1,9 +1,11 @@
 import mongoose from 'mongoose';
-import { expect, useDatabase } from '../config';
+import { expect, useDatabase, sinon } from '../config';
 import {
   getTransactionById,
   addTransaction,
   getAllTransactions,
+  updateTransaction,
+  getUserTransactionsByPropertyAndUser,
 } from '../../server/services/transaction.service';
 import TransactionFactory from '../factories/transaction.factory';
 import Transaction from '../../server/models/transaction.model';
@@ -19,7 +21,7 @@ describe('Transaction Service', () => {
     const id = mongoose.Types.ObjectId();
 
     before(async () => {
-      await addTransaction(TransactionFactory.build({ _id: id }));
+      await addTransaction(TransactionFactory.build({ _id: id, adminId: id }));
     });
 
     it('returns a valid transaction by Id', async () => {
@@ -30,7 +32,8 @@ describe('Transaction Service', () => {
 
   describe('#addTransaction', () => {
     let countedTransactions;
-    const transaction = TransactionFactory.build();
+    const id = mongoose.Types.ObjectId();
+    const transaction = TransactionFactory.build({ adminId: id });
 
     beforeEach(async () => {
       countedTransactions = await Transaction.countDocuments({});
@@ -91,6 +94,93 @@ describe('Transaction Service', () => {
         const transaction = await getAllTransactions();
         expect(transaction).to.be.an('array');
         expect(transaction.length).to.be.eql(3);
+      });
+    });
+  });
+
+  describe('#updateTransaction', () => {
+    const transactionId = mongoose.Types.ObjectId();
+    const userId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const transactionToAdd = TransactionFactory.build({
+      _id: transactionId,
+      propertyId,
+      userId,
+      adminId: userId,
+    });
+
+    const updatedDetails = {
+      transactionId,
+      paidOn: Date.now(),
+    };
+
+    beforeEach(async () => {
+      await addTransaction(transactionToAdd);
+    });
+
+    context('when transaction is updated', () => {
+      it('returns a valid updated transaction', async () => {
+        const updatedTransaction = updateTransaction(updatedDetails);
+        const transaction = getTransactionById(updatedDetails.id);
+        expect(transaction.amount).to.eql(updatedTransaction.amount);
+        expect(transaction.paidOn).to.eql(updatedTransaction.paidOn);
+      });
+    });
+
+    context('when getTransactionById fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Transaction, 'findById').throws(new Error('error msg'));
+        try {
+          await updateTransaction(updatedDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        Transaction.findById.restore();
+      });
+    });
+
+    context('when findByIdAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Transaction, 'findByIdAndUpdate').throws(new Error('error msg'));
+        try {
+          await updateTransaction(updatedDetails);
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Error updating transaction');
+        }
+        Transaction.findByIdAndUpdate.restore();
+      });
+    });
+  });
+
+  describe('#getUserTransactionsByPropertyAndUser', () => {
+    const userId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
+    const transactionToAdd = TransactionFactory.build({
+      propertyId,
+      userId,
+      adminId: userId,
+    });
+
+    const filter = {
+      userId,
+      propertyId,
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+      await addTransaction(transactionToAdd);
+    });
+
+    context('when transaction is updated', () => {
+      it('returns a valid updated transaction', async () => {
+        const searchResult = await getUserTransactionsByPropertyAndUser(filter);
+        expect(searchResult[0].propertyId).to.eql(propertyId);
+        expect(searchResult[0].userId).to.eql(userId);
       });
     });
   });

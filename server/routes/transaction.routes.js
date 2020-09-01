@@ -1,6 +1,10 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin } from '../helpers/middleware';
-import addTransactionSchema from '../schemas/transaction.schema';
+import {
+  addTransactionSchema,
+  updateTransactionSchema,
+  getTransactionInfoBypropertySchema,
+} from '../schemas/transaction.schema';
 import TransactionController from '../controllers/transaction.controllers';
 
 const router = express.Router();
@@ -58,5 +62,62 @@ router.post(
  *       description: Internal server error
  */
 router.get('/all', authenticate, isAdmin, TransactionController.getAll);
+
+/**
+ * @swagger
+ * /transaction/update:
+ *   put:
+ *     tags:
+ *       - Transaction
+ *     description: Updates payment date of existing transaction
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Transaction'
+ *      description: Updates payment date of existing transaction
+ *     responses:
+ *      '200':
+ *        description: Transaction updated
+ *      '404':
+ *        description: Transaction not found
+ */
+router.put(
+  '/update',
+  authenticate,
+  isAdmin,
+  schemaValidation(updateTransactionSchema),
+  TransactionController.update,
+);
+
+/**
+ * @swagger
+ * /transaction/details:
+ *   post:
+ *     tags:
+ *       - Transaction
+ *     description: Get transactions by property and user id
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Transaction'
+ *      description: Get transactions by property and user id
+ *     responses:
+ *      '200':
+ *        description: Transactions found
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/details',
+  authenticate,
+  schemaValidation(getTransactionInfoBypropertySchema),
+  TransactionController.getUserTransactionsByPropertyAndUser,
+);
 
 module.exports = router;
