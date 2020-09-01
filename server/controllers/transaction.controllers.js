@@ -2,7 +2,8 @@ import {
   addTransaction,
   getAllTransactions,
   updateTransaction,
-  getUserTransactionsByPropertyAndUser,
+  getUserTransactionsByProperty,
+  getTransactionsByUser,
 } from '../services/transaction.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -38,9 +39,18 @@ const TransactionController = {
       .catch((error) => next(error));
   },
 
-  getUserTransactionsByPropertyAndUser(req, res, next) {
-    const filter = req.locals;
-    getUserTransactionsByPropertyAndUser(filter)
+  getAllPersonal(req, res, next) {
+    const id = req.user._id;
+    getTransactionsByUser(id)
+      .then((transactions) => {
+        res.status(httpStatus.OK).json({ success: true, transactions });
+      })
+      .catch((error) => next(error));
+  },
+
+  getTransactionsByProperty(req, res, next) {
+    const { propertyId } = req.locals;
+    getUserTransactionsByProperty(propertyId)
       .then((transactions) => {
         res.status(httpStatus.OK).json({ success: true, transactions });
       })

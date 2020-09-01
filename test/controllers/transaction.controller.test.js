@@ -269,7 +269,7 @@ describe('Update Transaction route', () => {
     });
   });
 
-  context('with invalid ttransaction', () => {
+  context('with invalid transaction', () => {
     it('returns validation error', (done) => {
       request()
         .put('/api/v1/transaction/update')
@@ -331,6 +331,178 @@ describe('Update Transaction route', () => {
             done();
           });
       });
+    });
+  });
+});
+
+describe('Get all transactions made by a user route', () => {
+  const propertyId = mongoose.Types.ObjectId();
+  const transactionId = mongoose.Types.ObjectId();
+  const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+  const transaction = TransactionFactory.build({
+    _id: transactionId,
+    propertyId,
+    userId: _id,
+    adminId: _id,
+  });
+
+  context('when no transaction is found', () => {
+    it('returns empty array of transactions', (done) => {
+      request()
+        .get('/api/v1/transaction/personal')
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body).to.have.property('transactions');
+          expect(res.body.transactions.length).to.be.eql(0);
+          done();
+        });
+    });
+  });
+
+  describe('when transactions exist in db', () => {
+    before(async () => {
+      await addProperty(property);
+      await addTransaction(transaction);
+    });
+
+    context('with a valid token & id', async () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/transaction/personal')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('transactions');
+            expect(res.body.transactions[0]._id).to.be.eql(transactionId.toString());
+            expect(res.body.transactions[0].propertyInfo._id).to.be.eql(propertyId.toString());
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/transaction/personal')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when user token is used', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/transaction/personal')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            done();
+          });
+      });
+    });
+
+    context('when getTransactionsByUser service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/transaction/personal')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Transaction.aggregate.restore();
+          });
+      });
+    });
+  });
+});
+
+describe('Get User Transactions By Property route', () => {
+  const propertyId = mongoose.Types.ObjectId();
+  const transactionId = mongoose.Types.ObjectId();
+  const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+  const transaction = TransactionFactory.build({
+    _id: transactionId,
+    propertyId,
+    userId: _id,
+    adminId: _id,
+  });
+
+  beforeEach(async () => {
+    await addProperty(property);
+    await addTransaction(transaction);
+  });
+
+  const propertyDetails = {
+    propertyId,
+  };
+
+  context('with valid token', () => {
+    it('returns an updated transaction', (done) => {
+      request()
+        .post('/api/v1/transaction/details')
+        .set('authorization', adminToken)
+        .send(propertyDetails)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body).to.have.property('transactions');
+          expect(res.body.transactions[0]._id).to.be.eql(transactionId.toString());
+          expect(res.body.transactions[0].propertyInfo._id).to.be.eql(propertyId.toString());
+          expect(res.body.transactions[0].userInfo._id).to.be.eql(_id.toString());
+          done();
+        });
+    });
+  });
+
+  context('without token', () => {
+    it('returns error', (done) => {
+      request()
+        .post('/api/v1/transaction/details')
+        .send(propertyDetails)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+
+  context('with invalid transaction', () => {
+    it('returns validation error', (done) => {
+      request()
+        .post('/api/v1/transaction/details')
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Validation Error');
+          done();
+        });
+    });
+  });
+
+  context('when getUserTransactionsByProperty service returns an error', () => {
+    it('returns the error', (done) => {
+      sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
+      request()
+        .post('/api/v1/transaction/details')
+        .set('authorization', adminToken)
+        .send(propertyDetails)
+        .end((err, res) => {
+          expect(res).to.have.status(500);
+          done();
+          Transaction.aggregate.restore();
+        });
     });
   });
 });

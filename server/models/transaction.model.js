@@ -59,6 +59,7 @@ const TransactionSchema = new mongoose.Schema(
     },
     paidOn: {
       type: Date,
+      required: true,
     },
     additionalInfo: {
       type: String,

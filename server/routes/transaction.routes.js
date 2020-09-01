@@ -3,7 +3,7 @@ import { authenticate, schemaValidation, isAdmin } from '../helpers/middleware';
 import {
   addTransactionSchema,
   updateTransactionSchema,
-  getTransactionInfoBypropertySchema,
+  getTransactionsBypropertySchema,
 } from '../schemas/transaction.schema';
 import TransactionController from '../controllers/transaction.controllers';
 
@@ -46,7 +46,7 @@ router.post(
  *   get:
  *     tags:
  *       - Transaction
- *     description: Get all enquiries
+ *     description: Get all transactions in db
  *     produces:
  *       - application/json
  *     requestBody:
@@ -54,7 +54,7 @@ router.post(
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/Transaction'
- *      description: Get all transactions
+ *      description: Get all transactions in db
  *     responses:
  *      '200':
  *        description: returns object of transactions
@@ -94,11 +94,11 @@ router.put(
 
 /**
  * @swagger
- * /transaction/details:
- *   post:
+ * /transaction/personal:
+ *   get:
  *     tags:
  *       - Transaction
- *     description: Get transactions by property and user id
+ *     description: Get all transactions made by a user
  *     produces:
  *       - application/json
  *     requestBody:
@@ -106,7 +106,30 @@ router.put(
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/Transaction'
- *      description: Get transactions by property and user id
+ *      description: Get all transactions made by a user
+ *     responses:
+ *      '200':
+ *        description: returns object of transactions
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/personal', authenticate, TransactionController.getAllPersonal);
+
+/**
+ * @swagger
+ * /transaction/details:
+ *   post:
+ *     tags:
+ *       - Transaction
+ *     description: Get all transactions made on a property
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Transaction'
+ *      description: Get all transactions made on a property
  *     responses:
  *      '200':
  *        description: Transactions found
@@ -116,8 +139,9 @@ router.put(
 router.post(
   '/details',
   authenticate,
-  schemaValidation(getTransactionInfoBypropertySchema),
-  TransactionController.getUserTransactionsByPropertyAndUser,
+  isAdmin,
+  schemaValidation(getTransactionsBypropertySchema),
+  TransactionController.getTransactionsByProperty,
 );
 
 module.exports = router;

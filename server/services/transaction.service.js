@@ -78,13 +78,9 @@ export const getAllTransactions = async () =>
     },
   ]);
 
-export const getUserTransactionsByPropertyAndUser = async (filter) =>
+export const getTransactionsByUser = async (userId) =>
   Transaction.aggregate([
-    {
-      $match: {
-        $and: [{ propertyId: ObjectId(filter.propertyId) }, { userId: ObjectId(filter.userId) }],
-      },
-    },
+    { $match: { userId: ObjectId(userId) } },
     {
       $lookup: {
         from: 'properties',
@@ -99,6 +95,41 @@ export const getUserTransactionsByPropertyAndUser = async (filter) =>
     {
       $project: {
         'propertyInfo.assignedTo': 0,
+      },
+    },
+  ]);
+
+export const getUserTransactionsByProperty = async (propertyId) =>
+  Transaction.aggregate([
+    { $match: { propertyId: ObjectId(propertyId) } },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    {
+      $unwind: '$propertyInfo',
+    },
+    {
+      $unwind: '$userInfo',
+    },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+        'userInfo.assignedProperties': 0,
+        'userInfo.password': 0,
+        'userInfo.referralCode': 0,
       },
     },
   ]);

@@ -7,6 +7,7 @@ export const addTransactionSchema = Joi.object({
   userId: Joi.objectId().label('User Id').required(),
   paymentSource: Joi.string().label('Transaction Payment Source').required(),
   amount: Joi.number().label('Transaction Amount').required(),
+  paidOn: Joi.string().label('Payment Date').required(),
   additionalInfo: Joi.string().label('Additional Info').optional(),
 });
 
@@ -15,7 +16,6 @@ export const updateTransactionSchema = Joi.object({
   paidOn: Joi.string().label('Payment Date').required(),
 });
 
-export const getTransactionInfoBypropertySchema = Joi.object({
-  userId: Joi.objectId().label('User Id').required(),
+export const getTransactionsBypropertySchema = Joi.object({
   propertyId: Joi.objectId().label('Property Id').required(),
 });
