@@ -194,6 +194,22 @@ describe('Schedule Visit Route', () => {
           });
       });
     });
+    context('when visit date is empty', () => {
+      it('returns an error', (done) => {
+        const booking = VisitationFactory.build({ visitDate: '' });
+        request()
+          .post('/api/v1/visitation/schedule')
+          .set('authorization', userToken)
+          .send(booking)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Visit Date" is not allowed to be empty');
+            done();
+          });
+      });
+    });
   });
 });
 
