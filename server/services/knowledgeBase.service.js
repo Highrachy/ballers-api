@@ -4,9 +4,10 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 
 const { ObjectId } = mongoose.Types.ObjectId;
+const WORDS_PER_MINUTE = 150;
 
 export const estimateReadingTime = (text) => {
-  const time = Math.round(text.split(' ').length / 150);
+  const time = Math.round(text.split(' ').length / WORDS_PER_MINUTE);
   return time < 1 ? 1 : time;
 };
 

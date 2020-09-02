@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
 import { expect, sinon, useDatabase } from '../config';
 import {
   estimateReadingTime,
@@ -13,6 +15,11 @@ import KnowledgeBaseFactory from '../factories/knowledgeBase.factory';
 import KnowledgeBase from '../../server/models/knowledgeBase.model';
 import User from '../../server/models/user.model';
 import UserFactory from '../factories/user.factory';
+
+const threeHundredWords = fs.readFileSync(
+  path.resolve(__dirname, '../threeHundredWords.txt'),
+  'utf8',
+);
 
 useDatabase();
 
@@ -33,12 +40,7 @@ describe('KnowledgeBase Service', () => {
   });
 
   describe('#estimateReadingTime', () => {
-    context('when text is less than 150 words', () => {
-      const threeHundredWords = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent ut venenatis dui, ut malesuada quam. Vestibulum in rhoncus mi, ut fermentum nibh. Vivamus at varius nisi. Morbi tincidunt quam odio, in pretium enim dapibus vitae. Duis fringilla justo ac facilisis fermentum. Proin eu orci interdum, volutpat arcu nec, egestas enim. Morbi elementum neque eget mattis blandit. Praesent lobortis ipsum at consectetur sodales. Ut dictum dolor convallis sapien congue bibendum. Morbi vel dolor ac nisl ullamcorper tempor vitae id enim.
-        Donec sit amet luctus lacus. Mauris vel eros eu ligula facilisis tincidunt. Mauris ac interdum arcu. Nam et eleifend nunc, vel euismod nisi. Donec mauris leo, gravida non condimentum sit amet, bibendum at felis. Fusce vitae tempus nibh, posuere luctus massa. Nunc auctor lectus facilisis rutrum venenatis. Vivamus eget elit scelerisque, condimentum risus id, luctus justo. Nullam pulvinar, sapien ut dictum sollicitudin, justo dui pharetra velit, sed pharetra justo urna ut nisi. Donec ex tortor, congue eget luctus eget, maximus at turpis.
-        Integer vehicula ultrices tincidunt. Etiam est justo, bibendum sed est eu, vulputate consequat elit. Fusce vel felis ut elit semper varius. Etiam scelerisque sem nec leo ornare, sed tincidunt augue feugiat. Integer et facilisis mi. Aenean at arcu pharetra odio vehicula fermentum sollicitudin in risus. Sed dictum faucibus dolor vitae rutrum. Maecenas in lectus ut magna vehicula dignissim dapibus eget orci. Phasellus eget tincidunt dui. Sed pulvinar dolor quis neque tincidunt, sit amet elementum mi pulvinar. Morbi facilisis scelerisque ultricies. Duis porttitor mattis lectus ut efficitur. Maecenas convallis erat felis, non egestas lacus porttitor sit amet. Sed pellentesque est sed risus dignissim, a vulputate lorem ornare. Quisque nec mollis sapien.
-        Suspendisse auctor dapibus bibendum. Sed pellentesque est ligula, ac aliquam nunc posuere ut. Cras fringilla interdum nisi a volutpat. Ut at semper diam. Suspendisse elementum ipsum dolor, ut blandit.`;
-
+    context('when text is more than 150 words', () => {
       it('returns 2 minutes as reading time', async () => {
         const post = estimateReadingTime(threeHundredWords);
         expect(post).to.be.eql(2);
