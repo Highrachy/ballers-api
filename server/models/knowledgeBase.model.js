@@ -26,6 +26,7 @@ import mongoose from 'mongoose';
  *        example:
  *           title: How to create your account
  *           author: John Doe
+ *           authorSummary: John Doe is a Design Founder & Advisor, Lasgidi School of Creative Leadership Executive MBA participant.
  *           body: Lorem ipsum dolor, sit amet consectetur adipisicing elit. Aut omnis deserunt perferendis adipisci impedit quae quia consectetur sint non ab consequuntur recusandae maiores soluta nostrum, repellat suscipit quisquam accusantium illo?
  *           readLength: 2 (in minutes)
  *           image: https://picsum.photos/200
@@ -43,6 +44,9 @@ const KnowledgeBaseSchema = new mongoose.Schema(
     author: {
       type: String,
       required: true,
+    },
+    authorSummary: {
+      type: String,
     },
     body: {
       type: String,
