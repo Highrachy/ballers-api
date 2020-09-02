@@ -448,16 +448,11 @@ describe('Get User Transactions By Property route', () => {
     await addTransaction(transaction);
   });
 
-  const propertyDetails = {
-    propertyId,
-  };
-
   context('with valid token', () => {
     it('returns an updated transaction', (done) => {
       request()
-        .post('/api/v1/transaction/details')
+        .get(`/api/v1/transaction/property/${propertyId}`)
         .set('authorization', adminToken)
-        .send(propertyDetails)
         .end((err, res) => {
           expect(res).to.have.status(200);
           expect(res.body.success).to.be.eql(true);
@@ -473,8 +468,7 @@ describe('Get User Transactions By Property route', () => {
   context('without token', () => {
     it('returns error', (done) => {
       request()
-        .post('/api/v1/transaction/details')
-        .send(propertyDetails)
+        .get(`/api/v1/transaction/property/${propertyId}`)
         .end((err, res) => {
           expect(res).to.have.status(403);
           expect(res.body.success).to.be.eql(false);
@@ -484,15 +478,15 @@ describe('Get User Transactions By Property route', () => {
     });
   });
 
-  context('with invalid transaction', () => {
+  context('with invalid property id ', () => {
     it('returns validation error', (done) => {
       request()
-        .post('/api/v1/transaction/details')
+        .get(`/api/v1/transaction/property/${propertyId}s`)
         .set('authorization', adminToken)
         .end((err, res) => {
           expect(res).to.have.status(412);
           expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Validation Error');
+          expect(res.body.message).to.be.eql('Invalid Id supplied');
           done();
         });
     });
@@ -502,9 +496,8 @@ describe('Get User Transactions By Property route', () => {
     it('returns the error', (done) => {
       sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
       request()
-        .post('/api/v1/transaction/details')
+        .get(`/api/v1/transaction/property/${propertyId}`)
         .set('authorization', adminToken)
-        .send(propertyDetails)
         .end((err, res) => {
           expect(res).to.have.status(500);
           done();

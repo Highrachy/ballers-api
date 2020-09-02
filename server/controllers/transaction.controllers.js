@@ -49,7 +49,7 @@ const TransactionController = {
   },
 
   getTransactionsByProperty(req, res, next) {
-    const { propertyId } = req.locals;
+    const propertyId = req.params.id;
     getUserTransactionsByProperty(propertyId)
       .then((transactions) => {
         res.status(httpStatus.OK).json({ success: true, transactions });

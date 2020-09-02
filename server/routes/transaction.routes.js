@@ -1,10 +1,6 @@
 import express from 'express';
-import { authenticate, schemaValidation, isAdmin } from '../helpers/middleware';
-import {
-  addTransactionSchema,
-  updateTransactionSchema,
-  getTransactionsByPropertySchema,
-} from '../schemas/transaction.schema';
+import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
+import { addTransactionSchema, updateTransactionSchema } from '../schemas/transaction.schema';
 import TransactionController from '../controllers/transaction.controllers';
 
 const router = express.Router();
@@ -117,30 +113,28 @@ router.get('/user', authenticate, TransactionController.getAllPersonal);
 
 /**
  * @swagger
- * /transaction/details:
- *   post:
- *     tags:
- *       - Transaction
- *     description: Get all transactions made on a property
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
+ * path:
+ *  /transaction/property/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
  *          schema:
- *            $ref: '#/components/schemas/Transaction'
- *      description: Get all transactions made on a property
- *     responses:
- *      '200':
- *        description: Transactions found
- *      '500':
- *       description: Internal server error
+ *            type: string
+ *          description: verifies user access
+ *      summary: Get all transactions made on a property
+ *      tags: [Transaction]
+ *      responses:
+ *        '200':
+ *          description: Transactions found
+ *        '500':
+ *          description: Internal server error
  */
-router.post(
-  '/details',
+router.get(
+  '/property/:id',
   authenticate,
   isAdmin,
-  schemaValidation(getTransactionsByPropertySchema),
+  hasValidObjectId,
   TransactionController.getTransactionsByProperty,
 );
 
