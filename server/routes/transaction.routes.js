@@ -3,7 +3,7 @@ import { authenticate, schemaValidation, isAdmin } from '../helpers/middleware';
 import {
   addTransactionSchema,
   updateTransactionSchema,
-  getTransactionsBypropertySchema,
+  getTransactionsByPropertySchema,
 } from '../schemas/transaction.schema';
 import TransactionController from '../controllers/transaction.controllers';
 
@@ -94,7 +94,7 @@ router.put(
 
 /**
  * @swagger
- * /transaction/personal:
+ * /transaction/user:
  *   get:
  *     tags:
  *       - Transaction
@@ -113,7 +113,7 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.get('/personal', authenticate, TransactionController.getAllPersonal);
+router.get('/user', authenticate, TransactionController.getAllPersonal);
 
 /**
  * @swagger
@@ -140,7 +140,7 @@ router.post(
   '/details',
   authenticate,
   isAdmin,
-  schemaValidation(getTransactionsBypropertySchema),
+  schemaValidation(getTransactionsByPropertySchema),
   TransactionController.getTransactionsByProperty,
 );
 

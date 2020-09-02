@@ -16,6 +16,6 @@ export const updateTransactionSchema = Joi.object({
   paidOn: Joi.string().label('Payment Date').required(),
 });
 
-export const getTransactionsBypropertySchema = Joi.object({
+export const getTransactionsByPropertySchema = Joi.object({
   propertyId: Joi.objectId().label('Property Id').required(),
 });

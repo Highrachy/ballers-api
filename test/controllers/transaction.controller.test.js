@@ -349,7 +349,7 @@ describe('Get all transactions made by a user route', () => {
   context('when no transaction is found', () => {
     it('returns empty array of transactions', (done) => {
       request()
-        .get('/api/v1/transaction/personal')
+        .get('/api/v1/transaction/user')
         .set('authorization', adminToken)
         .end((err, res) => {
           expect(res).to.have.status(200);
@@ -370,14 +370,21 @@ describe('Get all transactions made by a user route', () => {
     context('with a valid token & id', async () => {
       it('returns successful payload', (done) => {
         request()
-          .get('/api/v1/transaction/personal')
+          .get('/api/v1/transaction/user')
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('transactions');
+            expect(res.body.transactions[0]).to.have.property('propertyId');
+            expect(res.body.transactions[0]).to.have.property('userId');
+            expect(res.body.transactions[0]).to.have.property('paymentSource');
+            expect(res.body.transactions[0]).to.have.property('amount');
+            expect(res.body.transactions[0]).to.have.property('adminId');
             expect(res.body.transactions[0]._id).to.be.eql(transactionId.toString());
             expect(res.body.transactions[0].propertyInfo._id).to.be.eql(propertyId.toString());
+            expect(res.body.transactions[0].propertyInfo).to.have.property('name');
+            expect(res.body.transactions[0].propertyInfo).to.have.property('mainImage');
             done();
           });
       });
@@ -386,7 +393,7 @@ describe('Get all transactions made by a user route', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get('/api/v1/transaction/personal')
+          .get('/api/v1/transaction/user')
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -399,7 +406,7 @@ describe('Get all transactions made by a user route', () => {
     context('when user token is used', () => {
       it('returns successful payload', (done) => {
         request()
-          .get('/api/v1/transaction/personal')
+          .get('/api/v1/transaction/user')
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -413,7 +420,7 @@ describe('Get all transactions made by a user route', () => {
       it('returns the error', (done) => {
         sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get('/api/v1/transaction/personal')
+          .get('/api/v1/transaction/user')
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
