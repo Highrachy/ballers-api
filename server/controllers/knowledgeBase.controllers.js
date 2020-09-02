@@ -13,7 +13,7 @@ const KnowledgeBaseController = {
     const { user } = req;
     addPostToKnowledgeBase({
       ...newKnowledgeBase,
-      author: `${user.firstName} ${user.lastName}`,
+      author: user._id,
       updatedBy: user._id,
     })
       .then((post) => {

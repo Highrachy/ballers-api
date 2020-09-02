@@ -69,13 +69,23 @@ export const getOnePostFromKnowledgeBase = async (id) =>
       },
     },
     {
+      $lookup: {
+        from: 'users',
+        localField: 'author',
+        foreignField: '_id',
+        as: 'author',
+      },
+    },
+    {
       $unwind: '$updatedBy',
+    },
+    {
+      $unwind: '$author',
     },
     {
       $project: {
         tags: 1,
         title: 1,
-        author: 1,
         body: 1,
         readLength: 1,
         createdAt: 1,
@@ -84,6 +94,11 @@ export const getOnePostFromKnowledgeBase = async (id) =>
         'updatedBy.firstName': 1,
         'updatedBy.lastName': 1,
         'updatedBy.email': 1,
+        'author._id': 1,
+        'author.firstName': 1,
+        'author.lastName': 1,
+        'author.email': 1,
+        'author.about': 1,
       },
     },
   ]);
@@ -99,13 +114,23 @@ export const getAllPostsFromKnowledgeBase = async () =>
       },
     },
     {
+      $lookup: {
+        from: 'users',
+        localField: 'author',
+        foreignField: '_id',
+        as: 'author',
+      },
+    },
+    {
       $unwind: '$updatedBy',
+    },
+    {
+      $unwind: '$author',
     },
     {
       $project: {
         tags: 1,
         title: 1,
-        author: 1,
         body: 1,
         readLength: 1,
         createdAt: 1,
@@ -114,6 +139,11 @@ export const getAllPostsFromKnowledgeBase = async () =>
         'updatedBy.firstName': 1,
         'updatedBy.lastName': 1,
         'updatedBy.email': 1,
+        'author._id': 1,
+        'author.firstName': 1,
+        'author.lastName': 1,
+        'author.email': 1,
+        'author.about': 1,
       },
     },
   ]);

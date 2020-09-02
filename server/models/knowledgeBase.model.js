@@ -14,7 +14,7 @@ import mongoose from 'mongoose';
  *          title:
  *            type: string
  *          author:
- *            type: string
+ *            type: objectid
  *          body:
  *            type: string
  *          readLength:
@@ -25,8 +25,7 @@ import mongoose from 'mongoose';
  *            type: string
  *        example:
  *           title: How to create your account
- *           author: John Doe
- *           authorSummary: John Doe is a Design Founder & Advisor, Lasgidi School of Creative Leadership Executive MBA participant.
+ *           author: 5f4d9f082fa5058b6a3ea70d
  *           body: Lorem ipsum dolor, sit amet consectetur adipisicing elit. Aut omnis deserunt perferendis adipisci impedit quae quia consectetur sint non ab consequuntur recusandae maiores soluta nostrum, repellat suscipit quisquam accusantium illo?
  *           readLength: 2 (in minutes)
  *           image: https://picsum.photos/200
@@ -42,11 +41,8 @@ const KnowledgeBaseSchema = new mongoose.Schema(
       required: true,
     },
     author: {
-      type: String,
+      type: ObjectId,
       required: true,
-    },
-    authorSummary: {
-      type: String,
     },
     body: {
       type: String,
@@ -63,7 +59,6 @@ const KnowledgeBaseSchema = new mongoose.Schema(
     },
     updatedBy: {
       type: ObjectId,
-      required: true,
     },
   },
   { timestamps: true },

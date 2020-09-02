@@ -1,6 +1,4 @@
 import mongoose from 'mongoose';
-import fs from 'fs';
-import path from 'path';
 import { expect, sinon, useDatabase } from '../config';
 import {
   estimateReadingTime,
@@ -15,11 +13,7 @@ import KnowledgeBaseFactory from '../factories/knowledgeBase.factory';
 import KnowledgeBase from '../../server/models/knowledgeBase.model';
 import User from '../../server/models/user.model';
 import UserFactory from '../factories/user.factory';
-
-const threeHundredWords = fs.readFileSync(
-  path.resolve(__dirname, '../threeHundredWords.txt'),
-  'utf8',
-);
+import { threeHundredWords, twentyWords } from '../words';
 
 useDatabase();
 
@@ -28,9 +22,7 @@ describe('KnowledgeBase Service', () => {
     const id = mongoose.Types.ObjectId();
 
     before(async () => {
-      await addPostToKnowledgeBase(
-        KnowledgeBaseFactory.build({ _id: id, author: 'John Doe', updatedBy: id }),
-      );
+      await addPostToKnowledgeBase(KnowledgeBaseFactory.build({ _id: id, author: id }));
     });
 
     it('returns a valid post by Id', async () => {
@@ -40,17 +32,14 @@ describe('KnowledgeBase Service', () => {
   });
 
   describe('#estimateReadingTime', () => {
-    context('when text is more than 150 words', () => {
+    context('with 300 words', () => {
       it('returns 2 minutes as reading time', async () => {
         const post = estimateReadingTime(threeHundredWords);
         expect(post).to.be.eql(2);
       });
     });
 
-    context('when text is less than 150 words', () => {
-      const twentyWords =
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus a leo ut nibh semper condimentum nec nec nisl. Pellentesque id.';
-
+    context('with 20 words', () => {
       it('returns 1 minute as reading time', async () => {
         const post = estimateReadingTime(twentyWords);
         expect(post).to.be.eql(1);
@@ -61,7 +50,7 @@ describe('KnowledgeBase Service', () => {
   describe('#addPostToKnowledgeBase', () => {
     let countedPosts;
     const id = mongoose.Types.ObjectId();
-    const post = KnowledgeBaseFactory.build({ author: 'John Doe', updatedBy: id });
+    const post = KnowledgeBaseFactory.build({ author: id });
 
     beforeEach(async () => {
       countedPosts = await KnowledgeBase.countDocuments({});
@@ -83,8 +72,7 @@ describe('KnowledgeBase Service', () => {
         try {
           const InvalidPost = KnowledgeBaseFactory.build({
             title: '',
-            author: 'John Doe',
-            updatedBy: id,
+            author: id,
           });
           await addPostToKnowledgeBase(InvalidPost);
         } catch (err) {
@@ -100,7 +88,7 @@ describe('KnowledgeBase Service', () => {
 
   describe('#getAllPostsFromKnowledgeBase', () => {
     const id = mongoose.Types.ObjectId();
-    const post = KnowledgeBaseFactory.build({ author: 'John Doe', updatedBy: id });
+    const post = KnowledgeBaseFactory.build({ author: id, updatedBy: id });
 
     beforeEach(async () => {
       await User.create(UserFactory.build({ _id: id }));
@@ -133,7 +121,7 @@ describe('KnowledgeBase Service', () => {
     before(async () => {
       await User.create(UserFactory.build({ _id: id }));
       await addPostToKnowledgeBase(
-        KnowledgeBaseFactory.build({ _id: id, author: 'John Doe', updatedBy: id }),
+        KnowledgeBaseFactory.build({ _id: id, author: id, updatedBy: id }),
       );
     });
 
@@ -153,7 +141,7 @@ describe('KnowledgeBase Service', () => {
     };
     before(async () => {
       await addPostToKnowledgeBase(
-        KnowledgeBaseFactory.build({ _id, author: 'John Doe', updatedBy: _id }),
+        KnowledgeBaseFactory.build({ _id, author: _id, updatedBy: _id }),
       );
     });
 
@@ -197,7 +185,7 @@ describe('KnowledgeBase Service', () => {
     const _id = mongoose.Types.ObjectId();
     before(async () => {
       await addPostToKnowledgeBase(
-        KnowledgeBaseFactory.build({ _id, author: 'John Doe', updatedBy: _id }),
+        KnowledgeBaseFactory.build({ _id, author: _id, updatedBy: _id }),
       );
     });
 

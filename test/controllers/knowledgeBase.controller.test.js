@@ -24,7 +24,7 @@ beforeEach(async () => {
 
 describe('Add post to knowledge base Route', () => {
   context('with valid data', () => {
-    it('returns successful property', (done) => {
+    it('returns successful post', (done) => {
       const post = KnowledgeBaseFactory.build();
       request()
         .post('/api/v1/knowledge-base/add')
@@ -119,7 +119,7 @@ describe('Add post to knowledge base Route', () => {
 
 describe('Update Knowledgebase', () => {
   const id = mongoose.Types.ObjectId();
-  const post = KnowledgeBaseFactory.build({ _id: id, author: 'John Doe', updatedBy: adminId });
+  const post = KnowledgeBaseFactory.build({ _id: id, author: adminId });
   const newPost = {
     id,
     body: 'Lorem ipsum dolor, nsequuntur recusandae maiores soluta nostrum',
@@ -325,7 +325,7 @@ describe('Update Knowledgebase', () => {
 
 describe('Delete post', () => {
   const id = mongoose.Types.ObjectId();
-  const post = KnowledgeBaseFactory.build({ _id: id, author: 'John Doe', updatedBy: adminId });
+  const post = KnowledgeBaseFactory.build({ _id: id, author: adminId });
 
   beforeEach(async () => {
     await addPostToKnowledgeBase(post);
@@ -392,9 +392,9 @@ describe('Delete post', () => {
 
 describe('Get all posts', () => {
   const id = mongoose.Types.ObjectId();
-  const post = KnowledgeBaseFactory.build({ _id: id, author: 'John Doe', updatedBy: adminId });
-  const post2 = KnowledgeBaseFactory.build({ author: 'John Doe', updatedBy: adminId });
-  const post3 = KnowledgeBaseFactory.build({ author: 'John Doe', updatedBy: adminId });
+  const post = KnowledgeBaseFactory.build({ _id: id, author: adminId, updatedBy: adminId });
+  const post2 = KnowledgeBaseFactory.build({ author: adminId, updatedBy: adminId });
+  const post3 = KnowledgeBaseFactory.build({ author: adminId, updatedBy: adminId });
 
   context('when no post is found', () => {
     it('returns not found', (done) => {
@@ -487,7 +487,7 @@ describe('Get all posts', () => {
 
 describe('Get one post', () => {
   const postId = mongoose.Types.ObjectId();
-  const post = KnowledgeBaseFactory.build({ _id: postId, author: 'John Doe', updatedBy: adminId });
+  const post = KnowledgeBaseFactory.build({ _id: postId, author: adminId, updatedBy: adminId });
 
   beforeEach(async () => {
     await addPostToKnowledgeBase(post);
