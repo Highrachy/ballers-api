@@ -38,7 +38,7 @@ import mongoose from 'mongoose';
  *            type: array
  *          favourites:
  *            type: array
- *          accountSummary:
+ *          about:
  *            type: string
  *        example:
  *           firstName: John
@@ -52,7 +52,7 @@ import mongoose from 'mongoose';
  *           preferences: {houseType: 3 bedroom apartment, location: lekki phase 1, maxPrice: 50000000, minPrice: 15000000, paymentPlan: Outright Payment}
  *           notifications: [description: Your account has been activated, type: info, URL: app.ballers.ng/dashboard, status: 0, dateAdded: 2021-03-22]
  *           favourites: []
- *           authorSummary: John Doe is a Design Founder & Advisor, Lasgidi School of Creative Leadership Executive MBA participant.
+ *           about: John Doe is a Design Founder & Advisor, Lasgidi School of Creative Leadership Executive MBA participant.
  */
 
 const { ObjectId } = mongoose.Schema.Types;

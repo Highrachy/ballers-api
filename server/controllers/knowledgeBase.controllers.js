@@ -50,8 +50,8 @@ const KnowledgeBaseController = {
   },
 
   getOne(req, res, next) {
-    const { id } = req.params;
-    getOnePostFromKnowledgeBase(id)
+    const { slug } = req.params;
+    getOnePostFromKnowledgeBase(slug)
       .then((post) => {
         if (post.length > 0) {
           res.status(httpStatus.OK).json({ success: true, post: post[0] });

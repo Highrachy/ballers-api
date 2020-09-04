@@ -60,6 +60,10 @@ const KnowledgeBaseSchema = new mongoose.Schema(
     updatedBy: {
       type: ObjectId,
     },
+    slug: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true },
 );

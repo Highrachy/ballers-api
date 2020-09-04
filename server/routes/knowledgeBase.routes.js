@@ -117,12 +117,12 @@ router.delete(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, KnowledgeBaseController.getAll);
+router.get('/all', KnowledgeBaseController.getAll);
 
 /**
  * @swagger
  * path:
- *  /knowledge-base/:id:
+ *  /knowledge-base/:slug:
  *    get:
  *      parameters:
  *        - in: query
@@ -130,7 +130,7 @@ router.get('/all', authenticate, isAdmin, KnowledgeBaseController.getAll);
  *          schema:
  *            type: string
  *          description: verifies user access
- *      summary: Gets a post from the knowledge base based by its ID
+ *      summary: Gets a post from the knowledge base based by its slug
  *      tags: [KnowledgeBase]
  *      responses:
  *        '200':
@@ -138,6 +138,6 @@ router.get('/all', authenticate, isAdmin, KnowledgeBaseController.getAll);
  *        '500':
  *          description: Internal server error
  */
-router.get('/:id', authenticate, hasValidObjectId, isAdmin, KnowledgeBaseController.getOne);
+router.get('/:slug', KnowledgeBaseController.getOne);
 
 module.exports = router;

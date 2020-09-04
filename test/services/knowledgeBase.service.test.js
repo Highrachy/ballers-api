@@ -13,7 +13,7 @@ import KnowledgeBaseFactory from '../factories/knowledgeBase.factory';
 import KnowledgeBase from '../../server/models/knowledgeBase.model';
 import User from '../../server/models/user.model';
 import UserFactory from '../factories/user.factory';
-import { threeHundredWords, twentyWords } from '../words';
+import { fourHundredWords, twentyWords } from '../words';
 
 useDatabase();
 
@@ -34,7 +34,7 @@ describe('KnowledgeBase Service', () => {
   describe('#estimateReadingTime', () => {
     context('with 300 words', () => {
       it('returns 2 minutes as reading time', async () => {
-        const post = estimateReadingTime(threeHundredWords);
+        const post = estimateReadingTime(fourHundredWords);
         expect(post).to.be.eql(2);
       });
     });
@@ -88,12 +88,14 @@ describe('KnowledgeBase Service', () => {
 
   describe('#getAllPostsFromKnowledgeBase', () => {
     const id = mongoose.Types.ObjectId();
-    const post = KnowledgeBaseFactory.build({ author: id, updatedBy: id });
+    const post1 = KnowledgeBaseFactory.build({ author: id, updatedBy: id });
+    const post2 = KnowledgeBaseFactory.build({ author: id, updatedBy: id });
+    const post3 = KnowledgeBaseFactory.build({ author: id, updatedBy: id });
 
     beforeEach(async () => {
       await User.create(UserFactory.build({ _id: id }));
-      await addPostToKnowledgeBase(post);
-      await addPostToKnowledgeBase(post);
+      await addPostToKnowledgeBase(post1);
+      await addPostToKnowledgeBase(post2);
     });
 
     context('when post added is valid', () => {
@@ -105,7 +107,7 @@ describe('KnowledgeBase Service', () => {
     });
     context('when new post is added', () => {
       before(async () => {
-        await addPostToKnowledgeBase(post);
+        await addPostToKnowledgeBase(post3);
       });
       it('returns 3 posts', async () => {
         const posts = await getAllPostsFromKnowledgeBase();
@@ -117,17 +119,23 @@ describe('KnowledgeBase Service', () => {
 
   describe('#getOnePostFromKnowledgeBase', () => {
     const id = mongoose.Types.ObjectId();
+    const slug = 'beginners-guide-1';
 
     before(async () => {
       await User.create(UserFactory.build({ _id: id }));
       await addPostToKnowledgeBase(
-        KnowledgeBaseFactory.build({ _id: id, author: id, updatedBy: id }),
+        KnowledgeBaseFactory.build({
+          _id: id,
+          title: 'Beginners guide 1',
+          author: id,
+          updatedBy: id,
+        }),
       );
     });
 
     context('when post is gotten', () => {
       it('returns a valid post', async () => {
-        const post = await getOnePostFromKnowledgeBase(id);
+        const post = await getOnePostFromKnowledgeBase(slug);
         expect(post[0]._id).to.eql(id);
       });
     });

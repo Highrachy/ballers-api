@@ -1,23 +1,47 @@
-import mongoose from 'mongoose';
 import KnowledgeBase from '../models/knowledgeBase.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 
-const { ObjectId } = mongoose.Types.ObjectId;
-const WORDS_PER_MINUTE = 150;
+const WORDS_PER_MINUTE = 200;
 
 export const estimateReadingTime = (text) => {
   const time = Math.round(text.split(' ').length / WORDS_PER_MINUTE);
   return time < 1 ? 1 : time;
 };
 
+export const slugify = (string) => {
+  const a = 'àáâäæãåāăąçćčđďèéêëēėęěğǵḧîïíīįìłḿñńǹňôöòóœøōõőṕŕřßśšşșťțûüùúūǘůűųẃẍÿýžźż·/_,:;';
+  const b = 'aaaaaaaaaacccddeeeeeeeegghiiiiiilmnnnnoooooooooprrsssssttuuuuuuuuuwxyyzzz------';
+  const p = new RegExp(a.split('').join('|'), 'g');
+
+  return string
+    .toString()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(p, (c) => b.charAt(a.indexOf(c)))
+    .replace(/&/g, '-and-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+};
+
 export const getPostInKnowledgeBaseById = async (id) => KnowledgeBase.findById(id).select();
 
+export const getPostBySlug = async (slug, fields = null) =>
+  KnowledgeBase.findOne({ slug }).select(fields);
+
 export const addPostToKnowledgeBase = async (post) => {
+  const slug = slugify(post.title);
+  const slugExists = await getPostBySlug(slug);
+  if (slugExists) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Edit post title');
+  }
   try {
     const newKnowledgeBase = await new KnowledgeBase({
       ...post,
       readLength: estimateReadingTime(post.body),
+      slug,
     }).save();
     return newKnowledgeBase;
   } catch (error) {
@@ -26,17 +50,26 @@ export const addPostToKnowledgeBase = async (post) => {
 };
 
 export const updatePostInKnowledgeBase = async (body) => {
-  const post = body;
-  const story = await getPostInKnowledgeBaseById(post.id).catch((error) => {
+  let slug;
+  const updatedPost = body;
+  const story = await getPostInKnowledgeBaseById(updatedPost.id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+  if (updatedPost.title) {
+    slug = slugify(updatedPost.title);
+  }
 
-  if (post.body) {
-    post.readLength = estimateReadingTime(post.body);
+  const slugExists = await getPostBySlug(slug);
+  if (slugExists) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Edit post title');
+  }
+
+  if (updatedPost.body) {
+    updatedPost.readLength = estimateReadingTime(updatedPost.body);
   }
 
   try {
-    return KnowledgeBase.findByIdAndUpdate(story.id, post, { new: true });
+    return KnowledgeBase.findByIdAndUpdate(story.id, updatedPost, { new: true });
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating post in knowledge base', error);
   }
@@ -57,9 +90,9 @@ export const deletePostFromKnowledgeBase = async (id) => {
   }
 };
 
-export const getOnePostFromKnowledgeBase = async (id) =>
+export const getOnePostFromKnowledgeBase = async (slug) =>
   KnowledgeBase.aggregate([
-    { $match: { _id: ObjectId(id) } },
+    { $match: { slug } },
     {
       $lookup: {
         from: 'users',
