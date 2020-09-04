@@ -194,6 +194,53 @@ describe('Schedule Visit Route', () => {
           });
       });
     });
+    context('when visit date is empty', () => {
+      it('returns an error', (done) => {
+        const booking = VisitationFactory.build({ visitDate: '' });
+        request()
+          .post('/api/v1/visitation/schedule')
+          .set('authorization', userToken)
+          .send(booking)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Visit Date" must be a valid date');
+            done();
+          });
+      });
+    });
+    context('when visit date is a random string', () => {
+      it('returns an error', (done) => {
+        const property = VisitationFactory.build({ visitDate: 'abcdefghij' });
+        request()
+          .post('/api/v1/visitation/schedule')
+          .set('authorization', userToken)
+          .send(property)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql('"Visit Date" must be a valid date');
+            done();
+          });
+      });
+    });
+    context('when visit date is a past date', () => {
+      it('returns an error', (done) => {
+        const property = VisitationFactory.build({ visitDate: '2020-01-01' });
+        request()
+          .post('/api/v1/visitation/schedule')
+          .set('authorization', userToken)
+          .send(property)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            done();
+          });
+      });
+    });
   });
 });
 

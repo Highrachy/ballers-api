@@ -11,6 +11,7 @@ import mongoose from 'mongoose';
  *          - visitorName
  *          - visitorEmail
  *          - visitorPhone
+ *          - visitDate
  *        properties:
  *          propertyId:
  *            type: string
@@ -20,11 +21,14 @@ import mongoose from 'mongoose';
  *            type: string
  *          visitorPhone:
  *            type: string
+ *          visitDate:
+ *            type: date
  *        example:
  *           propertyId: 5f22f7f8c790039da1242381
  *           visitorName: John Doe
  *           visitorEmail: johndoe@mail.com
  *           visitorPhone: 08012345678
+ *           visitDate: 2020-09-12
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -47,6 +51,10 @@ const VisitationSchema = new mongoose.Schema(
     },
     visitorPhone: {
       type: String,
+      required: true,
+    },
+    visitDate: {
+      type: Date,
       required: true,
     },
   },
