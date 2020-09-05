@@ -13,7 +13,7 @@ import KnowledgeBaseFactory from '../factories/knowledgeBase.factory';
 import KnowledgeBase from '../../server/models/knowledgeBase.model';
 import User from '../../server/models/user.model';
 import UserFactory from '../factories/user.factory';
-import { fourHundredWords, twentyWords } from '../words';
+import { FOUR_HUNDRED_WORDS, TWENTY_WORDS } from '../words';
 
 useDatabase();
 
@@ -34,14 +34,14 @@ describe('KnowledgeBase Service', () => {
   describe('#estimateReadingTime', () => {
     context('with 300 words', () => {
       it('returns 2 minutes as reading time', async () => {
-        const post = estimateReadingTime(fourHundredWords);
+        const post = estimateReadingTime(FOUR_HUNDRED_WORDS);
         expect(post).to.be.eql(2);
       });
     });
 
     context('with 20 words', () => {
       it('returns 1 minute as reading time', async () => {
-        const post = estimateReadingTime(twentyWords);
+        const post = estimateReadingTime(TWENTY_WORDS);
         expect(post).to.be.eql(1);
       });
     });

@@ -35,7 +35,10 @@ export const addPostToKnowledgeBase = async (post) => {
   const slug = slugify(post.title);
   const slugExists = await getPostBySlug(slug);
   if (slugExists) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Edit post title');
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'An existing post with the same title exists',
+    );
   }
   try {
     const newKnowledgeBase = await new KnowledgeBase({
@@ -126,11 +129,9 @@ export const getOnePostFromKnowledgeBase = async (slug) =>
         'updatedBy._id': 1,
         'updatedBy.firstName': 1,
         'updatedBy.lastName': 1,
-        'updatedBy.email': 1,
         'author._id': 1,
         'author.firstName': 1,
         'author.lastName': 1,
-        'author.email': 1,
         'author.about': 1,
       },
     },
@@ -171,11 +172,9 @@ export const getAllPostsFromKnowledgeBase = async () =>
         'updatedBy._id': 1,
         'updatedBy.firstName': 1,
         'updatedBy.lastName': 1,
-        'updatedBy.email': 1,
         'author._id': 1,
         'author.firstName': 1,
         'author.lastName': 1,
-        'author.email': 1,
         'author.about': 1,
       },
     },
