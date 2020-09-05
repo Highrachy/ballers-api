@@ -6,4 +6,5 @@ export default new Factory()
   .sequence('email', (i) => `email-${i}@mail.com`)
   .attr('password', '123456')
   .attr('confirmPassword', '123456')
-  .attr('phone', '08012345678');
+  .attr('phone', '08012345678')
+  .attr('about', 'John Doe is a Design Founder & Advisor');

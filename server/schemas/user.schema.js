@@ -17,6 +17,7 @@ export const registerSchema = Joi.object({
   phone,
   password,
   confirmPassword,
+  about: Joi.string().label('About').optional(),
 });
 
 export const loginSchema = Joi.object({
@@ -61,6 +62,7 @@ export const updateUserSchema = Joi.object({
   phone2: Joi.string().label('Phone 2').optional(),
   address,
   preferences,
+  about: Joi.string().label('About').optional(),
 });
 
 export const favoritePropertySchema = Joi.object({
