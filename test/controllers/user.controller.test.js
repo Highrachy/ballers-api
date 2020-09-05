@@ -8,6 +8,7 @@ import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import Upload from '../../server/helpers/uploadImage';
 
 useDatabase();
 
@@ -20,6 +21,12 @@ beforeEach(() => {
 afterEach(() => {
   sandbox.restore();
 });
+
+// let uploadImageSpy;
+
+// beforeEach(() => {
+//   uploadImageSpy = sandbox.stub(Upload, 'uploadImage').returns({ file: {} });
+// });
 
 describe('Register Route', () => {
   context('with valid data', () => {
@@ -1174,6 +1181,41 @@ describe('Remove property from favorite route', () => {
           expect(res.body.success).to.be.eql(false);
           done();
           User.findByIdAndUpdate.restore();
+        });
+    });
+  });
+});
+
+describe('Upload User Profile', () => {
+  let token;
+  const user = UserFactory.build();
+
+  beforeEach(async () => {
+    token = await addUser(user);
+    sinon.stub(Upload, 'uploadImage').callsFake((req, res, next) => {
+      req.body = { title: 'testing' };
+      req.files = { filename: 'test', url: 'urltest' };
+      return next();
+    });
+  });
+
+  // const profileImage = {
+  //   id: 'test',
+  //   url: 'https://test/image',
+  // };
+
+  context('with valid token', () => {
+    it('returns an updated image profile', (done) => {
+      request()
+        .post('/api/v1/user/profile-image')
+        .set('authorization', token)
+        .set('Content-type', 'application/x-www-form-urlendcoded')
+        .end((err, res) => {
+          // console.log('res', res);
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          // expect(uploadImageSpy.callCount).to.eq(1);
+          done();
         });
     });
   });

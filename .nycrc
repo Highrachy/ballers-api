@@ -3,7 +3,8 @@
   "check-coverage": true,
   "exclude": [
     ".eslintrc.js",
-    "server/config/**"
+    "server/config/**",
+    "server/helpers/uploadImage.js"
   ],
   "extends": "@istanbuljs/nyc-config-babel",
   "branches": 80,

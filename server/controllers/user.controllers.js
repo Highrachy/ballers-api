@@ -158,17 +158,6 @@ const UserController = {
       })
       .catch((error) => next(error));
   },
-
-  uploadProfileImage(req, res) {
-    if (req.file) {
-      return res.json({ file: req.file });
-    }
-    return res.status(412).json({
-      success: false,
-      message: 'Image cannot be uploaded',
-      error: 'Image cannot be uploaded',
-    });
-  },
 };
 
 export default UserController;

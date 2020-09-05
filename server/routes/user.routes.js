@@ -10,7 +10,7 @@ import {
 } from '../schemas/user.schema';
 import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
-import Upload from '../helpers/uploadImage';
+import Upload, { UploadController } from '../helpers/uploadImage';
 
 const router = express.Router();
 
@@ -256,7 +256,15 @@ router.post(
  *       description: Internal server error
  */
 router.put('/update', authenticate, schemaValidation(updateUserSchema), UserController.update);
-router.post('/profile-image', authenticate, Upload.uploadImage, UserController.uploadProfileImage);
+
+router.post(
+  '/profile-image',
+  authenticate,
+  Upload.uploadProfileImage,
+  UploadController.uploadProfileImage,
+);
+
+router.post('/upload-image', authenticate, Upload.uploadProfileImage, UploadController.uploadImage);
 
 /**
  * @swagger
