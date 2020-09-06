@@ -1,6 +1,6 @@
 import {
   createOffer,
-  respondToOffer,
+  acceptOffer,
   assignOffer,
   getOffer,
   getAllOffers,
@@ -18,19 +18,18 @@ const OfferLetterController = {
       .catch((error) => next(error));
   },
 
-  respond(req, res, next) {
+  accept(req, res, next) {
     const offerResponse = req.locals;
-    respondToOffer(offerResponse)
+    acceptOffer(offerResponse)
       .then((offer) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Offer responded to', offer });
+        res.status(httpStatus.OK).json({ success: true, message: 'Offer accepted', offer });
       })
       .catch((error) => next(error));
   },
 
   assign(req, res, next) {
     const assignmentDetails = req.locals;
-    const { user } = req;
-    assignOffer({ ...assignmentDetails, adminid: user._id })
+    assignOffer(assignmentDetails)
       .then((offer) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Offer assigned', offer });
       })
@@ -41,7 +40,7 @@ const OfferLetterController = {
     const offerId = req.params.id;
     getOffer(offerId)
       .then((offer) => {
-        res.status(httpStatus.OK).json({ success: true, offer });
+        res.status(httpStatus.OK).json({ success: true, offer: offer[0] });
       })
       .catch((error) => next(error));
   },

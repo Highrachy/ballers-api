@@ -18,7 +18,6 @@ import mongoose from 'mongoose';
  *          - title
  *          - status
  *          - expires
- *          - signature
  *          - dateAccepted
  *          - initialPayment
  *          - monthlyPayment
@@ -86,7 +85,7 @@ const OfferLetterSchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
-    enquiryid: {
+    enquiryId: {
       type: ObjectId,
       required: true,
     },
@@ -116,7 +115,7 @@ const OfferLetterSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      required: true,
+      default: 'Generated',
     },
     expires: {
       type: Date,
@@ -124,7 +123,6 @@ const OfferLetterSchema = new mongoose.Schema(
     },
     signature: {
       type: String,
-      required: true,
     },
     responseDate: {
       type: Date,
@@ -140,9 +138,6 @@ const OfferLetterSchema = new mongoose.Schema(
     paymentFrequency: {
       type: Number,
       required: true,
-    },
-    assignedBy: {
-      type: ObjectId,
     },
   },
   { timestamps: true },

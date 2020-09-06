@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import OfferLetter from '../models/offerLetter.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { updateUser } from './user.service';
+import { OFFER_STATUS } from '../helpers/constants';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -17,15 +17,21 @@ export const createOffer = async (offer) => {
   }
 };
 
-export const respondToOffer = async (offerToAcceept) => {
-  const offer = await getOfferById(offerToAcceept.offerId).catch((error) => {
+export const acceptOffer = async (offerToAccept) => {
+  const offer = await getOfferById(offerToAccept.offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
   try {
     return OfferLetter.findOneAndUpdate(
       { _id: offer.id },
-      { $set: { status: offerToAcceept.status, responseDate: Date.now() } },
+      {
+        $set: {
+          status: OFFER_STATUS.INTERESTED,
+          signature: offerToAccept.signature,
+          responseDate: Date.now(),
+        },
+      },
       { new: true },
     );
   } catch (error) {
@@ -39,19 +45,9 @@ export const assignOffer = async (assignmentInfo) => {
   });
 
   try {
-    const updatedUser = {
-      id: assignmentInfo.userId,
-      $push: { offers: offer.id },
-    };
-    const updateUserModel = await updateUser(updatedUser).catch((error) => {
-      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    return OfferLetter.findByIdAndUpdate(offer.id, {
+      $set: { status: OFFER_STATUS.ASSIGNED },
     });
-    if (updateUserModel) {
-      return OfferLetter.findByIdAndUpdate(offer.id, {
-        $set: { status: 'assigned', assignedBy: assignmentInfo.adminid },
-      });
-    }
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning offer');
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning offer', error);
   }

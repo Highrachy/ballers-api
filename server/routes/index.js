@@ -18,7 +18,7 @@ export default (app) => {
   app.use('/api/v1/visitation', visitation);
   app.use('/api/v1/transaction', transaction);
   app.use('/api/v1/payment-plan', paymentPlan);
-  app.use('/api/v1/offer', offerLetter);
+  app.use('/api/v1/offer-letter', offerLetter);
   app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, { explorer: true }));
   app.use('/mailer', mailer);
 };

@@ -155,9 +155,6 @@ const UserSchema = new mongoose.Schema(
       default: false,
     },
     activationDate: Date,
-    offers: {
-      type: [ObjectId],
-    },
   },
   { timestamps: true },
 );

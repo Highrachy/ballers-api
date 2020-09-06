@@ -11,7 +11,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /offer/create:
+ * /offer-letter/create:
  *   post:
  *     tags:
  *       - OfferLetter
@@ -42,11 +42,11 @@ router.post(
 
 /**
  * @swagger
- * /offer/respond:
+ * /offer-letter/accept:
  *   put:
  *     tags:
  *       - OfferLetter
- *     description: Respond to a specific offer
+ *     description: Accepts a specific offer
  *     produces:
  *       - application/json
  *     requestBody:
@@ -57,22 +57,22 @@ router.post(
  *      description: Respond to a specific offer
  *     responses:
  *      '200':
- *        description: Offer rsponded to
+ *        description: Offer accepted
  *      '400':
- *        description: Error responding to offer
+ *        description: Error accepting to offer
  *      '500':
  *       description: Internal server error
  */
 router.put(
-  '/respond',
+  '/accept',
   authenticate,
   schemaValidation(acceptOfferSchema),
-  OfferLetterController.respond,
+  OfferLetterController.accept,
 );
 
 /**
  * @swagger
- * /offer/assign:
+ * /offer-letter/assign:
  *   put:
  *     tags:
  *       - OfferLetter
@@ -103,7 +103,7 @@ router.put(
 
 /**
  * @swagger
- * /offer/all:
+ * /offer-letter/all:
  *   get:
  *     tags:
  *       - OfferLetter
@@ -127,7 +127,7 @@ router.get('/all', authenticate, isAdmin, OfferLetterController.getAll);
 /**
  * @swagger
  * path:
- *  /offer/:id:
+ *  /offer-letter/:id:
  *    get:
  *      parameters:
  *        - in: query
