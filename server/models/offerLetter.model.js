@@ -127,6 +127,9 @@ const OfferLetterSchema = new mongoose.Schema(
     responseDate: {
       type: Date,
     },
+    dateAssigned: {
+      type: Date,
+    },
     initialPayment: {
       type: Number,
       required: true,

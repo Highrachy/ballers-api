@@ -32,6 +32,10 @@ const EMAIL_CONTENT = {
     subject: 'Property Visit Requested',
     contentTop: 'A new propery visit has been requested',
   },
+  OFFER_RESPONSE: {
+    subject: 'Offer Accepted',
+    contentTop: 'Your offer has been accepted',
+  },
 };
 
 module.exports = EMAIL_CONTENT;

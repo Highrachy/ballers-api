@@ -24,5 +24,4 @@ export const acceptOfferSchema = Joi.object({
 
 export const assignOfferSchema = Joi.object({
   offerId: Joi.objectId().label('Offer Id').required(),
-  userId: Joi.objectId().label('User Id').required(),
 });

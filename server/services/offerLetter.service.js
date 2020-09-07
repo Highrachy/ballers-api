@@ -17,42 +17,6 @@ export const createOffer = async (offer) => {
   }
 };
 
-export const acceptOffer = async (offerToAccept) => {
-  const offer = await getOfferById(offerToAccept.offerId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  try {
-    return OfferLetter.findOneAndUpdate(
-      { _id: offer.id },
-      {
-        $set: {
-          status: OFFER_STATUS.INTERESTED,
-          signature: offerToAccept.signature,
-          responseDate: Date.now(),
-        },
-      },
-      { new: true },
-    );
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error responding to offer', error);
-  }
-};
-
-export const assignOffer = async (assignmentInfo) => {
-  const offer = await getOfferById(assignmentInfo.offerId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  try {
-    return OfferLetter.findByIdAndUpdate(offer.id, {
-      $set: { status: OFFER_STATUS.ASSIGNED },
-    });
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning offer', error);
-  }
-};
-
 export const getAllOffers = async (userId) =>
   OfferLetter.aggregate([
     { $match: { userId: ObjectId(userId) } },
@@ -113,7 +77,7 @@ export const getOffer = async (offerId) =>
     {
       $lookup: {
         from: 'enquiries',
-        localField: 'enquiryid',
+        localField: 'enquiryId',
         foreignField: '_id',
         as: 'enquiryInfo',
       },
@@ -144,3 +108,45 @@ export const getOffer = async (offerId) =>
       },
     },
   ]);
+
+export const acceptOffer = async (offerToAccept) => {
+  const offer = await getOfferById(offerToAccept.offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    OfferLetter.findByIdAndUpdate(
+      offer.id,
+      {
+        $set: {
+          status: OFFER_STATUS.INTERESTED,
+          signature: offerToAccept.signature,
+          responseDate: Date.now(),
+        },
+      },
+      { new: true },
+    );
+    return await getOffer(offerToAccept.offerId);
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error responding to offer', error);
+  }
+};
+
+export const assignOffer = async (offerId) => {
+  const offer = await getOfferById(offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    OfferLetter.findByIdAndUpdate(
+      offer.id,
+      {
+        $set: { status: OFFER_STATUS.ASSIGNED, dateAssigned: Date.now() },
+      },
+      { new: true },
+    );
+    return await getOffer(offerId);
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning offer', error);
+  }
+};

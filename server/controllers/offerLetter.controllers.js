@@ -6,6 +6,8 @@ import {
   getAllOffers,
 } from '../services/offerLetter.service';
 import httpStatus from '../helpers/httpStatus';
+import EMAIL_CONTENT from '../../mailer';
+import { sendMail } from '../services/mailer.service';
 
 const OfferLetterController = {
   create(req, res, next) {
@@ -22,16 +24,23 @@ const OfferLetterController = {
     const offerResponse = req.locals;
     acceptOffer(offerResponse)
       .then((offer) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Offer accepted', offer });
+        const vendor = offer[0].vendorInfo;
+        const contentBottom = `Dear ${vendor.firstName}, your offer on ${offer[0].propertyInfo.name} has been accepted. Check your dashboard for more details.`;
+        sendMail(EMAIL_CONTENT.OFFER_RESPONSE, { email: vendor.email }, { contentBottom });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Offer accepted', offer: offer[0] });
       })
       .catch((error) => next(error));
   },
 
   assign(req, res, next) {
-    const assignmentDetails = req.locals;
-    assignOffer(assignmentDetails)
+    const { offerId } = req.locals;
+    assignOffer(offerId)
       .then((offer) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Offer assigned', offer });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Offer assigned', offer: offer[0] });
       })
       .catch((error) => next(error));
   },
