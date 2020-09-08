@@ -22,12 +22,6 @@ afterEach(() => {
   sandbox.restore();
 });
 
-// let uploadImageSpy;
-
-// beforeEach(() => {
-//   uploadImageSpy = sandbox.stub(Upload, 'uploadImage').returns({ file: {} });
-// });
-
 describe('Register Route', () => {
   context('with valid data', () => {
     it('returns successful token', (done) => {
@@ -1199,11 +1193,6 @@ describe('Upload User Profile', () => {
     });
   });
 
-  // const profileImage = {
-  //   id: 'test',
-  //   url: 'https://test/image',
-  // };
-
   context('with valid token', () => {
     it('returns an updated image profile', (done) => {
       request()
@@ -1211,10 +1200,8 @@ describe('Upload User Profile', () => {
         .set('authorization', token)
         .set('Content-type', 'application/x-www-form-urlendcoded')
         .end((err, res) => {
-          // console.log('res', res);
           expect(res).to.have.status(412);
           expect(res.body.success).to.be.eql(false);
-          // expect(uploadImageSpy.callCount).to.eq(1);
           done();
         });
     });

@@ -257,6 +257,30 @@ router.post(
  */
 router.put('/update', authenticate, schemaValidation(updateUserSchema), UserController.update);
 
+/**
+ * @swagger
+ * /user/profile-image:
+ *   post:
+ *     tags:
+ *       - User
+ *     description: Uploads a new Profile Image for a user
+ *     operationId: "uploadFile"
+ *     consumes:
+ *       - "multipart/form-data"
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: "image"
+ *         in: "formData"
+ *         type: "file"
+ *     responses:
+ *      '200':
+ *        description: Image uploaded
+ *      '400':
+ *        description: Error uploading image
+ *      '500':
+ *       description: Internal server error
+ */
 router.post(
   '/profile-image',
   authenticate,
@@ -264,6 +288,30 @@ router.post(
   UploadController.uploadProfileImage,
 );
 
+/**
+ * @swagger
+ * /user/upload-image:
+ *   post:
+ *     tags:
+ *       - User
+ *     description: Uploads a new image
+ *     operationId: "uploadFile"
+ *     consumes:
+ *       - "multipart/form-data"
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: "image"
+ *         in: "formData"
+ *         type: "file"
+ *     responses:
+ *      '200':
+ *        description: Image uploaded
+ *      '400':
+ *        description: Error uploading image
+ *      '500':
+ *       description: Internal server error
+ */
 router.post('/upload-image', authenticate, Upload.uploadProfileImage, UploadController.uploadImage);
 
 /**
