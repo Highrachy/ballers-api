@@ -8,6 +8,7 @@ import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import Upload from '../../server/helpers/uploadImage';
 
 useDatabase();
 
@@ -1174,6 +1175,34 @@ describe('Remove property from favorite route', () => {
           expect(res.body.success).to.be.eql(false);
           done();
           User.findByIdAndUpdate.restore();
+        });
+    });
+  });
+});
+
+describe('Upload User Profile', () => {
+  let token;
+  const user = UserFactory.build();
+
+  beforeEach(async () => {
+    token = await addUser(user);
+    sinon.stub(Upload, 'uploadImage').callsFake((req, res, next) => {
+      req.body = { title: 'testing' };
+      req.files = { filename: 'test', url: 'urltest' };
+      return next();
+    });
+  });
+
+  context('with valid token', () => {
+    it('returns an updated image profile', (done) => {
+      request()
+        .post('/api/v1/user/profile-image')
+        .set('authorization', token)
+        .set('Content-type', 'application/x-www-form-urlendcoded')
+        .end((err, res) => {
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          done();
         });
     });
   });

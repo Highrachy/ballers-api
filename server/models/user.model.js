@@ -134,6 +134,10 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       default: 1,
     },
+    profileImage: {
+      id: String,
+      url: String,
+    },
     assignedProperties: [
       {
         propertyId: ObjectId,
