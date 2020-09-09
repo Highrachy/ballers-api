@@ -4,6 +4,7 @@ import {
   assignOffer,
   getOffer,
   getAllOffers,
+  getActiveOffers,
 } from '../services/offer.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -12,9 +13,16 @@ import { sendMail } from '../services/mailer.service';
 const OfferController = {
   create(req, res, next) {
     const newOffer = req.locals;
-    const { user } = req;
-    createOffer({ ...newOffer, vendorId: user._id })
+    const vendorId = req.user._id;
+    createOffer({ ...newOffer, vendorId })
       .then((offer) => {
+        const user = offer.userInfo;
+        const contentBottom = `Dear ${user.firstName}, ${offer.vendorInfo.lastName} ${
+          offer.vendorInfo.firstName
+        } has made you an offer for property ${offer.propertyInfo.name}. Valid till ${new Date(
+          Date.parse(offer.expires),
+        ).toUTCString()} Check your dashboard for more details.`;
+        sendMail(EMAIL_CONTENT.OFFER_CREATED, { email: user.email }, { contentBottom });
         res.status(httpStatus.CREATED).json({ success: true, message: 'Offer created', offer });
       })
       .catch((error) => next(error));
@@ -57,6 +65,15 @@ const OfferController = {
   getAll(req, res, next) {
     const userId = req.user._id;
     getAllOffers(userId)
+      .then((offers) => {
+        res.status(httpStatus.OK).json({ success: true, offers });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAllActive(req, res, next) {
+    const userId = req.user._id;
+    getActiveOffers(userId)
       .then((offers) => {
         res.status(httpStatus.OK).json({ success: true, offers });
       })

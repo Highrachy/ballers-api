@@ -3,23 +3,71 @@ import Offer from '../models/offer.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
+import { getUserById } from './user.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getOfferById = async (id) => Offer.findById(id).select();
 
-export const createOffer = async (offer) => {
-  try {
-    const newOffer = await new Offer(offer).save();
-    return newOffer;
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error creating offer', error);
-  }
-};
-
 export const getAllOffers = async (userId) =>
   Offer.aggregate([
     { $match: { userId: ObjectId(userId) } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'vendorId',
+        foreignField: '_id',
+        as: 'vendorInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'enquiries',
+        localField: 'enquiryId',
+        foreignField: '_id',
+        as: 'enquiryInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $unwind: '$vendorInfo',
+    },
+    {
+      $unwind: '$enquiryInfo',
+    },
+    {
+      $unwind: '$propertyInfo',
+    },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+        'vendorInfo.assignedProperties': 0,
+        'vendorInfo.password': 0,
+        'vendorInfo.referralCode': 0,
+      },
+    },
+  ]);
+
+export const getActiveOffers = async (userId) =>
+  Offer.aggregate([
+    { $match: { userId: ObjectId(userId) } },
+    {
+      $match: {
+        $or: [
+          { status: OFFER_STATUS.GENERATED },
+          { status: OFFER_STATUS.INTERESTED },
+          { status: OFFER_STATUS.ASSIGNED },
+          { status: OFFER_STATUS.ALLOCATED },
+        ],
+      },
+    },
     {
       $lookup: {
         from: 'users',
@@ -108,6 +156,21 @@ export const getOffer = async (offerId) =>
       },
     },
   ]);
+
+export const createOffer = async (offer) => {
+  try {
+    const newOffer = await new Offer(offer).save();
+    const user = await getUserById(newOffer.userId);
+    const userInfo = {
+      firstName: user.firstName,
+      email: user.email,
+    };
+    const offerInfo = await getOffer(newOffer._id);
+    return { ...offerInfo[0], userInfo };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error creating offer', error);
+  }
+};
 
 export const acceptOffer = async (offerToAccept) => {
   const offer = await getOfferById(offerToAccept.offerId).catch((error) => {

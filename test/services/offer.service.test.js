@@ -8,6 +8,7 @@ import {
   getOffer,
   acceptOffer,
   assignOffer,
+  getActiveOffers,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -16,40 +17,67 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import EnquiryFactory from '../factories/enquiry.factory';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
+import { OFFER_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
 describe('Offer Service', () => {
   describe('#getOfferById', () => {
     const _id = mongoose.Types.ObjectId();
+    const userId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const enquiryId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
+    const offer = OfferFactory.build({ _id, userId, enquiryId, propertyId, vendorId: userId });
 
     before(async () => {
-      await createOffer(OfferFactory.build({ _id, vendorId: _id }));
+      await addUser(user);
+      await addProperty(property);
+      await addEnquiry(enquiry);
+      await createOffer(offer);
     });
 
     it('returns a valid offer by Id', async () => {
-      const offer = await getOfferById(_id);
-      expect(offer._id).to.eql(_id);
+      const offerInfo = await getOfferById(_id);
+      expect(offerInfo._id).to.eql(_id);
     });
   });
 
   describe('#createOffer', () => {
     let countedOffers;
-    const vendorId = mongoose.Types.ObjectId();
-    const offer = OfferFactory.build({ vendorId });
+    const userId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const enquiryId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
+    const offer = OfferFactory.build({ userId, enquiryId, propertyId, vendorId: userId });
 
     beforeEach(async () => {
+      await addUser(user);
+      await addProperty(property);
+      await addEnquiry(enquiry);
       countedOffers = await Offer.countDocuments({});
     });
 
     context('when a valid offer is entered', () => {
-      beforeEach(async () => {
-        await createOffer(offer);
-      });
-
       it('adds a new offer', async () => {
+        const newOffer = await createOffer(offer);
         const currentCountedOffers = await Offer.countDocuments({});
         expect(currentCountedOffers).to.eql(countedOffers + 1);
+        expect(newOffer.propertyId).to.eql(propertyId);
+        expect(newOffer.enquiryId).to.eql(enquiryId);
+        expect(newOffer.userId).to.eql(userId);
+        expect(newOffer.propertyInfo._id).to.eql(propertyId);
+        expect(newOffer.enquiryInfo._id).to.eql(enquiryId);
+        expect(newOffer.vendorInfo._id).to.eql(userId);
+        expect(newOffer).to.have.property('userInfo');
+        expect(newOffer.propertyInfo).to.not.have.property('assignedTo');
+        expect(newOffer.vendorInfo).to.not.have.property('assignedProperties');
+        expect(newOffer.vendorInfo).to.not.have.property('password');
+        expect(newOffer.vendorInfo).to.not.have.property('referralCode');
       });
     });
 
@@ -94,10 +122,8 @@ describe('Offer Service', () => {
       });
     });
     context('when new enquiry is added', () => {
-      before(async () => {
-        await createOffer(offer);
-      });
       it('returns 3 enquiries', async () => {
+        await createOffer(offer);
         const offers = await getAllOffers(userId);
         expect(offers).to.be.an('array');
         expect(offers.length).to.be.eql(3);
@@ -273,6 +299,76 @@ describe('Offer Service', () => {
           expect(err.message).to.be.eql('Error assigning offer');
         }
         Offer.findByIdAndUpdate.restore();
+      });
+    });
+  });
+
+  describe('#getActiveOffers', () => {
+    const userId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const enquiryId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
+    const offer1 = OfferFactory.build({
+      userId,
+      enquiryId,
+      propertyId,
+      vendorId: userId,
+      status: OFFER_STATUS.ASSIGNED,
+    });
+    const offer2 = OfferFactory.build({
+      userId,
+      enquiryId,
+      propertyId,
+      vendorId: userId,
+      status: OFFER_STATUS.ALLOCATED,
+    });
+    const offer3 = OfferFactory.build({
+      userId,
+      enquiryId,
+      propertyId,
+      vendorId: userId,
+      status: OFFER_STATUS.REJECTED,
+    });
+    const offer4 = OfferFactory.build({
+      userId,
+      enquiryId,
+      propertyId,
+      vendorId: userId,
+      status: OFFER_STATUS.INTERESTED,
+    });
+    const offer5 = OfferFactory.build({
+      userId,
+      enquiryId,
+      propertyId,
+      vendorId: userId,
+      status: OFFER_STATUS.NEGLECTED,
+    });
+
+    beforeEach(async () => {
+      await addUser(user);
+      await addProperty(property);
+      await addEnquiry(enquiry);
+      await createOffer(offer1);
+      await createOffer(offer2);
+      await createOffer(offer3);
+    });
+
+    context('when offers added are valid', () => {
+      it('returns 2 offers', async () => {
+        const offers = await getActiveOffers(userId);
+        expect(offers).to.be.an('array');
+        expect(offers.length).to.be.eql(2);
+      });
+    });
+    context('when new enquiry is added', () => {
+      it('returns 3 enquiries', async () => {
+        await createOffer(offer4);
+        await createOffer(offer5);
+        const offers = await getActiveOffers(userId);
+        expect(offers).to.be.an('array');
+        expect(offers.length).to.be.eql(3);
       });
     });
   });

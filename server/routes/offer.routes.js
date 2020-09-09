@@ -113,7 +113,30 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, OfferController.getAll);
+router.get('/all', authenticate, OfferController.getAll);
+
+/**
+ * @swagger
+ * /offer/active:
+ *   get:
+ *     tags:
+ *       - Offer
+ *     description: Get all offers
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Offer'
+ *      description: Get all owned offers
+ *     responses:
+ *      '200':
+ *        description: returns object of offers
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/active', authenticate, OfferController.getAllActive);
 
 /**
  * @swagger
@@ -134,6 +157,6 @@ router.get('/all', authenticate, isAdmin, OfferController.getAll);
  *        '500':
  *          description: Internal server error
  */
-router.get('/:id', authenticate, isAdmin, hasValidObjectId, OfferController.getOne);
+router.get('/:id', authenticate, hasValidObjectId, OfferController.getOne);
 
 module.exports = router;
