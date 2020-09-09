@@ -8,7 +8,7 @@ import visitation from './visitation.routes';
 import transaction from './transaction.routes';
 import paymentPlan from './paymentPlan.routes';
 import swaggerSpecs from '../config/swagger';
-import offerLetter from './offerLetter.routes';
+import offer from './offer.routes';
 
 export default (app) => {
   app.use('/api/v1/', welcome);
@@ -18,7 +18,7 @@ export default (app) => {
   app.use('/api/v1/visitation', visitation);
   app.use('/api/v1/transaction', transaction);
   app.use('/api/v1/payment-plan', paymentPlan);
-  app.use('/api/v1/offer-letter', offerLetter);
+  app.use('/api/v1/offer', offer);
   app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, { explorer: true }));
   app.use('/mailer', mailer);
 };

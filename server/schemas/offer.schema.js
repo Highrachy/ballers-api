@@ -9,7 +9,7 @@ export const createOfferSchema = Joi.object({
   handOverDate: Joi.date().label('Handover Date').required(),
   deliveryState: Joi.string().label('Delivery State').required(),
   totalAmountPayable: Joi.number().label('Total Amount Payable').required(),
-  allocationInPercentage: Joi.number().label('Allocation In Percentage').required(),
+  allocationInPercentage: Joi.number().min(1).max(100).label('Allocation In Percentage').required(),
   title: Joi.string().label('Title').required(),
   expires: Joi.date().label('Expires').required(),
   initialPayment: Joi.number().label('Initial Payment').required(),

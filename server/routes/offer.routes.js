@@ -1,20 +1,16 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import {
-  createOfferSchema,
-  acceptOfferSchema,
-  assignOfferSchema,
-} from '../schemas/offerLetter.schema';
-import OfferLetterController from '../controllers/offerLetter.controllers';
+import { createOfferSchema, acceptOfferSchema, assignOfferSchema } from '../schemas/offer.schema';
+import OfferController from '../controllers/offer.controllers';
 
 const router = express.Router();
 
 /**
  * @swagger
- * /offer-letter/create:
+ * /offer/create:
  *   post:
  *     tags:
- *       - OfferLetter
+ *       - Offer
  *     description: Creates a new offer
  *     produces:
  *       - application/json
@@ -22,7 +18,7 @@ const router = express.Router();
  *      content:
  *        application/json:
  *          schema:
- *            $ref: '#/components/schemas/OfferLetter'
+ *            $ref: '#/components/schemas/Offer'
  *      description: Add a new offer
  *     responses:
  *      '201':
@@ -37,15 +33,15 @@ router.post(
   authenticate,
   isAdmin,
   schemaValidation(createOfferSchema),
-  OfferLetterController.create,
+  OfferController.create,
 );
 
 /**
  * @swagger
- * /offer-letter/accept:
+ * /offer/accept:
  *   put:
  *     tags:
- *       - OfferLetter
+ *       - Offer
  *     description: Accepts a specific offer
  *     produces:
  *       - application/json
@@ -53,7 +49,7 @@ router.post(
  *      content:
  *        application/json:
  *          schema:
- *            $ref: '#/components/schemas/OfferLetter'
+ *            $ref: '#/components/schemas/Offer'
  *      description: Respond to a specific offer
  *     responses:
  *      '200':
@@ -63,19 +59,14 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.put(
-  '/accept',
-  authenticate,
-  schemaValidation(acceptOfferSchema),
-  OfferLetterController.accept,
-);
+router.put('/accept', authenticate, schemaValidation(acceptOfferSchema), OfferController.accept);
 
 /**
  * @swagger
- * /offer-letter/assign:
+ * /offer/assign:
  *   put:
  *     tags:
- *       - OfferLetter
+ *       - Offer
  *     description: Assigns a specific offer to a user
  *     produces:
  *       - application/json
@@ -83,7 +74,7 @@ router.put(
  *      content:
  *        application/json:
  *          schema:
- *            $ref: '#/components/schemas/OfferLetter'
+ *            $ref: '#/components/schemas/Offer'
  *      description: Assigns a specific offer to a user
  *     responses:
  *      '200':
@@ -98,15 +89,15 @@ router.put(
   authenticate,
   isAdmin,
   schemaValidation(assignOfferSchema),
-  OfferLetterController.assign,
+  OfferController.assign,
 );
 
 /**
  * @swagger
- * /offer-letter/all:
+ * /offer/all:
  *   get:
  *     tags:
- *       - OfferLetter
+ *       - Offer
  *     description: Get all offers
  *     produces:
  *       - application/json
@@ -114,7 +105,7 @@ router.put(
  *      content:
  *        application/json:
  *          schema:
- *            $ref: '#/components/schemas/OfferLetter'
+ *            $ref: '#/components/schemas/Offer'
  *      description: Get all owned offers
  *     responses:
  *      '200':
@@ -122,12 +113,12 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, OfferLetterController.getAll);
+router.get('/all', authenticate, isAdmin, OfferController.getAll);
 
 /**
  * @swagger
  * path:
- *  /offer-letter/:id:
+ *  /offer/:id:
  *    get:
  *      parameters:
  *        - in: query
@@ -136,13 +127,13 @@ router.get('/all', authenticate, isAdmin, OfferLetterController.getAll);
  *            type: string
  *          description: verifies user access
  *      summary: Gets an offer based by its ID
- *      tags: [OfferLetter]
+ *      tags: [Offer]
  *      responses:
  *        '200':
  *          description: Offer found
  *        '500':
  *          description: Internal server error
  */
-router.get('/:id', authenticate, isAdmin, hasValidObjectId, OfferLetterController.getOne);
+router.get('/:id', authenticate, isAdmin, hasValidObjectId, OfferController.getOne);
 
 module.exports = router;

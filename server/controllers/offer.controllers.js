@@ -4,12 +4,12 @@ import {
   assignOffer,
   getOffer,
   getAllOffers,
-} from '../services/offerLetter.service';
+} from '../services/offer.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
 
-const OfferLetterController = {
+const OfferController = {
   create(req, res, next) {
     const newOffer = req.locals;
     const { user } = req;
@@ -64,4 +64,4 @@ const OfferLetterController = {
   },
 };
 
-export default OfferLetterController;
+export default OfferController;

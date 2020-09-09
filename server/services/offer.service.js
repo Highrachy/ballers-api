@@ -1,16 +1,16 @@
 import mongoose from 'mongoose';
-import OfferLetter from '../models/offerLetter.model';
+import Offer from '../models/offer.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
-export const getOfferById = async (id) => OfferLetter.findById(id).select();
+export const getOfferById = async (id) => Offer.findById(id).select();
 
 export const createOffer = async (offer) => {
   try {
-    const newOffer = await new OfferLetter(offer).save();
+    const newOffer = await new Offer(offer).save();
     return newOffer;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error creating offer', error);
@@ -18,7 +18,7 @@ export const createOffer = async (offer) => {
 };
 
 export const getAllOffers = async (userId) =>
-  OfferLetter.aggregate([
+  Offer.aggregate([
     { $match: { userId: ObjectId(userId) } },
     {
       $lookup: {
@@ -31,7 +31,7 @@ export const getAllOffers = async (userId) =>
     {
       $lookup: {
         from: 'enquiries',
-        localField: 'enquiryid',
+        localField: 'enquiryId',
         foreignField: '_id',
         as: 'enquiryInfo',
       },
@@ -64,7 +64,7 @@ export const getAllOffers = async (userId) =>
   ]);
 
 export const getOffer = async (offerId) =>
-  OfferLetter.aggregate([
+  Offer.aggregate([
     { $match: { _id: ObjectId(offerId) } },
     {
       $lookup: {
@@ -115,7 +115,7 @@ export const acceptOffer = async (offerToAccept) => {
   });
 
   try {
-    OfferLetter.findByIdAndUpdate(
+    await Offer.findByIdAndUpdate(
       offer.id,
       {
         $set: {
@@ -138,7 +138,7 @@ export const assignOffer = async (offerId) => {
   });
 
   try {
-    OfferLetter.findByIdAndUpdate(
+    await Offer.findByIdAndUpdate(
       offer.id,
       {
         $set: { status: OFFER_STATUS.ASSIGNED, dateAssigned: Date.now() },

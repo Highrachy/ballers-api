@@ -1,10 +1,11 @@
 import mongoose from 'mongoose';
+import { OFFER_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
  *  components:
  *    schemas:
- *      OfferLetter:
+ *      Offer:
  *        type: object
  *        required:
  *          - userId
@@ -65,7 +66,7 @@ import mongoose from 'mongoose';
  *           totalAmountPayable: 40000000
  *           allocationInPercentage: 20
  *           title: 4 bedroom detatched duplex
- *           status: interested
+ *           status: Interested
  *           expires: 2020-01-01
  *           signature: http://www.ballers.ng/signature.png
  *           dateAccepted: 2020-01-01
@@ -75,7 +76,7 @@ import mongoose from 'mongoose';
  */
 
 const { ObjectId } = mongoose.Schema.Types;
-const OfferLetterSchema = new mongoose.Schema(
+const OfferSchema = new mongoose.Schema(
   {
     userId: {
       type: ObjectId,
@@ -115,7 +116,7 @@ const OfferLetterSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: 'Generated',
+      default: OFFER_STATUS.GENERATED,
     },
     expires: {
       type: Date,
@@ -146,6 +147,6 @@ const OfferLetterSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-const OfferLetter = mongoose.model('OfferLetter', OfferLetterSchema);
+const Offer = mongoose.model('Offer', OfferSchema);
 
-export default OfferLetter;
+export default Offer;
