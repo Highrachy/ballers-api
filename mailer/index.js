@@ -34,7 +34,8 @@ const EMAIL_CONTENT = {
   },
   OFFER_CREATED: {
     subject: 'Offer Created',
-    contentTop: 'An offer has been created for you',
+    contentTop:
+      'Ballers just made you an offer for property [Property name]. Valid till [Expiry date]. Check your dashboard for more details.',
   },
   OFFER_RESPONSE: {
     subject: 'Offer Accepted',
