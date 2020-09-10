@@ -130,6 +130,9 @@ const UserSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
+    referrals: {
+      type: [ObjectId],
+    },
     role: {
       type: Number,
       default: 1,

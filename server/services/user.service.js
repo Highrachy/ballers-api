@@ -84,6 +84,13 @@ export const addUser = async (user) => {
   try {
     const password = await hashPassword(user.password);
     const savedUser = await new User({ ...user, password, referralCode }).save();
+
+    if (user.referralCode) {
+      const referee = await getUserByReferralCode(user.referralCode).catch((error) => {
+        throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+      });
+      await User.findByIdAndUpdate(referee._id, { $push: { referrals: savedUser._id } });
+    }
     return generateToken(savedUser._id);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding user', error);
