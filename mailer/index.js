@@ -33,13 +33,14 @@ const EMAIL_CONTENT = {
     contentTop: 'A new propery visit has been requested',
   },
   OFFER_CREATED: {
-    subject: 'Offer Created',
+    subject: 'New Offer Available',
     contentTop:
       'Ballers just made you an offer for property [Property name]. Valid till [Expiry date]. Check your dashboard for more details.',
   },
   OFFER_RESPONSE: {
     subject: 'Offer Accepted',
-    contentTop: 'Your offer has been accepted',
+    contentTop:
+      'Your offer on [Property name] has been accepted. Check your dashboard for more details.',
   },
 };
 

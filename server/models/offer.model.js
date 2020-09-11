@@ -58,9 +58,9 @@ import { OFFER_STATUS } from '../helpers/constants';
  *            type: number
  *        example:
  *           userId: 5f2b39035a086cfc4b7fa7f6
- *           vendorId: 5f2b39035a086cfc4b7fa7f6
- *           enquiryid: 5f2b39035a086cfc4b7fa7f6
- *           propertyId: 5f2b39035a086cfc4b7fa7f6
+ *           vendorId: 5f22f7f8c790039da1242381
+ *           enquiryid: 5f5a71e1e26485102a780795
+ *           propertyId: 5f22f8aec790039da1242382
  *           handOverDate: 2020-01-01
  *           deliveryState: New
  *           totalAmountPayable: 40000000
@@ -101,6 +101,10 @@ const OfferSchema = new mongoose.Schema(
     deliveryState: {
       type: String,
       required: true,
+    },
+    referenceCode: {
+      type: String,
+      // required: true,
     },
     totalAmountPayable: {
       type: Number,

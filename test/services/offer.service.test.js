@@ -310,41 +310,12 @@ describe('Offer Service', () => {
     const user = UserFactory.build({ _id: userId });
     const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
     const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
-    const offer1 = OfferFactory.build({
-      userId,
-      enquiryId,
-      propertyId,
-      vendorId: userId,
-      status: OFFER_STATUS.ASSIGNED,
-    });
-    const offer2 = OfferFactory.build({
-      userId,
-      enquiryId,
-      propertyId,
-      vendorId: userId,
-      status: OFFER_STATUS.ALLOCATED,
-    });
-    const offer3 = OfferFactory.build({
-      userId,
-      enquiryId,
-      propertyId,
-      vendorId: userId,
-      status: OFFER_STATUS.REJECTED,
-    });
-    const offer4 = OfferFactory.build({
-      userId,
-      enquiryId,
-      propertyId,
-      vendorId: userId,
-      status: OFFER_STATUS.INTERESTED,
-    });
-    const offer5 = OfferFactory.build({
-      userId,
-      enquiryId,
-      propertyId,
-      vendorId: userId,
-      status: OFFER_STATUS.NEGLECTED,
-    });
+    const offerDetails = { userId, enquiryId, propertyId, vendorId: userId };
+    const offer1 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.ASSIGNED });
+    const offer2 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.ALLOCATED });
+    const offer3 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.REJECTED });
+    const offer4 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.INTERESTED });
+    const offer5 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.NEGLECTED });
 
     beforeEach(async () => {
       await addUser(user);
