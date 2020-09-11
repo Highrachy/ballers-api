@@ -6,6 +6,7 @@ import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
+import { addReferral } from './referal.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -89,7 +90,7 @@ export const addUser = async (user) => {
       const referee = await getUserByReferralCode(user.referralCode).catch((error) => {
         throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
       });
-      await User.findByIdAndUpdate(referee._id, { $push: { referrals: savedUser._id } });
+      await addReferral({ userId: savedUser._id, refereeId: referee._id });
     }
     return generateToken(savedUser._id);
   } catch (error) {
