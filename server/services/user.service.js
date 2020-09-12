@@ -6,7 +6,8 @@ import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
-import { addReferral } from './referal.service';
+// eslint-disable-next-line import/no-cycle
+import { addReferral } from './referral.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 

@@ -9,22 +9,17 @@ import { REFERRAL_STATUS } from '../helpers/constants';
  *        type: object
  *        required:
  *          - userId
- *          - refereeId
- *          - registrationDate
- *          - status
+ *          - referrerId
  *        properties:
  *          userId:
  *            type: string
- *          refereeId:
+ *          referrerId:
  *            type: string
- *          registrationDate:
- *            type: date
  *          status:
  *            type: string
  *        example:
  *           userId: 5f5a64ea4661990c8f65e5e8
- *           refereeId: 5f2b39035a086cfc4b7fa7f6
- *           registrationDate: 2020-01-01
+ *           referrerId: 5f2b39035a086cfc4b7fa7f6
  *           status: John
  */
 
@@ -33,19 +28,31 @@ const ReferralSchema = new mongoose.Schema(
   {
     userId: {
       type: ObjectId,
-      required: true,
     },
-    refereeId: {
+    firstName: {
+      type: String,
+    },
+    email: {
+      type: String,
+    },
+    referrerId: {
       type: ObjectId,
       required: true,
     },
-    registrationDate: {
-      type: Date,
-      required: true,
-    },
-    status: {
-      type: String,
-      default: REFERRAL_STATUS.SENT,
+    reward: {
+      amount: {
+        type: Number,
+      },
+      status: {
+        type: String,
+        default: REFERRAL_STATUS.SENT,
+      },
+      paidBy: {
+        type: ObjectId,
+      },
+      paidOn: {
+        type: Date,
+      },
     },
   },
   { timestamps: true },
