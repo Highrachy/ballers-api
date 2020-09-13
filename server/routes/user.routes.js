@@ -312,7 +312,7 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.post('/upload-image', authenticate, Upload.uploadProfileImage, UploadController.uploadImage);
+router.post('/upload-image', authenticate, Upload.uploadImage, UploadController.uploadImage);
 
 /**
  * @swagger
