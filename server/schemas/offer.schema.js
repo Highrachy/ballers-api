@@ -3,9 +3,7 @@ import Joi from '@hapi/joi';
 Joi.objectId = require('joi-objectid')(Joi);
 
 export const createOfferSchema = Joi.object({
-  userId: Joi.objectId().label('User ID').required(),
   enquiryId: Joi.objectId().label('Enquiry ID').required(),
-  propertyId: Joi.objectId().label('Property ID').required(),
   handOverDate: Joi.date().label('Handover Date').required(),
   deliveryState: Joi.string().label('Delivery State').required(),
   totalAmountPayable: Joi.number().label('Total Amount Payable').required(),

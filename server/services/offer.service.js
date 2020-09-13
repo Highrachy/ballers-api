@@ -4,6 +4,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
 import { getUserById } from './user.service';
+import { getEnquiryById, approveEnquiry } from './enquiry.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -153,18 +154,46 @@ export const getOffer = async (offerId) =>
         'vendorInfo.assignedProperties': 0,
         'vendorInfo.password': 0,
         'vendorInfo.referralCode': 0,
+        'vendorInfo.role': 0,
+        'vendorInfo.favorites': 0,
+        'vendorInfo.activated': 0,
+        'vendorInfo.phone': 0,
+        'vendorInfo.notifications': 0,
       },
     },
   ]);
 
 export const createOffer = async (offer) => {
+  const enquiry = await getEnquiryById(offer.enquiryId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!enquiry) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid enquiry');
+  }
+
+  if (enquiry.approved === true) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Cannot create offer for approved enquiry',
+    );
+  }
+
+  const user = await getUserById(enquiry.userId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+  const userInfo = {
+    firstName: user.firstName,
+    email: user.email,
+  };
+
   try {
-    const newOffer = await new Offer(offer).save();
-    const user = await getUserById(newOffer.userId);
-    const userInfo = {
-      firstName: user.firstName,
-      email: user.email,
-    };
+    const newOffer = await new Offer({
+      ...offer,
+      userId: enquiry.userId,
+      propertyId: enquiry.propertyId,
+    }).save();
+    await approveEnquiry({ enquiryId: enquiry._id, adminId: offer.vendorId });
     const offerInfo = await getOffer(newOffer._id);
     return { ...offerInfo[0], userInfo };
   } catch (error) {
@@ -176,6 +205,11 @@ export const acceptOffer = async (offerToAccept) => {
   const offer = await getOfferById(offerToAccept.offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
+  const expiryDate = new Date(offer.expires);
+  if (Date.now() > expiryDate) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
+  }
 
   try {
     await Offer.findByIdAndUpdate(

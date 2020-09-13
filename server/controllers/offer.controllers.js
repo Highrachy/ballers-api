@@ -31,17 +31,20 @@ const OfferController = {
   },
 
   accept(req, res, next) {
-    const offerResponse = req.locals;
-    acceptOffer(offerResponse)
+    const offerInfo = req.locals;
+    acceptOffer(offerInfo)
       .then((offer) => {
         const vendor = offer[0].vendorInfo;
+        const offerResponse = offer[0];
         const contentTop = `Your offer on ${offer[0].propertyInfo.name} has been accepted. Check your dashboard for more details.`;
 
         sendMail(EMAIL_CONTENT.OFFER_RESPONSE, vendor, { contentTop });
+        offerResponse.vendorId = null;
+        offerResponse.vendorInfo = null;
 
         res
           .status(httpStatus.OK)
-          .json({ success: true, message: 'Offer accepted', offer: offer[0] });
+          .json({ success: true, message: 'Offer accepted', offer: offerResponse });
       })
       .catch((error) => next(error));
   },
@@ -61,13 +64,26 @@ const OfferController = {
     const offerId = req.params.id;
     getOffer(offerId)
       .then((offer) => {
-        res.status(httpStatus.OK).json({ success: true, offer: offer[0] });
+        if (offer.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, offer: offer[0] });
+        } else {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Offer not found' });
+        }
       })
       .catch((error) => next(error));
   },
 
-  getAll(req, res, next) {
+  getAllUser(req, res, next) {
     const userId = req.user._id;
+    getAllOffers(userId)
+      .then((offers) => {
+        res.status(httpStatus.OK).json({ success: true, offers });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAllAdmin(req, res, next) {
+    const userId = req.params.id;
     getAllOffers(userId)
       .then((offers) => {
         res.status(httpStatus.OK).json({ success: true, offers });

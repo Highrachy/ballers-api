@@ -29,8 +29,8 @@ describe('Offer Service', () => {
     const enquiryId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
-    const offer = OfferFactory.build({ _id, userId, enquiryId, propertyId, vendorId: userId });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const offer = OfferFactory.build({ _id, enquiryId, vendorId: userId });
 
     before(async () => {
       await addUser(user);
@@ -52,8 +52,8 @@ describe('Offer Service', () => {
     const enquiryId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
-    const offer = OfferFactory.build({ userId, enquiryId, propertyId, vendorId: userId });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const offer = OfferFactory.build({ enquiryId, vendorId: userId });
 
     beforeEach(async () => {
       await addUser(user);
@@ -88,9 +88,8 @@ describe('Offer Service', () => {
           await createOffer(invalidOffer);
         } catch (err) {
           const currentCountedOffers = await Offer.countDocuments({});
-          expect(err.statusCode).to.eql(400);
-          expect(err.error.name).to.be.eql('ValidationError');
-          expect(err.message).to.be.eql('Error creating offer');
+          expect(err.statusCode).to.eql(412);
+          expect(err.message).to.be.eql('Invalid enquiry');
           expect(currentCountedOffers).to.eql(countedOffers);
         }
       });
@@ -100,18 +99,29 @@ describe('Offer Service', () => {
   describe('#getAllOffers', () => {
     const userId = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
-    const offer = OfferFactory.build({ userId, enquiryId, propertyId, vendorId: userId });
+
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: userId });
+
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
+    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: userId });
+
+    const enquiryId3 = mongoose.Types.ObjectId();
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: userId });
 
     beforeEach(async () => {
       await addUser(user);
       await addProperty(property);
-      await addEnquiry(enquiry);
-      await createOffer(offer);
-      await createOffer(offer);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await addEnquiry(enquiry3);
+      await createOffer(offer1);
+      await createOffer(offer2);
     });
 
     context('when offers added are valid', () => {
@@ -123,7 +133,7 @@ describe('Offer Service', () => {
     });
     context('when new enquiry is added', () => {
       it('returns 3 enquiries', async () => {
-        await createOffer(offer);
+        await createOffer(offer3);
         const offers = await getAllOffers(userId);
         expect(offers).to.be.an('array');
         expect(offers.length).to.be.eql(3);
@@ -138,14 +148,8 @@ describe('Offer Service', () => {
     const offerId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
-    const offer = OfferFactory.build({
-      _id: offerId,
-      userId,
-      enquiryId,
-      propertyId,
-      vendorId: userId,
-    });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: userId });
 
     beforeEach(async () => {
       await addUser(user);
@@ -187,14 +191,8 @@ describe('Offer Service', () => {
     const offerId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
-    const offer = OfferFactory.build({
-      _id: offerId,
-      userId,
-      enquiryId,
-      propertyId,
-      vendorId: userId,
-    });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: userId });
     const toAccept = {
       offerId,
       signature: 'http://www.ballers.ng/signature.png',
@@ -251,14 +249,8 @@ describe('Offer Service', () => {
     const offerId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
-    const offer = OfferFactory.build({
-      _id: offerId,
-      userId,
-      enquiryId,
-      propertyId,
-      vendorId: userId,
-    });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: userId });
 
     beforeEach(async () => {
       await addUser(user);
@@ -306,21 +298,57 @@ describe('Offer Service', () => {
   describe('#getActiveOffers', () => {
     const userId = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId });
-    const offerDetails = { userId, enquiryId, propertyId, vendorId: userId };
-    const offer1 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.ASSIGNED });
-    const offer2 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.ALLOCATED });
-    const offer3 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.REJECTED });
-    const offer4 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.INTERESTED });
-    const offer5 = OfferFactory.build({ ...offerDetails, status: OFFER_STATUS.NEGLECTED });
+
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const offer1 = OfferFactory.build({
+      enquiryId: enquiryId1,
+      vendorId: userId,
+      status: OFFER_STATUS.ASSIGNED,
+    });
+
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
+    const offer2 = OfferFactory.build({
+      enquiryId: enquiryId2,
+      vendorId: userId,
+      status: OFFER_STATUS.ALLOCATED,
+    });
+
+    const enquiryId3 = mongoose.Types.ObjectId();
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const offer3 = OfferFactory.build({
+      enquiryId: enquiryId3,
+      vendorId: userId,
+      status: OFFER_STATUS.REJECTED,
+    });
+
+    const enquiryId4 = mongoose.Types.ObjectId();
+    const enquiry4 = EnquiryFactory.build({ _id: enquiryId4, userId, propertyId });
+    const offer4 = OfferFactory.build({
+      enquiryId: enquiryId4,
+      vendorId: userId,
+      status: OFFER_STATUS.INTERESTED,
+    });
+
+    const enquiryId5 = mongoose.Types.ObjectId();
+    const enquiry5 = EnquiryFactory.build({ _id: enquiryId5, userId, propertyId });
+    const offer5 = OfferFactory.build({
+      enquiryId: enquiryId5,
+      vendorId: userId,
+      status: OFFER_STATUS.NEGLECTED,
+    });
 
     beforeEach(async () => {
       await addUser(user);
       await addProperty(property);
-      await addEnquiry(enquiry);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await addEnquiry(enquiry3);
+      await addEnquiry(enquiry4);
+      await addEnquiry(enquiry5);
       await createOffer(offer1);
       await createOffer(offer2);
       await createOffer(offer3);

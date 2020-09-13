@@ -10,7 +10,7 @@ import { OFFER_STATUS } from '../helpers/constants';
  *        required:
  *          - userId
  *          - vendorId
- *          - enquiryid
+ *          - enquiryId
  *          - propertyId
  *          - handOverDate
  *          - deliveryState
@@ -28,7 +28,7 @@ import { OFFER_STATUS } from '../helpers/constants';
  *            type: string
  *          vendorId:
  *            type: string
- *          enquiryid:
+ *          enquiryId:
  *            type: string
  *          propertyId:
  *            type: string
@@ -59,7 +59,7 @@ import { OFFER_STATUS } from '../helpers/constants';
  *        example:
  *           userId: 5f2b39035a086cfc4b7fa7f6
  *           vendorId: 5f22f7f8c790039da1242381
- *           enquiryid: 5f5a71e1e26485102a780795
+ *           enquiryId: 5f5a71e1e26485102a780795
  *           propertyId: 5f22f8aec790039da1242382
  *           handOverDate: 2020-01-01
  *           deliveryState: New

@@ -94,11 +94,11 @@ router.put(
 
 /**
  * @swagger
- * /offer/all:
+ * /offer/user/all:
  *   get:
  *     tags:
  *       - Offer
- *     description: Get all offers
+ *     description: Get all owned offers
  *     produces:
  *       - application/json
  *     requestBody:
@@ -113,15 +113,15 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, OfferController.getAll);
+router.get('/user/all', authenticate, OfferController.getAllUser);
 
 /**
  * @swagger
- * /offer/active:
+ * /offer/user/:id:
  *   get:
  *     tags:
  *       - Offer
- *     description: Get all offers
+ *     description: Get all offers of a user
  *     produces:
  *       - application/json
  *     requestBody:
@@ -129,7 +129,30 @@ router.get('/all', authenticate, OfferController.getAll);
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/Offer'
- *      description: Get all owned offers
+ *      description: Get all offers of a user
+ *     responses:
+ *      '200':
+ *        description: returns object of offers
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/user/:id', authenticate, isAdmin, hasValidObjectId, OfferController.getAllAdmin);
+
+/**
+ * @swagger
+ * /offer/active:
+ *   get:
+ *     tags:
+ *       - Offer
+ *     description: Get all active owned offers
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Offer'
+ *      description: Get all active owned offers
  *     responses:
  *      '200':
  *        description: returns object of offers
