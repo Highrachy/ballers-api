@@ -198,7 +198,7 @@ describe('PaymentPlan Service', () => {
           await updatePaymentPlan(paymentPlanToUpdate);
         } catch (err) {
           expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
+          expect(err.error.message).to.be.eql('error msg');
           expect(err.message).to.be.eql('Internal Server Error');
         }
         PaymentPlan.findById.restore();
@@ -212,7 +212,7 @@ describe('PaymentPlan Service', () => {
           await updatePaymentPlan(paymentPlanToUpdate);
         } catch (err) {
           expect(err.statusCode).to.eql(400);
-          expect(err.error).to.be.an('Error');
+          expect(err.error.message).to.be.eql("Cannot read property 'id' of null");
           expect(err.message).to.be.eql('Error updating payment plan');
         }
         PaymentPlan.findByIdAndUpdate.restore();

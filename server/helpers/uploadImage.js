@@ -15,9 +15,19 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: 'ballers',
+    folder: 'ballers-profile',
     allowedFormats: ['jpg', 'png'],
     transformation: [{ width: 256, height: 256, crop: 'limit' }],
+  },
+});
+
+const largeStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async () => {
+    return {
+      folder: 'ballers-upload',
+      allowedFormats: ['jpg', 'jpeg', 'png'],
+    };
   },
 });
 
@@ -30,7 +40,7 @@ const parserProfileImage = multer({
 const MAX_IMG_SIZE = 1000000; // 1MB
 const parserImage = multer({
   limits: { fileSize: MAX_IMG_SIZE },
-  storage,
+  storage: largeStorage,
 }).single('image');
 
 export default {
