@@ -2,6 +2,8 @@ import Joi from '@hapi/joi';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
+const today = new Date().toISOString().slice(0, 10);
+
 const address = Joi.object().keys({
   street1: Joi.string().label('Street 1').required(),
   street2: Joi.string().label('Street 2').optional(),
@@ -25,7 +27,15 @@ export const addEnquirySchema = Joi.object({
   investmentFrequency: Joi.string().label('Investment Frequency').required(),
   initialInvestmentAmount: Joi.number().label('Initial Investment Amount').required(),
   periodicInvestmentAmount: Joi.number().label('Periodic Investment Amount').required(),
-  investmentStartDate: Joi.date().label('Investment Start Date').required(),
+  investmentStartDate: Joi.date()
+    .greater(today)
+    .label('Investment Start Date')
+    .required()
+    .messages({
+      'date.greater': `"Investment Start Date" should a date later than ${new Date(
+        Date.parse(today),
+      ).toUTCString()}`,
+    }),
 });
 
 export const approveEnquirySchema = Joi.object({

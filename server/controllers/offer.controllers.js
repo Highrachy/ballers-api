@@ -73,7 +73,7 @@ const OfferController = {
       .catch((error) => next(error));
   },
 
-  getAllUser(req, res, next) {
+  getAllUserOffers(req, res, next) {
     const userId = req.user._id;
     getAllOffers(userId)
       .then((offers) => {
@@ -82,7 +82,7 @@ const OfferController = {
       .catch((error) => next(error));
   },
 
-  getAllAdmin(req, res, next) {
+  getAllAdminOffers(req, res, next) {
     const userId = req.params.id;
     getAllOffers(userId)
       .then((offers) => {

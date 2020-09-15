@@ -19,14 +19,14 @@ let userToken;
 const userId = mongoose.Types.ObjectId();
 const adminId = mongoose.Types.ObjectId();
 const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
-const regualarUser = UserFactory.build({ _id: userId, role: 1, activated: true });
+const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
 const propertyId = mongoose.Types.ObjectId();
 const property = PropertyFactory.build({ _id: propertyId, addedBy: adminId, updatedBy: adminId });
 
-describe('Offer Routes', () => {
+describe('Offer Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
-    userToken = await addUser(regualarUser);
+    userToken = await addUser(regularUser);
     await addProperty(property);
   });
 
@@ -49,16 +49,16 @@ describe('Offer Routes', () => {
             expect(res).to.have.status(201);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Offer created');
-            expect(res.body.offer).to.have.property('vendorInfo');
-            expect(res.body.offer).to.have.property('enquiryInfo');
-            expect(res.body.offer).to.have.property('propertyInfo');
             expect(res.body.offer).to.have.property('userInfo');
+            expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
+            expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
+            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId.toString());
             done();
           });
       });
     });
 
-    context('when user token is used', () => {
+    context('when an invalid token is used', () => {
       beforeEach(async () => {
         await User.findByIdAndDelete(adminId);
       });
@@ -174,6 +174,42 @@ describe('Offer Routes', () => {
             });
         });
       });
+      context('when allocation in percentage is less than 1', () => {
+        it('returns an error', (done) => {
+          const offer = OfferFactory.build({ allocationInPercentage: 0 });
+          request()
+            .post('/api/v1/offer/create')
+            .set('authorization', adminToken)
+            .send(offer)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                '"Allocation In Percentage" must be larger than or equal to 1',
+              );
+              done();
+            });
+        });
+      });
+      context('when allocation in percentage is greater than 100', () => {
+        it('returns an error', (done) => {
+          const offer = OfferFactory.build({ allocationInPercentage: 101 });
+          request()
+            .post('/api/v1/offer/create')
+            .set('authorization', adminToken)
+            .send(offer)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                '"Allocation In Percentage" must be less than or equal to 100',
+              );
+              done();
+            });
+        });
+      });
       context('when title is empty', () => {
         it('returns an error', (done) => {
           const offer = OfferFactory.build({ title: '' });
@@ -190,7 +226,7 @@ describe('Offer Routes', () => {
             });
         });
       });
-      context('when expires is empty', () => {
+      context('when expiry date is empty', () => {
         it('returns an error', (done) => {
           const offer = OfferFactory.build({ expires: '' });
           request()
@@ -201,7 +237,7 @@ describe('Offer Routes', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Expires" must be a valid date');
+              expect(res.body.error).to.be.eql('"Expiry Date" must be a valid date');
               done();
             });
         });

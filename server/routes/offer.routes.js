@@ -113,7 +113,7 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.get('/user/all', authenticate, OfferController.getAllUser);
+router.get('/user/all', authenticate, OfferController.getAllUserOffers);
 
 /**
  * @swagger
@@ -136,7 +136,7 @@ router.get('/user/all', authenticate, OfferController.getAllUser);
  *      '500':
  *       description: Internal server error
  */
-router.get('/user/:id', authenticate, isAdmin, hasValidObjectId, OfferController.getAllAdmin);
+router.get('/user/:id', authenticate, isAdmin, hasValidObjectId, OfferController.getAllAdminOffers);
 
 /**
  * @swagger
