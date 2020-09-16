@@ -4,11 +4,13 @@ import Offer from '../../server/models/offer.model';
 import {
   getOfferById,
   createOffer,
-  getAllOffers,
+  getAllOffersUser,
+  getAllOffersAdmin,
   getOffer,
   acceptOffer,
   assignOffer,
   getActiveOffers,
+  cancelOffer,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -96,26 +98,33 @@ describe('Offer Service', () => {
     });
   });
 
-  describe('#getAllOffers', () => {
+  describe('#getAllOffersUser', () => {
     const userId = mongoose.Types.ObjectId();
+    const vendorId = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
+    const vendor = UserFactory.build({ _id: vendorId });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+    });
 
     const enquiryId1 = mongoose.Types.ObjectId();
     const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
-    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: userId });
+    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId, userId });
 
     const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
-    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: userId });
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId: vendorId, propertyId });
+    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId, userId: vendorId });
 
     const enquiryId3 = mongoose.Types.ObjectId();
     const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
-    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: userId });
+    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId, userId });
 
     beforeEach(async () => {
       await addUser(user);
+      await addUser(vendor);
       await addProperty(property);
       await addEnquiry(enquiry1);
       await addEnquiry(enquiry2);
@@ -125,18 +134,74 @@ describe('Offer Service', () => {
     });
 
     context('when offers added are valid', () => {
+      it('returns 1 offer', async () => {
+        const offers = await getAllOffersUser(userId);
+        expect(offers).to.be.an('array');
+        expect(offers.length).to.be.eql(1);
+        expect(offers[0].userId).to.be.eql(userId);
+      });
+    });
+    context('when new offer is added', () => {
       it('returns 2 offers', async () => {
-        const offers = await getAllOffers(userId);
+        await createOffer(offer3);
+        const offers = await getAllOffersUser(userId);
         expect(offers).to.be.an('array');
         expect(offers.length).to.be.eql(2);
+        expect(offers[0].userId).to.be.eql(userId);
+      });
+    });
+  });
+
+  describe('#getAllOffersAdmin', () => {
+    const userId = mongoose.Types.ObjectId();
+    const vendorId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const vendor = UserFactory.build({ _id: vendorId });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+    });
+
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId, userId });
+
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
+    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: userId, userId });
+
+    const enquiryId3 = mongoose.Types.ObjectId();
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId, userId });
+
+    beforeEach(async () => {
+      await addUser(user);
+      await addUser(vendor);
+      await addProperty(property);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await addEnquiry(enquiry3);
+      await createOffer(offer1);
+      await createOffer(offer2);
+    });
+
+    context('when offers added are valid', () => {
+      it('returns 1 offer', async () => {
+        const offers = await getAllOffersAdmin(vendorId);
+        expect(offers).to.be.an('array');
+        expect(offers.length).to.be.eql(1);
+        expect(offers[0].vendorId).to.be.eql(vendorId);
       });
     });
     context('when new enquiry is added', () => {
-      it('returns 3 enquiries', async () => {
+      it('returns 2 offers', async () => {
         await createOffer(offer3);
-        const offers = await getAllOffers(userId);
+        const offers = await getAllOffersAdmin(vendorId);
         expect(offers).to.be.an('array');
-        expect(offers.length).to.be.eql(3);
+        expect(offers.length).to.be.eql(2);
+        expect(offers[0].vendorId).to.be.eql(vendorId);
       });
     });
   });
@@ -217,27 +282,13 @@ describe('Offer Service', () => {
       it('throws an error', async () => {
         sinon.stub(Offer, 'findById').throws(new Error('error msg'));
         try {
-          await assignOffer(offerId);
+          await acceptOffer(toAccept);
         } catch (err) {
           expect(err.statusCode).to.eql(500);
           expect(err.error).to.be.an('Error');
           expect(err.message).to.be.eql('Internal Server Error');
         }
         Offer.findById.restore();
-      });
-    });
-
-    context('when findByIdAndUpdate fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('error msg'));
-        try {
-          await acceptOffer(toAccept);
-        } catch (err) {
-          expect(err.statusCode).to.eql(400);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Error responding to offer');
-        }
-        Offer.findByIdAndUpdate.restore();
       });
     });
   });
@@ -250,7 +301,12 @@ describe('Offer Service', () => {
     const user = UserFactory.build({ _id: userId });
     const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
     const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: userId });
+    const offer = OfferFactory.build({
+      _id: offerId,
+      enquiryId,
+      vendorId: userId,
+      status: OFFER_STATUS.INTERESTED,
+    });
 
     beforeEach(async () => {
       await addUser(user);
@@ -279,18 +335,43 @@ describe('Offer Service', () => {
         Offer.findById.restore();
       });
     });
+  });
 
-    context('when findByIdAndUpdate fails', () => {
+  describe('#cancelOffer', () => {
+    const userId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const enquiryId = mongoose.Types.ObjectId();
+    const offerId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: userId });
+
+    beforeEach(async () => {
+      await addUser(user);
+      await addProperty(property);
+      await addEnquiry(enquiry);
+      await createOffer(offer);
+    });
+
+    context('when all is valid', () => {
+      it('returns a valid cancelled offer', async () => {
+        const rejectedOffer = await cancelOffer(offerId);
+        expect(rejectedOffer.status).to.eql('Cancelled');
+      });
+    });
+
+    context('when getOfferById fails', () => {
       it('throws an error', async () => {
-        sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('error msg'));
+        sinon.stub(Offer, 'findById').throws(new Error('error msg'));
         try {
-          await assignOffer(offerId);
+          await cancelOffer(offerId);
         } catch (err) {
-          expect(err.statusCode).to.eql(400);
+          expect(err.statusCode).to.eql(500);
           expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Error assigning offer');
+          expect(err.message).to.be.eql('Internal Server Error');
         }
-        Offer.findByIdAndUpdate.restore();
+        Offer.findById.restore();
       });
     });
   });

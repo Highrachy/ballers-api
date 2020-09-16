@@ -2,8 +2,10 @@ import {
   createOffer,
   acceptOffer,
   assignOffer,
+  cancelOffer,
   getOffer,
-  getAllOffers,
+  getAllOffersUser,
+  getAllOffersAdmin,
   getActiveOffers,
 } from '../services/offer.service';
 import httpStatus from '../helpers/httpStatus';
@@ -60,6 +62,15 @@ const OfferController = {
       .catch((error) => next(error));
   },
 
+  cancel(req, res, next) {
+    const { offerId } = req.locals;
+    cancelOffer(offerId)
+      .then(() => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Offer cancelled' });
+      })
+      .catch((error) => next(error));
+  },
+
   getOne(req, res, next) {
     const offerId = req.params.id;
     getOffer(offerId)
@@ -75,7 +86,7 @@ const OfferController = {
 
   getAllUserOffers(req, res, next) {
     const userId = req.user._id;
-    getAllOffers(userId)
+    getAllOffersUser(userId)
       .then((offers) => {
         res.status(httpStatus.OK).json({ success: true, offers });
       })
@@ -83,8 +94,17 @@ const OfferController = {
   },
 
   getAllAdminOffers(req, res, next) {
+    const adminId = req.user._id;
+    getAllOffersAdmin(adminId)
+      .then((offers) => {
+        res.status(httpStatus.OK).json({ success: true, offers });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAllUserOffersAdmin(req, res, next) {
     const userId = req.params.id;
-    getAllOffers(userId)
+    getAllOffersUser(userId)
       .then((offers) => {
         res.status(httpStatus.OK).json({ success: true, offers });
       })

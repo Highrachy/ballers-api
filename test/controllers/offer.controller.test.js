@@ -399,7 +399,12 @@ describe('Offer Controller', () => {
     const offerId = mongoose.Types.ObjectId();
     const enquiryId = mongoose.Types.ObjectId();
     const enquiry = EnquiryFactory.build({ _id: enquiryId, userId: adminId, propertyId });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
+    const offer = OfferFactory.build({
+      _id: offerId,
+      enquiryId,
+      vendorId: adminId,
+      status: OFFER_STATUS.INTERESTED,
+    });
     const toAssignDetails = {
       offerId,
     };
@@ -460,7 +465,7 @@ describe('Offer Controller', () => {
       });
     });
 
-    context('when accept service returns an error', () => {
+    context('when assign service returns an error', () => {
       it('returns the error', (done) => {
         sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
         request()
@@ -496,24 +501,107 @@ describe('Offer Controller', () => {
     });
   });
 
-  describe('Get all owned offers', () => {
+  describe('Cancel Offer', () => {
+    const offerId = mongoose.Types.ObjectId();
+    const enquiryId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId: adminId, propertyId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
+    const toCancelDetails = {
+      offerId,
+    };
+
+    beforeEach(async () => {
+      await addEnquiry(enquiry);
+      await createOffer(offer);
+    });
+
+    context('with valid data & token', () => {
+      it('returns cancelled offer', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send(toCancelDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Offer cancelled');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .send(toCancelDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when cancel service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send(toCancelDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Offer.findByIdAndUpdate.restore();
+          });
+      });
+    });
+
+    context('with invalid data', () => {
+      context('when offer id is empty', () => {
+        it('returns an error', (done) => {
+          const invalidData = { offerId: '' };
+          request()
+            .put('/api/v1/offer/cancel')
+            .set('authorization', adminToken)
+            .send(invalidData)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Get all user owned offers', () => {
     const enquiryId1 = mongoose.Types.ObjectId();
     const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
-    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId });
+    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId, userId });
 
     const enquiryId2 = mongoose.Types.ObjectId();
     const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId: adminId, propertyId });
-    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: adminId });
+    const offer2 = OfferFactory.build({
+      enquiryId: enquiryId2,
+      vendorId: adminId,
+      userId: adminId,
+    });
 
     const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId: adminId, propertyId });
-    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId });
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId, userId });
 
     context('when no offer is found', () => {
       it('returns empty array of offers', (done) => {
         request()
           .get('/api/v1/offer/user/all')
-          .set('authorization', adminToken)
+          .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
@@ -538,14 +626,14 @@ describe('Offer Controller', () => {
         it('returns successful payload', (done) => {
           request()
             .get('/api/v1/offer/user/all')
-            .set('authorization', adminToken)
+            .set('authorization', userToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('offers');
               expect(res.body.offers.length).to.be.eql(2);
-              expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
-              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId2.toString());
+              expect(res.body.offers[0].userId).to.be.eql(userId.toString());
+              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
               expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId.toString());
               done();
             });
@@ -570,6 +658,91 @@ describe('Offer Controller', () => {
           sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
           request()
             .get('/api/v1/offer/user/all')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(500);
+              done();
+              Offer.aggregate.restore();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Get all admin owned offers', () => {
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId, userId });
+
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
+    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: userId, userId });
+
+    const enquiryId3 = mongoose.Types.ObjectId();
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId, userId });
+
+    context('when no offer is found', () => {
+      it('returns empty array of offers', (done) => {
+        request()
+          .get('/api/v1/offer/admin/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('offers');
+            expect(res.body.offers.length).to.be.eql(0);
+            done();
+          });
+      });
+    });
+
+    describe('when offers exist in db', () => {
+      beforeEach(async () => {
+        await addEnquiry(enquiry1);
+        await createOffer(offer1);
+        await addEnquiry(enquiry2);
+        await createOffer(offer2);
+        await addEnquiry(enquiry3);
+        await createOffer(offer3);
+      });
+
+      context('with a valid token & id', async () => {
+        it('returns successful payload', (done) => {
+          request()
+            .get('/api/v1/offer/admin/all')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('offers');
+              expect(res.body.offers.length).to.be.eql(2);
+              expect(res.body.offers[0].vendorId).to.be.eql(adminId.toString());
+              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
+              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId.toString());
+              done();
+            });
+        });
+      });
+
+      context('without token', () => {
+        it('returns error', (done) => {
+          request()
+            .get('/api/v1/offer/admin/all')
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Token needed to access resources');
+              done();
+            });
+        });
+      });
+
+      context('when getAllOffers service fails', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
+          request()
+            .get('/api/v1/offer/admin/all')
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(500);

@@ -1,8 +1,9 @@
 import Joi from '@hapi/joi';
+import format from 'date-fns/format';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
-const today = new Date().toISOString().slice(0, 10);
+const today = format(new Date(), 'd MMM yyyy');
 
 export const createOfferSchema = Joi.object({
   enquiryId: Joi.objectId().label('Enquiry ID').required(),
@@ -11,9 +12,7 @@ export const createOfferSchema = Joi.object({
     .label('Handover Date')
     .required()
     .messages({
-      'date.greater': `"Handover Date" should a date later than ${new Date(
-        Date.parse(today),
-      ).toUTCString()}`,
+      'date.greater': `"Handover Date" should a date later than ${today}`,
     }),
   deliveryState: Joi.string().label('Delivery State').required(),
   totalAmountPayable: Joi.number().label('Total Amount Payable').required(),
@@ -24,9 +23,7 @@ export const createOfferSchema = Joi.object({
     .label('Expiry Date')
     .required()
     .messages({
-      'date.greater': `"Expiry Date" should a date later than ${new Date(
-        Date.parse(today),
-      ).toUTCString()}`,
+      'date.greater': `"Expiry Date" should a date later than ${today}`,
     }),
   initialPayment: Joi.number().label('Initial Payment').required(),
   monthlyPayment: Joi.number().label('Monthly Payment').required(),
@@ -38,6 +35,6 @@ export const acceptOfferSchema = Joi.object({
   signature: Joi.string().label('Signature').required(),
 });
 
-export const assignOfferSchema = Joi.object({
+export const respondOfferSchema = Joi.object({
   offerId: Joi.objectId().label('Offer Id').required(),
 });

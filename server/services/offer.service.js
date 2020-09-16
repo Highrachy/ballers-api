@@ -10,7 +10,7 @@ const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getOfferById = async (id) => Offer.findById(id).select();
 
-export const getAllOffers = async (userId) =>
+export const getAllOffersUser = async (userId) =>
   Offer.aggregate([
     { $match: { userId: ObjectId(userId) } },
     {
@@ -52,6 +52,52 @@ export const getAllOffers = async (userId) =>
         'vendorInfo.assignedProperties': 0,
         'vendorInfo.password': 0,
         'vendorInfo.referralCode': 0,
+      },
+    },
+  ]);
+
+export const getAllOffersAdmin = async (adminid) =>
+  Offer.aggregate([
+    { $match: { vendorId: ObjectId(adminid) } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'enquiries',
+        localField: 'enquiryId',
+        foreignField: '_id',
+        as: 'enquiryInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $unwind: '$userInfo',
+    },
+    {
+      $unwind: '$enquiryInfo',
+    },
+    {
+      $unwind: '$propertyInfo',
+    },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+        'userInfo.assignedProperties': 0,
+        'userInfo.password': 0,
+        'userInfo.referralCode': 0,
       },
     },
   ]);
@@ -175,7 +221,7 @@ export const createOffer = async (offer) => {
   if (enquiry.approved === true) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
-      'Cannot create offer for approved enquiry',
+      'An offer letter exists for this enquiry. You will need to cancel / reject the offer letter to create a new offer letter',
     );
   }
 
@@ -234,6 +280,13 @@ export const assignOffer = async (offerId) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  if (offer.status !== OFFER_STATUS.INTERESTED) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Offer letter has to be accepted before it can be assigned',
+    );
+  }
+
   try {
     await Offer.findByIdAndUpdate(
       offer.id,
@@ -245,5 +298,21 @@ export const assignOffer = async (offerId) => {
     return await getOffer(offerId);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning offer', error);
+  }
+};
+
+export const cancelOffer = async (offerId) => {
+  const offer = await getOfferById(offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    return Offer.findByIdAndUpdate(
+      offer.id,
+      { $set: { status: OFFER_STATUS.CANCELLED } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error cancelling offer', error);
   }
 };

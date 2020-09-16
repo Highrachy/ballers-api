@@ -1,8 +1,9 @@
 import Joi from '@hapi/joi';
+import format from 'date-fns/format';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
-const today = new Date().toISOString().slice(0, 10);
+const today = format(new Date(), 'd MMM yyyy');
 
 const propertyVisitationSchema = Joi.object({
   propertyId: Joi.objectId().label('Property id').required(),
@@ -14,9 +15,7 @@ const propertyVisitationSchema = Joi.object({
     .label('Visit Date')
     .required()
     .messages({
-      'date.greater': `"Visit Date" should a date later than ${new Date(
-        Date.parse(today),
-      ).toUTCString()}`,
+      'date.greater': `"Visit Date" should a date later than ${today}`,
     }),
 });
 

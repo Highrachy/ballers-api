@@ -1,8 +1,9 @@
 import Joi from '@hapi/joi';
+import format from 'date-fns/format';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
-const today = new Date().toISOString().slice(0, 10);
+const today = format(new Date(), 'd MMM yyyy');
 
 const address = Joi.object().keys({
   street1: Joi.string().label('Street 1').required(),
@@ -32,9 +33,7 @@ export const addEnquirySchema = Joi.object({
     .label('Investment Start Date')
     .required()
     .messages({
-      'date.greater': `"Investment Start Date" should a date later than ${new Date(
-        Date.parse(today),
-      ).toUTCString()}`,
+      'date.greater': `"Investment Start Date" should a date later than ${today}`,
     }),
 });
 

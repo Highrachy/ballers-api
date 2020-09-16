@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import { createOfferSchema, acceptOfferSchema, assignOfferSchema } from '../schemas/offer.schema';
+import { createOfferSchema, acceptOfferSchema, respondOfferSchema } from '../schemas/offer.schema';
 import OfferController from '../controllers/offer.controllers';
 
 const router = express.Router();
@@ -63,6 +63,31 @@ router.put('/accept', authenticate, schemaValidation(acceptOfferSchema), OfferCo
 
 /**
  * @swagger
+ * /offer/cancel:
+ *   put:
+ *     tags:
+ *       - Offer
+ *     description: Cancel a specific offer
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Offer'
+ *      description: Respond to a specific offer
+ *     responses:
+ *      '200':
+ *        description: Offer cancelled
+ *      '400':
+ *        description: Error cancelling offer
+ *      '500':
+ *       description: Internal server error
+ */
+router.put('/cancel', authenticate, schemaValidation(respondOfferSchema), OfferController.cancel);
+
+/**
+ * @swagger
  * /offer/assign:
  *   put:
  *     tags:
@@ -88,7 +113,7 @@ router.put(
   '/assign',
   authenticate,
   isAdmin,
-  schemaValidation(assignOfferSchema),
+  schemaValidation(respondOfferSchema),
   OfferController.assign,
 );
 
@@ -98,7 +123,7 @@ router.put(
  *   get:
  *     tags:
  *       - Offer
- *     description: Get all owned offers
+ *     description: Get all user owned offers
  *     produces:
  *       - application/json
  *     requestBody:
@@ -106,7 +131,7 @@ router.put(
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/Offer'
- *      description: Get all owned offers
+ *      description: Get all user owned offers
  *     responses:
  *      '200':
  *        description: returns object of offers
@@ -114,6 +139,29 @@ router.put(
  *       description: Internal server error
  */
 router.get('/user/all', authenticate, OfferController.getAllUserOffers);
+
+/**
+ * @swagger
+ * /offer/admin/all:
+ *   get:
+ *     tags:
+ *       - Offer
+ *     description: Get all admin owned offers
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Offer'
+ *      description: Get all admin owned offers
+ *     responses:
+ *      '200':
+ *        description: returns object of offers
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/admin/all', authenticate, isAdmin, OfferController.getAllAdminOffers);
 
 /**
  * @swagger
@@ -136,7 +184,13 @@ router.get('/user/all', authenticate, OfferController.getAllUserOffers);
  *      '500':
  *       description: Internal server error
  */
-router.get('/user/:id', authenticate, isAdmin, hasValidObjectId, OfferController.getAllAdminOffers);
+router.get(
+  '/user/:id',
+  authenticate,
+  isAdmin,
+  hasValidObjectId,
+  OfferController.getAllUserOffersAdmin,
+);
 
 /**
  * @swagger
