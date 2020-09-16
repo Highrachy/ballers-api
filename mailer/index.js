@@ -32,6 +32,16 @@ const EMAIL_CONTENT = {
     subject: 'Property Visit Requested',
     contentTop: 'A new propery visit has been requested',
   },
+  OFFER_CREATED: {
+    subject: 'New Offer Available',
+    contentTop:
+      'Ballers just made you an offer for property [Property name]. Valid till [Expiry date]. Check your dashboard for more details.',
+  },
+  OFFER_RESPONSE: {
+    subject: 'Offer Accepted',
+    contentTop:
+      'Your offer on [Property name] has been accepted. Check your dashboard for more details.',
+  },
 };
 
 module.exports = EMAIL_CONTENT;

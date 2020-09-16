@@ -1,6 +1,9 @@
 import Joi from '@hapi/joi';
+import format from 'date-fns/format';
 
 Joi.objectId = require('joi-objectid')(Joi);
+
+const today = format(new Date(), 'd MMM yyyy');
 
 const address = Joi.object().keys({
   street1: Joi.string().label('Street 1').required(),
@@ -25,7 +28,13 @@ export const addEnquirySchema = Joi.object({
   investmentFrequency: Joi.string().label('Investment Frequency').required(),
   initialInvestmentAmount: Joi.number().label('Initial Investment Amount').required(),
   periodicInvestmentAmount: Joi.number().label('Periodic Investment Amount').required(),
-  investmentStartDate: Joi.date().label('Investment Start Date').required(),
+  investmentStartDate: Joi.date()
+    .greater(today)
+    .label('Investment Start Date')
+    .required()
+    .messages({
+      'date.greater': `"Investment Start Date" should a date later than ${today}`,
+    }),
 });
 
 export const approveEnquirySchema = Joi.object({
