@@ -3,6 +3,7 @@ import { expect, sinon, useDatabase } from '../config';
 import Offer from '../../server/models/offer.model';
 import {
   getOfferById,
+  generateReferenceCode,
   createOffer,
   getAllOffersUser,
   getAllOffersAdmin,
@@ -47,6 +48,48 @@ describe('Offer Service', () => {
     });
   });
 
+  describe('#generateReferenceCode', () => {
+    const userId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const offerId = mongoose.Types.ObjectId();
+
+    const user = UserFactory.build({ _id: userId });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      name: 'Lekki Ville Estate',
+      houseType: 'Maisonette',
+      addedBy: userId,
+      updatedBy: userId,
+    });
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId: enquiryId1, vendorId: userId });
+
+    beforeEach(async () => {
+      await addUser(user);
+      await addProperty(property);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+    });
+
+    context('when no property has been sold previously', () => {
+      it('returns a valid offer by Id', async () => {
+        const referenceCode = await generateReferenceCode(propertyId);
+        expect(referenceCode.substr(0, 9)).to.eql('LVE/OLM/1');
+      });
+    });
+
+    context('when one property has been sold previously', () => {
+      it('returns a valid offer by Id', async () => {
+        await createOffer(offer);
+        const referenceCode = await generateReferenceCode(propertyId);
+        expect(referenceCode.substr(0, 9)).to.eql('LVE/OLM/2');
+      });
+    });
+  });
+
   describe('#createOffer', () => {
     let countedOffers;
     const userId = mongoose.Types.ObjectId();
@@ -83,7 +126,7 @@ describe('Offer Service', () => {
       });
     });
 
-    context('when an invalid data is entered', () => {
+    context('when an invalid enquiry id is entered', () => {
       it('throws an error', async () => {
         try {
           const invalidOffer = OfferFactory.build();

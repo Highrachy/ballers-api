@@ -32,9 +32,22 @@ describe('Offer Controller', () => {
 
   describe('Create Offer Route', () => {
     const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId: adminId, propertyId });
+    const createPropertyId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({
+      _id: enquiryId,
+      userId: adminId,
+      propertyId: createPropertyId,
+    });
+    const newProperty = PropertyFactory.build({
+      _id: createPropertyId,
+      name: 'Lekki Ville Estate',
+      houseType: 'Maisonette',
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
 
     beforeEach(async () => {
+      await addProperty(newProperty);
       await addEnquiry(enquiry);
     });
 
@@ -52,7 +65,8 @@ describe('Offer Controller', () => {
             expect(res.body.offer).to.have.property('userInfo');
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
-            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId.toString());
+            expect(res.body.offer.propertyInfo._id).to.be.eql(createPropertyId.toString());
+            expect(res.body.offer.referenceCode.substr(0, 9)).to.be.eql('LVE/OLM/1');
             done();
           });
       });

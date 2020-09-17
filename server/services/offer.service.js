@@ -20,7 +20,7 @@ export const generateReferenceCode = async (propertyId) => {
     .toUpperCase();
   const numberSold = await Offer.countDocuments({ propertyId })
     .then((count) => {
-      return count;
+      return count + 1;
     })
     .catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -234,7 +234,6 @@ export const createOffer = async (offer) => {
   const enquiry = await getEnquiryById(offer.enquiryId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
-  const referenceCode = await generateReferenceCode(enquiry.propertyId);
 
   if (!enquiry) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid enquiry');
@@ -247,6 +246,7 @@ export const createOffer = async (offer) => {
     );
   }
 
+  const referenceCode = await generateReferenceCode(enquiry.propertyId);
   const user = await getUserById(enquiry.userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
