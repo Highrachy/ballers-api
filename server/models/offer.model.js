@@ -104,7 +104,7 @@ const OfferSchema = new mongoose.Schema(
     },
     referenceCode: {
       type: String,
-      // required: true,
+      required: true,
     },
     totalAmountPayable: {
       type: Number,

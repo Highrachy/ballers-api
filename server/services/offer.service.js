@@ -1,14 +1,35 @@
 import mongoose from 'mongoose';
+import format from 'date-fns/format';
 import Offer from '../models/offer.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
 import { getUserById } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
+import { getPropertyById } from './property.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getOfferById = async (id) => Offer.findById(id).select();
+
+export const generateReferenceCode = async (propertyId) => {
+  const property = await getPropertyById(propertyId);
+  const initials = property.name
+    .match(/\b(\w)/g)
+    .join('')
+    .toUpperCase();
+  const numberSold = await Offer.countDocuments({ propertyId })
+    .then((count) => {
+      return count;
+    })
+    .catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+  const type = `OL${property.houseType.charAt(0)}`;
+  const date = format(new Date(), 'ddMMyyyy');
+  const referenceCode = `${initials}/${type}/${numberSold}/${date}`;
+  return referenceCode;
+};
 
 export const getAllOffersUser = async (userId) =>
   Offer.aggregate([
@@ -213,6 +234,7 @@ export const createOffer = async (offer) => {
   const enquiry = await getEnquiryById(offer.enquiryId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+  const referenceCode = await generateReferenceCode(enquiry.propertyId);
 
   if (!enquiry) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid enquiry');
@@ -238,6 +260,7 @@ export const createOffer = async (offer) => {
       ...offer,
       userId: enquiry.userId,
       propertyId: enquiry.propertyId,
+      referenceCode,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, adminId: offer.vendorId });
     const offerInfo = await getOffer(newOffer._id);
