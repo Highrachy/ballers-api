@@ -442,7 +442,7 @@ describe('User Service', () => {
           await updateUser(updatedDetails);
         } catch (err) {
           expect(err.statusCode).to.eql(400);
-          expect(err.error).to.be.an('Error');
+          expect(err.error.message).to.be.eql('error msg');
           expect(err.message).to.be.eql('Error updating user');
         }
         User.findOneAndUpdate.restore();

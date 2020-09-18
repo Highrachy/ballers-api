@@ -15,11 +15,11 @@ let adminToken;
 let userToken;
 const _id = mongoose.Types.ObjectId();
 const adminUser = UserFactory.build({ role: 0, activated: true });
-const regualarUser = UserFactory.build({ _id, role: 1, activated: true });
+const regularUser = UserFactory.build({ _id, role: 1, activated: true });
 
 beforeEach(async () => {
   adminToken = await addUser(adminUser);
-  userToken = await addUser(regualarUser);
+  userToken = await addUser(regularUser);
 });
 
 describe('Add Enquiry Route', () => {

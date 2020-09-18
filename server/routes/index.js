@@ -9,6 +9,7 @@ import transaction from './transaction.routes';
 import paymentPlan from './paymentPlan.routes';
 import swaggerSpecs from '../config/swagger';
 import referral from './referral.routes';
+import offer from './offer.routes';
 
 export default (app) => {
   app.use('/api/v1/', welcome);
@@ -19,6 +20,5 @@ export default (app) => {
   app.use('/api/v1/transaction', transaction);
   app.use('/api/v1/payment-plan', paymentPlan);
   app.use('/api/v1/referral', referral);
-  app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, { explorer: true }));
   app.use('/mailer', mailer);
 };

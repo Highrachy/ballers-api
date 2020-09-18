@@ -773,11 +773,11 @@ describe('Get all users', () => {
     let userToken;
     const _id = mongoose.Types.ObjectId();
     const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-    const regualarUser = UserFactory.build({ role: 1, activated: true });
+    const regularUser = UserFactory.build({ role: 1, activated: true });
 
     beforeEach(async () => {
       adminToken = await addUser(adminUser);
-      userToken = await addUser(regualarUser);
+      userToken = await addUser(regularUser);
     });
 
     context('with a valid token & id', () => {
@@ -862,11 +862,11 @@ describe('Assign property route', () => {
   const propertyId = mongoose.Types.ObjectId();
   const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
   const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-  const regualarUser = UserFactory.build({ role: 1, activated: true });
+  const regularUser = UserFactory.build({ role: 1, activated: true });
 
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
-    userToken = await addUser(regualarUser);
+    userToken = await addUser(regularUser);
     await addProperty(property);
   });
 
@@ -958,11 +958,11 @@ describe('Get Owned Properties route', () => {
   const userId = mongoose.Types.ObjectId();
   const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
   const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-  const regualarUser = UserFactory.build({ _id: userId, role: 1, activated: true });
+  const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
 
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
-    userToken = await addUser(regualarUser);
+    userToken = await addUser(regularUser);
     await addProperty(property);
     await assignPropertyToUser({ propertyId, userId, assignedBy: _id });
   });
@@ -1036,10 +1036,10 @@ describe('Add property to favorite route', () => {
   const _id = mongoose.Types.ObjectId();
   const propertyId = mongoose.Types.ObjectId();
   const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
-  const regualarUser = UserFactory.build({ role: 1, activated: true });
+  const regularUser = UserFactory.build({ role: 1, activated: true });
 
   beforeEach(async () => {
-    userToken = await addUser(regualarUser);
+    userToken = await addUser(regularUser);
     await addProperty(property);
   });
 
@@ -1110,10 +1110,10 @@ describe('Add property to favorite route', () => {
 describe('Remove property from favorite route', () => {
   let userToken;
   const propertyId = mongoose.Types.ObjectId();
-  const regualarUser = UserFactory.build({ role: 1, activated: true });
+  const regularUser = UserFactory.build({ role: 1, activated: true });
 
   beforeEach(async () => {
-    userToken = await addUser(regualarUser);
+    userToken = await addUser(regularUser);
   });
 
   const favorite = {

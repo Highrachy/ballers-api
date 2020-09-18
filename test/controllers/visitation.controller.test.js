@@ -8,16 +8,16 @@ import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { scheduleVisitation } from '../../server/services/visitation.service';
-import userRole from '../../server/helpers/userRole';
+import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
 
 let userToken;
 let adminToken;
 
-const user = UserFactory.build({ role: userRole.USER, activated: true });
+const user = UserFactory.build({ role: USER_ROLE.USER, activated: true });
 const adminId = mongoose.Types.ObjectId();
-const admin = UserFactory.build({ _id: adminId, role: userRole.ADMIN, activated: true });
+const admin = UserFactory.build({ _id: adminId, role: USER_ROLE.ADMIN, activated: true });
 const propId = mongoose.Types.ObjectId();
 const demoProperty = PropertyFactory.build({ _id: propId, addedBy: adminId, updatedBy: adminId });
 
@@ -55,7 +55,7 @@ describe('Schedule Visit Route', () => {
     const invalidUserId = mongoose.Types.ObjectId();
     const invalidUser = UserFactory.build({
       _id: invalidUserId,
-      role: userRole.USER,
+      role: USER_ROLE.USER,
       activated: true,
     });
 

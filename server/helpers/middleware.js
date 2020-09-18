@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import httpStatus from './httpStatus';
-import userRole from './userRole';
+import { USER_ROLE } from './constants';
 import { decodeToken, getUserById } from '../services/user.service';
 
 export const schemaValidation = (schema) => {
@@ -50,7 +50,7 @@ export const authenticate = async (req, res, next) => {
 
 export const isAdmin = async (req, res, next) => {
   const { user } = req;
-  if (user && user.role === userRole.ADMIN) {
+  if (user && user.role === USER_ROLE.ADMIN) {
     next();
   } else {
     return res.status(httpStatus.FORBIDDEN).json({

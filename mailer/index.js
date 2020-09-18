@@ -38,6 +38,16 @@ const EMAIL_CONTENT = {
     contentBottom: `Use their code [Referral code], or click the link below`,
     buttonText: 'Join BALLERS',
   },
+  OFFER_CREATED: {
+    subject: 'New Offer Available',
+    contentTop:
+      'Ballers just made you an offer for property [Property name]. Valid till [Expiry date]. Check your dashboard for more details.',
+  },
+  OFFER_RESPONSE: {
+    subject: 'Offer Accepted',
+    contentTop:
+      'Your offer on [Property name] has been accepted. Check your dashboard for more details.',
+  },
 };
 
 module.exports = EMAIL_CONTENT;

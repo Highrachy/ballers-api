@@ -21,4 +21,4 @@ export default new Factory()
   .attr('investmentFrequency', 'weekly')
   .attr('initialInvestmentAmount', 20000000)
   .attr('periodicInvestmentAmount', 500000)
-  .attr('investmentStartDate', Date.now());
+  .attr('investmentStartDate', '2090-09-08');
