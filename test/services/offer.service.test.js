@@ -21,6 +21,7 @@ import EnquiryFactory from '../factories/enquiry.factory';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { OFFER_STATUS } from '../../server/helpers/constants';
+import { TODAY_DDMMYY } from '../../server/helpers/dates';
 
 useDatabase();
 
@@ -77,7 +78,7 @@ describe('Offer Service', () => {
     context('when no property has been sold previously', () => {
       it('returns a valid offer by Id', async () => {
         const referenceCode = await generateReferenceCode(propertyId);
-        expect(referenceCode.substr(0, 9)).to.eql('LVE/OLM/1');
+        expect(referenceCode).to.eql(`LVE/OLM/01${TODAY_DDMMYY}`);
       });
     });
 
@@ -85,7 +86,21 @@ describe('Offer Service', () => {
       it('returns a valid offer by Id', async () => {
         await createOffer(offer);
         const referenceCode = await generateReferenceCode(propertyId);
-        expect(referenceCode.substr(0, 9)).to.eql('LVE/OLM/2');
+        expect(referenceCode).to.eql(`LVE/OLM/02${TODAY_DDMMYY}`);
+      });
+    });
+
+    context('when date class fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Date, 'now').throws(new Error('Date Error'));
+        try {
+          await createOffer(offer);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        Date.now.restore();
       });
     });
   });

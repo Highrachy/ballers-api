@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import format from 'date-fns/format';
 import Offer from '../models/offer.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
@@ -7,6 +6,7 @@ import { OFFER_STATUS } from '../helpers/constants';
 import { getUserById } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
 import { getPropertyById } from './property.service';
+import { TODAY_DDMMYY } from '../helpers/dates';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -19,15 +19,12 @@ export const generateReferenceCode = async (propertyId) => {
     .join('')
     .toUpperCase();
   const numberSold = await Offer.countDocuments({ propertyId })
-    .then((count) => {
-      return count + 1;
-    })
+    .then((count) => count + 1)
     .catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
   const type = `OL${property.houseType.charAt(0)}`;
-  const date = format(new Date(), 'ddMMyyyy');
-  const referenceCode = `${initials}/${type}/${numberSold}/${date}`;
+  const referenceCode = `${initials}/${type}/0${numberSold}${TODAY_DDMMYY}`;
   return referenceCode;
 };
 
