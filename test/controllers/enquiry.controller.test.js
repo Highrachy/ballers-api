@@ -525,6 +525,81 @@ describe('Approve Enquiry', () => {
   });
 });
 
+describe('Get one enquiry', () => {
+  const enquiryId = mongoose.Types.ObjectId();
+  const propertyId = mongoose.Types.ObjectId();
+  const enquiry = EnquiryFactory.build({
+    _id: enquiryId,
+    propertyId,
+    userId: _id,
+    addedBy: _id,
+    updatedBy: _id,
+  });
+  const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+
+  beforeEach(async () => {
+    await addProperty(property);
+    await addEnquiry(enquiry);
+  });
+
+  context('with a valid token & id', () => {
+    it('returns successful payload', (done) => {
+      request()
+        .get(`/api/v1/enquiry/${enquiryId}`)
+        .set('authorization', adminToken)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body).to.have.property('enquiry');
+          expect(res.body.enquiry._id).to.be.eql(enquiryId.toString());
+          done();
+        });
+    });
+  });
+
+  context('with an invalid enquiry id', () => {
+    const invalidId = mongoose.Types.ObjectId();
+    it('returns not found', (done) => {
+      request()
+        .get(`/api/v1/enquiry/${invalidId}`)
+        .set('authorization', userToken)
+        .end((err, res) => {
+          expect(res).to.have.status(404);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Enquiry not found');
+          done();
+        });
+    });
+  });
+
+  context('without token', () => {
+    it('returns error', (done) => {
+      request()
+        .get(`/api/v1/enquiry/${enquiryId}`)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('Token needed to access resources');
+          done();
+        });
+    });
+  });
+
+  context('when getEnquiry service fails', () => {
+    it('returns the error', (done) => {
+      sinon.stub(Enquiry, 'aggregate').throws(new Error('Type Error'));
+      request()
+        .get(`/api/v1/enquiry/${enquiryId}`)
+        .set('authorization', userToken)
+        .end((err, res) => {
+          expect(res).to.have.status(500);
+          done();
+          Enquiry.aggregate.restore();
+        });
+    });
+  });
+});
+
 describe('Get all enquiries', () => {
   const id = mongoose.Types.ObjectId();
   const propertyId = mongoose.Types.ObjectId();

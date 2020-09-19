@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, schemaValidation, isAdmin } from '../helpers/middleware';
+import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
 import { addEnquirySchema, approveEnquirySchema } from '../schemas/enquiry.schema';
 import EnquiryController from '../controllers/enquiry.controllers';
 
@@ -83,5 +83,26 @@ router.put(
  *       description: Internal server error
  */
 router.get('/all', authenticate, isAdmin, EnquiryController.getAll);
+
+/**
+ * @swagger
+ * path:
+ *  /enquiry/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets an enquiry based by its ID
+ *      tags: [Enquiry]
+ *      responses:
+ *        '200':
+ *          description: Enquiry found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/:id', authenticate, hasValidObjectId, EnquiryController.getOne);
 
 module.exports = router;
