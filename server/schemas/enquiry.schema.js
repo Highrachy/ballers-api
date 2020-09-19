@@ -1,5 +1,5 @@
 import Joi from '@hapi/joi';
-import { TODAY_WORDS } from '../helpers/dates';
+import { getTodaysDateInWords } from '../helpers/dates';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
@@ -27,11 +27,11 @@ export const addEnquirySchema = Joi.object({
   initialInvestmentAmount: Joi.number().label('Initial Investment Amount').required(),
   periodicInvestmentAmount: Joi.number().label('Periodic Investment Amount').required(),
   investmentStartDate: Joi.date()
-    .greater(TODAY_WORDS)
+    .greater(getTodaysDateInWords())
     .label('Investment Start Date')
     .required()
     .messages({
-      'date.greater': `"Investment Start Date" should a date later than ${TODAY_WORDS}`,
+      'date.greater': `"Investment Start Date" should a date later than ${getTodaysDateInWords()}`,
     }),
 });
 

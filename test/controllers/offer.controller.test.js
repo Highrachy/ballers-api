@@ -11,7 +11,7 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { OFFER_STATUS } from '../../server/helpers/constants';
-import { TODAY_DDMMYY } from '../../server/helpers/dates';
+import { getTodaysDateShortCode } from '../../server/helpers/dates';
 
 useDatabase();
 
@@ -67,7 +67,7 @@ describe('Offer Controller', () => {
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
             expect(res.body.offer.propertyInfo._id).to.be.eql(createPropertyId.toString());
-            expect(res.body.offer.referenceCode).to.be.eql(`LVE/OLM/01${TODAY_DDMMYY}`);
+            expect(res.body.offer.referenceCode).to.be.eql(`LVE/OLM/01${getTodaysDateShortCode()}`);
             done();
           });
       });

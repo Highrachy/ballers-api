@@ -12,6 +12,7 @@ import {
   assignOffer,
   getActiveOffers,
   cancelOffer,
+  getPropertyInitials,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -21,7 +22,7 @@ import EnquiryFactory from '../factories/enquiry.factory';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { OFFER_STATUS } from '../../server/helpers/constants';
-import { TODAY_DDMMYY } from '../../server/helpers/dates';
+import { getTodaysDateShortCode } from '../../server/helpers/dates';
 
 useDatabase();
 
@@ -46,6 +47,14 @@ describe('Offer Service', () => {
     it('returns a valid offer by Id', async () => {
       const offerInfo = await getOfferById(_id);
       expect(offerInfo._id).to.eql(_id);
+    });
+  });
+
+  describe('#getPropertyInitials', () => {
+    it('returns a valid offer by Id', async () => {
+      const propertyname = 'Lekki ville estate';
+      const initials = await getPropertyInitials(propertyname);
+      expect(initials).to.eql('LVE');
     });
   });
 
@@ -78,7 +87,7 @@ describe('Offer Service', () => {
     context('when no property has been sold previously', () => {
       it('returns a valid offer by Id', async () => {
         const referenceCode = await generateReferenceCode(propertyId);
-        expect(referenceCode).to.eql(`LVE/OLM/01${TODAY_DDMMYY}`);
+        expect(referenceCode).to.eql(`LVE/OLM/01${getTodaysDateShortCode()}`);
       });
     });
 
@@ -86,7 +95,7 @@ describe('Offer Service', () => {
       it('returns a valid offer by Id', async () => {
         await createOffer(offer);
         const referenceCode = await generateReferenceCode(propertyId);
-        expect(referenceCode).to.eql(`LVE/OLM/02${TODAY_DDMMYY}`);
+        expect(referenceCode).to.eql(`LVE/OLM/02${getTodaysDateShortCode()}`);
       });
     });
 

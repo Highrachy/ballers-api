@@ -1,27 +1,27 @@
 import Joi from '@hapi/joi';
-import { TODAY_WORDS } from '../helpers/dates';
+import { getTodaysDateInWords } from '../helpers/dates';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
 export const createOfferSchema = Joi.object({
   enquiryId: Joi.objectId().label('Enquiry ID').required(),
   handOverDate: Joi.date()
-    .greater(TODAY_WORDS)
+    .greater(getTodaysDateInWords())
     .label('Handover Date')
     .required()
     .messages({
-      'date.greater': `"Handover Date" should a date later than ${TODAY_WORDS}`,
+      'date.greater': `"Handover Date" should a date later than ${getTodaysDateInWords()}`,
     }),
   deliveryState: Joi.string().label('Delivery State').required(),
   totalAmountPayable: Joi.number().label('Total Amount Payable').required(),
   allocationInPercentage: Joi.number().min(1).max(100).label('Allocation In Percentage').required(),
   title: Joi.string().label('Title').required(),
   expires: Joi.date()
-    .greater(TODAY_WORDS)
+    .greater(getTodaysDateInWords())
     .label('Expiry Date')
     .required()
     .messages({
-      'date.greater': `"Expiry Date" should a date later than ${TODAY_WORDS}`,
+      'date.greater': `"Expiry Date" should a date later than ${getTodaysDateInWords()}`,
     }),
   initialPayment: Joi.number().label('Initial Payment').required(),
   monthlyPayment: Joi.number().label('Monthly Payment').required(),
