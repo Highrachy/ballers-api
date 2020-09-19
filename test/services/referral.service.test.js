@@ -109,7 +109,7 @@ describe('Referral Service', () => {
         expect(registeredReferral._id).to.eql(referralId);
         expect(registeredReferral.userId).to.eql(userId);
         expect(registeredReferral.referrerId).to.eql(userId);
-        expect(registeredReferral.status).to.eql(REFERRAL_STATUS.REWARDED);
+        expect(registeredReferral.reward.status).to.eql(REFERRAL_STATUS.REWARDED);
       });
     });
 

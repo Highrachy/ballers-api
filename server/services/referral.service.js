@@ -49,7 +49,7 @@ export const updateReferralToRewarded = async (referralId) => {
   try {
     return Referral.findByIdAndUpdate(
       referralId,
-      { $set: { status: REFERRAL_STATUS.REWARDED } },
+      { $set: { reward: { status: REFERRAL_STATUS.REWARDED } } },
       { new: true },
     );
   } catch (error) {
