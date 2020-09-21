@@ -19,7 +19,7 @@ let adminToken;
 let userToken;
 const userId = mongoose.Types.ObjectId();
 const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
+const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true, vendorCode: 'HIG' });
 const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
 const propertyId = mongoose.Types.ObjectId();
 const property = PropertyFactory.build({ _id: propertyId, addedBy: adminId, updatedBy: adminId });
@@ -67,7 +67,9 @@ describe('Offer Controller', () => {
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
             expect(res.body.offer.propertyInfo._id).to.be.eql(createPropertyId.toString());
-            expect(res.body.offer.referenceCode).to.be.eql(`LVE/OLM/01${getTodaysDateShortCode()}`);
+            expect(res.body.offer.referenceCode).to.be.eql(
+              `HIG/LVE/OLM/01/${getTodaysDateShortCode()}`,
+            );
             done();
           });
       });

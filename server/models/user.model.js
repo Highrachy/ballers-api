@@ -159,6 +159,10 @@ const UserSchema = new mongoose.Schema(
       default: false,
     },
     activationDate: Date,
+    vendorCode: {
+      type: String,
+      unique: true,
+    },
   },
   { timestamps: true },
 );

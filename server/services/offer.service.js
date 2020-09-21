@@ -5,30 +5,31 @@ import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
 import { getUserById } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
-import { getPropertyById } from './property.service';
+import { getOneProperty } from './property.service';
 import { getTodaysDateShortCode } from '../helpers/dates';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getOfferById = async (id) => Offer.findById(id).select();
 
-export const getPropertyInitials = (propertyName) =>
+export const getInitials = (propertyName) =>
   propertyName
     .match(/\b(\w)/g)
     .join('')
     .toUpperCase();
 
 export const generateReferenceCode = async (propertyId) => {
-  const property = await getPropertyById(propertyId);
-  const initials = getPropertyInitials(property.name);
+  const property = await getOneProperty(propertyId);
+  const { vendorCode } = property[0].adminInfo;
+  const initials = getInitials(property[0].name);
   let numberSold = await Offer.countDocuments({ propertyId })
     .then((count) => count + 1)
     .catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
   numberSold = numberSold < 10 ? `0${numberSold}` : numberSold;
-  const type = `OL${property.houseType.charAt(0)}`;
-  const referenceCode = `${initials}/${type}/${numberSold}${getTodaysDateShortCode()}`;
+  const type = `OL${getInitials(property[0].houseType)}`;
+  const referenceCode = `${vendorCode}/${initials}/${type}/${numberSold}/${getTodaysDateShortCode()}`;
   return referenceCode;
 };
 

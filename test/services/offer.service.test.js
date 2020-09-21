@@ -12,7 +12,7 @@ import {
   assignOffer,
   getActiveOffers,
   cancelOffer,
-  getPropertyInitials,
+  getInitials,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -50,10 +50,10 @@ describe('Offer Service', () => {
     });
   });
 
-  describe('#getPropertyInitials', () => {
+  describe('#getInitials', () => {
     it('returns a valid offer by Id', async () => {
       const propertyname = 'Lekki ville estate';
-      const initials = await getPropertyInitials(propertyname);
+      const initials = await getInitials(propertyname);
       expect(initials).to.eql('LVE');
     });
   });
@@ -65,7 +65,7 @@ describe('Offer Service', () => {
     const enquiryId2 = mongoose.Types.ObjectId();
     const offerId = mongoose.Types.ObjectId();
 
-    const user = UserFactory.build({ _id: userId });
+    const user = UserFactory.build({ _id: userId, vendorCode: 'HIG' });
     const property = PropertyFactory.build({
       _id: propertyId,
       name: 'Lekki Ville Estate',
@@ -87,7 +87,7 @@ describe('Offer Service', () => {
     context('when no property has been sold previously', () => {
       it('returns a valid offer by Id', async () => {
         const referenceCode = await generateReferenceCode(propertyId);
-        expect(referenceCode).to.eql(`LVE/OLM/01${getTodaysDateShortCode()}`);
+        expect(referenceCode).to.eql(`HIG/LVE/OLM/01/${getTodaysDateShortCode()}`);
       });
     });
 
@@ -95,7 +95,7 @@ describe('Offer Service', () => {
       it('returns a valid offer by Id', async () => {
         await createOffer(offer);
         const referenceCode = await generateReferenceCode(propertyId);
-        expect(referenceCode).to.eql(`LVE/OLM/02${getTodaysDateShortCode()}`);
+        expect(referenceCode).to.eql(`HIG/LVE/OLM/02/${getTodaysDateShortCode()}`);
       });
     });
 
