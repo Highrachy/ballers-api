@@ -186,7 +186,6 @@ export const getOneProperty = async (propertId) =>
         'adminInfo.firstName': 1,
         'adminInfo.lastName': 1,
         'adminInfo.email': 1,
-        'adminInfo.vendorCode': 1,
       },
     },
   ]);

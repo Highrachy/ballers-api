@@ -20,7 +20,7 @@ export const getPropertyInitials = (propertyName) =>
 
 export const generateReferenceCode = async (propertyId) => {
   const property = await getOneProperty(propertyId);
-  const { vendorCode } = property[0].adminInfo;
+  const vendorCode = 'HIG';
   const initials = getPropertyInitials(property[0].name);
   let numberSold = await Offer.countDocuments({ propertyId })
     .then((count) => count + 1)
