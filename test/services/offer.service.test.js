@@ -3,6 +3,7 @@ import { expect, sinon, useDatabase } from '../config';
 import Offer from '../../server/models/offer.model';
 import {
   getOfferById,
+  generateReferenceCode,
   createOffer,
   getAllOffersUser,
   getAllOffersAdmin,
@@ -11,6 +12,7 @@ import {
   assignOffer,
   getActiveOffers,
   cancelOffer,
+  getPropertyInitials,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -20,6 +22,7 @@ import EnquiryFactory from '../factories/enquiry.factory';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { OFFER_STATUS } from '../../server/helpers/constants';
+import { getTodaysDateShortCode } from '../../server/helpers/dates';
 
 useDatabase();
 
@@ -44,6 +47,70 @@ describe('Offer Service', () => {
     it('returns a valid offer by Id', async () => {
       const offerInfo = await getOfferById(_id);
       expect(offerInfo._id).to.eql(_id);
+    });
+  });
+
+  describe('#getPropertyInitials', () => {
+    it('returns a valid offer by Id', async () => {
+      const propertyname = 'Lekki ville estate';
+      const initials = await getPropertyInitials(propertyname);
+      expect(initials).to.eql('LVE');
+    });
+  });
+
+  describe('#generateReferenceCode', () => {
+    const userId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const offerId = mongoose.Types.ObjectId();
+
+    const user = UserFactory.build({ _id: userId, vendorCode: 'HIG' });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      name: 'Lekki Ville Estate',
+      houseType: 'Maisonette',
+      addedBy: userId,
+      updatedBy: userId,
+    });
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId: enquiryId1, vendorId: userId });
+
+    beforeEach(async () => {
+      await addUser(user);
+      await addProperty(property);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+    });
+
+    context('when no property has been sold previously', () => {
+      it('returns a valid offer by Id', async () => {
+        const referenceCode = await generateReferenceCode(propertyId);
+        expect(referenceCode).to.eql(`HIG/LVE/OLM/01/${getTodaysDateShortCode()}`);
+      });
+    });
+
+    context('when one property has been sold previously', () => {
+      it('returns a valid offer by Id', async () => {
+        await createOffer(offer);
+        const referenceCode = await generateReferenceCode(propertyId);
+        expect(referenceCode).to.eql(`HIG/LVE/OLM/02/${getTodaysDateShortCode()}`);
+      });
+    });
+
+    context('when date class fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Date, 'now').throws(new Error('Date Error'));
+        try {
+          await createOffer(offer);
+        } catch (err) {
+          expect(err.statusCode).to.eql(500);
+          expect(err.error).to.be.an('Error');
+          expect(err.message).to.be.eql('Internal Server Error');
+        }
+        Date.now.restore();
+      });
     });
   });
 
@@ -83,7 +150,7 @@ describe('Offer Service', () => {
       });
     });
 
-    context('when an invalid data is entered', () => {
+    context('when an invalid enquiry id is entered', () => {
       it('throws an error', async () => {
         try {
           const invalidOffer = OfferFactory.build();

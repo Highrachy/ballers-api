@@ -11,6 +11,11 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { OFFER_STATUS } from '../../server/helpers/constants';
+import {
+  getTodaysDateShortCode,
+  getTodaysDateStandard,
+  getTodaysDateInWords,
+} from '../../server/helpers/dates';
 
 useDatabase();
 
@@ -18,7 +23,7 @@ let adminToken;
 let userToken;
 const userId = mongoose.Types.ObjectId();
 const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
+const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true, vendorCode: 'HIG' });
 const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
 const propertyId = mongoose.Types.ObjectId();
 const property = PropertyFactory.build({ _id: propertyId, addedBy: adminId, updatedBy: adminId });
@@ -32,9 +37,22 @@ describe('Offer Controller', () => {
 
   describe('Create Offer Route', () => {
     const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId: adminId, propertyId });
+    const createPropertyId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({
+      _id: enquiryId,
+      userId: adminId,
+      propertyId: createPropertyId,
+    });
+    const newProperty = PropertyFactory.build({
+      _id: createPropertyId,
+      name: 'Lekki Ville Estate',
+      houseType: 'Maisonette',
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
 
     beforeEach(async () => {
+      await addProperty(newProperty);
       await addEnquiry(enquiry);
     });
 
@@ -52,7 +70,10 @@ describe('Offer Controller', () => {
             expect(res.body.offer).to.have.property('userInfo');
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
-            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId.toString());
+            expect(res.body.offer.propertyInfo._id).to.be.eql(createPropertyId.toString());
+            expect(res.body.offer.referenceCode).to.be.eql(
+              `HIG/LVE/OLM/01/${getTodaysDateShortCode()}`,
+            );
             done();
           });
       });
@@ -122,6 +143,24 @@ describe('Offer Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Handover Date" must be a valid date');
+              done();
+            });
+        });
+      });
+      context('when hand over date is todays date', () => {
+        it('returns an error', (done) => {
+          const offer = OfferFactory.build({ handOverDate: getTodaysDateStandard() });
+          request()
+            .post('/api/v1/offer/create')
+            .set('authorization', adminToken)
+            .send(offer)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                `"Handover Date" should a date later than ${getTodaysDateInWords()}`,
+              );
               done();
             });
         });
@@ -238,6 +277,24 @@ describe('Offer Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Expiry Date" must be a valid date');
+              done();
+            });
+        });
+      });
+      context('when expiry date is todays date', () => {
+        it('returns an error', (done) => {
+          const offer = OfferFactory.build({ expires: getTodaysDateStandard() });
+          request()
+            .post('/api/v1/offer/create')
+            .set('authorization', adminToken)
+            .send(offer)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                `"Expiry Date" should a date later than ${getTodaysDateInWords()}`,
+              );
               done();
             });
         });
