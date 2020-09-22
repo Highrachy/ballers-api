@@ -12,7 +12,7 @@ import {
   assignOffer,
   getActiveOffers,
   cancelOffer,
-  getInitials,
+  getPropertyInitials,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -50,10 +50,10 @@ describe('Offer Service', () => {
     });
   });
 
-  describe('#getInitials', () => {
+  describe('#getPropertyInitials', () => {
     it('returns a valid offer by Id', async () => {
       const propertyname = 'Lekki ville estate';
-      const initials = await getInitials(propertyname);
+      const initials = await getPropertyInitials(propertyname);
       expect(initials).to.eql('LVE');
     });
   });

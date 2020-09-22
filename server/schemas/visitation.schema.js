@@ -1,5 +1,5 @@
 import Joi from '@hapi/joi';
-import { getTodaysDateInWords } from '../helpers/dates';
+import { getTodaysDateInWords, getTodaysDateStandard } from '../helpers/dates';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
@@ -9,7 +9,7 @@ const propertyVisitationSchema = Joi.object({
   visitorEmail: Joi.string().label('Email address').email().optional(),
   visitorPhone: Joi.string().label('Phone').min(11).max(14).required(),
   visitDate: Joi.date()
-    .greater(getTodaysDateInWords())
+    .greater(getTodaysDateStandard())
     .label('Visit Date')
     .required()
     .messages({

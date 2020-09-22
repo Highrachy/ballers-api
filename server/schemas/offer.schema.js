@@ -1,12 +1,12 @@
 import Joi from '@hapi/joi';
-import { getTodaysDateInWords } from '../helpers/dates';
+import { getTodaysDateInWords, getTodaysDateStandard } from '../helpers/dates';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
 export const createOfferSchema = Joi.object({
   enquiryId: Joi.objectId().label('Enquiry ID').required(),
   handOverDate: Joi.date()
-    .greater(getTodaysDateInWords())
+    .greater(getTodaysDateStandard())
     .label('Handover Date')
     .required()
     .messages({
@@ -17,7 +17,7 @@ export const createOfferSchema = Joi.object({
   allocationInPercentage: Joi.number().min(1).max(100).label('Allocation In Percentage').required(),
   title: Joi.string().label('Title').required(),
   expires: Joi.date()
-    .greater(getTodaysDateInWords())
+    .greater(getTodaysDateStandard())
     .label('Expiry Date')
     .required()
     .messages({

@@ -12,7 +12,7 @@ const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getOfferById = async (id) => Offer.findById(id).select();
 
-export const getInitials = (propertyName) =>
+export const getPropertyInitials = (propertyName) =>
   propertyName
     .match(/\b(\w)/g)
     .join('')
@@ -21,14 +21,14 @@ export const getInitials = (propertyName) =>
 export const generateReferenceCode = async (propertyId) => {
   const property = await getOneProperty(propertyId);
   const { vendorCode } = property[0].adminInfo;
-  const initials = getInitials(property[0].name);
+  const initials = getPropertyInitials(property[0].name);
   let numberSold = await Offer.countDocuments({ propertyId })
     .then((count) => count + 1)
     .catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
   numberSold = numberSold < 10 ? `0${numberSold}` : numberSold;
-  const type = `OL${getInitials(property[0].houseType)}`;
+  const type = `OL${getPropertyInitials(property[0].houseType)}`;
   const referenceCode = `${vendorCode}/${initials}/${type}/${numberSold}/${getTodaysDateShortCode()}`;
   return referenceCode;
 };

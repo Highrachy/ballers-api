@@ -11,7 +11,11 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { OFFER_STATUS } from '../../server/helpers/constants';
-import { getTodaysDateShortCode } from '../../server/helpers/dates';
+import {
+  getTodaysDateShortCode,
+  getTodaysDateStandard,
+  getTodaysDateInWords,
+} from '../../server/helpers/dates';
 
 useDatabase();
 
@@ -143,6 +147,24 @@ describe('Offer Controller', () => {
             });
         });
       });
+      context('when hand over date is todays date', () => {
+        it('returns an error', (done) => {
+          const offer = OfferFactory.build({ handOverDate: getTodaysDateStandard() });
+          request()
+            .post('/api/v1/offer/create')
+            .set('authorization', adminToken)
+            .send(offer)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                `"Handover Date" should a date later than ${getTodaysDateInWords()}`,
+              );
+              done();
+            });
+        });
+      });
       context('when delivery state is empty', () => {
         it('returns an error', (done) => {
           const offer = OfferFactory.build({ deliveryState: '' });
@@ -255,6 +277,24 @@ describe('Offer Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Expiry Date" must be a valid date');
+              done();
+            });
+        });
+      });
+      context('when expiry date is todays date', () => {
+        it('returns an error', (done) => {
+          const offer = OfferFactory.build({ expires: getTodaysDateStandard() });
+          request()
+            .post('/api/v1/offer/create')
+            .set('authorization', adminToken)
+            .send(offer)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                `"Expiry Date" should a date later than ${getTodaysDateInWords()}`,
+              );
               done();
             });
         });
