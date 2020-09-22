@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { REFERRAL_STATUS } from '../helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -39,13 +39,17 @@ const ReferralSchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
+    status: {
+      type: String,
+      default: REFERRAL_STATUS.SENT,
+    },
     reward: {
       amount: {
         type: Number,
       },
       status: {
         type: String,
-        default: REFERRAL_STATUS.SENT,
+        default: REWARD_STATUS.PENDING,
       },
       paidBy: {
         type: ObjectId,

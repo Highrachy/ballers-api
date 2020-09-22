@@ -1,6 +1,10 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import { updateReferralSchema, emailReferralSchema } from '../schemas/referral.schema';
+import {
+  updateReferralSchema,
+  emailReferralSchema,
+  sendReferralSchema,
+} from '../schemas/referral.schema';
 import ReferralController from '../controllers/referral.controllers';
 
 const router = express.Router();
@@ -26,7 +30,7 @@ const router = express.Router();
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, hasValidObjectId, ReferralController.getReferrals);
+router.get('/all', authenticate, hasValidObjectId, ReferralController.getMyReferrals);
 
 /**
  * @swagger
@@ -131,7 +135,7 @@ router.post('/email', schemaValidation(emailReferralSchema), ReferralController.
 router.post(
   '/invite',
   authenticate,
-  schemaValidation(emailReferralSchema),
+  schemaValidation(sendReferralSchema),
   ReferralController.sendInvite,
 );
 

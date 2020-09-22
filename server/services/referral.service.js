@@ -4,7 +4,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { REFERRAL_STATUS } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
-import { getUserById } from './user.service';
+import { getUserById, getUserByEmail } from './user.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -49,7 +49,7 @@ export const updateReferralToRewarded = async (referralId) => {
   try {
     return Referral.findByIdAndUpdate(
       referralId,
-      { $set: { reward: { status: REFERRAL_STATUS.REWARDED } } },
+      { $set: { status: REFERRAL_STATUS.REWARDED } },
       { new: true },
     );
   } catch (error) {
@@ -60,24 +60,33 @@ export const updateReferralToRewarded = async (referralId) => {
 export const getReferralByEmail = async (email, fields = null) =>
   Referral.findOne({ email }).select(fields);
 
-export const sendReferralInvite = async ({ referrerId, email }) => {
-  const referral = await getReferralByEmail(email).catch((error) => {
+export const sendReferralInvite = async (invite) => {
+  const referral = await getReferralByEmail(invite.email).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (referral) {
+  if (referral && referral.referrerId.toString() === invite.referrerId.toString()) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
       'Multiple invites cannot be sent to same email',
     );
   }
-  const referrer = await getUserById(referrerId);
+
+  const existingUser = await getUserByEmail(invite.email).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (existingUser) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, "You can't refer a BALLER to BALLERS");
+  }
+
+  const referrer = await getUserById(invite.referrerId);
 
   try {
-    await addReferral({ referrerId, email });
+    await addReferral(invite);
     return {
-      referrerName: `${referrer.firstName} ${referrer.lastName}`,
-      email,
+      referrerName: referrer.firstName,
+      email: invite.email,
       referralCode: referrer.referralCode,
     };
   } catch (error) {

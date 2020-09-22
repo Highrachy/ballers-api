@@ -9,3 +9,8 @@ export const updateReferralSchema = Joi.object({
 export const emailReferralSchema = Joi.object({
   email: Joi.string().label('Email Address').email().required(),
 });
+
+export const sendReferralSchema = Joi.object({
+  email: Joi.string().label('Email Address').email().required(),
+  firstName: Joi.string().label('First Name').optional(),
+});

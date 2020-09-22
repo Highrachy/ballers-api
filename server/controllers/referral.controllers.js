@@ -18,7 +18,7 @@ const ReferralController = {
       .catch((error) => next(error));
   },
 
-  getReferrals(req, res, next) {
+  getMyReferrals(req, res, next) {
     const { user } = req;
     getAllUserReferrals(user._id)
       .then((referrals) => {
@@ -46,19 +46,19 @@ const ReferralController = {
   },
 
   sendInvite(req, res, next) {
-    const { email } = req.locals;
+    const invite = req.locals;
     const referrerId = req.user._id;
-    sendReferralInvite({ referrerId, email })
+    sendReferralInvite({ ...invite, referrerId })
       .then((inviteInfo) => {
         const contentTop = `${inviteInfo.referrerName} just invited you to BALLERS.`;
         const contentBottom = `Use their code ${inviteInfo.referralCode}, or click the link below`;
         sendMail(
           EMAIL_CONTENT.REFERRAL_INVITE,
-          { email: inviteInfo.email, firstName: ' ' },
+          { email: inviteInfo.email, firstName: invite.firstName || ' ' },
           {
             contentTop,
             contentBottom,
-            link: `http://ballers.ng/referral/invite/${inviteInfo.referralCode}`,
+            link: `http://ballers.ng/invite/${inviteInfo._id}`,
           },
         );
         res.status(httpStatus.OK).json({ success: true, message: 'Invite sent' });

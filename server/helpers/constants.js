@@ -19,3 +19,9 @@ export const REFERRAL_STATUS = {
   REGISTERED: 'Registered',
   REWARDED: 'Rewarded',
 };
+
+export const REWARD_STATUS = {
+  PENDING: 'Pending',
+  PROGRESS: 'Progress',
+  PAID: 'Paid',
+};
