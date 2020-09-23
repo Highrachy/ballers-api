@@ -17,7 +17,7 @@ const _id = mongoose.Types.ObjectId();
 const adminUser = UserFactory.build({ role: 0, activated: true });
 const regularUser = UserFactory.build({ _id, role: 1, activated: true });
 
-describe.only('Enquiry Controller', () => {
+describe('Enquiry Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
