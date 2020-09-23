@@ -141,11 +141,11 @@ router.post(
 
 /**
  * @swagger
- * /referral/refcode/:refcode:
+ * /referral/ref/:refcode:
  *   get:
  *     tags:
  *       - Referral
- *     description: Get a user's information by refcode
+ *     description: Get a user's information by referral code
  *     produces:
  *       - application/json
  *     requestBody:
@@ -153,14 +153,14 @@ router.post(
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/Referral'
- *      description: Get a user's information by refcode
+ *      description: Get a user's information by referral code
  *     responses:
  *      '200':
  *        description: returns referral
  *      '500':
  *       description: Internal server error
  */
-router.get('/refcode/:refcode', authenticate, ReferralController.getUserByRefCode);
+router.get('/ref/:refcode', ReferralController.getUserByRefCode);
 
 /**
  * @swagger
@@ -183,6 +183,6 @@ router.get('/refcode/:refcode', authenticate, ReferralController.getUserByRefCod
  *      '500':
  *       description: Internal server error
  */
-router.get('/:id', authenticate, hasValidObjectId, ReferralController.getReferralById);
+router.get('/:id', hasValidObjectId, ReferralController.getReferralById);
 
 module.exports = router;
