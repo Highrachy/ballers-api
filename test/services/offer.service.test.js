@@ -59,26 +59,29 @@ describe('Offer Service', () => {
   });
 
   describe('#generateReferenceCode', () => {
-    const userId = mongoose.Types.ObjectId();
+    const userId1 = mongoose.Types.ObjectId();
+    const userId2 = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
     const enquiryId1 = mongoose.Types.ObjectId();
     const enquiryId2 = mongoose.Types.ObjectId();
     const offerId = mongoose.Types.ObjectId();
 
-    const user = UserFactory.build({ _id: userId, vendorCode: 'HIG' });
+    const user1 = UserFactory.build({ _id: userId1 });
+    const user2 = UserFactory.build({ _id: userId2 });
     const property = PropertyFactory.build({
       _id: propertyId,
       name: 'Lekki Ville Estate',
       houseType: 'Maisonette',
-      addedBy: userId,
-      updatedBy: userId,
+      addedBy: userId1,
+      updatedBy: userId1,
     });
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId: enquiryId1, vendorId: userId });
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId: userId1, propertyId });
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId: userId2, propertyId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId: enquiryId1, vendorId: userId1 });
 
     beforeEach(async () => {
-      await addUser(user);
+      await addUser(user1);
+      await addUser(user2);
       await addProperty(property);
       await addEnquiry(enquiry1);
       await addEnquiry(enquiry2);
@@ -168,31 +171,49 @@ describe('Offer Service', () => {
   describe('#getAllOffersUser', () => {
     const userId = mongoose.Types.ObjectId();
     const vendorId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
+    const propertyId1 = mongoose.Types.ObjectId();
+    const propertyId2 = mongoose.Types.ObjectId();
+    const propertyId3 = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const vendor = UserFactory.build({ _id: vendorId });
-    const property = PropertyFactory.build({
-      _id: propertyId,
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+    });
+    const property2 = PropertyFactory.build({
+      _id: propertyId2,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+    });
+    const property3 = PropertyFactory.build({
+      _id: propertyId3,
       addedBy: vendorId,
       updatedBy: vendorId,
     });
 
     const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
     const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId, userId });
 
     const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId: vendorId, propertyId });
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      userId: vendorId,
+      propertyId: propertyId2,
+    });
     const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId, userId: vendorId });
 
     const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
     const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId, userId });
 
     beforeEach(async () => {
       await addUser(user);
       await addUser(vendor);
-      await addProperty(property);
+      await addProperty(property1);
+      await addProperty(property2);
+      await addProperty(property3);
       await addEnquiry(enquiry1);
       await addEnquiry(enquiry2);
       await addEnquiry(enquiry3);
@@ -222,31 +243,45 @@ describe('Offer Service', () => {
   describe('#getAllOffersAdmin', () => {
     const userId = mongoose.Types.ObjectId();
     const vendorId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
+    const propertyId1 = mongoose.Types.ObjectId();
+    const propertyId2 = mongoose.Types.ObjectId();
+    const propertyId3 = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const vendor = UserFactory.build({ _id: vendorId });
-    const property = PropertyFactory.build({
-      _id: propertyId,
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+    });
+    const property2 = PropertyFactory.build({
+      _id: propertyId2,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+    });
+    const property3 = PropertyFactory.build({
+      _id: propertyId3,
       addedBy: vendorId,
       updatedBy: vendorId,
     });
 
     const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
     const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId, userId });
 
     const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId: propertyId2 });
     const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: userId, userId });
 
     const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
     const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId, userId });
 
     beforeEach(async () => {
       await addUser(user);
       await addUser(vendor);
-      await addProperty(property);
+      await addProperty(property1);
+      await addProperty(property2);
+      await addProperty(property3);
       await addEnquiry(enquiry1);
       await addEnquiry(enquiry2);
       await addEnquiry(enquiry3);
@@ -445,12 +480,40 @@ describe('Offer Service', () => {
 
   describe('#getActiveOffers', () => {
     const userId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
+    const propertyId1 = mongoose.Types.ObjectId();
+    const propertyId2 = mongoose.Types.ObjectId();
+    const propertyId3 = mongoose.Types.ObjectId();
+    const propertyId4 = mongoose.Types.ObjectId();
+    const propertyId5 = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
+      addedBy: userId,
+      updatedBy: userId,
+    });
+    const property2 = PropertyFactory.build({
+      _id: propertyId2,
+      addedBy: userId,
+      updatedBy: userId,
+    });
+    const property3 = PropertyFactory.build({
+      _id: propertyId3,
+      addedBy: userId,
+      updatedBy: userId,
+    });
+    const property4 = PropertyFactory.build({
+      _id: propertyId4,
+      addedBy: userId,
+      updatedBy: userId,
+    });
+    const property5 = PropertyFactory.build({
+      _id: propertyId5,
+      addedBy: userId,
+      updatedBy: userId,
+    });
 
     const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
     const offer1 = OfferFactory.build({
       enquiryId: enquiryId1,
       vendorId: userId,
@@ -458,7 +521,7 @@ describe('Offer Service', () => {
     });
 
     const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId: propertyId2 });
     const offer2 = OfferFactory.build({
       enquiryId: enquiryId2,
       vendorId: userId,
@@ -466,7 +529,7 @@ describe('Offer Service', () => {
     });
 
     const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
     const offer3 = OfferFactory.build({
       enquiryId: enquiryId3,
       vendorId: userId,
@@ -474,7 +537,7 @@ describe('Offer Service', () => {
     });
 
     const enquiryId4 = mongoose.Types.ObjectId();
-    const enquiry4 = EnquiryFactory.build({ _id: enquiryId4, userId, propertyId });
+    const enquiry4 = EnquiryFactory.build({ _id: enquiryId4, userId, propertyId: propertyId4 });
     const offer4 = OfferFactory.build({
       enquiryId: enquiryId4,
       vendorId: userId,
@@ -482,7 +545,7 @@ describe('Offer Service', () => {
     });
 
     const enquiryId5 = mongoose.Types.ObjectId();
-    const enquiry5 = EnquiryFactory.build({ _id: enquiryId5, userId, propertyId });
+    const enquiry5 = EnquiryFactory.build({ _id: enquiryId5, userId, propertyId: propertyId5 });
     const offer5 = OfferFactory.build({
       enquiryId: enquiryId5,
       vendorId: userId,
@@ -491,7 +554,11 @@ describe('Offer Service', () => {
 
     beforeEach(async () => {
       await addUser(user);
-      await addProperty(property);
+      await addProperty(property1);
+      await addProperty(property2);
+      await addProperty(property3);
+      await addProperty(property4);
+      await addProperty(property5);
       await addEnquiry(enquiry1);
       await addEnquiry(enquiry2);
       await addEnquiry(enquiry3);
