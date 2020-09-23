@@ -59,6 +59,35 @@ describe('Add Enquiry Route', () => {
     });
   });
 
+  context('when an enquiry by the user for the property exists', () => {
+    const propertyId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({
+      propertyId,
+    });
+    beforeEach(async () => {
+      await addEnquiry(
+        EnquiryFactory.build({
+          propertyId,
+          userId: _id,
+          addedBy: _id,
+          updatedBy: _id,
+        }),
+      );
+    });
+    it('returns token error', (done) => {
+      request()
+        .post('/api/v1/enquiry/add')
+        .set('authorization', userToken)
+        .send(enquiry)
+        .end((err, res) => {
+          expect(res).to.have.status(412);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('You can only make one enquiry for this property');
+          done();
+        });
+    });
+  });
+
   context('with invalid data', () => {
     context('when title is empty', () => {
       it('returns an error', (done) => {

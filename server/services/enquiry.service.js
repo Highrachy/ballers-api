@@ -8,6 +8,17 @@ const { ObjectId } = mongoose.Types.ObjectId;
 export const getEnquiryById = async (id) => Enquiry.findById(id).select();
 
 export const addEnquiry = async (enquiry) => {
+  const existingEnquiry = await Enquiry.find({
+    propertyId: enquiry.propertyId,
+    userId: enquiry.userId,
+  });
+
+  if (existingEnquiry.length > 0) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'You can only make one enquiry for this property',
+    );
+  }
   try {
     const newEnquiry = await new Enquiry(enquiry).save();
     return newEnquiry;
