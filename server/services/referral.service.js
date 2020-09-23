@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Referral from '../models/referral.model';
+import User from '../models/user.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { REFERRAL_STATUS } from '../helpers/constants';
@@ -23,7 +24,7 @@ export const getAllUserReferrals = async (referrerId) =>
     {
       $lookup: {
         from: 'users',
-        localField: 'userId',
+        localField: 'referrerId',
         foreignField: '_id',
         as: 'referee',
       },
@@ -39,6 +40,7 @@ export const getAllUserReferrals = async (referrerId) =>
         email: 1,
         referrerId: 1,
         reward: 1,
+        status: 1,
         'referee._id': 1,
         'referee.email': 1,
       },
@@ -93,3 +95,73 @@ export const sendReferralInvite = async (invite) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error sending invite', error);
   }
 };
+
+export const getReferralById = async (referralId) =>
+  Referral.aggregate([
+    { $match: { _id: ObjectId(referralId) } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'referrerId',
+        foreignField: '_id',
+        as: 'referee',
+      },
+    },
+    {
+      $unwind: '$referee',
+    },
+    {
+      $project: {
+        _id: 1,
+        userId: 1,
+        firstName: 1,
+        email: 1,
+        referrerId: 1,
+        reward: 1,
+        status: 1,
+        'referee._id': 1,
+        'referee.email': 1,
+      },
+    },
+  ]);
+
+export const getAllReferrals = async () =>
+  Referral.aggregate([
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'referrerId',
+        foreignField: '_id',
+        as: 'referee',
+      },
+    },
+    {
+      $unwind: '$referee',
+    },
+    {
+      $project: {
+        _id: 1,
+        userId: 1,
+        firstName: 1,
+        email: 1,
+        referrerId: 1,
+        reward: 1,
+        status: 1,
+        'referee._id': 1,
+        'referee.email': 1,
+      },
+    },
+  ]);
+
+export const getUserByRefCode = async (refCode) =>
+  User.aggregate([
+    { $match: { referralCode: refCode } },
+    {
+      $project: {
+        _id: 1,
+        lastName: 1,
+        firstName: 1,
+        email: 1,
+      },
+    },
+  ]);

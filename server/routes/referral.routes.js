@@ -30,15 +30,15 @@ const router = express.Router();
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, hasValidObjectId, ReferralController.getMyReferrals);
+router.get('/', authenticate, ReferralController.getUserReferrals);
 
 /**
  * @swagger
- * /referral/:id:
+ * /referral/all/:
  *   get:
  *     tags:
  *       - Referral
- *     description: Get all referrals by referrer id
+ *     description: Get all referrals
  *     produces:
  *       - application/json
  *     requestBody:
@@ -46,14 +46,14 @@ router.get('/all', authenticate, hasValidObjectId, ReferralController.getMyRefer
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/Referral'
- *      description: Get all referrals by referrer id
+ *      description: Get all referrals
  *     responses:
  *      '200':
  *        description: returns object of referrals
  *      '500':
  *       description: Internal server error
  */
-router.get('/:id', authenticate, isAdmin, hasValidObjectId, ReferralController.getAllUserReferrals);
+router.get('/all', authenticate, isAdmin, ReferralController.getAllReferrals);
 
 /**
  * @swagger
@@ -138,5 +138,51 @@ router.post(
   schemaValidation(sendReferralSchema),
   ReferralController.sendInvite,
 );
+
+/**
+ * @swagger
+ * /referral/refcode/:refcode:
+ *   get:
+ *     tags:
+ *       - Referral
+ *     description: Get a user's information by refcode
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Referral'
+ *      description: Get a user's information by refcode
+ *     responses:
+ *      '200':
+ *        description: returns referral
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/refcode/:refcode', authenticate, ReferralController.getUserByRefCode);
+
+/**
+ * @swagger
+ * /referral/:id:
+ *   get:
+ *     tags:
+ *       - Referral
+ *     description: Get a referral by the id
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Referral'
+ *      description: Get a referral by the id
+ *     responses:
+ *      '200':
+ *        description: returns referral
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/:id', authenticate, hasValidObjectId, ReferralController.getReferralById);
 
 module.exports = router;

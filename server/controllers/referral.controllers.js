@@ -3,22 +3,24 @@ import {
   updateReferralToRewarded,
   getReferralByEmail,
   sendReferralInvite,
+  getUserByRefCode,
+  getReferralById,
+  getAllReferrals,
 } from '../services/referral.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
 
 const ReferralController = {
-  getAllUserReferrals(req, res, next) {
-    const referrerId = req.params.id;
-    getAllUserReferrals(referrerId)
+  getAllReferrals(req, res, next) {
+    getAllReferrals()
       .then((referrals) => {
         res.status(httpStatus.OK).json({ success: true, referrals });
       })
       .catch((error) => next(error));
   },
 
-  getMyReferrals(req, res, next) {
+  getUserReferrals(req, res, next) {
     const { user } = req;
     getAllUserReferrals(user._id)
       .then((referrals) => {
@@ -62,6 +64,24 @@ const ReferralController = {
           },
         );
         res.status(httpStatus.OK).json({ success: true, message: 'Invite sent' });
+      })
+      .catch((error) => next(error));
+  },
+
+  getUserByRefCode(req, res, next) {
+    const refCode = req.params.refcode;
+    getUserByRefCode(refCode)
+      .then((user) => {
+        res.status(httpStatus.OK).json({ success: true, user: user[0] });
+      })
+      .catch((error) => next(error));
+  },
+
+  getReferralById(req, res, next) {
+    const referralId = req.params.id;
+    getReferralById(referralId)
+      .then((referral) => {
+        res.status(httpStatus.OK).json({ success: true, referral: referral[0] });
       })
       .catch((error) => next(error));
   },

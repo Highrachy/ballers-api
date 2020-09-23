@@ -4,6 +4,11 @@ import {
   addReferral,
   getAllUserReferrals,
   updateReferralToRewarded,
+  getReferralByEmail,
+  sendReferralInvite,
+  getReferralById,
+  getAllReferrals,
+  getUserByRefCode,
 } from '../../server/services/referral.service';
 import ReferralFactory from '../factories/referral.factory';
 import UserFactory from '../factories/user.factory';
@@ -52,7 +57,7 @@ describe('Referral Service', () => {
     context('when the referee id is invalid', () => {
       it('throws a validation error', async () => {
         try {
-          const invalidReferralInfo = ReferralFactory.build({ userId, referrerId: '' });
+          const invalidReferralInfo = ReferralFactory.build({ referrerId: '' });
           await addReferral(invalidReferralInfo);
         } catch (err) {
           const currentcountedReferrals = await Referral.countDocuments({});
@@ -124,6 +129,124 @@ describe('Referral Service', () => {
           expect(err.message).to.be.eql('Referral not found');
         }
         Referral.findByIdAndUpdate.restore();
+      });
+    });
+  });
+
+  describe('#getReferralByEmail', () => {
+    const email = 'demo@mail.com';
+    const userId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const referral = ReferralFactory.build({ referrerId: userId, email });
+
+    beforeEach(async () => {
+      await User.create(user);
+      await addReferral(referral);
+    });
+
+    it('returns a valid referral by email', async () => {
+      const ref = await getReferralByEmail(email);
+      expect(ref.email).to.eql(email);
+    });
+  });
+
+  describe('#sendReferralInvite', () => {
+    let countedReferrals;
+    const userId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+
+    beforeEach(async () => {
+      countedReferrals = await Referral.countDocuments({});
+      await User.create(user);
+    });
+
+    context('when a valid referral is entered', () => {
+      it('adds a new referral', async () => {
+        const referralInfo = ReferralFactory.build({ referrerId: userId, email: 'demo@mail.io' });
+        const referral = await sendReferralInvite(referralInfo);
+        const currentcountedReferrals = await Referral.countDocuments({});
+        expect(referral.email).to.eql(referralInfo.email);
+        expect(currentcountedReferrals).to.eql(countedReferrals + 1);
+      });
+    });
+
+    context('when the email is invalid', () => {
+      it('throws a validation error', async () => {
+        try {
+          const invalidReferralInfo = ReferralFactory.build({ email: '' });
+          await sendReferralInvite(invalidReferralInfo);
+        } catch (err) {
+          const currentcountedReferrals = await Referral.countDocuments({});
+          expect(err.statusCode).to.eql(400);
+          expect(err.message).to.be.eql('Error sending invite');
+          expect(currentcountedReferrals).to.eql(countedReferrals);
+        }
+      });
+    });
+  });
+
+  describe('#getReferralById', () => {
+    const userId = mongoose.Types.ObjectId();
+    const referralId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const referral = ReferralFactory.build({
+      _id: referralId,
+      referrerId: userId,
+      email: 'demo@mail.com',
+    });
+
+    beforeEach(async () => {
+      await User.create(user);
+      await addReferral(referral);
+    });
+
+    it('returns a valid referral by referral id', async () => {
+      const ref = await getReferralById(referralId);
+      expect(ref[0]._id).to.eql(referralId);
+    });
+  });
+
+  describe('#getUserByRefCode', () => {
+    const userId = mongoose.Types.ObjectId();
+    const referralCode = 'RC1234';
+    const user = UserFactory.build({ _id: userId, referralCode });
+
+    beforeEach(async () => {
+      await User.create(user);
+    });
+
+    it('returns a valid user by referral code', async () => {
+      const res = await getUserByRefCode(referralCode);
+      expect(res[0]._id).to.eql(userId);
+    });
+  });
+
+  describe('#getAllReferrals', () => {
+    const userId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const referral = ReferralFactory.build({ userId, referrerId: userId });
+
+    beforeEach(async () => {
+      await User.create(user);
+      await addReferral(referral);
+      await addReferral(referral);
+    });
+
+    context('when referral added is valid', () => {
+      it('returns 2 referrals', async () => {
+        const referrasls = await getAllReferrals();
+        expect(referrasls).to.be.an('array');
+        expect(referrasls.length).to.be.eql(2);
+      });
+    });
+    context('when new referral is added', () => {
+      beforeEach(async () => {
+        await addReferral(referral);
+      });
+      it('returns 3 referrals', async () => {
+        const referrasls = await getAllReferrals();
+        expect(referrasls).to.be.an('array');
+        expect(referrasls.length).to.be.eql(3);
       });
     });
   });
