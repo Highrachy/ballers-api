@@ -88,10 +88,14 @@ export const addUser = async (user) => {
     const savedUser = await new User({ ...user, password, referralCode }).save();
 
     if (user.referralCode) {
-      const referee = await getUserByReferralCode(user.referralCode).catch((error) => {
+      const referrer = await getUserByReferralCode(user.referralCode).catch((error) => {
         throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
       });
-      await addReferral({ userId: savedUser._id, refereeId: referee._id });
+      await addReferral({
+        userId: savedUser._id,
+        referrerId: referrer._id,
+        email: savedUser.email,
+      });
     }
     return generateToken(savedUser._id);
   } catch (error) {

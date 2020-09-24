@@ -1,7 +1,6 @@
 import {
   getAllUserReferrals,
   updateReferralToRewarded,
-  getReferralByEmail,
   sendReferralInvite,
   getUserByRefCode,
   getReferralById,
@@ -34,15 +33,6 @@ const ReferralController = {
     updateReferralToRewarded(referralId)
       .then((referral) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Referral rewarded', referral });
-      })
-      .catch((error) => next(error));
-  },
-
-  getByEmail(req, res, next) {
-    const { email } = req.locals;
-    getReferralByEmail(email)
-      .then((referral) => {
-        res.status(httpStatus.OK).json({ success: true, referral });
       })
       .catch((error) => next(error));
   },

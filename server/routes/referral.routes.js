@@ -1,10 +1,6 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import {
-  updateReferralSchema,
-  emailReferralSchema,
-  sendReferralSchema,
-} from '../schemas/referral.schema';
+import { updateReferralSchema, sendReferralSchema } from '../schemas/referral.schema';
 import ReferralController from '../controllers/referral.controllers';
 
 const router = express.Router();
@@ -85,31 +81,6 @@ router.put(
   schemaValidation(updateReferralSchema),
   ReferralController.updateReferralToRewarded,
 );
-
-/**
- * @swagger
- * /referral/email:
- *   post:
- *     tags:
- *       - Referral
- *     description: Get a referral by email
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/Referral'
- *      description: Get a referral by email
- *     responses:
- *      '200':
- *        description: Referral found
- *      '404':
- *        description: Referral not found
- *      '500':
- *       description: Internal server error
- */
-router.post('/email', schemaValidation(emailReferralSchema), ReferralController.getByEmail);
 
 /**
  * @swagger

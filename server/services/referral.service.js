@@ -3,13 +3,40 @@ import Referral from '../models/referral.model';
 import User from '../models/user.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { REFERRAL_STATUS } from '../helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
+export const getReferralByEmailAndReferrerId = async (email, referrerId) =>
+  Referral.aggregate([
+    {
+      $match: {
+        $and: [{ email }, { referrerId: ObjectId(referrerId) }],
+      },
+    },
+  ]);
+
 export const addReferral = async (referalInfo) => {
+  const invitedReferral = await getReferralByEmailAndReferrerId(
+    referalInfo.email,
+    referalInfo.referrerId,
+  ).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (
+    invitedReferral.length > 0 &&
+    invitedReferral[0].referrerId.toString() === referalInfo.referrerId.toString()
+  ) {
+    return Referral.findByIdAndUpdate(
+      invitedReferral[0]._id,
+      { $set: { status: REFERRAL_STATUS.REGISTERED, userId: referalInfo.userId } },
+      { new: true },
+    );
+  }
+
   try {
     const referralInfo = await new Referral(referalInfo).save();
     return referralInfo;
@@ -26,11 +53,11 @@ export const getAllUserReferrals = async (referrerId) =>
         from: 'users',
         localField: 'referrerId',
         foreignField: '_id',
-        as: 'referee',
+        as: 'referrer',
       },
     },
     {
-      $unwind: '$referee',
+      $unwind: '$referrer',
     },
     {
       $project: {
@@ -41,8 +68,8 @@ export const getAllUserReferrals = async (referrerId) =>
         referrerId: 1,
         reward: 1,
         status: 1,
-        'referee._id': 1,
-        'referee.email': 1,
+        'referrer._id': 1,
+        'referrer.email': 1,
       },
     },
   ]);
@@ -51,7 +78,7 @@ export const updateReferralToRewarded = async (referralId) => {
   try {
     return Referral.findByIdAndUpdate(
       referralId,
-      { $set: { status: REFERRAL_STATUS.REWARDED } },
+      { $set: { status: REFERRAL_STATUS.REWARDED, reward: { status: REWARD_STATUS.PAID } } },
       { new: true },
     );
   } catch (error) {
@@ -59,31 +86,30 @@ export const updateReferralToRewarded = async (referralId) => {
   }
 };
 
-export const getReferralByEmail = async (email, fields = null) =>
-  Referral.findOne({ email }).select(fields);
-
 export const sendReferralInvite = async (invite) => {
-  const referral = await getReferralByEmail(invite.email).catch((error) => {
+  const existingUser = await getUserByEmail(invite.email).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+  if (existingUser) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      `${invite.email} has already registered on Ballers.`,
+    );
+  }
 
-  if (referral && referral.referrerId.toString() === invite.referrerId.toString()) {
+  const referral = await getReferralByEmailAndReferrerId(invite.email, invite.referrerId).catch(
+    (error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    },
+  );
+  if (referral.length > 0 && referral[0].referrerId.toString() === invite.referrerId.toString()) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
       'Multiple invites cannot be sent to same email',
     );
   }
 
-  const existingUser = await getUserByEmail(invite.email).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (existingUser) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, "You can't refer a BALLER to BALLERS");
-  }
-
   const referrer = await getUserById(invite.referrerId);
-
   try {
     await addReferral(invite);
     return {
@@ -104,11 +130,11 @@ export const getReferralById = async (referralId) =>
         from: 'users',
         localField: 'referrerId',
         foreignField: '_id',
-        as: 'referee',
+        as: 'referrer',
       },
     },
     {
-      $unwind: '$referee',
+      $unwind: '$referrer',
     },
     {
       $project: {
@@ -119,8 +145,9 @@ export const getReferralById = async (referralId) =>
         referrerId: 1,
         reward: 1,
         status: 1,
-        'referee._id': 1,
-        'referee.email': 1,
+        'referrer._id': 1,
+        'referrer.firstName': 1,
+        'referrer.lastName': 1,
       },
     },
   ]);
@@ -132,11 +159,11 @@ export const getAllReferrals = async () =>
         from: 'users',
         localField: 'referrerId',
         foreignField: '_id',
-        as: 'referee',
+        as: 'referrer',
       },
     },
     {
-      $unwind: '$referee',
+      $unwind: '$referrer',
     },
     {
       $project: {
@@ -147,8 +174,11 @@ export const getAllReferrals = async () =>
         referrerId: 1,
         reward: 1,
         status: 1,
-        'referee._id': 1,
-        'referee.email': 1,
+        'referrer._id': 1,
+        'referrer.email': 1,
+        'referrer.firstName': 1,
+        'referrer.lastName': 1,
+        'referrer.phone': 1,
       },
     },
   ]);
