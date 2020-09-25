@@ -62,7 +62,11 @@ const ReferralController = {
     const refCode = req.params.refcode;
     getUserByRefCode(refCode)
       .then((user) => {
-        res.status(httpStatus.OK).json({ success: true, user: user[0] });
+        if (user.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, user: user[0] });
+        } else {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'User not found' });
+        }
       })
       .catch((error) => next(error));
   },
@@ -71,7 +75,11 @@ const ReferralController = {
     const referralId = req.params.id;
     getReferralById(referralId)
       .then((referral) => {
-        res.status(httpStatus.OK).json({ success: true, referral: referral[0] });
+        if (referral.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, referral: referral[0] });
+        } else {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Referral not found' });
+        }
       })
       .catch((error) => next(error));
   },
