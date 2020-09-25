@@ -74,18 +74,6 @@ export const getAllUserReferrals = async (referrerId) =>
     },
   ]);
 
-export const updateReferralToRewarded = async (referralId) => {
-  try {
-    return Referral.findByIdAndUpdate(
-      referralId,
-      { $set: { status: REFERRAL_STATUS.REWARDED, reward: { status: REWARD_STATUS.PAID } } },
-      { new: true },
-    );
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Referral not found', error);
-  }
-};
-
 export const sendReferralInvite = async (invite) => {
   const existingUser = await getUserByEmail(invite.email).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -151,6 +139,22 @@ export const getReferralById = async (referralId) =>
       },
     },
   ]);
+
+export const updateReferralToRewarded = async (referralId) => {
+  const referral = await getReferralById(referralId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    return Referral.findByIdAndUpdate(
+      referral[0]._id,
+      { $set: { status: REFERRAL_STATUS.REWARDED, reward: { status: REWARD_STATUS.PAID } } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error rewarding referral', error);
+  }
+};
 
 export const getAllReferrals = async () =>
   Referral.aggregate([

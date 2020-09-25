@@ -6,6 +6,7 @@ import ReferralFactory from '../factories/referral.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
 import { addReferral } from '../../server/services/referral.service';
+import { REFERRAL_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
@@ -384,6 +385,118 @@ describe('Referral Controller', () => {
             done();
             Referral.aggregate.restore();
           });
+      });
+    });
+  });
+
+  describe('Reward a referral', () => {
+    const referralId = mongoose.Types.ObjectId();
+    const invalidId = mongoose.Types.ObjectId();
+    const referral = ReferralFactory.build({ _id: referralId, referrerId: adminId });
+
+    const referralDetails = {
+      referralId,
+    };
+
+    beforeEach(async () => {
+      await addReferral(referral);
+    });
+
+    context('with valid data & token', () => {
+      it('returns assigned offer', (done) => {
+        request()
+          .put('/api/v1/referral/rewarded')
+          .set('authorization', adminToken)
+          .send(referralDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Referral rewarded');
+            expect(res.body).to.have.property('referral');
+            expect(res.body.referral._id).to.be.eql(referralId.toString());
+            expect(res.body.referral.status).to.be.eql(REFERRAL_STATUS.REWARDED);
+            expect(res.body.referral.reward.status).to.be.eql(REWARD_STATUS.PAID);
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/referral/rewarded')
+          .send(referralDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('with unauthorized user access token', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/referral/rewarded')
+          .set('authorization', userToken)
+          .send(referralDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when updateReferralToRewarded service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Referral, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          .put('/api/v1/referral/rewarded')
+          .set('authorization', adminToken)
+          .send(referralDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Referral.findByIdAndUpdate.restore();
+          });
+      });
+    });
+
+    context('with invalid data', () => {
+      context('when referral id is empty', () => {
+        it('returns an error', (done) => {
+          const invalidData = { referralId: '' };
+          request()
+            .put('/api/v1/referral/rewarded')
+            .set('authorization', adminToken)
+            .send(invalidData)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Referral Id" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+      context('when invalid referral id', () => {
+        it('returns an error', (done) => {
+          const invalidData = { referralId: invalidId };
+          request()
+            .put('/api/v1/referral/rewarded')
+            .set('authorization', adminToken)
+            .send(invalidData)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Error rewarding referral');
+              done();
+            });
+        });
       });
     });
   });

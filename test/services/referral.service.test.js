@@ -14,7 +14,7 @@ import ReferralFactory from '../factories/referral.factory';
 import UserFactory from '../factories/user.factory';
 import Referral from '../../server/models/referral.model';
 import User from '../../server/models/user.model';
-import { REFERRAL_STATUS } from '../../server/helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
@@ -106,12 +106,13 @@ describe('Referral Service', () => {
   });
 
   describe('#updateReferralToRewarded', () => {
-    const userId = mongoose.Types.ObjectId();
-    const referrerId = mongoose.Types.ObjectId();
     const referralId = mongoose.Types.ObjectId();
-    const referral = ReferralFactory.build({ _id: referralId, userId, referrerId });
+    const referrerId = mongoose.Types.ObjectId();
+    const referral = ReferralFactory.build({ _id: referralId, referrerId });
+    const referrer = UserFactory.build({ _id: referrerId });
 
     beforeEach(async () => {
+      await User.create(referrer);
       await addReferral(referral);
     });
 
@@ -119,9 +120,9 @@ describe('Referral Service', () => {
       it('returns a valid updated referral', async () => {
         const registeredReferral = await updateReferralToRewarded(referralId);
         expect(registeredReferral._id).to.eql(referralId);
-        expect(registeredReferral.userId).to.eql(userId);
         expect(registeredReferral.referrerId).to.eql(referrerId);
         expect(registeredReferral.status).to.eql(REFERRAL_STATUS.REWARDED);
+        expect(registeredReferral.reward.status).to.eql(REWARD_STATUS.PAID);
       });
     });
 
@@ -131,9 +132,8 @@ describe('Referral Service', () => {
         try {
           await updateReferralToRewarded(referralId);
         } catch (err) {
-          expect(err.statusCode).to.eql(404);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Referral not found');
+          expect(err.statusCode).to.eql(400);
+          expect(err.message).to.be.eql('Error rewarding referral');
         }
         Referral.findByIdAndUpdate.restore();
       });
