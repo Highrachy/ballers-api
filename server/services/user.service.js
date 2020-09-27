@@ -6,6 +6,8 @@ import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
+// eslint-disable-next-line import/no-cycle
+import { addReferral } from './referral.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -69,6 +71,7 @@ export const generateReferralCode = async (firstName) => {
 };
 
 export const addUser = async (user) => {
+  let referrer;
   const referralCode = await generateReferralCode(user.firstName).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -81,9 +84,26 @@ export const addUser = async (user) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Email is linked to another account');
   }
 
+  if (user.referralCode) {
+    referrer = await getUserByReferralCode(user.referralCode).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+    if (!referrer) {
+      throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid referral code');
+    }
+  }
+
   try {
     const password = await hashPassword(user.password);
     const savedUser = await new User({ ...user, password, referralCode }).save();
+
+    if (referrer) {
+      await addReferral({
+        userId: savedUser._id,
+        referrerId: referrer._id,
+        email: savedUser.email,
+      });
+    }
     return generateToken(savedUser._id);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding user', error);

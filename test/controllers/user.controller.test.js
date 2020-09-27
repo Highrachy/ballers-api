@@ -9,6 +9,7 @@ import PropertyFactory from '../factories/property.factory';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import Upload from '../../server/helpers/uploadImage';
+import { sendReferralInvite } from '../../server/services/referral.service';
 
 useDatabase();
 
@@ -59,6 +60,34 @@ describe('User Controller', () => {
             expect(res.body.message).to.be.eql('Email is linked to another account');
             expect(res.body.error).to.be.eql('Email is linked to another account');
             expect(sendMailSpy.callCount).to.eq(0);
+            done();
+          });
+      });
+    });
+
+    context('when user was invited before registering', () => {
+      const registeredUserId = mongoose.Types.ObjectId();
+      const referralCode = 'RC1234';
+      const registeredUser = UserFactory.build({
+        _id: registeredUserId,
+        referralCode,
+      });
+      const email = 'newuser@mail.com';
+      const user = UserFactory.build({ email, referralCode });
+      before(async () => {
+        await User.create(registeredUser);
+        await sendReferralInvite({ email, referrerId: registeredUserId });
+      });
+      it('returns successful token', (done) => {
+        request()
+          .post('/api/v1/user/register')
+          .send(user)
+          .end((err, res) => {
+            expect(res).to.have.status(201);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('User registered');
+            expect(res.body).to.have.property('token');
+            expect(sendMailSpy.callCount).to.eq(1);
             done();
           });
       });

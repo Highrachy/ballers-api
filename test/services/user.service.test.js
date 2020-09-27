@@ -197,10 +197,39 @@ describe('User Service', () => {
       });
     });
 
+    context('when user is invited by by valid referral code', () => {
+      const referralCode = 'RC1234';
+      const userWithRef = UserFactory.build({ email, referralCode });
+      beforeEach(async () => {
+        await User.create(userWithRef);
+      });
+
+      it('returns the user token', async () => {
+        const currentCountedUsers = await User.countDocuments({});
+        const _id = mongoose.Types.ObjectId();
+        const token = await addUser(UserFactory.build({ _id, referralCode }));
+        expectsReturnedTokenToBeValid(token, _id);
+        expect(currentCountedUsers).to.eql(countedUsers + 1);
+      });
+    });
+
+    context('when an invalid invalid referal code is sent', () => {
+      it('throws an error', async () => {
+        try {
+          const InvalidUser = UserFactory.build({ referralCode: '123456' });
+          await addUser(InvalidUser);
+        } catch (err) {
+          const currentCountedUsers = await User.countDocuments({});
+          expect(err.statusCode).to.eql(412);
+          expect(err.message).to.be.eql('Invalid referral code');
+          expect(currentCountedUsers).to.eql(countedUsers);
+        }
+      });
+    });
+
     context('when getUserbyEmail returns an error', () => {
       it('throws an error', async () => {
         sinon.stub(User, 'findOne').throws(new Error('error msg'));
-
         try {
           await addUser(user);
         } catch (err) {

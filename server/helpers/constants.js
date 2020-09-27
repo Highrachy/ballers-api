@@ -13,3 +13,15 @@ export const OFFER_STATUS = {
   NEGLECTED: 'Neglected',
   CANCELLED: 'Cancelled',
 };
+
+export const REFERRAL_STATUS = {
+  SENT: 'Sent',
+  REGISTERED: 'Registered',
+  REWARDED: 'Rewarded',
+};
+
+export const REWARD_STATUS = {
+  PENDING: 'Pending',
+  PROGRESS: 'Progress',
+  PAID: 'Paid',
+};

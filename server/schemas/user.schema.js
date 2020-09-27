@@ -17,6 +17,7 @@ export const registerSchema = Joi.object({
   phone,
   password,
   confirmPassword,
+  referralCode: Joi.string().label('Referral Code').optional(),
 });
 
 export const loginSchema = Joi.object({

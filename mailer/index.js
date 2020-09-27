@@ -32,6 +32,12 @@ const EMAIL_CONTENT = {
     subject: 'Property Visit Requested',
     contentTop: 'A new propery visit has been requested',
   },
+  REFERRAL_INVITE: {
+    subject: 'BALLERS Invite',
+    contentTop: '[Referrer Name] just invited you to BALLERS.',
+    contentBottom: `Use their code [Referral code], or click the link below`,
+    buttonText: 'Join BALLERS',
+  },
   OFFER_CREATED: {
     subject: 'New Offer Available',
     contentTop:
