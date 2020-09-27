@@ -11,6 +11,11 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { OFFER_STATUS } from '../../server/helpers/constants';
+import {
+  getTodaysDateShortCode,
+  getTodaysDateStandard,
+  getTodaysDateInWords,
+} from '../../server/helpers/dates';
 
 useDatabase();
 
@@ -18,23 +23,42 @@ let adminToken;
 let userToken;
 const userId = mongoose.Types.ObjectId();
 const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
+const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true, vendorCode: 'HIG' });
 const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
-const propertyId = mongoose.Types.ObjectId();
-const property = PropertyFactory.build({ _id: propertyId, addedBy: adminId, updatedBy: adminId });
+const propertyId1 = mongoose.Types.ObjectId();
+const propertyId2 = mongoose.Types.ObjectId();
+const propertyId3 = mongoose.Types.ObjectId();
+const property1 = PropertyFactory.build({ _id: propertyId1, addedBy: adminId, updatedBy: adminId });
+const property2 = PropertyFactory.build({ _id: propertyId2, addedBy: adminId, updatedBy: adminId });
+const property3 = PropertyFactory.build({ _id: propertyId3, addedBy: adminId, updatedBy: adminId });
 
 describe('Offer Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
-    await addProperty(property);
+    await addProperty(property1);
+    await addProperty(property2);
+    await addProperty(property3);
   });
 
   describe('Create Offer Route', () => {
     const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId: adminId, propertyId });
+    const createPropertyId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({
+      _id: enquiryId,
+      userId: adminId,
+      propertyId: createPropertyId,
+    });
+    const newProperty = PropertyFactory.build({
+      _id: createPropertyId,
+      name: 'Lekki Ville Estate',
+      houseType: 'Maisonette',
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
 
     beforeEach(async () => {
+      await addProperty(newProperty);
       await addEnquiry(enquiry);
     });
 
@@ -52,7 +76,10 @@ describe('Offer Controller', () => {
             expect(res.body.offer).to.have.property('userInfo');
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
-            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId.toString());
+            expect(res.body.offer.propertyInfo._id).to.be.eql(createPropertyId.toString());
+            expect(res.body.offer.referenceCode).to.be.eql(
+              `HIG/LVE/OLM/01/${getTodaysDateShortCode()}`,
+            );
             done();
           });
       });
@@ -122,6 +149,24 @@ describe('Offer Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Handover Date" must be a valid date');
+              done();
+            });
+        });
+      });
+      context('when hand over date is todays date', () => {
+        it('returns an error', (done) => {
+          const offer = OfferFactory.build({ handOverDate: getTodaysDateStandard() });
+          request()
+            .post('/api/v1/offer/create')
+            .set('authorization', adminToken)
+            .send(offer)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                `"Handover Date" should a date later than ${getTodaysDateInWords()}`,
+              );
               done();
             });
         });
@@ -242,6 +287,24 @@ describe('Offer Controller', () => {
             });
         });
       });
+      context('when expiry date is todays date', () => {
+        it('returns an error', (done) => {
+          const offer = OfferFactory.build({ expires: getTodaysDateStandard() });
+          request()
+            .post('/api/v1/offer/create')
+            .set('authorization', adminToken)
+            .send(offer)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                `"Expiry Date" should a date later than ${getTodaysDateInWords()}`,
+              );
+              done();
+            });
+        });
+      });
       context('when initial payment is empty', () => {
         it('returns an error', (done) => {
           const offer = OfferFactory.build({ initialPayment: '' });
@@ -296,7 +359,11 @@ describe('Offer Controller', () => {
   describe('Accept Offer', () => {
     const offerId = mongoose.Types.ObjectId();
     const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId: adminId, propertyId });
+    const enquiry = EnquiryFactory.build({
+      _id: enquiryId,
+      userId: adminId,
+      propertyId: propertyId1,
+    });
     const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
     const acceptanceInfo = {
       offerId,
@@ -323,7 +390,7 @@ describe('Offer Controller', () => {
             expect(res.body.offer.status).to.be.eql('Interested');
             expect(res.body.offer.signature).to.be.eql(acceptanceInfo.signature);
             expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiryId.toString());
-            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId.toString());
+            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
             done();
           });
       });
@@ -398,7 +465,11 @@ describe('Offer Controller', () => {
   describe('Assign Offer', () => {
     const offerId = mongoose.Types.ObjectId();
     const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId: adminId, propertyId });
+    const enquiry = EnquiryFactory.build({
+      _id: enquiryId,
+      userId: adminId,
+      propertyId: propertyId1,
+    });
     const offer = OfferFactory.build({
       _id: offerId,
       enquiryId,
@@ -430,7 +501,7 @@ describe('Offer Controller', () => {
             expect(res.body.offer.signature).to.be.eql(toAssignDetails.signature);
             expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
             expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiryId.toString());
-            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId.toString());
+            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
             done();
           });
       });
@@ -504,7 +575,11 @@ describe('Offer Controller', () => {
   describe('Cancel Offer', () => {
     const offerId = mongoose.Types.ObjectId();
     const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId: adminId, propertyId });
+    const enquiry = EnquiryFactory.build({
+      _id: enquiryId,
+      userId: adminId,
+      propertyId: propertyId1,
+    });
     const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
     const toCancelDetails = {
       offerId,
@@ -582,11 +657,15 @@ describe('Offer Controller', () => {
 
   describe('Get all user owned offers', () => {
     const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
     const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId, userId });
 
     const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId: adminId, propertyId });
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      userId: adminId,
+      propertyId: propertyId2,
+    });
     const offer2 = OfferFactory.build({
       enquiryId: enquiryId2,
       vendorId: adminId,
@@ -594,7 +673,7 @@ describe('Offer Controller', () => {
     });
 
     const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
     const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId, userId });
 
     context('when no offer is found', () => {
@@ -634,7 +713,7 @@ describe('Offer Controller', () => {
               expect(res.body.offers.length).to.be.eql(2);
               expect(res.body.offers[0].userId).to.be.eql(userId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId.toString());
+              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
               done();
             });
         });
@@ -671,15 +750,15 @@ describe('Offer Controller', () => {
 
   describe('Get all admin owned offers', () => {
     const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
     const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId, userId });
 
     const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId });
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId: propertyId2 });
     const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: userId, userId });
 
     const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId });
+    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
     const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId, userId });
 
     context('when no offer is found', () => {
@@ -719,7 +798,7 @@ describe('Offer Controller', () => {
               expect(res.body.offers.length).to.be.eql(2);
               expect(res.body.offers[0].vendorId).to.be.eql(adminId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId.toString());
+              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
               done();
             });
         });
@@ -757,7 +836,11 @@ describe('Offer Controller', () => {
   describe('Get one offer', () => {
     const offerId = mongoose.Types.ObjectId();
     const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId: adminId, propertyId });
+    const enquiry = EnquiryFactory.build({
+      _id: enquiryId,
+      userId: adminId,
+      propertyId: propertyId1,
+    });
     const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
 
     beforeEach(async () => {
@@ -842,15 +925,23 @@ describe('Offer Controller', () => {
 
   describe('Get all offers of a user', () => {
     const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId });
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
     const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId });
 
     const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId: adminId, propertyId });
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      userId: adminId,
+      propertyId: propertyId2,
+    });
     const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: adminId });
 
     const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId: adminId, propertyId });
+    const enquiry3 = EnquiryFactory.build({
+      _id: enquiryId3,
+      userId: adminId,
+      propertyId: propertyId3,
+    });
     const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId });
 
     context('when no offer is found', () => {
@@ -890,7 +981,7 @@ describe('Offer Controller', () => {
               expect(res.body.offers.length).to.be.eql(1);
               expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId.toString());
+              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
               done();
             });
         });
@@ -927,7 +1018,11 @@ describe('Offer Controller', () => {
 
   describe('Get all active offers', () => {
     const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId: adminId, propertyId });
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
+      userId: adminId,
+      propertyId: propertyId1,
+    });
     const offer1 = OfferFactory.build({
       enquiryId: enquiryId1,
       vendorId: adminId,
@@ -935,7 +1030,11 @@ describe('Offer Controller', () => {
     });
 
     const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId: adminId, propertyId });
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      userId: adminId,
+      propertyId: propertyId2,
+    });
     const offer2 = OfferFactory.build({
       enquiryId: enquiryId2,
       vendorId: adminId,
@@ -943,7 +1042,11 @@ describe('Offer Controller', () => {
     });
 
     const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId: adminId, propertyId });
+    const enquiry3 = EnquiryFactory.build({
+      _id: enquiryId3,
+      userId: adminId,
+      propertyId: propertyId3,
+    });
     const offer3 = OfferFactory.build({
       enquiryId: enquiryId3,
       vendorId: adminId,
@@ -987,7 +1090,7 @@ describe('Offer Controller', () => {
               expect(res.body.offers.length).to.be.eql(2);
               expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId.toString());
+              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
               done();
             });
         });

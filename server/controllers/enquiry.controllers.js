@@ -1,4 +1,9 @@
-import { addEnquiry, approveEnquiry, getAllEnquiries } from '../services/enquiry.service';
+import {
+  addEnquiry,
+  approveEnquiry,
+  getEnquiry,
+  getAllEnquiries,
+} from '../services/enquiry.service';
 import httpStatus from '../helpers/httpStatus';
 
 const EnquiryController = {
@@ -18,6 +23,19 @@ const EnquiryController = {
     approveEnquiry({ ...approvedEnquiry, adminId: user._id })
       .then((enquiry) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Enquiry approved', enquiry });
+      })
+      .catch((error) => next(error));
+  },
+
+  getOne(req, res, next) {
+    const enquiryId = req.params.id;
+    getEnquiry(enquiryId)
+      .then((enquiry) => {
+        if (enquiry.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, enquiry: enquiry[0] });
+        } else {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Enquiry not found' });
+        }
       })
       .catch((error) => next(error));
   },

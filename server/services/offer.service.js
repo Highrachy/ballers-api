@@ -5,10 +5,33 @@ import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
 import { getUserById } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
+import { getOneProperty } from './property.service';
+import { getTodaysDateShortCode } from '../helpers/dates';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getOfferById = async (id) => Offer.findById(id).select();
+
+export const getPropertyInitials = (propertyName) =>
+  propertyName
+    .match(/\b(\w)/g)
+    .join('')
+    .toUpperCase();
+
+export const generateReferenceCode = async (propertyId) => {
+  const property = await getOneProperty(propertyId);
+  const vendorCode = 'HIG';
+  const initials = getPropertyInitials(property[0].name);
+  let numberSold = await Offer.countDocuments({ propertyId })
+    .then((count) => count + 1)
+    .catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+  numberSold = numberSold < 10 ? `0${numberSold}` : numberSold;
+  const type = `OL${getPropertyInitials(property[0].houseType)}`;
+  const referenceCode = `${vendorCode}/${initials}/${type}/${numberSold}/${getTodaysDateShortCode()}`;
+  return referenceCode;
+};
 
 export const getAllOffersUser = async (userId) =>
   Offer.aggregate([
@@ -225,6 +248,7 @@ export const createOffer = async (offer) => {
     );
   }
 
+  const referenceCode = await generateReferenceCode(enquiry.propertyId);
   const user = await getUserById(enquiry.userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -238,6 +262,7 @@ export const createOffer = async (offer) => {
       ...offer,
       userId: enquiry.userId,
       propertyId: enquiry.propertyId,
+      referenceCode,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, adminId: offer.vendorId });
     const offerInfo = await getOffer(newOffer._id);

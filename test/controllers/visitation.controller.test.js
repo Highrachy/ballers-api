@@ -21,301 +21,56 @@ const admin = UserFactory.build({ _id: adminId, role: USER_ROLE.ADMIN, activated
 const propId = mongoose.Types.ObjectId();
 const demoProperty = PropertyFactory.build({ _id: propId, addedBy: adminId, updatedBy: adminId });
 
-beforeEach(async () => {
-  userToken = await addUser(user);
-  adminToken = await addUser(admin);
-});
-
-describe('Schedule Visit Route', () => {
+describe('Visitation Controller', () => {
   beforeEach(async () => {
-    await addProperty(demoProperty);
+    userToken = await addUser(user);
+    adminToken = await addUser(admin);
   });
 
-  context('with valid data', () => {
-    it('returns successful property', (done) => {
-      const booking = VisitationFactory.build({ propertyId: propId });
-      request()
-        .post('/api/v1/visitation/schedule')
-        .set('authorization', userToken)
-        .send(booking)
-        .end((err, res) => {
-          expect(res).to.have.status(201);
-          expect(res.body.success).to.be.eql(true);
-          expect(res.body.message).to.be.eql('Visit scheduled successfully');
-          expect(res.body).to.have.property('schedule');
-          expect(propId.equals(res.body.schedule.propertyId)).to.be.eql(true);
-          // TODO: add test for mail service
-          done();
-        });
-    });
-  });
-
-  context('when user token is not available', () => {
-    let invalidUserToken;
-    const invalidUserId = mongoose.Types.ObjectId();
-    const invalidUser = UserFactory.build({
-      _id: invalidUserId,
-      role: USER_ROLE.USER,
-      activated: true,
-    });
-
-    beforeEach(async () => {
-      invalidUserToken = await addUser(invalidUser);
-      await User.findByIdAndDelete(invalidUserId);
-    });
-
-    it('returns token error', (done) => {
-      const booking = VisitationFactory.build({ propertyId: propId });
-      request()
-        .post('/api/v1/visitation/schedule')
-        .set('authorization', invalidUserToken)
-        .send(booking)
-        .end((err, res) => {
-          expect(res).to.have.status(404);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Invalid token');
-          done();
-        });
-    });
-  });
-
-  context('when property does not exist', () => {
-    it('returns a property not found error', (done) => {
-      const booking = VisitationFactory.build();
-      request()
-        .post('/api/v1/visitation/schedule')
-        .set('authorization', userToken)
-        .send(booking)
-        .end((err, res) => {
-          expect(res).to.have.status(404);
-          expect(res.body.success).to.be.eql(false);
-          expect(res.body.message).to.be.eql('Property not found');
-          done();
-        });
-    });
-  });
-
-  context('with invalid data', () => {
-    context('when property ID is empty', () => {
-      it('returns an error', (done) => {
-        const booking = VisitationFactory.build({ propertyId: '' });
-        request()
-          .post('/api/v1/visitation/schedule')
-          .set('authorization', userToken)
-          .send(booking)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Property id" is not allowed to be empty');
-            done();
-          });
-      });
-    });
-    context('when visitor name is empty', () => {
-      it('returns an error', (done) => {
-        const property = VisitationFactory.build({ visitorName: '' });
-        request()
-          .post('/api/v1/visitation/schedule')
-          .set('authorization', userToken)
-          .send(property)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Name" is not allowed to be empty');
-            done();
-          });
-      });
-    });
-    context('when visitor email is empty', () => {
-      it('returns an error', (done) => {
-        const property = VisitationFactory.build({ visitorEmail: '' });
-        request()
-          .post('/api/v1/visitation/schedule')
-          .set('authorization', userToken)
-          .send(property)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Email address" is not allowed to be empty');
-            done();
-          });
-      });
-    });
-    context('when visitor phone is empty', () => {
-      it('returns an error', (done) => {
-        const booking = VisitationFactory.build({ visitorPhone: '' });
-        request()
-          .post('/api/v1/visitation/schedule')
-          .set('authorization', userToken)
-          .send(booking)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Phone" is not allowed to be empty');
-            done();
-          });
-      });
-    });
-    context('when visitor phone is less than 11 numbers', () => {
-      it('returns an error', (done) => {
-        const booking = VisitationFactory.build({ visitorPhone: '1234567890' });
-        request()
-          .post('/api/v1/visitation/schedule')
-          .set('authorization', userToken)
-          .send(booking)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Phone" length must be at least 11 characters long');
-            done();
-          });
-      });
-    });
-    context('when visitor phone is more than 14 numbers', () => {
-      it('returns an error', (done) => {
-        const booking = VisitationFactory.build({ visitorPhone: '123456789012345' });
-        request()
-          .post('/api/v1/visitation/schedule')
-          .set('authorization', userToken)
-          .send(booking)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql(
-              '"Phone" length must be less than or equal to 14 characters long',
-            );
-            done();
-          });
-      });
-    });
-    context('when visit date is empty', () => {
-      it('returns an error', (done) => {
-        const booking = VisitationFactory.build({ visitDate: '' });
-        request()
-          .post('/api/v1/visitation/schedule')
-          .set('authorization', userToken)
-          .send(booking)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Visit Date" must be a valid date');
-            done();
-          });
-      });
-    });
-    context('when visit date is a random string', () => {
-      it('returns an error', (done) => {
-        const property = VisitationFactory.build({ visitDate: 'abcdefghij' });
-        request()
-          .post('/api/v1/visitation/schedule')
-          .set('authorization', userToken)
-          .send(property)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            expect(res.body.error).to.be.eql('"Visit Date" must be a valid date');
-            done();
-          });
-      });
-    });
-    context('when visit date is a past date', () => {
-      it('returns an error', (done) => {
-        const property = VisitationFactory.build({ visitDate: '2020-01-01' });
-        request()
-          .post('/api/v1/visitation/schedule')
-          .set('authorization', userToken)
-          .send(property)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            done();
-          });
-      });
-    });
-  });
-});
-
-describe('Get all properties', () => {
-  const booking = VisitationFactory.build({ propertyId: propId, userId: adminId });
-
-  context('when no schedule exists', () => {
-    it('returns not found', (done) => {
-      request()
-        .get('/api/v1/visitation/all')
-        .set('authorization', adminToken)
-        .end((err, res) => {
-          expect(res).to.have.status(200);
-          expect(res.body.success).to.be.eql(true);
-          expect(res.body).to.have.property('schedules');
-          expect(res.body.schedules.length).to.be.eql(0);
-          done();
-        });
-    });
-  });
-
-  describe('when scheduled visits exist in db', () => {
+  describe('Schedule Visit Route', () => {
     beforeEach(async () => {
       await addProperty(demoProperty);
     });
 
-    context('with a valid token & id', () => {
-      beforeEach(async () => {
-        await scheduleVisitation(booking);
-      });
-      it('returns successful payload', (done) => {
+    context('with valid data', () => {
+      it('returns successful property', (done) => {
+        const booking = VisitationFactory.build({ propertyId: propId });
         request()
-          .get('/api/v1/visitation/all')
-          .set('authorization', adminToken)
+          .post('/api/v1/visitation/schedule')
+          .set('authorization', userToken)
+          .send(booking)
           .end((err, res) => {
-            expect(res).to.have.status(200);
+            expect(res).to.have.status(201);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('schedules');
-            expect(propId.equals(res.body.schedules[0].propertyId)).to.be.eql(true);
-            expect(adminId.equals(res.body.schedules[0].userId)).to.be.eql(true);
-            expect(res.body.schedules[0].visitorName).to.be.eql(booking.visitorName);
-            expect(res.body.schedules[0].visitorEmail).to.be.eql(booking.visitorEmail);
-            expect(res.body.schedules[0].visitorPhone).to.be.eql(booking.visitorPhone);
-            expect(propId.equals(res.body.schedules[0].propertyInfo[0]._id)).to.be.eql(true);
-            expect(res.body.schedules[0].propertyInfo[0].name).to.be.eql(demoProperty.name);
-            expect(res.body.schedules[0].propertyInfo[0].price).to.be.eql(demoProperty.price);
-            expect(res.body.schedules[0].propertyInfo[0].description).to.be.eql(
-              demoProperty.description,
-            );
+            expect(res.body.message).to.be.eql('Visit scheduled successfully');
+            expect(res.body).to.have.property('schedule');
+            expect(propId.equals(res.body.schedule.propertyId)).to.be.eql(true);
+            // TODO: add test for mail service
             done();
           });
       });
     });
 
-    context('without token', () => {
-      it('returns error', (done) => {
-        request()
-          .get('/api/v1/visitation/all')
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
-            done();
-          });
+    context('when user token is not available', () => {
+      let invalidUserToken;
+      const invalidUserId = mongoose.Types.ObjectId();
+      const invalidUser = UserFactory.build({
+        _id: invalidUserId,
+        role: USER_ROLE.USER,
+        activated: true,
       });
-    });
 
-    context('when admin token is not available', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(adminId);
+        invalidUserToken = await addUser(invalidUser);
+        await User.findByIdAndDelete(invalidUserId);
       });
+
       it('returns token error', (done) => {
+        const booking = VisitationFactory.build({ propertyId: propId });
         request()
-          .get('/api/v1/visitation/all')
-          .set('authorization', adminToken)
+          .post('/api/v1/visitation/schedule')
+          .set('authorization', invalidUserToken)
+          .send(booking)
           .end((err, res) => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
@@ -325,31 +80,280 @@ describe('Get all properties', () => {
       });
     });
 
-    context('when user token is is used', () => {
-      it('returns forbidden', (done) => {
+    context('when property does not exist', () => {
+      it('returns a property not found error', (done) => {
+        const booking = VisitationFactory.build();
         request()
-          .get('/api/v1/visitation/all')
+          .post('/api/v1/visitation/schedule')
           .set('authorization', userToken)
+          .send(booking)
           .end((err, res) => {
-            expect(res).to.have.status(403);
+            expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            expect(res.body.message).to.be.eql('Property not found');
             done();
           });
       });
     });
 
-    context('when getAllVisitations service fails', () => {
-      it('returns the error', (done) => {
-        sinon.stub(Visitation, 'aggregate').throws(new Error('Type Error'));
+    context('with invalid data', () => {
+      context('when property ID is empty', () => {
+        it('returns an error', (done) => {
+          const booking = VisitationFactory.build({ propertyId: '' });
+          request()
+            .post('/api/v1/visitation/schedule')
+            .set('authorization', userToken)
+            .send(booking)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Property id" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+      context('when visitor name is empty', () => {
+        it('returns an error', (done) => {
+          const property = VisitationFactory.build({ visitorName: '' });
+          request()
+            .post('/api/v1/visitation/schedule')
+            .set('authorization', userToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Name" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+      context('when visitor email is empty', () => {
+        it('returns an error', (done) => {
+          const property = VisitationFactory.build({ visitorEmail: '' });
+          request()
+            .post('/api/v1/visitation/schedule')
+            .set('authorization', userToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Email address" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+      context('when visitor phone is empty', () => {
+        it('returns an error', (done) => {
+          const booking = VisitationFactory.build({ visitorPhone: '' });
+          request()
+            .post('/api/v1/visitation/schedule')
+            .set('authorization', userToken)
+            .send(booking)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Phone" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+      context('when visitor phone is less than 11 numbers', () => {
+        it('returns an error', (done) => {
+          const booking = VisitationFactory.build({ visitorPhone: '1234567890' });
+          request()
+            .post('/api/v1/visitation/schedule')
+            .set('authorization', userToken)
+            .send(booking)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                '"Phone" length must be at least 11 characters long',
+              );
+              done();
+            });
+        });
+      });
+      context('when visitor phone is more than 14 numbers', () => {
+        it('returns an error', (done) => {
+          const booking = VisitationFactory.build({ visitorPhone: '123456789012345' });
+          request()
+            .post('/api/v1/visitation/schedule')
+            .set('authorization', userToken)
+            .send(booking)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql(
+                '"Phone" length must be less than or equal to 14 characters long',
+              );
+              done();
+            });
+        });
+      });
+      context('when visit date is empty', () => {
+        it('returns an error', (done) => {
+          const booking = VisitationFactory.build({ visitDate: '' });
+          request()
+            .post('/api/v1/visitation/schedule')
+            .set('authorization', userToken)
+            .send(booking)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Visit Date" must be a valid date');
+              done();
+            });
+        });
+      });
+      context('when visit date is a random string', () => {
+        it('returns an error', (done) => {
+          const property = VisitationFactory.build({ visitDate: 'abcdefghij' });
+          request()
+            .post('/api/v1/visitation/schedule')
+            .set('authorization', userToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Visit Date" must be a valid date');
+              done();
+            });
+        });
+      });
+      context('when visit date is a past date', () => {
+        it('returns an error', (done) => {
+          const property = VisitationFactory.build({ visitDate: '2020-01-01' });
+          request()
+            .post('/api/v1/visitation/schedule')
+            .set('authorization', userToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              done();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Get all properties', () => {
+    const booking = VisitationFactory.build({ propertyId: propId, userId: adminId });
+
+    context('when no schedule exists', () => {
+      it('returns not found', (done) => {
         request()
           .get('/api/v1/visitation/all')
           .set('authorization', adminToken)
           .end((err, res) => {
-            expect(res).to.have.status(500);
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('schedules');
+            expect(res.body.schedules.length).to.be.eql(0);
             done();
-            Visitation.aggregate.restore();
           });
+      });
+    });
+
+    describe('when scheduled visits exist in db', () => {
+      beforeEach(async () => {
+        await addProperty(demoProperty);
+      });
+
+      context('with a valid token & id', () => {
+        beforeEach(async () => {
+          await scheduleVisitation(booking);
+        });
+        it('returns successful payload', (done) => {
+          request()
+            .get('/api/v1/visitation/all')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('schedules');
+              expect(propId.equals(res.body.schedules[0].propertyId)).to.be.eql(true);
+              expect(adminId.equals(res.body.schedules[0].userId)).to.be.eql(true);
+              expect(res.body.schedules[0].visitorName).to.be.eql(booking.visitorName);
+              expect(res.body.schedules[0].visitorEmail).to.be.eql(booking.visitorEmail);
+              expect(res.body.schedules[0].visitorPhone).to.be.eql(booking.visitorPhone);
+              expect(propId.equals(res.body.schedules[0].propertyInfo[0]._id)).to.be.eql(true);
+              expect(res.body.schedules[0].propertyInfo[0].name).to.be.eql(demoProperty.name);
+              expect(res.body.schedules[0].propertyInfo[0].price).to.be.eql(demoProperty.price);
+              expect(res.body.schedules[0].propertyInfo[0].description).to.be.eql(
+                demoProperty.description,
+              );
+              done();
+            });
+        });
+      });
+
+      context('without token', () => {
+        it('returns error', (done) => {
+          request()
+            .get('/api/v1/visitation/all')
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Token needed to access resources');
+              done();
+            });
+        });
+      });
+
+      context('when admin token is not available', () => {
+        beforeEach(async () => {
+          await User.findByIdAndDelete(adminId);
+        });
+        it('returns token error', (done) => {
+          request()
+            .get('/api/v1/visitation/all')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Invalid token');
+              done();
+            });
+        });
+      });
+
+      context('when user token is is used', () => {
+        it('returns forbidden', (done) => {
+          request()
+            .get('/api/v1/visitation/all')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+              done();
+            });
+        });
+      });
+
+      context('when getAllVisitations service fails', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Visitation, 'aggregate').throws(new Error('Type Error'));
+          request()
+            .get('/api/v1/visitation/all')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(500);
+              done();
+              Visitation.aggregate.restore();
+            });
+        });
       });
     });
   });

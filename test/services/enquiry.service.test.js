@@ -3,6 +3,7 @@ import { expect, sinon, useDatabase } from '../config';
 import {
   getEnquiryById,
   addEnquiry,
+  getEnquiry,
   approveEnquiry,
   getAllEnquiries,
 } from '../../server/services/enquiry.service';
@@ -10,6 +11,8 @@ import { addProperty } from '../../server/services/property.service';
 import EnquiryFactory from '../factories/enquiry.factory';
 import PropertyFactory from '../factories/property.factory';
 import Enquiry from '../../server/models/enquiry.model';
+import { addUser } from '../../server/services/user.service';
+import UserFactory from '../factories/user.factory';
 
 useDatabase();
 
@@ -108,6 +111,37 @@ describe('Enquiry Service', () => {
           expect(err.message).to.be.eql('Error approving enquiry');
         }
         Enquiry.findOneAndUpdate.restore();
+      });
+    });
+  });
+
+  describe('#getEnquiry', () => {
+    const userId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const enquiryId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+
+    beforeEach(async () => {
+      await addUser(user);
+      await addProperty(property);
+      await addEnquiry(enquiry);
+    });
+
+    context('when enquiry exists', () => {
+      it('returns a valid enquiry', async () => {
+        const gottenEnquiry = await getEnquiry(enquiryId);
+        expect(gottenEnquiry[0]._id).to.eql(enquiryId);
+        expect(gottenEnquiry[0].propertyId).to.eql(propertyId);
+      });
+    });
+
+    context('when an invalid id is used', () => {
+      it('returns an error', async () => {
+        const invalidEnquiryId = mongoose.Types.ObjectId();
+        const gottenEnquiry = await getEnquiry(invalidEnquiryId);
+        expect(gottenEnquiry.length).to.eql(0);
       });
     });
   });
