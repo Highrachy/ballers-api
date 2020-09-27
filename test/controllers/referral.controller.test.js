@@ -103,7 +103,7 @@ describe('Referral Controller', () => {
         });
       });
 
-      context('when invite email is not sent', () => {
+      context('when no email is not given', () => {
         it('returns an error', (done) => {
           const invite = { firstName: 'John' };
           request()
@@ -122,14 +122,18 @@ describe('Referral Controller', () => {
 
       context('when email that has been invited by another user but has not registered', () => {
         const email = 'invite-1@mail.com';
+        let newUserToken;
+        const newUserId = mongoose.Types.ObjectId();
+        const newUser = UserFactory.build({ _id: newUserId, activated: true });
         beforeEach(async () => {
+          newUserToken = await addUser(newUser);
           await sendReferralInvite({ email, referrerId: userId });
         });
         it('returns successful invite', (done) => {
           const invite = { email, firstName: 'John' };
           request()
             .post('/api/v1/referral/invite')
-            .set('authorization', adminToken)
+            .set('authorization', newUserToken)
             .send(invite)
             .end((err, res) => {
               expect(res).to.have.status(200);
