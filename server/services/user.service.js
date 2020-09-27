@@ -71,6 +71,7 @@ export const generateReferralCode = async (firstName) => {
 };
 
 export const addUser = async (user) => {
+  let referrer;
   const referralCode = await generateReferralCode(user.firstName).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -83,14 +84,20 @@ export const addUser = async (user) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Email is linked to another account');
   }
 
+  if (user.referralCode) {
+    referrer = await getUserByReferralCode(user.referralCode).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+    if (!referrer) {
+      throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid referral code');
+    }
+  }
+
   try {
     const password = await hashPassword(user.password);
     const savedUser = await new User({ ...user, password, referralCode }).save();
 
-    if (user.referralCode) {
-      const referrer = await getUserByReferralCode(user.referralCode).catch((error) => {
-        throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-      });
+    if (referrer) {
       await addReferral({
         userId: savedUser._id,
         referrerId: referrer._id,

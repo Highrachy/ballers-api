@@ -5,7 +5,7 @@ import User from '../../server/models/user.model';
 import ReferralFactory from '../factories/referral.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
-import { addReferral } from '../../server/services/referral.service';
+import { addReferral, sendReferralInvite } from '../../server/services/referral.service';
 import { REFERRAL_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
@@ -36,7 +36,23 @@ describe('Referral Controller', () => {
   describe('Referral Invite Route', () => {
     context('with valid data', () => {
       it('returns successful invite', (done) => {
-        const invite = ReferralFactory.build({ email: 'invite-1@mail.com' });
+        const invite = { email: 'invite-1@mail.com', firstName: 'John' };
+        request()
+          .post('/api/v1/referral/invite')
+          .set('authorization', userToken)
+          .send(invite)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Invite sent');
+            done();
+          });
+      });
+    });
+
+    context('with first name is absent', () => {
+      it('returns successful invite', (done) => {
+        const invite = { email: 'invite-2@mail.com' };
         request()
           .post('/api/v1/referral/invite')
           .set('authorization', userToken)
@@ -87,7 +103,64 @@ describe('Referral Controller', () => {
         });
       });
 
-      context('when invite email is has been registered', () => {
+      context('when invite email is not sent', () => {
+        it('returns an error', (done) => {
+          const invite = { firstName: 'John' };
+          request()
+            .post('/api/v1/referral/invite')
+            .set('authorization', adminToken)
+            .send(invite)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Email Address" is required');
+              done();
+            });
+        });
+      });
+
+      context('when email that has been invited by another user but has not registered', () => {
+        const email = 'invite-1@mail.com';
+        beforeEach(async () => {
+          await sendReferralInvite({ email, referrerId: userId });
+        });
+        it('returns successful invite', (done) => {
+          const invite = { email, firstName: 'John' };
+          request()
+            .post('/api/v1/referral/invite')
+            .set('authorization', adminToken)
+            .send(invite)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Invite sent');
+              done();
+            });
+        });
+      });
+
+      context('when user has sent invite to email previously', () => {
+        const email = 'invite-1@mail.com';
+        beforeEach(async () => {
+          await sendReferralInvite({ email, referrerId: userId });
+        });
+        it('returns successful invite', (done) => {
+          const invite = { email, firstName: 'John' };
+          request()
+            .post('/api/v1/referral/invite')
+            .set('authorization', userToken)
+            .send(invite)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Multiple invites cannot be sent to same email');
+              done();
+            });
+        });
+      });
+
+      context('when invite email is a registered user', () => {
         it('returns an error', (done) => {
           const invite = ReferralFactory.build({ email: 'admin@mail.com' });
           request()
@@ -108,7 +181,8 @@ describe('Referral Controller', () => {
   });
 
   describe('Get all referrals', () => {
-    const referral = ReferralFactory.build({ referrerId: adminId });
+    const referral1 = ReferralFactory.build({ referrerId: adminId, email: 'demo-1@mail.com' });
+    const referral2 = ReferralFactory.build({ referrerId: adminId, email: 'demo-2@mail.com' });
 
     context('when no referral is found', () => {
       it('returns not found', (done) => {
@@ -126,7 +200,8 @@ describe('Referral Controller', () => {
 
     describe('when referrals exist in db', () => {
       beforeEach(async () => {
-        await addReferral(referral);
+        await addReferral(referral1);
+        await addReferral(referral2);
       });
 
       context('with a valid token & id', () => {
@@ -141,7 +216,9 @@ describe('Referral Controller', () => {
               expect(res.body.referrals[0]).to.have.property('reward');
               expect(res.body.referrals[0]).to.have.property('status');
               expect(res.body.referrals[0]).to.have.property('referrerId');
+              expect(res.body.referrals[0].referrerId).to.be.eql(adminId.toString());
               expect(res.body.referrals[0]).to.have.property('email');
+              expect(res.body.referrals[0].email).to.be.eql('demo-1@mail.com');
               expect(res.body.referrals[0]).to.have.property('referrer');
               expect(res.body.referrals[0].referrer).to.have.property('firstName');
               expect(res.body.referrals[0].referrer).to.have.property('lastName');
@@ -164,7 +241,7 @@ describe('Referral Controller', () => {
         });
       });
 
-      context('when token is used', () => {
+      context('when an invalid token is used', () => {
         beforeEach(async () => {
           await User.findByIdAndDelete(adminId);
         });
@@ -236,7 +313,9 @@ describe('Referral Controller', () => {
               expect(res.body.referrals[0]).to.have.property('reward');
               expect(res.body.referrals[0]).to.have.property('status');
               expect(res.body.referrals[0]).to.have.property('referrerId');
+              expect(res.body.referrals[0].referrerId).to.be.eql(userId.toString());
               expect(res.body.referrals[0]).to.have.property('email');
+              expect(res.body.referrals[0].email).to.be.eql('demo1@mail.com');
               expect(res.body.referrals[0]).to.have.property('referrer');
               expect(res.body.referrals[0].referrer).to.have.property('email');
               done();
@@ -257,7 +336,7 @@ describe('Referral Controller', () => {
         });
       });
 
-      context('when token is used', () => {
+      context('when an invalid token is used', () => {
         beforeEach(async () => {
           await User.findByIdAndDelete(userId);
         });
@@ -293,13 +372,15 @@ describe('Referral Controller', () => {
   describe('Get user information by referral code', () => {
     const testId = mongoose.Types.ObjectId();
     const referralCode = 'RC1234';
-    const referrer = UserFactory.build({ _id: testId, referralCode });
+    const email = 'referrer@mail.com';
+    const firstName = 'Sammy';
+    const referrer = UserFactory.build({ _id: testId, referralCode, email, firstName });
 
     beforeEach(async () => {
       await User.create(referrer);
     });
 
-    context('with a valid referrl code', () => {
+    context('with a valid referral code', () => {
       it('returns successful payload', (done) => {
         request()
           .get(`/api/v1/referral/ref/${referralCode}`)
@@ -308,12 +389,15 @@ describe('Referral Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('user');
             expect(res.body.user._id).to.be.eql(testId.toString());
+            expect(res.body.user.firstName).to.be.eql(firstName);
+            expect(res.body.user.email).to.be.eql(email);
+            expect(res.body.user).to.not.have.property('password');
             done();
           });
       });
     });
 
-    context('with an invalid offer id', () => {
+    context('with an invalid referral id', () => {
       it('returns not found', (done) => {
         request()
           .get(`/api/v1/referral/ref/AB1234`)
@@ -403,7 +487,7 @@ describe('Referral Controller', () => {
     });
 
     context('with valid data & token', () => {
-      it('returns assigned offer', (done) => {
+      it('returns assigned referral', (done) => {
         request()
           .put('/api/v1/referral/rewarded')
           .set('authorization', adminToken)

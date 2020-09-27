@@ -54,23 +54,24 @@ describe('Referral Service', () => {
       });
     });
 
-    // TODO fix tests for invite referral
-    // context('when a valid invite referral is entered', () => {
-    //   const email = 'sam@mail.com';
-    //   const invite = ReferralFactory.build({ referrerId });
-    //   before(async () => {
-    //     await sendReferralInvite(invite);
-    //     countedReferrals = await Referral.countDocuments({});
-    //   });
-    //   it('updates referal invite', async () => {
-    //     const referralInfo = ReferralFactory.build({ referrerId, email });
-    //     const referral = await addReferral(referralInfo);
-    //     const currentcountedReferrals = await Referral.countDocuments({});
-    //     expect(referral.referralInfo).to.eql(referralInfo.referralInfo);
-    //     expect(referral.status).to.eql(REFERRAL_STATUS.REGISTERED);
-    //     expect(currentcountedReferrals).to.eql(countedReferrals);
-    //   });
-    // });
+    context('when referee was invited directly', () => {
+      const inviteEmail = 'sam@mail.com';
+      const userId = mongoose.Types.ObjectId();
+      const user = UserFactory.build({ _id: userId });
+      before(async () => {
+        await User.create(user);
+        await sendReferralInvite({ email: inviteEmail, referrerId: userId });
+        countedReferrals = await Referral.countDocuments({});
+      });
+      it('updates referral invite to registered', async () => {
+        const referralInfo = ReferralFactory.build({ referrerId: userId, email: inviteEmail });
+        const referral = await addReferral(referralInfo);
+        const currentcountedReferrals = await Referral.countDocuments({});
+        expect(referral.referralInfo).to.eql(referralInfo.referralInfo);
+        expect(referral.status).to.eql(REFERRAL_STATUS.REGISTERED);
+        expect(currentcountedReferrals).to.eql(countedReferrals);
+      });
+    });
   });
 
   describe('#getAllUserReferrals', () => {
