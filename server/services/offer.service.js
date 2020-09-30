@@ -3,6 +3,7 @@ import Offer from '../models/offer.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
+// eslint-disable-next-line import/no-cycle
 import { getUserById } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
 import { getOneProperty } from './property.service';
@@ -232,6 +233,19 @@ export const getOffer = async (offerId) =>
     },
   ]);
 
+export const calculateContributionReward = async (offerId) => {
+  const offer = await getOffer(offerId);
+  const propertyPrice = offer[0].propertyInfo.price;
+  const offerPrice = offer[0].totalAmountPayable;
+  const contributionReward = propertyPrice - offerPrice;
+
+  try {
+    return Offer.findByIdAndUpdate(offerId, { $set: { contributionReward } }, { new: true });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating contribution reward', error);
+  }
+};
+
 export const createOffer = async (offer) => {
   const enquiry = await getEnquiryById(offer.enquiryId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -265,6 +279,7 @@ export const createOffer = async (offer) => {
       referenceCode,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, adminId: offer.vendorId });
+    await calculateContributionReward(newOffer._id);
     const offerInfo = await getOffer(newOffer._id);
     return { ...offerInfo[0], userInfo };
   } catch (error) {
