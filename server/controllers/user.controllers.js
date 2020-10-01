@@ -11,7 +11,6 @@ import {
   getUserInfo,
   addPropertyToFavorites,
   removePropertyFromFavorites,
-  getAccountOverview,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -156,18 +155,6 @@ const UserController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Property removed from favorites' });
-      })
-      .catch((error) => next(error));
-  },
-
-  getAccountOverview(req, res, next) {
-    const userId = req.user._id;
-    getAccountOverview(userId)
-      .then((overview) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          overview,
-        });
       })
       .catch((error) => next(error));
   },

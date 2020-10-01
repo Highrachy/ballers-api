@@ -112,6 +112,7 @@ const OfferSchema = new mongoose.Schema(
     },
     contributionReward: {
       type: Number,
+      default: 0,
     },
     allocationInPercentage: {
       type: Number,

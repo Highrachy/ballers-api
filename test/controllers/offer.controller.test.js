@@ -361,7 +361,7 @@ describe('Offer Controller', () => {
     const enquiryId = mongoose.Types.ObjectId();
     const enquiry = EnquiryFactory.build({
       _id: enquiryId,
-      userId: adminId,
+      userId,
       propertyId: propertyId1,
     });
     const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });

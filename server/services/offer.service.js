@@ -233,19 +233,6 @@ export const getOffer = async (offerId) =>
     },
   ]);
 
-export const calculateContributionReward = async (offerId) => {
-  const offer = await getOffer(offerId);
-  const propertyPrice = offer[0].propertyInfo.price;
-  const offerPrice = offer[0].totalAmountPayable;
-  const contributionReward = propertyPrice - offerPrice;
-
-  try {
-    return Offer.findByIdAndUpdate(offerId, { $set: { contributionReward } }, { new: true });
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating contribution reward', error);
-  }
-};
-
 export const createOffer = async (offer) => {
   const enquiry = await getEnquiryById(offer.enquiryId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -279,7 +266,6 @@ export const createOffer = async (offer) => {
       referenceCode,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, adminId: offer.vendorId });
-    await calculateContributionReward(newOffer._id);
     const offerInfo = await getOffer(newOffer._id);
     return { ...offerInfo[0], userInfo };
   } catch (error) {
@@ -288,9 +274,19 @@ export const createOffer = async (offer) => {
 };
 
 export const acceptOffer = async (offerToAccept) => {
-  const offer = await getOfferById(offerToAccept.offerId).catch((error) => {
+  const offer = await getOffer(offerToAccept.offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
+  if (offer[0].userId.toString() !== offerToAccept.userId.toString()) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'You cannot accept offer of another user',
+    );
+  }
+  const propertyPrice = offer[0].propertyInfo.price;
+  const offerPrice = offer[0].totalAmountPayable;
+  const contributionReward = propertyPrice - offerPrice < 0 ? 0 : propertyPrice - offerPrice;
 
   const expiryDate = new Date(offer.expires);
   if (Date.now() > expiryDate) {
@@ -299,11 +295,12 @@ export const acceptOffer = async (offerToAccept) => {
 
   try {
     await Offer.findByIdAndUpdate(
-      offer.id,
+      offer[0]._id,
       {
         $set: {
           status: OFFER_STATUS.INTERESTED,
           signature: offerToAccept.signature,
+          contributionReward,
           responseDate: Date.now(),
         },
       },
@@ -311,7 +308,7 @@ export const acceptOffer = async (offerToAccept) => {
     );
     return await getOffer(offerToAccept.offerId);
   } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error responding to offer', error);
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error accepting offer', error);
   }
 };
 

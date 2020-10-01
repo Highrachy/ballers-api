@@ -13,7 +13,6 @@ import {
   getActiveOffers,
   cancelOffer,
   getPropertyInitials,
-  calculateContributionReward,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -352,7 +351,7 @@ describe('Offer Service', () => {
     });
   });
 
-  describe('#calculateContributionReward', () => {
+  describe('#acceptOffer', () => {
     const userId = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
     const enquiryId = mongoose.Types.ObjectId();
@@ -369,52 +368,12 @@ describe('Offer Service', () => {
       _id: offerId,
       enquiryId,
       vendorId: userId,
-      totalAmountPayable: 19000000,
+      totalAmountPayable: 18000000,
     });
-
-    beforeEach(async () => {
-      await addUser(user);
-      await addProperty(property);
-      await addEnquiry(enquiry);
-      await createOffer(offer);
-    });
-
-    context('when offer exists', () => {
-      it('returns a valid offer', async () => {
-        const calculatedOffer = await calculateContributionReward(offerId);
-        expect(calculatedOffer._id).to.eql(offerId);
-        expect(calculatedOffer.propertyId).to.eql(propertyId);
-        expect(calculatedOffer.contributionReward).to.eql(1000000);
-      });
-    });
-
-    context('when getOfferById fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('error msg'));
-        try {
-          await calculateContributionReward(offerId);
-        } catch (err) {
-          expect(err.statusCode).to.eql(400);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Error updating contribution reward');
-        }
-        Offer.findByIdAndUpdate.restore();
-      });
-    });
-  });
-
-  describe('#acceptOffer', () => {
-    const userId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
-    const offerId = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: userId });
     const toAccept = {
       offerId,
       signature: 'http://www.ballers.ng/signature.png',
+      userId,
     };
 
     beforeEach(async () => {
@@ -428,21 +387,8 @@ describe('Offer Service', () => {
       it('returns a valid accepted offer', async () => {
         const acceptedOffer = await acceptOffer(toAccept);
         expect(acceptedOffer[0].status).to.eql('Interested');
+        expect(acceptedOffer[0].contributionReward).to.eql(2000000);
         expect(acceptedOffer[0].signature).to.eql(toAccept.signature);
-      });
-    });
-
-    context('when getOfferById fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Offer, 'findById').throws(new Error('error msg'));
-        try {
-          await acceptOffer(toAccept);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        Offer.findById.restore();
       });
     });
   });
@@ -636,14 +582,6 @@ describe('Offer Service', () => {
         expect(offers).to.be.an('array');
         expect(offers.length).to.be.eql(3);
       });
-    });
-  });
-
-  describe('#calculateContributionReward', () => {
-    it('returns a valid offer by Id', async () => {
-      const propertyname = 'Lekki ville estate';
-      const initials = await getPropertyInitials(propertyname);
-      expect(initials).to.eql('LVE');
     });
   });
 });
