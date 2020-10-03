@@ -396,6 +396,21 @@ describe('Offer Controller', () => {
       });
     });
 
+    context('when offer is accepted by another user ', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offer/accept')
+          .set('authorization', adminToken)
+          .send(acceptanceInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You cannot accept offer of another user');
+            done();
+          });
+      });
+    });
+
     context('without token', () => {
       it('returns error', (done) => {
         request()

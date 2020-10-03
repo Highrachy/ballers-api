@@ -352,43 +352,71 @@ describe('Offer Service', () => {
   });
 
   describe('#acceptOffer', () => {
-    const userId = mongoose.Types.ObjectId();
+    const userId1 = mongoose.Types.ObjectId();
+    const userId2 = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
-    const offerId = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId });
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const offerId1 = mongoose.Types.ObjectId();
+    const offerId2 = mongoose.Types.ObjectId();
+    const user1 = UserFactory.build({ _id: userId1 });
+    const user2 = UserFactory.build({ _id: userId2 });
     const property = PropertyFactory.build({
       _id: propertyId,
-      addedBy: userId,
-      updatedBy: userId,
+      addedBy: userId1,
+      updatedBy: userId1,
       price: 20000000,
     });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
-    const offer = OfferFactory.build({
-      _id: offerId,
-      enquiryId,
-      vendorId: userId,
+    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId: userId1, propertyId });
+    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId: userId2, propertyId });
+    const offer1 = OfferFactory.build({
+      _id: offerId1,
+      enquiryId: enquiryId1,
+      vendorId: userId1,
       totalAmountPayable: 18000000,
     });
-    const toAccept = {
-      offerId,
+    const offer2 = OfferFactory.build({
+      _id: offerId2,
+      enquiryId: enquiryId2,
+      vendorId: userId2,
+      totalAmountPayable: 28000000,
+    });
+    const toAcceptValid = {
+      offerId: offerId1,
       signature: 'http://www.ballers.ng/signature.png',
-      userId,
+      userId: userId1,
+    };
+    const toAcceptInvalid = {
+      offerId: offerId2,
+      signature: 'http://www.ballers.ng/signature.png',
+      userId: userId2,
     };
 
     beforeEach(async () => {
-      await addUser(user);
+      await addUser(user1);
+      await addUser(user2);
       await addProperty(property);
-      await addEnquiry(enquiry);
-      await createOffer(offer);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await createOffer(offer1);
+      await createOffer(offer2);
     });
 
     context('when all is valid', () => {
       it('returns a valid accepted offer', async () => {
-        const acceptedOffer = await acceptOffer(toAccept);
+        const acceptedOffer = await acceptOffer(toAcceptValid);
         expect(acceptedOffer[0].status).to.eql('Interested');
         expect(acceptedOffer[0].contributionReward).to.eql(2000000);
-        expect(acceptedOffer[0].signature).to.eql(toAccept.signature);
+        expect(acceptedOffer[0].signature).to.eql(toAcceptValid.signature);
+      });
+    });
+
+    context('when offer price is higher than property price', () => {
+      it('returns a valid accepted offer', async () => {
+        const acceptedOffer = await acceptOffer(toAcceptInvalid);
+        expect(acceptedOffer[0].status).to.eql('Interested');
+        expect(acceptedOffer[0].contributionReward).to.eql(0);
+        expect(acceptedOffer[0].signature).to.eql(toAcceptInvalid.signature);
       });
     });
   });
