@@ -110,6 +110,10 @@ const OfferSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    contributionReward: {
+      type: Number,
+      default: 0,
+    },
     allocationInPercentage: {
       type: Number,
       required: true,

@@ -361,7 +361,7 @@ describe('Offer Controller', () => {
     const enquiryId = mongoose.Types.ObjectId();
     const enquiry = EnquiryFactory.build({
       _id: enquiryId,
-      userId: adminId,
+      userId,
       propertyId: propertyId1,
     });
     const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
@@ -391,6 +391,21 @@ describe('Offer Controller', () => {
             expect(res.body.offer.signature).to.be.eql(acceptanceInfo.signature);
             expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiryId.toString());
             expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
+            done();
+          });
+      });
+    });
+
+    context('when offer is accepted by another user ', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offer/accept')
+          .set('authorization', adminToken)
+          .send(acceptanceInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You cannot accept offer of another user');
             done();
           });
       });

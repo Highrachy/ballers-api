@@ -34,7 +34,8 @@ const OfferController = {
 
   accept(req, res, next) {
     const offerInfo = req.locals;
-    acceptOffer(offerInfo)
+    const userId = req.user._id;
+    acceptOffer({ ...offerInfo, userId })
       .then((offer) => {
         const vendor = offer[0].vendorInfo;
         const offerResponse = offer[0];
