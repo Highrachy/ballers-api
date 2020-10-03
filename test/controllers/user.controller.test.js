@@ -10,6 +10,10 @@ import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import Upload from '../../server/helpers/uploadImage';
 import { sendReferralInvite } from '../../server/services/referral.service';
+import OfferFactory from '../factories/offer.factory';
+import EnquiryFactory from '../factories/enquiry.factory';
+import { addEnquiry } from '../../server/services/enquiry.service';
+import { createOffer } from '../../server/services/offer.service';
 
 useDatabase();
 
@@ -1235,6 +1239,96 @@ describe('User Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
+            done();
+          });
+      });
+    });
+  });
+
+  describe('Account Overview', () => {
+    let token;
+    const userId = mongoose.Types.ObjectId();
+    const vendorId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const vendor = UserFactory.build({ _id: vendorId });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+      price: 20000000,
+    });
+
+    const enquiryId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const offer = OfferFactory.build({
+      enquiryId,
+      vendorId,
+      userId,
+      totalAmountPayable: 19000000,
+    });
+
+    beforeEach(async () => {
+      token = await addUser(user);
+      await addUser(vendor);
+    });
+
+    context('with valid token', () => {
+      it('returns contribution reward of zero', (done) => {
+        request()
+          .get('/api/v1/user/overview')
+          .set('authorization', token)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.overview.contributionReward).to.be.eql(0);
+            done();
+          });
+      });
+    });
+
+    beforeEach(async () => {
+      await addProperty(property);
+      await addEnquiry(enquiry);
+      await createOffer(offer);
+    });
+
+    // context('with valid token', () => {
+    //   it('returns contribution reward of one million', (done) => {
+    //     request()
+    //       .get('/api/v1/user/overview')
+    //       .set('authorization', token)
+    //       .end((err, res) => {
+    //         expect(res).to.have.status(200);
+    //         expect(res.body.success).to.be.eql(true);
+    //         expect(res.body.overview.contributionReward).to.be.eql(1000000);
+    //         done();
+    //       });
+    //   });
+    // });
+
+    context('with no token', () => {
+      it('returns a forbidden error', (done) => {
+        request()
+          .get('/api/v1/user/overview')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('with invalid token', () => {
+      it('returns an authorization error', (done) => {
+        request()
+          .get('/api/v1/user/overview')
+          .set('authorization', 'invalid-token')
+          .end((err, res) => {
+            expect(res).to.have.status(401);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Authentication Failed');
             done();
           });
       });

@@ -1,3 +1,4 @@
+/* eslint-disable import/no-cycle */
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
@@ -6,7 +7,7 @@ import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
-// eslint-disable-next-line import/no-cycle
+import { getActiveOffers } from './offer.service';
 import { addReferral } from './referral.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
@@ -327,4 +328,16 @@ export const removePropertyFromFavorites = async (favorite) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error removing property from favorites', error);
   }
+};
+
+export const getAccountOverview = async (userId) => {
+  const offers = await getActiveOffers(userId);
+  const contributionReward = offers.reduce(
+    (previousValue, currentValue) => previousValue + currentValue.contributionReward || 0,
+    0,
+  );
+  const overview = {
+    contributionReward,
+  };
+  return overview;
 };
