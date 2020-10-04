@@ -6,6 +6,8 @@ import httpStatus from '../helpers/httpStatus';
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getTransactionById = async (id) => Transaction.findById(id).select();
+export const getTransactionByInfo = async (additionalInfo) =>
+  Transaction.findOne({ additionalInfo }).select();
 
 export const addTransaction = async (transaction) => {
   try {
