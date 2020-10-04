@@ -136,6 +136,7 @@ export const getReferralById = async (referralId) =>
         'referrer._id': 1,
         'referrer.firstName': 1,
         'referrer.lastName': 1,
+        'referrer.referralCode': 1,
       },
     },
   ]);
