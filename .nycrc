@@ -4,7 +4,8 @@
   "exclude": [
     ".eslintrc.js",
     "server/config/**",
-    "server/helpers/uploadImage.js"
+    "server/helpers/uploadImage.js",
+    "**/payment.**"
   ],
   "extends": "@istanbuljs/nyc-config-babel",
   "branches": 80,
