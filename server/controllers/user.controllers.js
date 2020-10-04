@@ -15,6 +15,7 @@ import {
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import httpStatus from '../helpers/httpStatus';
+import { HOST } from '../config';
 
 const UserController = {
   register(req, res, next) {
@@ -22,7 +23,7 @@ const UserController = {
     addUser(user)
       .then((token) => {
         sendMail(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
-          link: `http://ballers.ng/activate?token=${token}`,
+          link: `${HOST}/activate?token=${token}`,
         });
         res.status(httpStatus.CREATED).json({ success: true, message: 'User registered', token });
       })
@@ -56,7 +57,7 @@ const UserController = {
     forgotPasswordToken(email)
       .then((data) => {
         sendMail(EMAIL_CONTENT.RESET_PASSWORD_LINK, data.user, {
-          link: `http://ballers.ng/change-password/${data.token}`,
+          link: `${HOST}/change-password/${data.token}`,
         });
         res.status(httpStatus.OK).json({
           success: true,
@@ -72,7 +73,7 @@ const UserController = {
     resetPasswordViaToken(password, token)
       .then((user) => {
         sendMail(EMAIL_CONTENT.CHANGE_PASSWORD, user, {
-          link: `http://ballers.ng/reset-password`,
+          link: `${HOST}/reset-password`,
         });
         res.status(httpStatus.OK).json({
           success: true,

@@ -8,10 +8,13 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const DB_URL = process.env.DB_URL || process.env.MONGODB_URI || 'mongodb://localhost:27017/ballers';
 const PORT = process.env.PORT || 3000;
 const USER_SECRET = process.env.USER_SECRET || 'local_secret';
-const HOST =
-  process.env.HOST || NODE_ENV === 'development'
-    ? `http://localhost:3000`
-    : 'http://appstaging.ballers.ng';
+
+const ENVIRONMENTS = {
+  development: `http://localhost:${PORT}`,
+  test: `http://ballers.ng`,
+  production: `http://appstaging.ballers.ng`,
+};
+const HOST = process.env.HOST || ENVIRONMENTS[NODE_ENV] || 'http://appstaging.ballers.ng';
 
 const startDBConnection = () => {
   if (process.env.NODE_ENV !== 'test') {
