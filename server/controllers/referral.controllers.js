@@ -9,6 +9,7 @@ import {
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
+import { HOST } from '../config';
 
 const ReferralController = {
   getAllReferrals(req, res, next) {
@@ -50,7 +51,7 @@ const ReferralController = {
           {
             contentTop,
             contentBottom,
-            link: `http://ballers.ng/invite/${inviteInfo._id}`,
+            link: `${HOST}/invite/${inviteInfo._id}`,
           },
         );
         res.status(httpStatus.OK).json({ success: true, message: 'Invite sent' });
