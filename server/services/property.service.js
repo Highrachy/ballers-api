@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Property from '../models/property.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+import Transaction from '../models/transaction.model';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -265,3 +266,35 @@ export const getAvailablePropertyOptions = async () =>
 
 export const getPropertiesWithPaymentPlanId = async (id) =>
   Property.find({ paymentPlan: { $in: [id] } });
+
+export const getAssignedPropertyById = async (userId, propertyId) =>
+  Transaction.aggregate([
+    {
+      $match: {
+        $and: [{ userId: ObjectId(userId) }, { propertyId: ObjectId(propertyId) }],
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'property',
+      },
+    },
+    {
+      $unwind: '$property',
+    },
+    {
+      $project: {
+        property: 1,
+        amount: 1,
+      },
+    },
+    {
+      $group: {
+        _id: '$property._id',
+        totalAmountContributed: { $sum: '$amount' },
+      },
+    },
+  ]);
