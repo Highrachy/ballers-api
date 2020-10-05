@@ -9,6 +9,7 @@ import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
 import { calculateContributionReward } from './offer.service';
 import { addReferral } from './referral.service';
+import { getTotalAmountPaidByUser } from './transaction.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -334,8 +335,12 @@ export const getAccountOverview = async (userId) => {
   let contributionReward = await calculateContributionReward(userId);
   contributionReward = contributionReward.length > 0 ? contributionReward[0].contributionReward : 0;
 
+  let totalAmountPaid = await getTotalAmountPaidByUser(userId);
+  totalAmountPaid = totalAmountPaid.length > 0 ? totalAmountPaid[0].totalAmountPaid : 0;
+
   const overview = {
     contributionReward,
+    totalAmountPaid,
   };
   return overview;
 };

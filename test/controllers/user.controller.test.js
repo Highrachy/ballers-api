@@ -12,8 +12,10 @@ import Upload from '../../server/helpers/uploadImage';
 import { sendReferralInvite } from '../../server/services/referral.service';
 import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
+import TransactionFactory from '../factories/transaction.factory';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { createOffer, acceptOffer } from '../../server/services/offer.service';
+import { addTransaction } from '../../server/services/transaction.service';
 
 useDatabase();
 
@@ -1251,6 +1253,7 @@ describe('User Controller', () => {
     const vendorId = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
     const offerId = mongoose.Types.ObjectId();
+    const transactionId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const vendor = UserFactory.build({ _id: vendorId });
     const property = PropertyFactory.build({
@@ -1269,6 +1272,13 @@ describe('User Controller', () => {
       userId,
       totalAmountPayable: 19000000,
     });
+    const transaction = TransactionFactory.build({
+      _id: transactionId,
+      propertyId,
+      userId,
+      adminId: vendorId,
+      amount: 250000,
+    });
 
     beforeEach(async () => {
       token = await addUser(user);
@@ -1281,10 +1291,10 @@ describe('User Controller', () => {
           .get('/api/v1/user/overview')
           .set('authorization', token)
           .end((err, res) => {
-            console.log(res.body);
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.overview.contributionReward).to.be.eql(0);
+            expect(res.body.overview.totalAmountPaid).to.be.eql(0);
             done();
           });
       });
@@ -1295,6 +1305,7 @@ describe('User Controller', () => {
         await addProperty(property);
         await addEnquiry(enquiry);
         await createOffer(offer);
+        await addTransaction(transaction);
         await acceptOffer({ userId, offerId, signature: 'https://ballers.ng/signature.png' });
       });
 
@@ -1307,6 +1318,7 @@ describe('User Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.overview.contributionReward).to.be.eql(1000000);
+              expect(res.body.overview.totalAmountPaid).to.be.eql(250000);
               done();
             });
         });

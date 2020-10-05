@@ -133,3 +133,14 @@ export const getUserTransactionsByProperty = async (propertyId) =>
       },
     },
   ]);
+
+export const getTotalAmountPaidByUser = async (userId) =>
+  Transaction.aggregate([
+    { $match: { userId: ObjectId(userId) } },
+    {
+      $group: {
+        _id: null,
+        totalAmountPaid: { $sum: '$amount' },
+      },
+    },
+  ]);
