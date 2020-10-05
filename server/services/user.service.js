@@ -7,7 +7,7 @@ import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
-import { getActiveOffers } from './offer.service';
+import { calculateContributionReward } from './offer.service';
 import { addReferral } from './referral.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
@@ -331,11 +331,9 @@ export const removePropertyFromFavorites = async (favorite) => {
 };
 
 export const getAccountOverview = async (userId) => {
-  const offers = await getActiveOffers(userId);
-  const contributionReward = offers.reduce(
-    (previousValue, currentValue) => previousValue + currentValue.contributionReward || 0,
-    0,
-  );
+  let contributionReward = await calculateContributionReward(userId);
+  contributionReward = contributionReward.length > 0 ? contributionReward[0].contributionReward : 0;
+
   const overview = {
     contributionReward,
   };

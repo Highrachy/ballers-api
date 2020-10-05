@@ -32,7 +32,7 @@ import { addProperty, updateProperty } from '../../server/services/property.serv
 import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import { addEnquiry } from '../../server/services/enquiry.service';
-import { createOffer } from '../../server/services/offer.service';
+import { createOffer, acceptOffer } from '../../server/services/offer.service';
 
 useDatabase();
 
@@ -771,6 +771,7 @@ describe('User Service', () => {
     const userId = mongoose.Types.ObjectId();
     const vendorId = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
+    const offerId = mongoose.Types.ObjectId();
     const user = UserFactory.build({ _id: userId });
     const vendor = UserFactory.build({ _id: vendorId });
     const property = PropertyFactory.build({
@@ -783,6 +784,7 @@ describe('User Service', () => {
     const enquiryId = mongoose.Types.ObjectId();
     const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
     const offer = OfferFactory.build({
+      _id: offerId,
       enquiryId,
       vendorId,
       userId,
@@ -805,12 +807,13 @@ describe('User Service', () => {
         await addProperty(property);
         await addEnquiry(enquiry);
         await createOffer(offer);
+        await acceptOffer({ userId, offerId, signature: 'https://ballers.ng/signature.png' });
       });
 
-      // it('returns two million account overview', async () => {
-      //   const overview = await getAccountOverview(userId);
-      //   expect(overview.contributionReward).to.eql(2000000);
-      // });
+      it('returns two million account overview', async () => {
+        const overview = await getAccountOverview(userId);
+        expect(overview.contributionReward).to.eql(2000000);
+      });
     });
   });
 });

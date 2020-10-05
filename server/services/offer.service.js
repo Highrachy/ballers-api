@@ -353,3 +353,24 @@ export const cancelOffer = async (offerId) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error cancelling offer', error);
   }
 };
+
+export const calculateContributionReward = async (userId) =>
+  Offer.aggregate([
+    { $match: { userId: ObjectId(userId) } },
+    {
+      $match: {
+        $or: [
+          { status: OFFER_STATUS.GENERATED },
+          { status: OFFER_STATUS.INTERESTED },
+          { status: OFFER_STATUS.ASSIGNED },
+          { status: OFFER_STATUS.ALLOCATED },
+        ],
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        contributionReward: { $sum: '$contributionReward' },
+      },
+    },
+  ]);
