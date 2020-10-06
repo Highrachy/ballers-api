@@ -9,10 +9,11 @@ import PropertyFactory from '../factories/property.factory';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import Upload from '../../server/helpers/uploadImage';
-import { sendReferralInvite } from '../../server/services/referral.service';
+import { addReferral, sendReferralInvite } from '../../server/services/referral.service';
 import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import TransactionFactory from '../factories/transaction.factory';
+import ReferralFactory from '../factories/referral.factory';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
@@ -1262,6 +1263,12 @@ describe('User Controller', () => {
       updatedBy: vendorId,
       price: 20000000,
     });
+    const referralId = mongoose.Types.ObjectId();
+    const referral = ReferralFactory.build({
+      _id: referralId,
+      referrerId: userId,
+      reward: { amount: 50000 },
+    });
 
     const enquiryId = mongoose.Types.ObjectId();
     const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
@@ -1295,6 +1302,7 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.overview.contributionReward).to.be.eql(0);
             expect(res.body.overview.totalAmountPaid).to.be.eql(0);
+            expect(res.body.overview.referralRewards).to.be.eql(0);
             done();
           });
       });
@@ -1302,6 +1310,7 @@ describe('User Controller', () => {
 
     describe('when offer has been accepted', () => {
       beforeEach(async () => {
+        await addReferral(referral);
         await addProperty(property);
         await addEnquiry(enquiry);
         await createOffer(offer);
@@ -1319,6 +1328,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.overview.contributionReward).to.be.eql(1000000);
               expect(res.body.overview.totalAmountPaid).to.be.eql(250000);
+              expect(res.body.overview.referralRewards).to.be.eql(50000);
               done();
             });
         });

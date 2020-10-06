@@ -8,7 +8,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
 import { calculateContributionReward } from './offer.service';
-import { addReferral } from './referral.service';
+import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
@@ -338,9 +338,12 @@ export const getAccountOverview = async (userId) => {
   let totalAmountPaid = await getTotalAmountPaidByUser(userId);
   totalAmountPaid = totalAmountPaid.length > 0 ? totalAmountPaid[0].totalAmountPaid : 0;
 
-  const overview = {
+  let referralRewards = await calculateReferralRewards(userId);
+  referralRewards = referralRewards.length > 0 ? referralRewards[0].referralRewards : 0;
+
+  return {
     contributionReward,
     totalAmountPaid,
+    referralRewards,
   };
-  return overview;
 };
