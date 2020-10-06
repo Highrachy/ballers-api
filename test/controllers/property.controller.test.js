@@ -12,8 +12,9 @@ useDatabase();
 let adminToken;
 let userToken;
 const _id = mongoose.Types.ObjectId();
+const regularUserId = mongoose.Types.ObjectId();
 const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-const regularUser = UserFactory.build({ role: 1, activated: true });
+const regularUser = UserFactory.build({ _id: regularUserId, role: 1, activated: true });
 
 describe('Property Controller', () => {
   beforeEach(async () => {
@@ -1293,6 +1294,7 @@ describe('Property Controller', () => {
               expect(res.body.properties[0]).to.have.property('houseType');
               expect(res.body.properties[0]).to.have.property('description');
               expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0].assignedTo).to.not.include(regularUserId.toString());
               done();
             });
         });
