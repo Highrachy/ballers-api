@@ -77,6 +77,22 @@ describe('Transaction Controller', () => {
             });
         });
       });
+      context('when user id is empty', () => {
+        it('returns an error', (done) => {
+          const transaction = TransactionFactory.build({ offerId: '' });
+          request()
+            .post('/api/v1/transaction/add')
+            .set('authorization', adminToken)
+            .send(transaction)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+              done();
+            });
+        });
+      });
       context('when property id is empty', () => {
         it('returns an error', (done) => {
           const transaction = TransactionFactory.build({ propertyId: '' });
