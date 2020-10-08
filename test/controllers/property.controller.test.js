@@ -1416,7 +1416,7 @@ describe('Property Controller', () => {
         });
       });
 
-      context('when all properties have been assigned', () => {
+      context('when all properties have been assigned to user', () => {
         beforeEach(async () => {
           await assignPropertyToUser({ userId, propertyId: propertyId1 });
           await assignPropertyToUser({ userId, propertyId: propertyId2 });
@@ -1426,12 +1426,49 @@ describe('Property Controller', () => {
           request()
             .post('/api/v1/property/search')
             .set('authorization', userToken)
-            .send(filter)
+            .send({})
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
               expect(res.body.properties.length).to.be.eql(0);
+              done();
+            });
+        });
+      });
+
+      context('when no property has been assigned to user', () => {
+        it('returns all properties', (done) => {
+          request()
+            .post('/api/v1/property/search')
+            .set('authorization', userToken)
+            .send({})
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('properties');
+              expect(res.body.properties.length).to.be.eql(3);
+              done();
+            });
+        });
+      });
+
+      context('when 2 properties have been assigned to user', () => {
+        beforeEach(async () => {
+          await assignPropertyToUser({ userId, propertyId: propertyId1 });
+          await assignPropertyToUser({ userId, propertyId: propertyId2 });
+        });
+        it('returns one property', (done) => {
+          request()
+            .post('/api/v1/property/search')
+            .set('authorization', userToken)
+            .send({})
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('properties');
+              expect(res.body.properties.length).to.be.eql(1);
+              expect(res.body.properties[0]._id).to.be.eql(property3._id.toString());
               done();
             });
         });
