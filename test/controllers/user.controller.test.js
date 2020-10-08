@@ -1326,9 +1326,11 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.accountOverview.contributionReward).to.be.eql(1000000);
-              expect(res.body.accountOverview.totalAmountPaid).to.be.eql(250000);
-              expect(res.body.accountOverview.referralRewards).to.be.eql(50000);
+              expect(res.body.accountOverview.contributionReward).to.be.eql(
+                property.price - offer.totalAmountPayable,
+              );
+              expect(res.body.accountOverview.totalAmountPaid).to.be.eql(transaction.amount);
+              expect(res.body.accountOverview.referralRewards).to.be.eql(referral.reward.amount);
               done();
             });
         });

@@ -836,9 +836,9 @@ describe('User Service', () => {
 
       it('returns two million account overview', async () => {
         const overview = await getAccountOverview(userId);
-        expect(overview.contributionReward).to.eql(2000000);
-        expect(overview.totalAmountPaid).to.eql(250000);
-        expect(overview.referralRewards).to.eql(50000);
+        expect(overview.contributionReward).to.eql(property.price - offer.totalAmountPayable);
+        expect(overview.totalAmountPaid).to.eql(transaction.amount);
+        expect(overview.referralRewards).to.eql(referral.reward.amount);
       });
     });
   });
