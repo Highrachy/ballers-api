@@ -77,7 +77,7 @@ describe('Transaction Controller', () => {
             });
         });
       });
-      context('when user id is empty', () => {
+      context('when offer id is empty', () => {
         it('returns an error', (done) => {
           const transaction = TransactionFactory.build({ offerId: '' });
           request()
