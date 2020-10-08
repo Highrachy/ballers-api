@@ -163,10 +163,10 @@ const UserController = {
   getAccountOverview(req, res, next) {
     const userId = req.user._id;
     getAccountOverview(userId)
-      .then((overview) => {
+      .then((accountOverview) => {
         res.status(httpStatus.OK).json({
           success: true,
-          overview,
+          accountOverview,
         });
       })
       .catch((error) => next(error));

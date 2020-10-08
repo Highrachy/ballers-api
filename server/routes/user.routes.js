@@ -433,7 +433,7 @@ router.post(
 /**
  * @swagger
  * path:
- *  /user/overview:
+ *  /user/account-overview:
  *    get:
  *      parameters:
  *        - in: query
@@ -449,6 +449,6 @@ router.post(
  *        '500':
  *          description: Internal server error
  */
-router.get('/overview', authenticate, UserController.getAccountOverview);
+router.get('/account-overview', authenticate, UserController.getAccountOverview);
 
 module.exports = router;

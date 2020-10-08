@@ -332,14 +332,19 @@ export const removePropertyFromFavorites = async (favorite) => {
 };
 
 export const getAccountOverview = async (userId) => {
-  let contributionReward = await calculateContributionReward(userId);
-  contributionReward = contributionReward.length > 0 ? contributionReward[0].contributionReward : 0;
+  const calculatedContributionReward = await calculateContributionReward(userId);
+  const contributionReward =
+    calculatedContributionReward.length > 0
+      ? calculatedContributionReward[0].contributionReward
+      : 0;
 
-  let totalAmountPaid = await getTotalAmountPaidByUser(userId);
-  totalAmountPaid = totalAmountPaid.length > 0 ? totalAmountPaid[0].totalAmountPaid : 0;
+  const calculatedTotalAmountPaid = await getTotalAmountPaidByUser(userId);
+  const totalAmountPaid =
+    calculatedTotalAmountPaid.length > 0 ? calculatedTotalAmountPaid[0].totalAmountPaid : 0;
 
-  let referralRewards = await calculateReferralRewards(userId);
-  referralRewards = referralRewards.length > 0 ? referralRewards[0].referralRewards : 0;
+  const calculatedReferralRewards = await calculateReferralRewards(userId);
+  const referralRewards =
+    calculatedReferralRewards.length > 0 ? calculatedReferralRewards[0].referralRewards : 0;
 
   return {
     contributionReward,

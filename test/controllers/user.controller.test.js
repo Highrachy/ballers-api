@@ -1295,14 +1295,14 @@ describe('User Controller', () => {
     context('with valid token', () => {
       it('returns contribution reward of zero', (done) => {
         request()
-          .get('/api/v1/user/overview')
+          .get('/api/v1/user/account-overview')
           .set('authorization', token)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.overview.contributionReward).to.be.eql(0);
-            expect(res.body.overview.totalAmountPaid).to.be.eql(0);
-            expect(res.body.overview.referralRewards).to.be.eql(0);
+            expect(res.body.accountOverview.contributionReward).to.be.eql(0);
+            expect(res.body.accountOverview.totalAmountPaid).to.be.eql(0);
+            expect(res.body.accountOverview.referralRewards).to.be.eql(0);
             done();
           });
       });
@@ -1319,16 +1319,16 @@ describe('User Controller', () => {
       });
 
       context('with valid token', () => {
-        it('returns contribution reward of one million', (done) => {
+        it('returns a valid contribution reward', (done) => {
           request()
-            .get('/api/v1/user/overview')
+            .get('/api/v1/user/account-overview')
             .set('authorization', token)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.overview.contributionReward).to.be.eql(1000000);
-              expect(res.body.overview.totalAmountPaid).to.be.eql(250000);
-              expect(res.body.overview.referralRewards).to.be.eql(50000);
+              expect(res.body.accountOverview.contributionReward).to.be.eql(1000000);
+              expect(res.body.accountOverview.totalAmountPaid).to.be.eql(250000);
+              expect(res.body.accountOverview.referralRewards).to.be.eql(50000);
               done();
             });
         });
@@ -1337,7 +1337,7 @@ describe('User Controller', () => {
       context('with no token', () => {
         it('returns a forbidden error', (done) => {
           request()
-            .get('/api/v1/user/overview')
+            .get('/api/v1/user/account-overview')
             .end((err, res) => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
@@ -1350,7 +1350,7 @@ describe('User Controller', () => {
       context('with invalid token', () => {
         it('returns an authorization error', (done) => {
           request()
-            .get('/api/v1/user/overview')
+            .get('/api/v1/user/account-overview')
             .set('authorization', 'invalid-token')
             .end((err, res) => {
               expect(res).to.have.status(401);

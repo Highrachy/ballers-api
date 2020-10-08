@@ -24,6 +24,8 @@ import {
   getAccountOverview,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
+import ReferralFactory from '../factories/referral.factory';
+import TransactionFactory from '../factories/transaction.factory';
 import { USER_SECRET } from '../../server/config';
 import User from '../../server/models/user.model';
 import Property from '../../server/models/property.model';
@@ -33,6 +35,8 @@ import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { createOffer, acceptOffer } from '../../server/services/offer.service';
+import { addTransaction } from '../../server/services/transaction.service';
+import { addReferral } from '../../server/services/referral.service';
 
 useDatabase();
 
@@ -791,6 +795,22 @@ describe('User Service', () => {
       totalAmountPayable: 18000000,
     });
 
+    const referralId = mongoose.Types.ObjectId();
+    const referral = ReferralFactory.build({
+      _id: referralId,
+      referrerId: userId,
+      reward: { amount: 50000 },
+    });
+
+    const transactionId = mongoose.Types.ObjectId();
+    const transaction = TransactionFactory.build({
+      _id: transactionId,
+      propertyId,
+      userId,
+      adminId: vendorId,
+      amount: 250000,
+    });
+
     beforeEach(async () => {
       await addUser(user);
       await addUser(vendor);
@@ -799,6 +819,8 @@ describe('User Service', () => {
       it('returns zero as account overview', async () => {
         const overview = await getAccountOverview(userId);
         expect(overview.contributionReward).to.eql(0);
+        expect(overview.totalAmountPaid).to.eql(0);
+        expect(overview.referralRewards).to.eql(0);
       });
     });
 
@@ -808,11 +830,15 @@ describe('User Service', () => {
         await addEnquiry(enquiry);
         await createOffer(offer);
         await acceptOffer({ userId, offerId, signature: 'https://ballers.ng/signature.png' });
+        await addReferral(referral);
+        await addTransaction(transaction);
       });
 
       it('returns two million account overview', async () => {
         const overview = await getAccountOverview(userId);
         expect(overview.contributionReward).to.eql(2000000);
+        expect(overview.totalAmountPaid).to.eql(250000);
+        expect(overview.referralRewards).to.eql(50000);
       });
     });
   });
