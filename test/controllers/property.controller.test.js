@@ -4,17 +4,17 @@ import Property from '../../server/models/property.model';
 import User from '../../server/models/user.model';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
-import { addUser } from '../../server/services/user.service';
+import { addUser, assignPropertyToUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 
 useDatabase();
 
 let adminToken;
 let userToken;
-const _id = mongoose.Types.ObjectId();
-const regularUserId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-const regularUser = UserFactory.build({ _id: regularUserId, role: 1, activated: true });
+const adminId = mongoose.Types.ObjectId();
+const userId = mongoose.Types.ObjectId();
+const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
+const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
 
 describe('Property Controller', () => {
   beforeEach(async () => {
@@ -42,7 +42,7 @@ describe('Property Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(adminId);
       });
       it('returns token error', (done) => {
         const property = PropertyFactory.build();
@@ -463,7 +463,7 @@ describe('Property Controller', () => {
 
   describe('Update Property', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
     const newProperty = {
       id,
       price: 30200000,
@@ -507,7 +507,7 @@ describe('Property Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(adminId);
       });
       it('returns token error', (done) => {
         request()
@@ -885,7 +885,7 @@ describe('Property Controller', () => {
 
   describe('Delete property', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
 
     beforeEach(async () => {
       await addProperty(property);
@@ -907,7 +907,7 @@ describe('Property Controller', () => {
 
     context('when token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(adminId);
       });
       it('returns token error', (done) => {
         request()
@@ -925,7 +925,7 @@ describe('Property Controller', () => {
     context('with an invalid property id', () => {
       it('returns an error', (done) => {
         request()
-          .delete(`/api/v1/property/delete/${_id}`)
+          .delete(`/api/v1/property/delete/${adminId}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -951,7 +951,7 @@ describe('Property Controller', () => {
 
   describe('Get one property', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
 
     beforeEach(async () => {
       await addProperty(property);
@@ -973,7 +973,7 @@ describe('Property Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(adminId);
       });
       it('returns token error', (done) => {
         request()
@@ -992,7 +992,7 @@ describe('Property Controller', () => {
     context('with an invalid property id', () => {
       it('returns not found', (done) => {
         request()
-          .get(`/api/v1/property/${_id}`)
+          .get(`/api/v1/property/${adminId}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(404);
@@ -1032,7 +1032,7 @@ describe('Property Controller', () => {
 
   describe('Get all properties', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
 
     context('when no property is found', () => {
       it('returns not found', (done) => {
@@ -1089,7 +1089,7 @@ describe('Property Controller', () => {
 
       context('when token is used', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(_id);
+          await User.findByIdAndDelete(adminId);
         });
         it('returns token error', (done) => {
           request()
@@ -1122,12 +1122,12 @@ describe('Property Controller', () => {
 
   describe('Get all properties added by an admin', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
 
     context('when no property is found', () => {
       it('returns not found', (done) => {
         request()
-          .get(`/api/v1/property/added-by/${_id}`)
+          .get(`/api/v1/property/added-by/${adminId}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -1146,7 +1146,7 @@ describe('Property Controller', () => {
       context('with a valid token & id', () => {
         it('returns successful payload', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${_id}`)
+            .get(`/api/v1/property/added-by/${adminId}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
@@ -1160,7 +1160,7 @@ describe('Property Controller', () => {
       context('with id is not a valid mongo id', () => {
         it('returns successful payload', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${_id}a`)
+            .get(`/api/v1/property/added-by/${adminId}a`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -1174,7 +1174,7 @@ describe('Property Controller', () => {
       context('without token', () => {
         it('returns error', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${_id}`)
+            .get(`/api/v1/property/added-by/${adminId}`)
             .end((err, res) => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
@@ -1186,11 +1186,11 @@ describe('Property Controller', () => {
 
       context('when token is used', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(_id);
+          await User.findByIdAndDelete(adminId);
         });
         it('returns token error', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${_id}`)
+            .get(`/api/v1/property/added-by/${adminId}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(404);
@@ -1205,7 +1205,7 @@ describe('Property Controller', () => {
         it('returns the error', (done) => {
           sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
           request()
-            .get(`/api/v1/property/added-by/${_id}`)
+            .get(`/api/v1/property/added-by/${adminId}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(500);
@@ -1218,11 +1218,13 @@ describe('Property Controller', () => {
   });
 
   describe('Search Through Properties', () => {
-    const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({
-      _id: id,
-      addedBy: _id,
-      updatedBy: _id,
+    const propertyId1 = mongoose.Types.ObjectId();
+    const propertyId2 = mongoose.Types.ObjectId();
+    const propertyId3 = mongoose.Types.ObjectId();
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
+      addedBy: adminId,
+      updatedBy: adminId,
       houseType: '3 bedroom duplex',
       address: {
         state: 'lagos',
@@ -1230,8 +1232,9 @@ describe('Property Controller', () => {
       },
     });
     const property2 = PropertyFactory.build({
-      addedBy: _id,
-      updatedBy: _id,
+      _id: propertyId2,
+      addedBy: adminId,
+      updatedBy: adminId,
       houseType: '4 bedroom detatched duplex',
       address: {
         state: 'lagos',
@@ -1239,8 +1242,9 @@ describe('Property Controller', () => {
       },
     });
     const property3 = PropertyFactory.build({
-      addedBy: _id,
-      updatedBy: _id,
+      _id: propertyId3,
+      addedBy: adminId,
+      updatedBy: adminId,
       houseType: '3 bedroom duplex',
       address: {
         state: 'ogun',
@@ -1271,7 +1275,7 @@ describe('Property Controller', () => {
 
     describe('when properties exist in db', () => {
       beforeEach(async () => {
-        await addProperty(property);
+        await addProperty(property1);
         await addProperty(property2);
         await addProperty(property3);
       });
@@ -1293,8 +1297,8 @@ describe('Property Controller', () => {
               expect(res.body.properties[0]).to.have.property('price');
               expect(res.body.properties[0]).to.have.property('houseType');
               expect(res.body.properties[0]).to.have.property('description');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
-              expect(res.body.properties[0].assignedTo).to.not.include(regularUserId.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
+              expect(res.body.properties[0].assignedTo).to.not.include(userId.toString());
               done();
             });
         });
@@ -1310,7 +1314,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               expect(res.body.properties.length).to.be.eql(3);
               done();
             });
@@ -1327,7 +1331,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               done();
             });
         });
@@ -1343,7 +1347,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               done();
             });
         });
@@ -1359,7 +1363,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               done();
             });
         });
@@ -1390,7 +1394,7 @@ describe('Property Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
               expect(res.body.properties.length).to.be.eql(2);
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               expect(res.body.properties[1].houseType).to.be.eql(property2.houseType);
               done();
             });
@@ -1411,6 +1415,27 @@ describe('Property Controller', () => {
             });
         });
       });
+
+      context('when all properties have been assigned', () => {
+        beforeEach(async () => {
+          await assignPropertyToUser({ userId, propertyId: propertyId1 });
+          await assignPropertyToUser({ userId, propertyId: propertyId2 });
+          await assignPropertyToUser({ userId, propertyId: propertyId3 });
+        });
+        it('returns no property', (done) => {
+          request()
+            .post('/api/v1/property/search')
+            .set('authorization', userToken)
+            .send(filter)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('properties');
+              expect(res.body.properties.length).to.be.eql(0);
+              done();
+            });
+        });
+      });
     });
   });
 
@@ -1418,20 +1443,20 @@ describe('Property Controller', () => {
     const property1 = PropertyFactory.build({
       houseType: '2 bedroom apartment',
       address: { state: 'taraba' },
-      addedBy: _id,
-      updatedBy: _id,
+      addedBy: adminId,
+      updatedBy: adminId,
     });
     const property2 = PropertyFactory.build({
       houseType: '4 bedroom semi-detatched',
       address: { state: 'taraba' },
-      addedBy: _id,
-      updatedBy: _id,
+      addedBy: adminId,
+      updatedBy: adminId,
     });
     const property3 = PropertyFactory.build({
       houseType: '4 bedroom semi-detatched',
       address: { state: 'kano' },
-      addedBy: _id,
-      updatedBy: _id,
+      addedBy: adminId,
+      updatedBy: adminId,
     });
 
     describe('when properties exist in db', () => {
