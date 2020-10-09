@@ -200,3 +200,14 @@ export const getUserByRefCode = async (refCode) =>
       },
     },
   ]);
+
+export const calculateReferralRewards = async (referrerId) =>
+  Referral.aggregate([
+    { $match: { referrerId: ObjectId(referrerId) } },
+    {
+      $group: {
+        _id: null,
+        referralRewards: { $sum: '$reward.amount' },
+      },
+    },
+  ]);

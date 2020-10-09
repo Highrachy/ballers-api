@@ -9,7 +9,14 @@ import PropertyFactory from '../factories/property.factory';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import Upload from '../../server/helpers/uploadImage';
-import { sendReferralInvite } from '../../server/services/referral.service';
+import { addReferral, sendReferralInvite } from '../../server/services/referral.service';
+import OfferFactory from '../factories/offer.factory';
+import EnquiryFactory from '../factories/enquiry.factory';
+import TransactionFactory from '../factories/transaction.factory';
+import ReferralFactory from '../factories/referral.factory';
+import { addEnquiry } from '../../server/services/enquiry.service';
+import { createOffer, acceptOffer } from '../../server/services/offer.service';
+import { addTransaction } from '../../server/services/transaction.service';
 
 useDatabase();
 
@@ -1237,6 +1244,123 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(false);
             done();
           });
+      });
+    });
+  });
+
+  describe('Account Overview', () => {
+    let token;
+    const userId = mongoose.Types.ObjectId();
+    const vendorId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const offerId = mongoose.Types.ObjectId();
+    const transactionId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const vendor = UserFactory.build({ _id: vendorId });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+      price: 20000000,
+    });
+    const referralId = mongoose.Types.ObjectId();
+    const referral = ReferralFactory.build({
+      _id: referralId,
+      referrerId: userId,
+      reward: { amount: 50000 },
+    });
+
+    const enquiryId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const offer = OfferFactory.build({
+      _id: offerId,
+      enquiryId,
+      vendorId,
+      userId,
+      totalAmountPayable: 19000000,
+    });
+    const transaction = TransactionFactory.build({
+      _id: transactionId,
+      propertyId,
+      userId,
+      adminId: vendorId,
+      amount: 250000,
+    });
+
+    beforeEach(async () => {
+      token = await addUser(user);
+      await addUser(vendor);
+    });
+
+    context('with valid token', () => {
+      it('returns contribution reward of zero', (done) => {
+        request()
+          .get('/api/v1/user/account-overview')
+          .set('authorization', token)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.accountOverview.contributionReward).to.be.eql(0);
+            expect(res.body.accountOverview.totalAmountPaid).to.be.eql(0);
+            expect(res.body.accountOverview.referralRewards).to.be.eql(0);
+            done();
+          });
+      });
+    });
+
+    describe('when offer has been accepted', () => {
+      beforeEach(async () => {
+        await addReferral(referral);
+        await addProperty(property);
+        await addEnquiry(enquiry);
+        await createOffer(offer);
+        await addTransaction(transaction);
+        await acceptOffer({ userId, offerId, signature: 'https://ballers.ng/signature.png' });
+      });
+
+      context('with valid token', () => {
+        it('returns a valid contribution reward', (done) => {
+          request()
+            .get('/api/v1/user/account-overview')
+            .set('authorization', token)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.accountOverview.contributionReward).to.be.eql(
+                property.price - offer.totalAmountPayable,
+              );
+              expect(res.body.accountOverview.totalAmountPaid).to.be.eql(transaction.amount);
+              expect(res.body.accountOverview.referralRewards).to.be.eql(referral.reward.amount);
+              done();
+            });
+        });
+      });
+
+      context('with no token', () => {
+        it('returns a forbidden error', (done) => {
+          request()
+            .get('/api/v1/user/account-overview')
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Token needed to access resources');
+              done();
+            });
+        });
+      });
+
+      context('with invalid token', () => {
+        it('returns an authorization error', (done) => {
+          request()
+            .get('/api/v1/user/account-overview')
+            .set('authorization', 'invalid-token')
+            .end((err, res) => {
+              expect(res).to.have.status(401);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Authentication Failed');
+              done();
+            });
+        });
       });
     });
   });
