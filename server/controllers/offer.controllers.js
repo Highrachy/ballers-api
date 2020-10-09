@@ -43,9 +43,7 @@ const OfferController = {
         const contentTop = `Your offer on ${offerResponse.propertyInfo.name} has been accepted. Check your dashboard for more details.`;
 
         sendMail(EMAIL_CONTENT.OFFER_RESPONSE_VENDOR, vendor, { contentTop });
-        sendMail(EMAIL_CONTENT.OFFER_RESPONSE_USER, user, {
-          link: 'https://ballers.ng/link-to-article.html',
-        });
+        sendMail(EMAIL_CONTENT.OFFER_RESPONSE_USER, user, {});
 
         offerResponse.vendorId = null;
         offerResponse.vendorInfo = null;

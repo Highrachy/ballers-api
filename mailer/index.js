@@ -51,8 +51,7 @@ const EMAIL_CONTENT = {
   OFFER_RESPONSE_USER: {
     subject: 'Offer Signed',
     contentTop: `Congratulations on signing your offer. Details of your next steps are included in your offer letter and we are here to guide your process.`,
-    contentBottom: `  Meanwhile, click below to read our article on 5 Things Every Intending Homeowner Should Know. We look forward to an enjoyable process.`,
-    buttonText: 'Our article',
+    contentBottom: `Meanwhile, click below to read our article on <a href="https://ballers.ng">5 Things Every Intending Homeowner Should Know</a>. We look forward to an enjoyable process.`,
   },
 };
 
