@@ -430,4 +430,25 @@ router.post(
   UserController.removePropertyFromFavorites,
 );
 
+/**
+ * @swagger
+ * path:
+ *  /user/account-overview:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: the auto generated user token via jwt
+ *      summary: Returns financial overview of user (contribution reward, referral bonus etc)
+ *      tags: [User]
+ *      responses:
+ *        '200':
+ *          description: Returns overview
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/account-overview', authenticate, UserController.getAccountOverview);
+
 module.exports = router;

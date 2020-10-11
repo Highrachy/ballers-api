@@ -41,6 +41,8 @@ const PaymentController = {
             paystackResponse.metadata.custom_fields[0].value,
           [paystackResponse.metadata.custom_fields[1].variable_name]:
             paystackResponse.metadata.custom_fields[1].value,
+          [paystackResponse.metadata.custom_fields[2].variable_name]:
+            paystackResponse.metadata.custom_fields[2].value,
           paymentSource: 'Paystack',
           amount: paystackResponse.amount / 100,
           additionalInfo: paystackResponse.reference,

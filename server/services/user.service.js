@@ -7,7 +7,10 @@ import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
-import { addReferral } from './referral.service';
+import { calculateContributionReward } from './offer.service';
+import { addReferral, calculateReferralRewards } from './referral.service';
+import { getTotalAmountPaidByUser } from './transaction.service';
+import { REFERRAL_STATUS } from '../helpers/constants';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -102,6 +105,7 @@ export const addUser = async (user) => {
         userId: savedUser._id,
         referrerId: referrer._id,
         email: savedUser.email,
+        status: REFERRAL_STATUS.REGISTERED,
       });
     }
     return generateToken(savedUser._id);
@@ -327,4 +331,26 @@ export const removePropertyFromFavorites = async (favorite) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error removing property from favorites', error);
   }
+};
+
+export const getAccountOverview = async (userId) => {
+  const calculatedContributionReward = await calculateContributionReward(userId);
+  const contributionReward =
+    calculatedContributionReward.length > 0
+      ? calculatedContributionReward[0].contributionReward
+      : 0;
+
+  const calculatedTotalAmountPaid = await getTotalAmountPaidByUser(userId);
+  const totalAmountPaid =
+    calculatedTotalAmountPaid.length > 0 ? calculatedTotalAmountPaid[0].totalAmountPaid : 0;
+
+  const calculatedReferralRewards = await calculateReferralRewards(userId);
+  const referralRewards =
+    calculatedReferralRewards.length > 0 ? calculatedReferralRewards[0].referralRewards : 0;
+
+  return {
+    contributionReward,
+    totalAmountPaid,
+    referralRewards,
+  };
 };

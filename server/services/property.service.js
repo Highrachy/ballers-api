@@ -291,10 +291,10 @@ export const getAssignedPropertyById = async (userId, propertyId) =>
         amount: 1,
       },
     },
-    {
-      $group: {
-        _id: '$property._id',
-        totalAmountContributed: { $sum: '$amount' },
-      },
-    },
+    // {
+    //   $group: {
+    //     _id: '$property._id',
+    //     totalAmountContributed: { $sum: '$amount' },
+    //   },
+    // },
   ]);
