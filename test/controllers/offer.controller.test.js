@@ -16,8 +16,12 @@ import {
   getTodaysDateStandard,
   getTodaysDateInWords,
 } from '../../server/helpers/dates';
+import * as MailService from '../../server/services/mailer.service';
 
 useDatabase();
+
+let sendMailSpy;
+const sandbox = sinon.createSandbox();
 
 let adminToken;
 let userToken;
@@ -33,6 +37,14 @@ const property2 = PropertyFactory.build({ _id: propertyId2, addedBy: adminId, up
 const property3 = PropertyFactory.build({ _id: propertyId3, addedBy: adminId, updatedBy: adminId });
 
 describe('Offer Controller', () => {
+  beforeEach(() => {
+    sendMailSpy = sandbox.spy(MailService, 'sendMail');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
@@ -391,6 +403,7 @@ describe('Offer Controller', () => {
             expect(res.body.offer.signature).to.be.eql(acceptanceInfo.signature);
             expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiryId.toString());
             expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
+            expect(sendMailSpy.callCount).to.eq(2);
             done();
           });
       });
