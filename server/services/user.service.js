@@ -10,6 +10,7 @@ import { getPropertyById, updateProperty } from './property.service';
 import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
+import { REFERRAL_STATUS } from '../helpers/constants';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -104,6 +105,7 @@ export const addUser = async (user) => {
         userId: savedUser._id,
         referrerId: referrer._id,
         email: savedUser.email,
+        status: REFERRAL_STATUS.REGISTERED,
       });
     }
     return generateToken(savedUser._id);
