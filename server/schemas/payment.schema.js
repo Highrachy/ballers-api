@@ -6,5 +6,6 @@ export const requiredString = (label) => Joi.string().label(label).required();
 
 export const paymentSchema = Joi.object({
   amount: requiredString('Amount'),
-  propertyId: Joi.objectId().label('Property ID').required(),
+  offerId: Joi.objectId().label('Offer Id').required(),
+  propertyId: Joi.objectId().label('Property Id').required(),
 });
