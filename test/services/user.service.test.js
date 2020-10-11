@@ -37,6 +37,7 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import { addReferral } from '../../server/services/referral.service';
+import Referral from '../../server/models/referral.model';
 
 useDatabase();
 
@@ -206,66 +207,92 @@ describe('User Service', () => {
       });
     });
 
-    context('when user is invited by by valid referral code', () => {
-      const referralCode = 'RC1234';
-      const userWithRef = UserFactory.build({ email, referralCode });
+    describe('Registration with Referral Code', () => {
+      let countedReferrals;
+
       beforeEach(async () => {
-        await User.create(userWithRef);
+        countedReferrals = await Referral.countDocuments({});
       });
 
-      it('returns the user token', async () => {
-        const currentCountedUsers = await User.countDocuments({});
-        const _id = mongoose.Types.ObjectId();
-        const token = await addUser(UserFactory.build({ _id, referralCode }));
-        expectsReturnedTokenToBeValid(token, _id);
-        expect(currentCountedUsers).to.eql(countedUsers + 1);
-      });
-    });
+      context('when user is invited by by valid referral code', () => {
+        const referralCode = 'RC1234';
+        const userWithRef = UserFactory.build({ email, referralCode });
 
-    context('when an invalid invalid referal code is sent', () => {
-      it('throws an error', async () => {
-        try {
-          const InvalidUser = UserFactory.build({ referralCode: '123456' });
-          await addUser(InvalidUser);
-        } catch (err) {
+        beforeEach(async () => {
+          await User.create(userWithRef);
+        });
+
+        it('returns the user token', async () => {
           const currentCountedUsers = await User.countDocuments({});
-          expect(err.statusCode).to.eql(412);
-          expect(err.message).to.be.eql('Invalid referral code');
-          expect(currentCountedUsers).to.eql(countedUsers);
-        }
+          const _id = mongoose.Types.ObjectId();
+          const token = await addUser(UserFactory.build({ _id, referralCode }));
+          const currentCountedReferrals = await Referral.countDocuments({});
+          expectsReturnedTokenToBeValid(token, _id);
+          expect(currentCountedUsers).to.eql(countedUsers + 1);
+          expect(currentCountedReferrals).to.eql(countedReferrals + 1);
+        });
+
+        it('updates referral information to REGISTERED', async () => {
+          const _id = mongoose.Types.ObjectId();
+          const token = await addUser(UserFactory.build({ _id, referralCode }));
+          const referral = await Referral.findOne({ userId: _id });
+          expectsReturnedTokenToBeValid(token, _id);
+          expect(referral.status).to.eql('Registered');
+        });
       });
-    });
 
-    context('when getUserbyEmail returns an error', () => {
-      it('throws an error', async () => {
-        sinon.stub(User, 'findOne').throws(new Error('error msg'));
-        try {
-          await addUser(user);
-        } catch (err) {
-          const currentCountedUsers = await User.countDocuments({});
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-          expect(currentCountedUsers).to.eql(countedUsers);
-        }
-        User.findOne.restore();
+      context('when an invalid invalid referal code is sent', () => {
+        it('throws an error', async () => {
+          try {
+            const InvalidUser = UserFactory.build({ referralCode: '123456' });
+            await addUser(InvalidUser);
+          } catch (err) {
+            const currentCountedUsers = await User.countDocuments({});
+
+            const currentCountedReferrals = await Referral.countDocuments({});
+            expect(err.statusCode).to.eql(412);
+            expect(err.message).to.be.eql('Invalid referral code');
+            expect(currentCountedUsers).to.eql(countedUsers);
+            expect(currentCountedReferrals).to.eql(countedReferrals);
+          }
+        });
       });
-    });
 
-    context('when generateReferralCode returns an error', () => {
-      it('throws an error', async () => {
-        sinon.stub(User, 'findOne').throws(new Error('error msg'));
+      context('when getUserbyEmail returns an error', () => {
+        it('throws an error', async () => {
+          sinon.stub(User, 'findOne').throws(new Error('error msg'));
+          try {
+            await addUser(user);
+          } catch (err) {
+            const currentCountedUsers = await User.countDocuments({});
+            const currentCountedReferrals = await Referral.countDocuments({});
+            expect(err.statusCode).to.eql(500);
+            expect(err.error).to.be.an('Error');
+            expect(err.message).to.be.eql('Internal Server Error');
+            expect(currentCountedUsers).to.eql(countedUsers);
+            expect(currentCountedReferrals).to.eql(countedReferrals);
+          }
+          User.findOne.restore();
+        });
 
-        try {
-          await addUser(user);
-        } catch (err) {
-          const currentCountedUsers = await User.countDocuments({});
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-          expect(currentCountedUsers).to.eql(countedUsers);
-        }
-        User.findOne.restore();
+        context('when generateReferralCode returns an error', () => {
+          it('throws an error', async () => {
+            sinon.stub(User, 'findOne').throws(new Error('error msg'));
+
+            try {
+              await addUser(user);
+            } catch (err) {
+              const currentCountedUsers = await User.countDocuments({});
+              const currentCountedReferrals = await Referral.countDocuments({});
+              expect(err.statusCode).to.eql(500);
+              expect(err.error).to.be.an('Error');
+              expect(err.message).to.be.eql('Internal Server Error');
+              expect(currentCountedUsers).to.eql(countedUsers);
+              expect(currentCountedReferrals).to.eql(countedReferrals);
+            }
+            User.findOne.restore();
+          });
+        });
       });
     });
   });
