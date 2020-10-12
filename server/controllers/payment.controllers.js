@@ -4,9 +4,9 @@ import { addTransaction, getTransactionByInfo } from '../services/transaction.se
 
 const PaymentController = {
   paymentInitiation(req, res, next) {
-    const { amount, propertyId } = req.locals;
+    const { amount, propertyId, offerId } = req.locals;
     const { user } = req;
-    initiatePaystackPayment({ amount, user, propertyId })
+    initiatePaystackPayment({ amount, user, propertyId, offerId })
       .then((payment) => {
         res
           .status(httpStatus.CREATED)
@@ -29,11 +29,16 @@ const PaymentController = {
 
     try {
       const refExists = await getTransactionByInfo(ref);
-      if (refExists) {
-        return res.json({ success: true, message: 'Payment has already been processed' });
-      }
-
       const paystackResponse = await verifyPaystackPayment(ref);
+
+      if (refExists) {
+        return res.json({
+          success: true,
+          message: 'Payment has already been processed',
+          transaction: refExists,
+          paystackResponse,
+        });
+      }
 
       if (paystackResponse && paystackResponse.status === 'success') {
         const transaction = await addTransaction({
