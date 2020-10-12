@@ -205,7 +205,6 @@ export const assignPropertyToUser = async (toBeAssigned) => {
   try {
     const updatedProperty = {
       id: property.id,
-      units: property.units - 1,
       $push: { assignedTo: toBeAssigned.userId },
     };
     const updatePropertyUnit = await updateProperty(updatedProperty).catch((error) => {
@@ -221,6 +220,45 @@ export const assignPropertyToUser = async (toBeAssigned) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property', error);
   }
 };
+
+// TODO this is commented out as user model would need an `allocatedTo` to cater to allocated properties and separate them from assigned properties
+// export const allocatePropertyToUser = async (toBeAllocated) => {
+//   const assignedProperty = {
+//     propertyId: toBeAllocated.propertyId,
+//     assignedBy: toBeAllocated.assignedBy,
+//     assignedDate: Date.now(),
+//   };
+//   const property = await getPropertyById(toBeAllocated.propertyId).catch((error) => {
+//     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+//   });
+
+//   if (property.units < 1) {
+//     throw new ErrorHandler(httpStatus.NOT_FOUND, 'No available units');
+//   }
+
+//   const owner = await getUserById(toBeAllocated.userId).catch((error) => {
+//     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+//   });
+
+//   try {
+//     const updatedProperty = {
+//       id: property.id,
+//       units: property.units - 1,
+//       $push: { assignedTo: toBeAllocated.userId },
+//     };
+//     const updatePropertyUnit = await updateProperty(updatedProperty).catch((error) => {
+//       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+//     });
+
+//     if (updatePropertyUnit) {
+//       return User.findByIdAndUpdate(owner.id, { $push: { assignedProperties: assignedProperty } });
+//     }
+
+//     return new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property');
+//   } catch (error) {
+//     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property', error);
+//   }
+// };
 
 export const forgotPasswordToken = async (email) => {
   const existingUser = await getUserByEmail(email).catch((error) => {
