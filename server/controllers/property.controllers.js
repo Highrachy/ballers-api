@@ -92,9 +92,8 @@ const PropertyController = {
   },
 
   getAssignedPropertyById(req, res, next) {
-    const userId = req.user._id;
-    const propertyId = req.params.id;
-    getAssignedPropertyById(userId, propertyId)
+    const offerId = req.params.id;
+    getAssignedPropertyById(offerId)
       .then((properties) => {
         res.status(httpStatus.OK).json({
           success: true,

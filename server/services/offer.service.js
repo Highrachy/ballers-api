@@ -1,9 +1,9 @@
+/* eslint-disable import/no-cycle */
 import mongoose from 'mongoose';
 import Offer from '../models/offer.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
-// eslint-disable-next-line import/no-cycle
 import { getUserById } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
 import { getOneProperty } from './property.service';

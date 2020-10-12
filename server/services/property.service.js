@@ -3,6 +3,8 @@ import Property from '../models/property.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import Transaction from '../models/transaction.model';
+// eslint-disable-next-line import/no-cycle
+import { getOfferById } from './offer.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -267,13 +269,9 @@ export const getAvailablePropertyOptions = async () =>
 export const getPropertiesWithPaymentPlanId = async (id) =>
   Property.find({ paymentPlan: { $in: [id] } });
 
-export const getAssignedPropertyById = async (userId, propertyId) =>
+export const getTotalAmountPaidForProperty = async (offerId) =>
   Transaction.aggregate([
-    {
-      $match: {
-        $and: [{ userId: ObjectId(userId) }, { propertyId: ObjectId(propertyId) }],
-      },
-    },
+    { $match: { offerId: ObjectId(offerId) } },
     {
       $lookup: {
         from: 'properties',
@@ -286,15 +284,24 @@ export const getAssignedPropertyById = async (userId, propertyId) =>
       $unwind: '$property',
     },
     {
-      $project: {
-        property: 1,
-        amount: 1,
+      $group: {
+        _id: '$property._id',
+        totalAmountContributed: { $sum: '$amount' },
       },
     },
-    // {
-    //   $group: {
-    //     _id: '$property._id',
-    //     totalAmountContributed: { $sum: '$amount' },
-    //   },
-    // },
   ]);
+
+export const getAssignedPropertyById = async (offerId) => {
+  const total = await getTotalAmountPaidForProperty(offerId);
+  const totalPaid = total.length > 0 ? total[0].totalAmountContributed : 0;
+
+  const offer = await getOfferById(offerId);
+
+  const property = await getPropertyById(offer.propertyId);
+
+  return {
+    totalAmountPayable: offer.totalAmountPayable,
+    totalPaid,
+    property,
+  };
+};
