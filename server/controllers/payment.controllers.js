@@ -52,6 +52,7 @@ const PaymentController = {
           success: true,
           message: 'Payment was successful',
           transaction,
+          paystackResponse,
         });
       }
       return res
