@@ -195,6 +195,14 @@ export const getOffer = async (offerId) =>
     },
     {
       $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    {
+      $lookup: {
         from: 'enquiries',
         localField: 'enquiryId',
         foreignField: '_id',
@@ -213,6 +221,9 @@ export const getOffer = async (offerId) =>
       $unwind: '$vendorInfo',
     },
     {
+      $unwind: '$userInfo',
+    },
+    {
       $unwind: '$enquiryInfo',
     },
     {
@@ -229,6 +240,14 @@ export const getOffer = async (offerId) =>
         'vendorInfo.activated': 0,
         'vendorInfo.phone': 0,
         'vendorInfo.notifications': 0,
+        'userInfo.assignedProperties': 0,
+        'userInfo.password': 0,
+        'userInfo.referralCode': 0,
+        'userInfo.role': 0,
+        'userInfo.favorites': 0,
+        'userInfo.activated': 0,
+        'userInfo.phone': 0,
+        'userInfo.notifications': 0,
       },
     },
   ]);

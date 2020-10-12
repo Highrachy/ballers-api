@@ -37,13 +37,17 @@ const OfferController = {
     const userId = req.user._id;
     acceptOffer({ ...offerInfo, userId })
       .then((offer) => {
-        const vendor = offer[0].vendorInfo;
         const offerResponse = offer[0];
-        const contentTop = `Your offer on ${offer[0].propertyInfo.name} has been accepted. Check your dashboard for more details.`;
+        const vendor = offerResponse.vendorInfo;
+        const user = offerResponse.userInfo;
+        const contentTop = `Your offer on ${offerResponse.propertyInfo.name} has been accepted. Check your dashboard for more details.`;
 
-        sendMail(EMAIL_CONTENT.OFFER_RESPONSE, vendor, { contentTop });
+        sendMail(EMAIL_CONTENT.OFFER_RESPONSE_VENDOR, vendor, { contentTop });
+        sendMail(EMAIL_CONTENT.OFFER_RESPONSE_USER, user, {});
+
         offerResponse.vendorId = null;
         offerResponse.vendorInfo = null;
+        offerResponse.userInfo = null;
 
         res
           .status(httpStatus.OK)
