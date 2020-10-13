@@ -7,7 +7,8 @@ import {
   searchThroughProperties,
   getOneProperty,
   getAvailablePropertyOptions,
-  getAssignedPropertyById,
+  getAssignedPropertyByOfferId,
+  getAssignedProperties,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -91,13 +92,25 @@ const PropertyController = {
       .catch((error) => next(error));
   },
 
-  getAssignedPropertyById(req, res, next) {
+  getAssignedPropertyByOfferId(req, res, next) {
     const offerId = req.params.id;
-    getAssignedPropertyById(offerId)
+    getAssignedPropertyByOfferId(offerId)
       .then((property) => {
         res.status(httpStatus.OK).json({
           success: true,
           property,
+        });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAssignedProperties(req, res, next) {
+    const userId = req.user._id;
+    getAssignedProperties(userId)
+      .then((properties) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          properties,
         });
       })
       .catch((error) => next(error));

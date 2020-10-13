@@ -1600,4 +1600,69 @@ describe('Property Controller', () => {
       });
     });
   });
+
+  describe('Load all properties assigned to a user', () => {
+    const propertyId1 = mongoose.Types.ObjectId();
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
+      addedBy: adminId,
+      updatedBy: adminId,
+      assignedTo: [userId],
+    });
+
+    const propertyId2 = mongoose.Types.ObjectId();
+    const property2 = PropertyFactory.build({
+      _id: propertyId2,
+      addedBy: adminId,
+      updatedBy: adminId,
+      assignedTo: [userId],
+    });
+
+    beforeEach(async () => {
+      await addProperty(property1);
+      await addProperty(property2);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get(`/api/v1/property/assigned`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.properties[0]._id).to.be.eql(propertyId1.toString());
+            expect(res.body.properties[1]._id).to.be.eql(propertyId2.toString());
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/property/assigned`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getOffer service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/property/assigned`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Property.aggregate.restore();
+          });
+      });
+    });
+  });
 });

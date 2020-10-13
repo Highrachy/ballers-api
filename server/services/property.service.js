@@ -291,7 +291,7 @@ export const getTotalAmountPaidForProperty = async (offerId) =>
     },
   ]);
 
-export const getAssignedPropertyById = async (offerId) => {
+export const getAssignedPropertyByOfferId = async (offerId) => {
   const total = await getTotalAmountPaidForProperty(offerId);
   const totalPaid = total.length > 0 ? total[0].totalAmountContributed : 0;
 
@@ -302,3 +302,6 @@ export const getAssignedPropertyById = async (offerId) => {
     offer: offer[0],
   };
 };
+
+export const getAssignedProperties = async (userId) =>
+  Property.aggregate([{ $match: { assignedTo: ObjectId(userId) } }]);
