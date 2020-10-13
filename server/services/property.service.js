@@ -4,7 +4,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import Transaction from '../models/transaction.model';
 // eslint-disable-next-line import/no-cycle
-import { getOfferById } from './offer.service';
+import { getOffer } from './offer.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -295,13 +295,10 @@ export const getAssignedPropertyById = async (offerId) => {
   const total = await getTotalAmountPaidForProperty(offerId);
   const totalPaid = total.length > 0 ? total[0].totalAmountContributed : 0;
 
-  const offer = await getOfferById(offerId);
-
-  const property = await getPropertyById(offer.propertyId);
+  const offer = await getOffer(offerId);
 
   return {
-    totalAmountPayable: offer.totalAmountPayable,
     totalPaid,
-    property,
+    offer: offer[0],
   };
 };

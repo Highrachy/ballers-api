@@ -94,11 +94,10 @@ const PropertyController = {
   getAssignedPropertyById(req, res, next) {
     const offerId = req.params.id;
     getAssignedPropertyById(offerId)
-      .then((properties) => {
+      .then((property) => {
         res.status(httpStatus.OK).json({
           success: true,
-          message: 'Properties found',
-          properties,
+          property,
         });
       })
       .catch((error) => next(error));
