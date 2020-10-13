@@ -4,7 +4,7 @@ import {
   loginSchema,
   resetPasswordSchema,
   changePasswordSchema,
-  assignPropertySchema,
+  // assignPropertySchema,
   updateUserSchema,
   favoritePropertySchema,
 } from '../schemas/user.schema';
@@ -194,43 +194,43 @@ router.post(
  */
 router.get('/who-am-i', authenticate, UserController.currentUser);
 
-/**
- * @swagger
- * /user/assign-property:
- *   post:
- *     tags:
- *       - User
- *     description: Assigns property to a user
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            type: object
- *            properties:
- *              userId:
- *                  type: string
- *              propertyId:
- *                  type: string
- *      description: ID of property owner and ID of property to be assigned
- *     responses:
- *      '200':
- *        description: Property assigned
- *      '404':
- *        description: No units available
- *      '400':
- *        description: Bad request
- *      '500':
- *       description: Internal server error
- */
-router.post(
-  '/assign-property',
-  authenticate,
-  isAdmin,
-  schemaValidation(assignPropertySchema),
-  UserController.assignProperty,
-);
+// /**
+//  * @swagger
+//  * /user/assign-property:
+//  *   post:
+//  *     tags:
+//  *       - User
+//  *     description: Assigns property to a user
+//  *     produces:
+//  *       - application/json
+//  *     requestBody:
+//  *      content:
+//  *        application/json:
+//  *          schema:
+//  *            type: object
+//  *            properties:
+//  *              userId:
+//  *                  type: string
+//  *              propertyId:
+//  *                  type: string
+//  *      description: ID of property owner and ID of property to be assigned
+//  *     responses:
+//  *      '200':
+//  *        description: Property assigned
+//  *      '404':
+//  *        description: No units available
+//  *      '400':
+//  *        description: Bad request
+//  *      '500':
+//  *       description: Internal server error
+//  */
+// router.post(
+//   '/assign-property',
+//   authenticate,
+//   isAdmin,
+//   schemaValidation(assignPropertySchema),
+//   UserController.assignProperty,
+// );
 
 /**
  * @swagger
