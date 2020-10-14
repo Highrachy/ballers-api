@@ -84,7 +84,13 @@ router.put('/accept', authenticate, schemaValidation(acceptOfferSchema), OfferCo
  *      '500':
  *       description: Internal server error
  */
-router.put('/cancel', authenticate, schemaValidation(respondOfferSchema), OfferController.cancel);
+router.put(
+  '/cancel',
+  authenticate,
+  isAdmin,
+  schemaValidation(respondOfferSchema),
+  OfferController.cancel,
+);
 
 /**
  * @swagger

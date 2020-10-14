@@ -69,7 +69,8 @@ const OfferController = {
 
   cancel(req, res, next) {
     const { offerId } = req.locals;
-    cancelOffer(offerId)
+    const vendorId = req.user._id;
+    cancelOffer({ offerId, vendorId })
       .then(() => {
         res.status(httpStatus.OK).json({ success: true, message: 'Offer cancelled' });
       })
