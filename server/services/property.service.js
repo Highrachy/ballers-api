@@ -307,9 +307,10 @@ export const getAssignedPropertyByOfferId = async (offerId) => {
 
 export const getAssignedProperties = async (userId) =>
   Offer.aggregate([
+    { $match: { userId: ObjectId(userId) } },
     {
       $match: {
-        $and: [{ userId: ObjectId(userId) }, { status: OFFER_STATUS.ASSIGNED }],
+        $or: [{ status: OFFER_STATUS.ASSIGNED }, { status: OFFER_STATUS.ALLOCATED }],
       },
     },
     {
