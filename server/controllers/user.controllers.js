@@ -44,6 +44,7 @@ const UserController = {
     const { token } = req.query;
     activateUser(token)
       .then((user) => {
+        sendMail(EMAIL_CONTENT.WELCOME_MESSAGE, user, {});
         res.status(httpStatus.OK).json({
           success: true,
           message: 'Your account has been successfully activated',

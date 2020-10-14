@@ -407,6 +407,8 @@ describe('User Controller', () => {
             expect(res.body.user.activated).to.be.eql(true);
             expect(res.body.user.token).to.be.eql(token);
             expect(res.body.user).to.have.property('activationDate');
+            expect(sendMailSpy.callCount).to.eq(1);
+            expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.WELCOME_MESSAGE);
             done();
           });
       });
@@ -419,6 +421,7 @@ describe('User Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });

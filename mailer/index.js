@@ -53,6 +53,10 @@ const EMAIL_CONTENT = {
     contentTop: `Congratulations on signing your offer. Details of your next steps are included in your offer letter and we are here to guide your process.`,
     contentBottom: `Meanwhile, click below to read our article on <a href="https://ballers.ng">5 Things Every Intending Homeowner Should Know</a>. We look forward to an enjoyable process.`,
   },
+  WELCOME_MESSAGE: {
+    subject: 'Welcome to BALLers',
+    contentTop: `Congratulations you're officially a BALLer.`,
+  },
 };
 
 module.exports = EMAIL_CONTENT;
