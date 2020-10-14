@@ -14,6 +14,7 @@ import { addProperty } from '../../server/services/property.service';
 import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addTransaction } from '../../server/services/transaction.service';
+import { OFFER_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
@@ -1520,6 +1521,7 @@ describe('Property Controller', () => {
     const offer = OfferFactory.build({
       _id: offerId,
       enquiryId,
+      userId,
       vendorId: adminId,
     });
 
@@ -1607,32 +1609,64 @@ describe('Property Controller', () => {
       _id: propertyId1,
       addedBy: adminId,
       updatedBy: adminId,
-      assignedTo: [userId],
     });
-
     const propertyId2 = mongoose.Types.ObjectId();
     const property2 = PropertyFactory.build({
       _id: propertyId2,
       addedBy: adminId,
       updatedBy: adminId,
-      assignedTo: [userId],
+    });
+
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
+      propertyId: propertyId1,
+      userId,
+    });
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      propertyId: propertyId2,
+      userId,
+    });
+
+    const offerId1 = mongoose.Types.ObjectId();
+    const offer1 = OfferFactory.build({
+      _id: offerId1,
+      enquiryId: enquiryId1,
+      userId,
+      vendorId: adminId,
+      status: OFFER_STATUS.ASSIGNED,
+    });
+    const offerId2 = mongoose.Types.ObjectId();
+    const offer2 = OfferFactory.build({
+      _id: offerId2,
+      enquiryId: enquiryId2,
+      userId,
+      vendorId: adminId,
+      status: OFFER_STATUS.INTERESTED,
     });
 
     beforeEach(async () => {
       await addProperty(property1);
       await addProperty(property2);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await createOffer(offer1);
+      await createOffer(offer2);
     });
 
     context('with a valid token & id', () => {
       it('returns successful payload', (done) => {
         request()
-          .get(`/api/v1/property/assigned`)
+          .get('/api/v1/property/assigned')
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.properties[0]._id).to.be.eql(propertyId1.toString());
-            expect(res.body.properties[1]._id).to.be.eql(propertyId2.toString());
+            expect(res.body.properties.length).to.be.eql(1);
+            expect(res.body.properties[0]._id).to.be.eql(offerId1.toString());
+            expect(res.body.properties[0].property._id).to.be.eql(propertyId1.toString());
             done();
           });
       });
@@ -1641,7 +1675,7 @@ describe('Property Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(`/api/v1/property/assigned`)
+          .get('/api/v1/property/assigned')
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -1653,14 +1687,14 @@ describe('Property Controller', () => {
 
     context('when getOffer service fails', () => {
       it('returns the error', (done) => {
-        sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
+        sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/property/assigned`)
+          .get('/api/v1/property/assigned')
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
-            Property.aggregate.restore();
+            Offer.aggregate.restore();
           });
       });
     });

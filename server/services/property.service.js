@@ -5,6 +5,8 @@ import httpStatus from '../helpers/httpStatus';
 import Transaction from '../models/transaction.model';
 // eslint-disable-next-line import/no-cycle
 import { getOffer } from './offer.service';
+import { OFFER_STATUS } from '../helpers/constants';
+import Offer from '../models/offer.model';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -304,4 +306,26 @@ export const getAssignedPropertyByOfferId = async (offerId) => {
 };
 
 export const getAssignedProperties = async (userId) =>
-  Property.aggregate([{ $match: { assignedTo: ObjectId(userId) } }]);
+  Offer.aggregate([
+    {
+      $match: {
+        $and: [{ userId: ObjectId(userId) }, { status: OFFER_STATUS.ASSIGNED }],
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'property',
+      },
+    },
+    {
+      $unwind: '$property',
+    },
+    {
+      $project: {
+        property: 1,
+      },
+    },
+  ]);
