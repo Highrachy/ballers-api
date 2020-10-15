@@ -195,8 +195,16 @@ export const getOneProperty = async (propertId) =>
     },
   ]);
 
-export const searchThroughProperties = async ({ state, city, houseType, minPrice, maxPrice }) =>
+export const searchThroughProperties = async ({
+  userId,
+  state,
+  city,
+  houseType,
+  minPrice,
+  maxPrice,
+}) =>
   Property.aggregate([
+    { $match: { assignedTo: { $nin: [ObjectId(userId)] } } },
     {
       $match: {
         $and: [

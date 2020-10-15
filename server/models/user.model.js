@@ -138,19 +138,6 @@ const UserSchema = new mongoose.Schema(
       id: String,
       url: String,
     },
-    assignedProperties: [
-      {
-        propertyId: ObjectId,
-        assignedBy: ObjectId,
-        assignedDate: Date,
-        approved: {
-          type: Boolean,
-          default: false,
-        },
-        approvedBy: ObjectId,
-        approvedDate: Date,
-      },
-    ],
     favorites: {
       type: [ObjectId],
     },

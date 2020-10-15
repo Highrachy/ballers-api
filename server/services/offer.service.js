@@ -4,7 +4,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
-import { getUserById } from './user.service';
+import { getUserById, assignPropertyToUser } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
 // eslint-disable-next-line import/no-cycle
 import { getOneProperty } from './property.service';
@@ -322,6 +322,7 @@ export const acceptOffer = async (offerToAccept) => {
   }
 
   try {
+    await assignPropertyToUser({ propertyId: offer[0].propertyId, userId: offer[0].userId });
     await Offer.findByIdAndUpdate(
       offer[0]._id,
       {

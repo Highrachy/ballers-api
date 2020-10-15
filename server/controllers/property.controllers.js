@@ -73,7 +73,9 @@ const PropertyController = {
   },
   search(req, res, next) {
     const filter = req.locals;
-    searchThroughProperties(filter)
+    const userId = req.user._id;
+
+    searchThroughProperties({ ...filter, userId })
       .then((properties) => {
         res.status(httpStatus.OK).json({ success: true, properties });
       })

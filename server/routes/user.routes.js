@@ -4,7 +4,6 @@ import {
   loginSchema,
   resetPasswordSchema,
   changePasswordSchema,
-  assignPropertySchema,
   updateUserSchema,
   favoritePropertySchema,
 } from '../schemas/user.schema';
@@ -196,44 +195,6 @@ router.get('/who-am-i', authenticate, UserController.currentUser);
 
 /**
  * @swagger
- * /user/assign-property:
- *   post:
- *     tags:
- *       - User
- *     description: Assigns property to a user
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            type: object
- *            properties:
- *              userId:
- *                  type: string
- *              propertyId:
- *                  type: string
- *      description: ID of property owner and ID of property to be assigned
- *     responses:
- *      '200':
- *        description: Property assigned
- *      '404':
- *        description: No units available
- *      '400':
- *        description: Bad request
- *      '500':
- *       description: Internal server error
- */
-router.post(
-  '/assign-property',
-  authenticate,
-  isAdmin,
-  schemaValidation(assignPropertySchema),
-  UserController.assignProperty,
-);
-
-/**
- * @swagger
  * /user/update:
  *   put:
  *     tags:
@@ -313,29 +274,6 @@ router.post(
  *       description: Internal server error
  */
 router.post('/upload-image', authenticate, Upload.uploadImage, UploadController.uploadImage);
-
-/**
- * @swagger
- * path:
- *  /user/my-properties:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: the auto generated user token via jwt
- *      summary: Gets all owned properties
- *      tags: [User]
- *      responses:
- *        '200':
- *          description: Properties found
- *        '404':
- *          description: User not found
- *        '500':
- *          description: Internal server error
- */
-router.get('/my-properties', authenticate, UserController.getOwnedProperties);
 
 /**
  * @swagger

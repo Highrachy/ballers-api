@@ -6,10 +6,10 @@ import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
+import { addUser, assignPropertyToUser } from '../../server/services/user.service';
 import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import TransactionFactory from '../factories/transaction.factory';
-import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
@@ -1227,9 +1227,11 @@ describe('Property Controller', () => {
   });
 
   describe('Search Through Properties', () => {
-    const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({
-      _id: id,
+    const propertyId1 = mongoose.Types.ObjectId();
+    const propertyId2 = mongoose.Types.ObjectId();
+    const propertyId3 = mongoose.Types.ObjectId();
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
       addedBy: adminId,
       updatedBy: adminId,
       houseType: '3 bedroom duplex',
@@ -1239,6 +1241,7 @@ describe('Property Controller', () => {
       },
     });
     const property2 = PropertyFactory.build({
+      _id: propertyId2,
       addedBy: adminId,
       updatedBy: adminId,
       houseType: '4 bedroom detatched duplex',
@@ -1248,6 +1251,7 @@ describe('Property Controller', () => {
       },
     });
     const property3 = PropertyFactory.build({
+      _id: propertyId3,
       addedBy: adminId,
       updatedBy: adminId,
       houseType: '3 bedroom duplex',
@@ -1280,7 +1284,7 @@ describe('Property Controller', () => {
 
     describe('when properties exist in db', () => {
       beforeEach(async () => {
-        await addProperty(property);
+        await addProperty(property1);
         await addProperty(property2);
         await addProperty(property3);
       });
@@ -1302,7 +1306,8 @@ describe('Property Controller', () => {
               expect(res.body.properties[0]).to.have.property('price');
               expect(res.body.properties[0]).to.have.property('houseType');
               expect(res.body.properties[0]).to.have.property('description');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
+              expect(res.body.properties[0].assignedTo).to.not.include(userId.toString());
               done();
             });
         });
@@ -1318,7 +1323,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               expect(res.body.properties.length).to.be.eql(3);
               done();
             });
@@ -1335,7 +1340,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               done();
             });
         });
@@ -1351,7 +1356,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               done();
             });
         });
@@ -1367,7 +1372,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               done();
             });
         });
@@ -1398,7 +1403,7 @@ describe('Property Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
               expect(res.body.properties.length).to.be.eql(2);
-              expect(res.body.properties[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
               expect(res.body.properties[1].houseType).to.be.eql(property2.houseType);
               done();
             });
@@ -1416,6 +1421,64 @@ describe('Property Controller', () => {
               expect(res).to.have.status(500);
               done();
               Property.aggregate.restore();
+            });
+        });
+      });
+
+      context('when all properties have been assigned to user', () => {
+        beforeEach(async () => {
+          await assignPropertyToUser({ userId, propertyId: propertyId1 });
+          await assignPropertyToUser({ userId, propertyId: propertyId2 });
+          await assignPropertyToUser({ userId, propertyId: propertyId3 });
+        });
+        it('returns no property', (done) => {
+          request()
+            .post('/api/v1/property/search')
+            .set('authorization', userToken)
+            .send({})
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('properties');
+              expect(res.body.properties.length).to.be.eql(0);
+              done();
+            });
+        });
+      });
+
+      context('when no property has been assigned to user', () => {
+        it('returns all properties', (done) => {
+          request()
+            .post('/api/v1/property/search')
+            .set('authorization', userToken)
+            .send({})
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('properties');
+              expect(res.body.properties.length).to.be.eql(3);
+              done();
+            });
+        });
+      });
+
+      context('when 2 properties have been assigned to user', () => {
+        beforeEach(async () => {
+          await assignPropertyToUser({ userId, propertyId: propertyId1 });
+          await assignPropertyToUser({ userId, propertyId: propertyId2 });
+        });
+        it('returns one property', (done) => {
+          request()
+            .post('/api/v1/property/search')
+            .set('authorization', userToken)
+            .send({})
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('properties');
+              expect(res.body.properties.length).to.be.eql(1);
+              expect(res.body.properties[0]._id).to.be.eql(property3._id.toString());
+              done();
             });
         });
       });
