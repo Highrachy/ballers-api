@@ -199,9 +199,10 @@ export const assignPropertyToUser = async (toBeAssigned) => {
       id: property.id,
       $push: { assignedTo: toBeAssigned.userId },
     };
-    return await updateProperty(updatedProperty).catch((error) => {
+    const updatePropertyUnit = await updateProperty(updatedProperty).catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
+    return updatePropertyUnit;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property', error);
   }

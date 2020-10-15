@@ -4,7 +4,6 @@ import {
   loginSchema,
   resetPasswordSchema,
   changePasswordSchema,
-  // assignPropertySchema,
   updateUserSchema,
   favoritePropertySchema,
 } from '../schemas/user.schema';
