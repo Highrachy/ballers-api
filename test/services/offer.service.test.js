@@ -485,7 +485,7 @@ describe('Offer Service', () => {
     context('when all is valid', () => {
       it('returns a valid cancelled offer', async () => {
         const rejectedOffer = await cancelOffer({ offerId, vendorId: userId });
-        expect(rejectedOffer.status).to.eql(OFFER_STATUS.CANCELLED);
+        expect(rejectedOffer.status).to.eql('Cancelled');
       });
     });
 

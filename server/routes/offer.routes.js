@@ -1,6 +1,10 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import { createOfferSchema, acceptOfferSchema, respondOfferSchema } from '../schemas/offer.schema';
+import {
+  createOfferSchema,
+  acceptOfferSchema,
+  validateOrAssignOfferSchema,
+} from '../schemas/offer.schema';
 import OfferController from '../controllers/offer.controllers';
 
 const router = express.Router();
@@ -88,7 +92,7 @@ router.put(
   '/cancel',
   authenticate,
   isAdmin,
-  schemaValidation(respondOfferSchema),
+  schemaValidation(validateOrAssignOfferSchema),
   OfferController.cancel,
 );
 
@@ -119,7 +123,7 @@ router.put(
   '/assign',
   authenticate,
   isAdmin,
-  schemaValidation(respondOfferSchema),
+  schemaValidation(validateOrAssignOfferSchema),
   OfferController.assign,
 );
 

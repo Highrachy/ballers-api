@@ -371,7 +371,11 @@ export const cancelOffer = async ({ offerId, vendorId }) => {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
-  if (offer.status === OFFER_STATUS.ASSIGNED || offer.status === OFFER_STATUS.ALLOCATED) {
+  if (
+    offer.status === OFFER_STATUS.INTERESTED ||
+    offer.status === OFFER_STATUS.ASSIGNED ||
+    offer.status === OFFER_STATUS.ALLOCATED
+  ) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'You cannot cancel an accepted offer');
   }
 

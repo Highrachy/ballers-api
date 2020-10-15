@@ -7,7 +7,7 @@ import EnquiryFactory from '../factories/enquiry.factory';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
 import { createOffer } from '../../server/services/offer.service';
-import { addEnquiry } from '../../server/services/enquiry.service';
+import { addEnquiry, getEnquiryById } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { OFFER_STATUS } from '../../server/helpers/constants';
@@ -609,21 +609,41 @@ describe('Offer Controller', () => {
   });
 
   describe('Cancel Offer', () => {
-    const offerId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({
-      _id: enquiryId,
+    let demoVendorToken;
+    const demoVendorId = mongoose.Types.ObjectId();
+    const demoVendor = UserFactory.build({ _id: demoVendorId, role: 0, activated: true });
+    const offerId1 = mongoose.Types.ObjectId();
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
       userId: adminId,
       propertyId: propertyId1,
     });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
+    const offer1 = OfferFactory.build({ _id: offerId1, enquiryId: enquiryId1, vendorId: adminId });
     const toCancelDetails = {
-      offerId,
+      offerId: offerId1,
     };
 
+    const offerId2 = mongoose.Types.ObjectId();
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      userId: adminId,
+      propertyId: propertyId2,
+    });
+    const offer2 = OfferFactory.build({
+      _id: offerId2,
+      enquiryId: enquiryId2,
+      vendorId: adminId,
+      status: OFFER_STATUS.INTERESTED,
+    });
+
     beforeEach(async () => {
-      await addEnquiry(enquiry);
-      await createOffer(offer);
+      demoVendorToken = await addUser(demoVendor);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await createOffer(offer1);
+      await createOffer(offer2);
     });
 
     context('with valid data & token', () => {
@@ -632,10 +652,42 @@ describe('Offer Controller', () => {
           .put('/api/v1/offer/cancel')
           .set('authorization', adminToken)
           .send(toCancelDetails)
-          .end((err, res) => {
+          .end(async (err, res) => {
+            const enquiry = await getEnquiryById(enquiryId1);
+            expect(enquiry.approved).to.be.eql(false);
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Offer cancelled');
+            done();
+          });
+      });
+    });
+
+    context('when offer is cancelled by unauthorized vendor', () => {
+      it('returns forbidden error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', demoVendorToken)
+          .send(toCancelDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when offer has been accepted', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId2 })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
             done();
           });
       });
