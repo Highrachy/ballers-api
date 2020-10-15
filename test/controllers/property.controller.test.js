@@ -2,18 +2,28 @@ import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import Property from '../../server/models/property.model';
 import User from '../../server/models/user.model';
+import Transaction from '../../server/models/transaction.model';
+import Offer from '../../server/models/offer.model';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
+import OfferFactory from '../factories/offer.factory';
+import EnquiryFactory from '../factories/enquiry.factory';
+import TransactionFactory from '../factories/transaction.factory';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
+import { createOffer } from '../../server/services/offer.service';
+import { addEnquiry } from '../../server/services/enquiry.service';
+import { addTransaction } from '../../server/services/transaction.service';
+import { OFFER_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
 let adminToken;
 let userToken;
-const _id = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-const regularUser = UserFactory.build({ role: 1, activated: true });
+const adminId = mongoose.Types.ObjectId();
+const userId = mongoose.Types.ObjectId();
+const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
+const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
 
 describe('Property Controller', () => {
   beforeEach(async () => {
@@ -41,7 +51,7 @@ describe('Property Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(adminId);
       });
       it('returns token error', (done) => {
         const property = PropertyFactory.build();
@@ -462,7 +472,7 @@ describe('Property Controller', () => {
 
   describe('Update Property', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
     const newProperty = {
       id,
       price: 30200000,
@@ -506,7 +516,7 @@ describe('Property Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(adminId);
       });
       it('returns token error', (done) => {
         request()
@@ -884,7 +894,7 @@ describe('Property Controller', () => {
 
   describe('Delete property', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
 
     beforeEach(async () => {
       await addProperty(property);
@@ -906,7 +916,7 @@ describe('Property Controller', () => {
 
     context('when token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(adminId);
       });
       it('returns token error', (done) => {
         request()
@@ -924,7 +934,7 @@ describe('Property Controller', () => {
     context('with an invalid property id', () => {
       it('returns an error', (done) => {
         request()
-          .delete(`/api/v1/property/delete/${_id}`)
+          .delete(`/api/v1/property/delete/${adminId}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -950,7 +960,7 @@ describe('Property Controller', () => {
 
   describe('Get one property', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
 
     beforeEach(async () => {
       await addProperty(property);
@@ -972,7 +982,7 @@ describe('Property Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(adminId);
       });
       it('returns token error', (done) => {
         request()
@@ -991,7 +1001,7 @@ describe('Property Controller', () => {
     context('with an invalid property id', () => {
       it('returns not found', (done) => {
         request()
-          .get(`/api/v1/property/${_id}`)
+          .get(`/api/v1/property/${adminId}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(404);
@@ -1031,7 +1041,7 @@ describe('Property Controller', () => {
 
   describe('Get all properties', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
 
     context('when no property is found', () => {
       it('returns not found', (done) => {
@@ -1088,7 +1098,7 @@ describe('Property Controller', () => {
 
       context('when token is used', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(_id);
+          await User.findByIdAndDelete(adminId);
         });
         it('returns token error', (done) => {
           request()
@@ -1121,12 +1131,12 @@ describe('Property Controller', () => {
 
   describe('Get all properties added by an admin', () => {
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
 
     context('when no property is found', () => {
       it('returns not found', (done) => {
         request()
-          .get(`/api/v1/property/added-by/${_id}`)
+          .get(`/api/v1/property/added-by/${adminId}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -1145,7 +1155,7 @@ describe('Property Controller', () => {
       context('with a valid token & id', () => {
         it('returns successful payload', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${_id}`)
+            .get(`/api/v1/property/added-by/${adminId}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
@@ -1159,7 +1169,7 @@ describe('Property Controller', () => {
       context('with id is not a valid mongo id', () => {
         it('returns successful payload', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${_id}a`)
+            .get(`/api/v1/property/added-by/${adminId}a`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -1173,7 +1183,7 @@ describe('Property Controller', () => {
       context('without token', () => {
         it('returns error', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${_id}`)
+            .get(`/api/v1/property/added-by/${adminId}`)
             .end((err, res) => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
@@ -1185,11 +1195,11 @@ describe('Property Controller', () => {
 
       context('when token is used', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(_id);
+          await User.findByIdAndDelete(adminId);
         });
         it('returns token error', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${_id}`)
+            .get(`/api/v1/property/added-by/${adminId}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(404);
@@ -1204,7 +1214,7 @@ describe('Property Controller', () => {
         it('returns the error', (done) => {
           sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
           request()
-            .get(`/api/v1/property/added-by/${_id}`)
+            .get(`/api/v1/property/added-by/${adminId}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(500);
@@ -1220,8 +1230,8 @@ describe('Property Controller', () => {
     const id = mongoose.Types.ObjectId();
     const property = PropertyFactory.build({
       _id: id,
-      addedBy: _id,
-      updatedBy: _id,
+      addedBy: adminId,
+      updatedBy: adminId,
       houseType: '3 bedroom duplex',
       address: {
         state: 'lagos',
@@ -1229,8 +1239,8 @@ describe('Property Controller', () => {
       },
     });
     const property2 = PropertyFactory.build({
-      addedBy: _id,
-      updatedBy: _id,
+      addedBy: adminId,
+      updatedBy: adminId,
       houseType: '4 bedroom detatched duplex',
       address: {
         state: 'lagos',
@@ -1238,8 +1248,8 @@ describe('Property Controller', () => {
       },
     });
     const property3 = PropertyFactory.build({
-      addedBy: _id,
-      updatedBy: _id,
+      addedBy: adminId,
+      updatedBy: adminId,
       houseType: '3 bedroom duplex',
       address: {
         state: 'ogun',
@@ -1416,20 +1426,20 @@ describe('Property Controller', () => {
     const property1 = PropertyFactory.build({
       houseType: '2 bedroom apartment',
       address: { state: 'taraba' },
-      addedBy: _id,
-      updatedBy: _id,
+      addedBy: adminId,
+      updatedBy: adminId,
     });
     const property2 = PropertyFactory.build({
       houseType: '4 bedroom semi-detatched',
       address: { state: 'taraba' },
-      addedBy: _id,
-      updatedBy: _id,
+      addedBy: adminId,
+      updatedBy: adminId,
     });
     const property3 = PropertyFactory.build({
       houseType: '4 bedroom semi-detatched',
       address: { state: 'kano' },
-      addedBy: _id,
-      updatedBy: _id,
+      addedBy: adminId,
+      updatedBy: adminId,
     });
 
     describe('when properties exist in db', () => {
@@ -1488,6 +1498,268 @@ describe('Property Controller', () => {
               Property.aggregate.restore();
             });
         });
+      });
+    });
+  });
+
+  describe('Load transaction sum and info of assigned property', () => {
+    const propertyId1 = mongoose.Types.ObjectId();
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+    const propertyId2 = mongoose.Types.ObjectId();
+    const property2 = PropertyFactory.build({
+      _id: propertyId2,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
+      propertyId: propertyId1,
+      userId,
+    });
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      propertyId: propertyId2,
+      userId,
+    });
+
+    const offerId1 = mongoose.Types.ObjectId();
+    const offer1 = OfferFactory.build({
+      _id: offerId1,
+      enquiryId: enquiryId1,
+      userId,
+      vendorId: adminId,
+    });
+    const offerId2 = mongoose.Types.ObjectId();
+    const offer2 = OfferFactory.build({
+      _id: offerId2,
+      enquiryId: enquiryId2,
+      userId,
+      vendorId: adminId,
+    });
+
+    const transactionId1 = mongoose.Types.ObjectId();
+    const transaction1 = TransactionFactory.build({
+      _id: transactionId1,
+      propertyId: propertyId1,
+      offerId: offerId1,
+      userId,
+      adminId,
+      amount: 40000,
+    });
+
+    beforeEach(async () => {
+      await addProperty(property1);
+      await addProperty(property2);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await createOffer(offer1);
+      await createOffer(offer2);
+      await addTransaction(transaction1);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get(`/api/v1/property/assigned/${offerId1}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.property.totalPaid).to.be.eql(transaction1.amount);
+            expect(res.body.property.offer._id).to.be.eql(offerId1.toString());
+            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiryId1.toString());
+            expect(res.body.property.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
+            expect(res.body.property.offer.transactionInfo[0]._id).to.be.eql(
+              transactionId1.toString(),
+            );
+            done();
+          });
+      });
+    });
+
+    context('when no transaction has been made', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get(`/api/v1/property/assigned/${offerId2}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.property.totalPaid).to.be.eql(0);
+            expect(res.body.property.offer._id).to.be.eql(offerId2.toString());
+            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiryId2.toString());
+            expect(res.body.property.offer.propertyInfo._id).to.be.eql(propertyId2.toString());
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/property/assigned/${offerId1}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getTotalAmountPaidForProperty service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/property/assigned/${offerId1}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Transaction.aggregate.restore();
+          });
+      });
+    });
+    context('when getOffer service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/property/assigned/${offerId1}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Offer.aggregate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Load all properties assigned to a user', () => {
+    const propertyId1 = mongoose.Types.ObjectId();
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+    const propertyId2 = mongoose.Types.ObjectId();
+    const property2 = PropertyFactory.build({
+      _id: propertyId2,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+    const propertyId3 = mongoose.Types.ObjectId();
+    const property3 = PropertyFactory.build({
+      _id: propertyId3,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
+      propertyId: propertyId1,
+      userId,
+    });
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      propertyId: propertyId2,
+      userId,
+    });
+    const enquiryId3 = mongoose.Types.ObjectId();
+    const enquiry3 = EnquiryFactory.build({
+      _id: enquiryId3,
+      propertyId: propertyId3,
+      userId,
+    });
+
+    const offerId1 = mongoose.Types.ObjectId();
+    const offer1 = OfferFactory.build({
+      _id: offerId1,
+      enquiryId: enquiryId1,
+      userId,
+      vendorId: adminId,
+      status: OFFER_STATUS.ASSIGNED,
+    });
+    const offerId2 = mongoose.Types.ObjectId();
+    const offer2 = OfferFactory.build({
+      _id: offerId2,
+      enquiryId: enquiryId2,
+      userId,
+      vendorId: adminId,
+      status: OFFER_STATUS.INTERESTED,
+    });
+    const offerId3 = mongoose.Types.ObjectId();
+    const offer3 = OfferFactory.build({
+      _id: offerId3,
+      enquiryId: enquiryId3,
+      userId,
+      vendorId: adminId,
+      status: OFFER_STATUS.ALLOCATED,
+    });
+
+    beforeEach(async () => {
+      await addProperty(property1);
+      await addProperty(property2);
+      await addProperty(property3);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await addEnquiry(enquiry3);
+      await createOffer(offer1);
+      await createOffer(offer2);
+      await createOffer(offer3);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/property/assigned')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.properties.length).to.be.eql(2);
+            expect(res.body.properties[0]._id).to.be.eql(offerId1.toString());
+            expect(res.body.properties[0].property._id).to.be.eql(propertyId1.toString());
+            expect(res.body.properties[1]._id).to.be.eql(offerId3.toString());
+            expect(res.body.properties[1].property._id).to.be.eql(propertyId3.toString());
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/property/assigned')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getOffer service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/property/assigned')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Offer.aggregate.restore();
+          });
       });
     });
   });

@@ -6,6 +6,7 @@ import { OFFER_STATUS } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
+// eslint-disable-next-line import/no-cycle
 import { getOneProperty } from './property.service';
 import { getTodaysDateShortCode } from '../helpers/dates';
 
@@ -215,6 +216,14 @@ export const getOffer = async (offerId) =>
         localField: 'propertyId',
         foreignField: '_id',
         as: 'propertyInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'transactions',
+        localField: '_id',
+        foreignField: 'offerId',
+        as: 'transactionInfo',
       },
     },
     {

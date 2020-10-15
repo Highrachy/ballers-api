@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 import Property from '../models/property.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+import Transaction from '../models/transaction.model';
+// eslint-disable-next-line import/no-cycle
+import { getOffer } from './offer.service';
+import { OFFER_STATUS } from '../helpers/constants';
+import Offer from '../models/offer.model';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -265,3 +270,63 @@ export const getAvailablePropertyOptions = async () =>
 
 export const getPropertiesWithPaymentPlanId = async (id) =>
   Property.find({ paymentPlan: { $in: [id] } });
+
+export const getTotalAmountPaidForProperty = async (offerId) =>
+  Transaction.aggregate([
+    { $match: { offerId: ObjectId(offerId) } },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'property',
+      },
+    },
+    {
+      $unwind: '$property',
+    },
+    {
+      $group: {
+        _id: '$property._id',
+        totalAmountContributed: { $sum: '$amount' },
+      },
+    },
+  ]);
+
+export const getAssignedPropertyByOfferId = async (offerId) => {
+  const total = await getTotalAmountPaidForProperty(offerId);
+  const totalPaid = total.length > 0 ? total[0].totalAmountContributed : 0;
+
+  const offer = await getOffer(offerId);
+
+  return {
+    totalPaid,
+    offer: offer[0],
+  };
+};
+
+export const getAssignedProperties = async (userId) =>
+  Offer.aggregate([
+    { $match: { userId: ObjectId(userId) } },
+    {
+      $match: {
+        $or: [{ status: OFFER_STATUS.ASSIGNED }, { status: OFFER_STATUS.ALLOCATED }],
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'property',
+      },
+    },
+    {
+      $unwind: '$property',
+    },
+    {
+      $project: {
+        property: 1,
+      },
+    },
+  ]);
