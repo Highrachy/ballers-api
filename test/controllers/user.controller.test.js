@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
-import { addUser, assignPropertyToUser } from '../../server/services/user.service';
+import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
@@ -894,87 +894,6 @@ describe('User Controller', () => {
               User.aggregate.restore();
             });
         });
-      });
-    });
-  });
-
-  describe('Get Owned Properties route', () => {
-    let adminToken;
-    let userToken;
-    const _id = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const userId = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
-    const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-    const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
-
-    beforeEach(async () => {
-      adminToken = await addUser(adminUser);
-      userToken = await addUser(regularUser);
-      await addProperty(property);
-      await assignPropertyToUser({ propertyId, userId, assignedBy: _id });
-    });
-
-    context('with admin token', () => {
-      it('returns property assigned', (done) => {
-        request()
-          .get('/api/v1/user/my-properties')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Properties found');
-            done();
-          });
-      });
-    });
-
-    context('with user access token', () => {
-      it('returns owned properties', (done) => {
-        request()
-          .get('/api/v1/user/my-properties')
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Properties found');
-            expect(res.body).to.have.property('properties');
-            expect(res.body.properties[0]).to.have.property('name');
-            expect(res.body.properties[0]).to.have.property('address');
-            expect(res.body.properties[0]).to.have.property('mainImage');
-            expect(res.body.properties[0]).to.have.property('gallery');
-            expect(res.body.properties[0]).to.have.property('price');
-            expect(res.body.properties[0]).to.have.property('houseType');
-            expect(res.body.properties[0]).to.have.property('description');
-            done();
-          });
-      });
-    });
-
-    context('without token', () => {
-      it('returns error', (done) => {
-        request()
-          .get('/api/v1/user/my-properties')
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
-            done();
-          });
-      });
-    });
-
-    context('when getAllUserProperties service returns an error', () => {
-      it('returns the error', (done) => {
-        sinon.stub(User, 'aggregate').throws(new Error('Type Error'));
-        request()
-          .get('/api/v1/user/my-properties')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(500);
-            done();
-            User.aggregate.restore();
-          });
       });
     });
   });

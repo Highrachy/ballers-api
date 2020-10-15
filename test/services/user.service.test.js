@@ -581,7 +581,6 @@ describe('User Service', () => {
     const toBeAssigned = {
       propertyId,
       userId: _id,
-      assignedBy: _id,
     };
 
     describe('when property units is less than one', () => {
@@ -607,14 +606,6 @@ describe('User Service', () => {
       );
     });
 
-    context('when getUserById works', () => {
-      it('returns a valid updated user', async () => {
-        await assignPropertyToUser(toBeAssigned);
-        const user = await getUserById(_id);
-        expect(user.assignedProperties[0].propertyId).to.eql(propertyId);
-      });
-    });
-
     context('when getPropertyById fails', () => {
       it('throws an error', async () => {
         sinon.stub(Property, 'findById').throws(new Error('error msg'));
@@ -627,21 +618,6 @@ describe('User Service', () => {
           expect(err.message).to.be.eql('Internal Server Error');
         }
         Property.findById.restore();
-      });
-    });
-
-    context('when getUserById fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(User, 'findById').throws(new Error('error msg'));
-
-        try {
-          await assignPropertyToUser(toBeAssigned);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        User.findById.restore();
       });
     });
 

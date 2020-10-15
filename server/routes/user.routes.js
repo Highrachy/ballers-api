@@ -278,29 +278,6 @@ router.post('/upload-image', authenticate, Upload.uploadImage, UploadController.
 
 /**
  * @swagger
- * path:
- *  /user/my-properties:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: the auto generated user token via jwt
- *      summary: Gets all owned properties
- *      tags: [User]
- *      responses:
- *        '200':
- *          description: Properties found
- *        '404':
- *          description: User not found
- *        '500':
- *          description: Internal server error
- */
-router.get('/my-properties', authenticate, UserController.getOwnedProperties);
-
-/**
- * @swagger
  * /user/all:
  *   get:
  *     tags:

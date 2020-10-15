@@ -19,7 +19,7 @@ import { addProperty } from '../../server/services/property.service';
 import PropertyFactory from '../factories/property.factory';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import EnquiryFactory from '../factories/enquiry.factory';
-import { addUser, getUserById } from '../../server/services/user.service';
+import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { OFFER_STATUS } from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
@@ -405,8 +405,6 @@ describe('Offer Service', () => {
     context('when all is valid', () => {
       it('returns a valid accepted offer', async () => {
         const acceptedOffer = await acceptOffer(toAcceptValid);
-        const user = await getUserById(userId1);
-        expect(user.assignedProperties[0].propertyId).to.eql(propertyId);
         expect(acceptedOffer[0].status).to.eql('Interested');
         expect(acceptedOffer[0].contributionReward).to.eql(2000000);
         expect(acceptedOffer[0].signature).to.eql(toAcceptValid.signature);

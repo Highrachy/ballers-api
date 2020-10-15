@@ -6,7 +6,6 @@ import {
   resetPasswordViaToken,
   updateUser,
   assignPropertyToUser,
-  getAllUserProperties,
   getAllRegisteredUsers,
   getUserInfo,
   addPropertyToFavorites,
@@ -123,19 +122,6 @@ const UserController = {
     getAllRegisteredUsers()
       .then((users) => {
         res.status(httpStatus.OK).json({ success: true, users });
-      })
-      .catch((error) => next(error));
-  },
-
-  getOwnedProperties(req, res, next) {
-    const { user } = req;
-    getAllUserProperties(user._id)
-      .then((properties) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          message: 'Properties found',
-          properties: properties[0].ownedProperties,
-        });
       })
       .catch((error) => next(error));
   },

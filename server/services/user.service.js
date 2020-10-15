@@ -1,7 +1,6 @@
 /* eslint-disable import/no-cycle */
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose';
 import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
@@ -11,8 +10,6 @@ import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
 import { REFERRAL_STATUS } from '../helpers/constants';
-
-const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -189,11 +186,6 @@ export const activateUser = async (token) => {
 };
 
 export const assignPropertyToUser = async (toBeAssigned) => {
-  const assignedProperty = {
-    propertyId: toBeAssigned.propertyId,
-    assignedBy: toBeAssigned.assignedBy,
-    assignedDate: Date.now(),
-  };
   const property = await getPropertyById(toBeAssigned.propertyId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -202,24 +194,14 @@ export const assignPropertyToUser = async (toBeAssigned) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'No available units');
   }
 
-  const owner = await getUserById(toBeAssigned.userId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
   try {
     const updatedProperty = {
       id: property.id,
       $push: { assignedTo: toBeAssigned.userId },
     };
-    const updatePropertyUnit = await updateProperty(updatedProperty).catch((error) => {
+    return await updateProperty(updatedProperty).catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
-
-    if (updatePropertyUnit) {
-      return User.findByIdAndUpdate(owner.id, { $push: { assignedProperties: assignedProperty } });
-    }
-
-    return new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property');
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning property', error);
   }
@@ -261,39 +243,6 @@ export const updateUser = async (updatedUser) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
 };
-
-export const getAllUserProperties = async (userId) =>
-  User.aggregate([
-    { $match: { _id: ObjectId(userId) } },
-    {
-      $lookup: {
-        from: 'properties',
-        localField: 'assignedProperties.propertyId',
-        foreignField: '_id',
-        as: 'ownedProperties',
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        'ownedProperties._id': 1,
-        'ownedProperties.name': 1,
-        'ownedProperties.titleDocument': 1,
-        'ownedProperties.address': 1,
-        'ownedProperties.neighborhood': 1,
-        'ownedProperties.mapLocation': 1,
-        'ownedProperties.gallery': 1,
-        'ownedProperties.mainImage': 1,
-        'ownedProperties.price': 1,
-        'ownedProperties.units': 1,
-        'ownedProperties.houseType': 1,
-        'ownedProperties.bedrooms': 1,
-        'ownedProperties.toilets': 1,
-        'ownedProperties.description': 1,
-        'ownedProperties.floorPlans': 1,
-      },
-    },
-  ]);
 
 export const getAllRegisteredUsers = async () =>
   User.aggregate([
