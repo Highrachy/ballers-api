@@ -2,10 +2,19 @@ import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import Property from '../../server/models/property.model';
 import User from '../../server/models/user.model';
+import Transaction from '../../server/models/transaction.model';
+import Offer from '../../server/models/offer.model';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser, assignPropertyToUser } from '../../server/services/user.service';
+import OfferFactory from '../factories/offer.factory';
+import EnquiryFactory from '../factories/enquiry.factory';
+import TransactionFactory from '../factories/transaction.factory';
 import { addProperty } from '../../server/services/property.service';
+import { createOffer } from '../../server/services/offer.service';
+import { addEnquiry } from '../../server/services/enquiry.service';
+import { addTransaction } from '../../server/services/transaction.service';
+import { OFFER_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
@@ -1552,6 +1561,268 @@ describe('Property Controller', () => {
               Property.aggregate.restore();
             });
         });
+      });
+    });
+  });
+
+  describe('Load transaction sum and info of assigned property', () => {
+    const propertyId1 = mongoose.Types.ObjectId();
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+    const propertyId2 = mongoose.Types.ObjectId();
+    const property2 = PropertyFactory.build({
+      _id: propertyId2,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
+      propertyId: propertyId1,
+      userId,
+    });
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      propertyId: propertyId2,
+      userId,
+    });
+
+    const offerId1 = mongoose.Types.ObjectId();
+    const offer1 = OfferFactory.build({
+      _id: offerId1,
+      enquiryId: enquiryId1,
+      userId,
+      vendorId: adminId,
+    });
+    const offerId2 = mongoose.Types.ObjectId();
+    const offer2 = OfferFactory.build({
+      _id: offerId2,
+      enquiryId: enquiryId2,
+      userId,
+      vendorId: adminId,
+    });
+
+    const transactionId1 = mongoose.Types.ObjectId();
+    const transaction1 = TransactionFactory.build({
+      _id: transactionId1,
+      propertyId: propertyId1,
+      offerId: offerId1,
+      userId,
+      adminId,
+      amount: 40000,
+    });
+
+    beforeEach(async () => {
+      await addProperty(property1);
+      await addProperty(property2);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await createOffer(offer1);
+      await createOffer(offer2);
+      await addTransaction(transaction1);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get(`/api/v1/property/assigned/${offerId1}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.property.totalPaid).to.be.eql(transaction1.amount);
+            expect(res.body.property.offer._id).to.be.eql(offerId1.toString());
+            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiryId1.toString());
+            expect(res.body.property.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
+            expect(res.body.property.offer.transactionInfo[0]._id).to.be.eql(
+              transactionId1.toString(),
+            );
+            done();
+          });
+      });
+    });
+
+    context('when no transaction has been made', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get(`/api/v1/property/assigned/${offerId2}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.property.totalPaid).to.be.eql(0);
+            expect(res.body.property.offer._id).to.be.eql(offerId2.toString());
+            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiryId2.toString());
+            expect(res.body.property.offer.propertyInfo._id).to.be.eql(propertyId2.toString());
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/property/assigned/${offerId1}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getTotalAmountPaidForProperty service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/property/assigned/${offerId1}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Transaction.aggregate.restore();
+          });
+      });
+    });
+    context('when getOffer service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/property/assigned/${offerId1}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Offer.aggregate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Load all properties assigned to a user', () => {
+    const propertyId1 = mongoose.Types.ObjectId();
+    const property1 = PropertyFactory.build({
+      _id: propertyId1,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+    const propertyId2 = mongoose.Types.ObjectId();
+    const property2 = PropertyFactory.build({
+      _id: propertyId2,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+    const propertyId3 = mongoose.Types.ObjectId();
+    const property3 = PropertyFactory.build({
+      _id: propertyId3,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
+      propertyId: propertyId1,
+      userId,
+    });
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      propertyId: propertyId2,
+      userId,
+    });
+    const enquiryId3 = mongoose.Types.ObjectId();
+    const enquiry3 = EnquiryFactory.build({
+      _id: enquiryId3,
+      propertyId: propertyId3,
+      userId,
+    });
+
+    const offerId1 = mongoose.Types.ObjectId();
+    const offer1 = OfferFactory.build({
+      _id: offerId1,
+      enquiryId: enquiryId1,
+      userId,
+      vendorId: adminId,
+      status: OFFER_STATUS.ASSIGNED,
+    });
+    const offerId2 = mongoose.Types.ObjectId();
+    const offer2 = OfferFactory.build({
+      _id: offerId2,
+      enquiryId: enquiryId2,
+      userId,
+      vendorId: adminId,
+      status: OFFER_STATUS.INTERESTED,
+    });
+    const offerId3 = mongoose.Types.ObjectId();
+    const offer3 = OfferFactory.build({
+      _id: offerId3,
+      enquiryId: enquiryId3,
+      userId,
+      vendorId: adminId,
+      status: OFFER_STATUS.ALLOCATED,
+    });
+
+    beforeEach(async () => {
+      await addProperty(property1);
+      await addProperty(property2);
+      await addProperty(property3);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await addEnquiry(enquiry3);
+      await createOffer(offer1);
+      await createOffer(offer2);
+      await createOffer(offer3);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          .get('/api/v1/property/assigned')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.properties.length).to.be.eql(2);
+            expect(res.body.properties[0]._id).to.be.eql(offerId1.toString());
+            expect(res.body.properties[0].property._id).to.be.eql(propertyId1.toString());
+            expect(res.body.properties[1]._id).to.be.eql(offerId3.toString());
+            expect(res.body.properties[1].property._id).to.be.eql(propertyId3.toString());
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/property/assigned')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getOffer service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/property/assigned')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Offer.aggregate.restore();
+          });
       });
     });
   });

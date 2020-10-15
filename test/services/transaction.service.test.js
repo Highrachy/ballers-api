@@ -19,15 +19,26 @@ useDatabase();
 
 describe('Transaction Service', () => {
   describe('#getTransactionById', () => {
-    const id = mongoose.Types.ObjectId();
+    const transactionId = mongoose.Types.ObjectId();
+    const userId = mongoose.Types.ObjectId();
+    const offerId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
 
     before(async () => {
-      await addTransaction(TransactionFactory.build({ _id: id, adminId: id }));
+      await addTransaction(
+        TransactionFactory.build({
+          _id: transactionId,
+          adminId: userId,
+          offerId,
+          propertyId,
+          userId,
+        }),
+      );
     });
 
     it('returns a valid transaction by Id', async () => {
-      const transaction = await getTransactionById(id);
-      expect(transaction._id).to.be.eql(id);
+      const transaction = await getTransactionById(transactionId);
+      expect(transaction._id).to.be.eql(transactionId);
     });
   });
 

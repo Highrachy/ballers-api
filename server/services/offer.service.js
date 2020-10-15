@@ -6,6 +6,7 @@ import { OFFER_STATUS } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, assignPropertyToUser } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
+// eslint-disable-next-line import/no-cycle
 import { getOneProperty } from './property.service';
 import { getTodaysDateShortCode } from '../helpers/dates';
 
@@ -195,6 +196,14 @@ export const getOffer = async (offerId) =>
     },
     {
       $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    {
+      $lookup: {
         from: 'enquiries',
         localField: 'enquiryId',
         foreignField: '_id',
@@ -210,7 +219,18 @@ export const getOffer = async (offerId) =>
       },
     },
     {
+      $lookup: {
+        from: 'transactions',
+        localField: '_id',
+        foreignField: 'offerId',
+        as: 'transactionInfo',
+      },
+    },
+    {
       $unwind: '$vendorInfo',
+    },
+    {
+      $unwind: '$userInfo',
     },
     {
       $unwind: '$enquiryInfo',
@@ -229,6 +249,14 @@ export const getOffer = async (offerId) =>
         'vendorInfo.activated': 0,
         'vendorInfo.phone': 0,
         'vendorInfo.notifications': 0,
+        'userInfo.assignedProperties': 0,
+        'userInfo.password': 0,
+        'userInfo.referralCode': 0,
+        'userInfo.role': 0,
+        'userInfo.favorites': 0,
+        'userInfo.activated': 0,
+        'userInfo.phone': 0,
+        'userInfo.notifications': 0,
       },
     },
   ]);
@@ -354,3 +382,24 @@ export const cancelOffer = async (offerId) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error cancelling offer', error);
   }
 };
+
+export const calculateContributionReward = async (userId) =>
+  Offer.aggregate([
+    { $match: { userId: ObjectId(userId) } },
+    {
+      $match: {
+        $or: [
+          { status: OFFER_STATUS.GENERATED },
+          { status: OFFER_STATUS.INTERESTED },
+          { status: OFFER_STATUS.ASSIGNED },
+          { status: OFFER_STATUS.ALLOCATED },
+        ],
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        contributionReward: { $sum: '$contributionReward' },
+      },
+    },
+  ]);

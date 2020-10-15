@@ -21,13 +21,23 @@ import {
   getAllRegisteredUsers,
   addPropertyToFavorites,
   removePropertyFromFavorites,
+  getAccountOverview,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
+import ReferralFactory from '../factories/referral.factory';
+import TransactionFactory from '../factories/transaction.factory';
 import { USER_SECRET } from '../../server/config';
 import User from '../../server/models/user.model';
 import Property from '../../server/models/property.model';
 import PropertyFactory from '../factories/property.factory';
-import { updateProperty } from '../../server/services/property.service';
+import { addProperty, updateProperty } from '../../server/services/property.service';
+import OfferFactory from '../factories/offer.factory';
+import EnquiryFactory from '../factories/enquiry.factory';
+import { addEnquiry } from '../../server/services/enquiry.service';
+import { createOffer, acceptOffer } from '../../server/services/offer.service';
+import { addTransaction } from '../../server/services/transaction.service';
+import { addReferral } from '../../server/services/referral.service';
+import Referral from '../../server/models/referral.model';
 
 useDatabase();
 
@@ -197,66 +207,92 @@ describe('User Service', () => {
       });
     });
 
-    context('when user is invited by by valid referral code', () => {
-      const referralCode = 'RC1234';
-      const userWithRef = UserFactory.build({ email, referralCode });
+    describe('Registration with Referral Code', () => {
+      let countedReferrals;
+
       beforeEach(async () => {
-        await User.create(userWithRef);
+        countedReferrals = await Referral.countDocuments({});
       });
 
-      it('returns the user token', async () => {
-        const currentCountedUsers = await User.countDocuments({});
-        const _id = mongoose.Types.ObjectId();
-        const token = await addUser(UserFactory.build({ _id, referralCode }));
-        expectsReturnedTokenToBeValid(token, _id);
-        expect(currentCountedUsers).to.eql(countedUsers + 1);
-      });
-    });
+      context('when user is invited by by valid referral code', () => {
+        const referralCode = 'RC1234';
+        const userWithRef = UserFactory.build({ email, referralCode });
 
-    context('when an invalid invalid referal code is sent', () => {
-      it('throws an error', async () => {
-        try {
-          const InvalidUser = UserFactory.build({ referralCode: '123456' });
-          await addUser(InvalidUser);
-        } catch (err) {
+        beforeEach(async () => {
+          await User.create(userWithRef);
+        });
+
+        it('returns the user token', async () => {
           const currentCountedUsers = await User.countDocuments({});
-          expect(err.statusCode).to.eql(412);
-          expect(err.message).to.be.eql('Invalid referral code');
-          expect(currentCountedUsers).to.eql(countedUsers);
-        }
+          const _id = mongoose.Types.ObjectId();
+          const token = await addUser(UserFactory.build({ _id, referralCode }));
+          const currentCountedReferrals = await Referral.countDocuments({});
+          expectsReturnedTokenToBeValid(token, _id);
+          expect(currentCountedUsers).to.eql(countedUsers + 1);
+          expect(currentCountedReferrals).to.eql(countedReferrals + 1);
+        });
+
+        it('updates referral information to REGISTERED', async () => {
+          const _id = mongoose.Types.ObjectId();
+          const token = await addUser(UserFactory.build({ _id, referralCode }));
+          const referral = await Referral.findOne({ userId: _id });
+          expectsReturnedTokenToBeValid(token, _id);
+          expect(referral.status).to.eql('Registered');
+        });
       });
-    });
 
-    context('when getUserbyEmail returns an error', () => {
-      it('throws an error', async () => {
-        sinon.stub(User, 'findOne').throws(new Error('error msg'));
-        try {
-          await addUser(user);
-        } catch (err) {
-          const currentCountedUsers = await User.countDocuments({});
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-          expect(currentCountedUsers).to.eql(countedUsers);
-        }
-        User.findOne.restore();
+      context('when an invalid invalid referal code is sent', () => {
+        it('throws an error', async () => {
+          try {
+            const InvalidUser = UserFactory.build({ referralCode: '123456' });
+            await addUser(InvalidUser);
+          } catch (err) {
+            const currentCountedUsers = await User.countDocuments({});
+
+            const currentCountedReferrals = await Referral.countDocuments({});
+            expect(err.statusCode).to.eql(412);
+            expect(err.message).to.be.eql('Invalid referral code');
+            expect(currentCountedUsers).to.eql(countedUsers);
+            expect(currentCountedReferrals).to.eql(countedReferrals);
+          }
+        });
       });
-    });
 
-    context('when generateReferralCode returns an error', () => {
-      it('throws an error', async () => {
-        sinon.stub(User, 'findOne').throws(new Error('error msg'));
+      context('when getUserbyEmail returns an error', () => {
+        it('throws an error', async () => {
+          sinon.stub(User, 'findOne').throws(new Error('error msg'));
+          try {
+            await addUser(user);
+          } catch (err) {
+            const currentCountedUsers = await User.countDocuments({});
+            const currentCountedReferrals = await Referral.countDocuments({});
+            expect(err.statusCode).to.eql(500);
+            expect(err.error).to.be.an('Error');
+            expect(err.message).to.be.eql('Internal Server Error');
+            expect(currentCountedUsers).to.eql(countedUsers);
+            expect(currentCountedReferrals).to.eql(countedReferrals);
+          }
+          User.findOne.restore();
+        });
 
-        try {
-          await addUser(user);
-        } catch (err) {
-          const currentCountedUsers = await User.countDocuments({});
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-          expect(currentCountedUsers).to.eql(countedUsers);
-        }
-        User.findOne.restore();
+        context('when generateReferralCode returns an error', () => {
+          it('throws an error', async () => {
+            sinon.stub(User, 'findOne').throws(new Error('error msg'));
+
+            try {
+              await addUser(user);
+            } catch (err) {
+              const currentCountedUsers = await User.countDocuments({});
+              const currentCountedReferrals = await Referral.countDocuments({});
+              expect(err.statusCode).to.eql(500);
+              expect(err.error).to.be.an('Error');
+              expect(err.message).to.be.eql('Internal Server Error');
+              expect(currentCountedUsers).to.eql(countedUsers);
+              expect(currentCountedReferrals).to.eql(countedReferrals);
+            }
+            User.findOne.restore();
+          });
+        });
       });
     });
   });
@@ -758,6 +794,78 @@ describe('User Service', () => {
           expect(err.message).to.be.eql('Error removing property from favorites');
         }
         User.findByIdAndUpdate.restore();
+      });
+    });
+  });
+
+  describe('#getAccountOverview', () => {
+    const userId = mongoose.Types.ObjectId();
+    const vendorId = mongoose.Types.ObjectId();
+    const propertyId = mongoose.Types.ObjectId();
+    const offerId = mongoose.Types.ObjectId();
+    const user = UserFactory.build({ _id: userId });
+    const vendor = UserFactory.build({ _id: vendorId });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+      price: 20000000,
+    });
+
+    const enquiryId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const offer = OfferFactory.build({
+      _id: offerId,
+      enquiryId,
+      vendorId,
+      userId,
+      totalAmountPayable: 18000000,
+    });
+
+    const referralId = mongoose.Types.ObjectId();
+    const referral = ReferralFactory.build({
+      _id: referralId,
+      referrerId: userId,
+      reward: { amount: 50000 },
+    });
+
+    const transactionId = mongoose.Types.ObjectId();
+    const transaction = TransactionFactory.build({
+      _id: transactionId,
+      propertyId,
+      userId,
+      adminId: vendorId,
+      amount: 250000,
+    });
+
+    beforeEach(async () => {
+      await addUser(user);
+      await addUser(vendor);
+    });
+    context('when account has no contribution rewards', () => {
+      it('returns zero as account overview', async () => {
+        const overview = await getAccountOverview(userId);
+        expect(overview.contributionReward).to.eql(0);
+        expect(overview.totalAmountPaid).to.eql(0);
+        expect(overview.referralRewards).to.eql(0);
+      });
+    });
+
+    context('when account has two million off property price in offer letter', () => {
+      beforeEach(async () => {
+        await addProperty(property);
+        await addEnquiry(enquiry);
+        await createOffer(offer);
+        await acceptOffer({ userId, offerId, signature: 'https://ballers.ng/signature.png' });
+        await addReferral(referral);
+        await addTransaction(transaction);
+      });
+
+      it('returns two million account overview', async () => {
+        const overview = await getAccountOverview(userId);
+        expect(overview.contributionReward).to.eql(property.price - offer.totalAmountPayable);
+        expect(overview.totalAmountPaid).to.eql(transaction.amount);
+        expect(overview.referralRewards).to.eql(referral.reward.amount);
       });
     });
   });

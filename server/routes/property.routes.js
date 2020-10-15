@@ -200,6 +200,53 @@ router.get('/available-options', authenticate, PropertyController.getDistinctPro
 /**
  * @swagger
  * path:
+ *  /property/assigned/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets all information and transaction summ of assigned property by offer ID
+ *      tags: [Property]
+ *      responses:
+ *        '200':
+ *          description: Properties found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get(
+  '/assigned/:id',
+  authenticate,
+  hasValidObjectId,
+  PropertyController.getAssignedPropertyByOfferId,
+);
+
+/**
+ * @swagger
+ * path:
+ *  /property/assigned/:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets all properties assigned to a user
+ *      tags: [Property]
+ *      responses:
+ *        '200':
+ *          description: Properties found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/assigned/', authenticate, PropertyController.getAssignedProperties);
+
+/**
+ * @swagger
+ * path:
  *  /property/:id:
  *    get:
  *      parameters:
