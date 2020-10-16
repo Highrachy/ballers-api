@@ -99,8 +99,9 @@ export const sendReferralInvite = async (invite) => {
 
   const referrer = await getUserById(invite.referrerId);
   try {
-    await addReferral(invite);
+    const referralMessage = await addReferral(invite);
     return {
+      _id: referralMessage._id,
       referrerName: referrer.firstName,
       email: invite.email,
       referralCode: referrer.referralCode,
