@@ -5,7 +5,7 @@ import User from '../models/user.model';
 import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { getPropertyById, updateProperty } from './property.service';
+import { getPropertyById, updateProperty, getAssignedProperties } from './property.service';
 import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
@@ -297,9 +297,12 @@ export const getAccountOverview = async (userId) => {
   const referralRewards =
     calculatedReferralRewards.length > 0 ? calculatedReferralRewards[0].referralRewards : 0;
 
+  const properties = await getAssignedProperties(userId);
+
   return {
     contributionReward,
     totalAmountPaid,
     referralRewards,
+    properties,
   };
 };
