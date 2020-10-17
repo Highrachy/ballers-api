@@ -1,6 +1,11 @@
 import { Factory } from 'rosie';
+import mongoose from 'mongoose';
 
 export default new Factory()
+  .option('generateId', false)
+  .after((property, options) =>
+    options.generateId ? { _id: mongoose.Types.ObjectId(), ...property } : property,
+  )
   .sequence('name', (i) => `${i} bedroom apartment`)
   .attr('titleDocument', 'https://ballers.ng/sampletitledocument.pdf')
   .attr('price', 55000000)

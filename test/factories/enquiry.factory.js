@@ -1,6 +1,11 @@
 import { Factory } from 'rosie';
+import mongoose from 'mongoose';
 
 export default new Factory()
+  .option('generateId', false)
+  .after((enquiry, options) =>
+    options.generateId ? { _id: mongoose.Types.ObjectId(), ...enquiry } : enquiry,
+  )
   .sequence('title', (i) => `title-${i}`)
   .attr('propertyId', '5f2b39035a086cfc4b7fa7f6')
   .sequence('firstName', (i) => `firstName-${i}`)

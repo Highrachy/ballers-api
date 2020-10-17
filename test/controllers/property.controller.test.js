@@ -15,6 +15,7 @@ import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import { OFFER_STATUS } from '../../server/helpers/constants';
+import Enquiry from '../../server/models/enquiry.model';
 
 useDatabase();
 
@@ -1706,79 +1707,45 @@ describe('Property Controller', () => {
   });
 
   describe('Load all properties assigned to a user', () => {
-    const propertyId1 = mongoose.Types.ObjectId();
-    const property1 = PropertyFactory.build({
-      _id: propertyId1,
-      addedBy: adminId,
-      updatedBy: adminId,
-    });
-    const propertyId2 = mongoose.Types.ObjectId();
-    const property2 = PropertyFactory.build({
-      _id: propertyId2,
-      addedBy: adminId,
-      updatedBy: adminId,
-    });
-    const propertyId3 = mongoose.Types.ObjectId();
-    const property3 = PropertyFactory.build({
-      _id: propertyId3,
-      addedBy: adminId,
-      updatedBy: adminId,
-    });
+    const allOfferStatus = Object.keys(OFFER_STATUS);
+    const properties = allOfferStatus.map(() =>
+      PropertyFactory.build(
+        {
+          addedBy: adminId,
+          updatedBy: adminId,
+        },
+        { generateId: true },
+      ),
+    );
 
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({
-      _id: enquiryId1,
-      propertyId: propertyId1,
-      userId,
-    });
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({
-      _id: enquiryId2,
-      propertyId: propertyId2,
-      userId,
-    });
-    const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({
-      _id: enquiryId3,
-      propertyId: propertyId3,
-      userId,
-    });
+    const enquiries = allOfferStatus.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: properties[index]._id,
+          userId,
+        },
+        { generateId: true },
+      ),
+    );
 
-    const offerId1 = mongoose.Types.ObjectId();
-    const offer1 = OfferFactory.build({
-      _id: offerId1,
-      enquiryId: enquiryId1,
-      userId,
-      vendorId: adminId,
-      status: OFFER_STATUS.ASSIGNED,
-    });
-    const offerId2 = mongoose.Types.ObjectId();
-    const offer2 = OfferFactory.build({
-      _id: offerId2,
-      enquiryId: enquiryId2,
-      userId,
-      vendorId: adminId,
-      status: OFFER_STATUS.INTERESTED,
-    });
-    const offerId3 = mongoose.Types.ObjectId();
-    const offer3 = OfferFactory.build({
-      _id: offerId3,
-      enquiryId: enquiryId3,
-      userId,
-      vendorId: adminId,
-      status: OFFER_STATUS.ALLOCATED,
-    });
+    const offers = allOfferStatus.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: properties[index]._id,
+          enquiryId: enquiries[index]._id,
+          userId,
+          vendorId: adminId,
+          status: OFFER_STATUS[allOfferStatus[index]],
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
+    );
 
     beforeEach(async () => {
-      await addProperty(property1);
-      await addProperty(property2);
-      await addProperty(property3);
-      await addEnquiry(enquiry1);
-      await addEnquiry(enquiry2);
-      await addEnquiry(enquiry3);
-      await createOffer(offer1);
-      await createOffer(offer2);
-      await createOffer(offer3);
+      await Property.insertMany(properties);
+      await Enquiry.insertMany(enquiries);
+      await Offer.insertMany(offers);
     });
 
     context('with a valid token & id', () => {
@@ -1789,11 +1756,11 @@ describe('Property Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.properties.length).to.be.eql(2);
-            expect(res.body.properties[0]._id).to.be.eql(offerId1.toString());
-            expect(res.body.properties[0].property._id).to.be.eql(propertyId1.toString());
-            expect(res.body.properties[1]._id).to.be.eql(offerId3.toString());
-            expect(res.body.properties[1].property._id).to.be.eql(propertyId3.toString());
+            expect(res.body.properties.length).to.be.eql(3);
+            res.body.properties.forEach(({ _id, property }, index) => {
+              expect(_id).to.be.eql(offers[index + 1]._id.toString());
+              expect(property._id).to.be.eql(properties[index + 1]._id.toString());
+            });
             done();
           });
       });
