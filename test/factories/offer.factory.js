@@ -1,6 +1,11 @@
 import { Factory } from 'rosie';
+import mongoose from 'mongoose';
 
 export default new Factory()
+  .option('generateId', false)
+  .after((offer, options) =>
+    options.generateId ? { _id: mongoose.Types.ObjectId(), ...offer } : offer,
+  )
   .attr('enquiryId', '5f31e1a5580ea36150920130')
   .attr('handOverDate', '2090-09-08')
   .attr('deliveryState', 'new')

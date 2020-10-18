@@ -318,7 +318,11 @@ export const getAssignedProperties = async (userId) =>
     { $match: { userId: ObjectId(userId) } },
     {
       $match: {
-        $or: [{ status: OFFER_STATUS.ASSIGNED }, { status: OFFER_STATUS.ALLOCATED }],
+        $or: [
+          { status: OFFER_STATUS.ASSIGNED },
+          { status: OFFER_STATUS.ALLOCATED },
+          { status: OFFER_STATUS.INTERESTED },
+        ],
       },
     },
     {
