@@ -609,9 +609,13 @@ describe('Offer Controller', () => {
   });
 
   describe('Cancel Offer', () => {
-    let demoVendorToken;
-    const demoVendorId = mongoose.Types.ObjectId();
-    const demoVendor = UserFactory.build({ _id: demoVendorId, role: 0, activated: true });
+    let unauthorizedVendorToken;
+    const unauthorizedVendorId = mongoose.Types.ObjectId();
+    const unauthorizedVendor = UserFactory.build({
+      _id: unauthorizedVendorId,
+      role: 0,
+      activated: true,
+    });
     const offerId1 = mongoose.Types.ObjectId();
     const enquiryId1 = mongoose.Types.ObjectId();
     const enquiry1 = EnquiryFactory.build({
@@ -638,12 +642,44 @@ describe('Offer Controller', () => {
       status: OFFER_STATUS.INTERESTED,
     });
 
+    const offerId3 = mongoose.Types.ObjectId();
+    const enquiryId3 = mongoose.Types.ObjectId();
+    const enquiry3 = EnquiryFactory.build({
+      _id: enquiryId3,
+      userId: adminId,
+      propertyId: propertyId3,
+    });
+    const offer3 = OfferFactory.build({
+      _id: offerId3,
+      enquiryId: enquiryId3,
+      vendorId: adminId,
+      status: OFFER_STATUS.ASSIGNED,
+    });
+
+    const offerId4 = mongoose.Types.ObjectId();
+    const enquiryId4 = mongoose.Types.ObjectId();
+    const enquiry4 = EnquiryFactory.build({
+      _id: enquiryId4,
+      userId,
+      propertyId: propertyId3,
+    });
+    const offer4 = OfferFactory.build({
+      _id: offerId4,
+      enquiryId: enquiryId4,
+      vendorId: adminId,
+      status: OFFER_STATUS.ALLOCATED,
+    });
+
     beforeEach(async () => {
-      demoVendorToken = await addUser(demoVendor);
+      unauthorizedVendorToken = await addUser(unauthorizedVendor);
       await addEnquiry(enquiry1);
       await addEnquiry(enquiry2);
+      await addEnquiry(enquiry3);
+      await addEnquiry(enquiry4);
       await createOffer(offer1);
       await createOffer(offer2);
+      await createOffer(offer3);
+      await createOffer(offer4);
     });
 
     context('with valid data & token', () => {
@@ -667,7 +703,7 @@ describe('Offer Controller', () => {
       it('returns forbidden error', (done) => {
         request()
           .put('/api/v1/offer/cancel')
-          .set('authorization', demoVendorToken)
+          .set('authorization', unauthorizedVendorToken)
           .send(toCancelDetails)
           .end((err, res) => {
             expect(res).to.have.status(403);
@@ -684,6 +720,36 @@ describe('Offer Controller', () => {
           .put('/api/v1/offer/cancel')
           .set('authorization', adminToken)
           .send({ offerId: offerId2 })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
+            done();
+          });
+      });
+    });
+
+    context('when offer has been assigned', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId3 })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
+            done();
+          });
+      });
+    });
+
+    context('when offer has been allocated', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId4 })
           .end((err, res) => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);

@@ -3,7 +3,7 @@ import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../he
 import {
   createOfferSchema,
   acceptOfferSchema,
-  validateOrAssignOfferSchema,
+  validateOfferIdSchema,
 } from '../schemas/offer.schema';
 import OfferController from '../controllers/offer.controllers';
 
@@ -92,7 +92,7 @@ router.put(
   '/cancel',
   authenticate,
   isAdmin,
-  schemaValidation(validateOrAssignOfferSchema),
+  schemaValidation(validateOfferIdSchema),
   OfferController.cancel,
 );
 
@@ -123,7 +123,7 @@ router.put(
   '/assign',
   authenticate,
   isAdmin,
-  schemaValidation(validateOrAssignOfferSchema),
+  schemaValidation(validateOfferIdSchema),
   OfferController.assign,
 );
 
