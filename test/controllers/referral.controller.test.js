@@ -76,6 +76,8 @@ describe('Referral Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Invite sent');
+            expect(sendMailSpy.callCount).to.eq(1);
+            expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.REFERRAL_INVITE);
             done();
           });
       });
@@ -95,6 +97,7 @@ describe('Referral Controller', () => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Invalid token');
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -113,6 +116,7 @@ describe('Referral Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Email Address" is not allowed to be empty');
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
@@ -130,6 +134,7 @@ describe('Referral Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Email Address" is required');
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
@@ -154,6 +159,8 @@ describe('Referral Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Invite sent');
+              expect(sendMailSpy.callCount).to.eq(1);
+              expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.REFERRAL_INVITE);
               done();
             });
         });
@@ -174,6 +181,7 @@ describe('Referral Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Multiple invites cannot be sent to same email');
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
@@ -192,6 +200,7 @@ describe('Referral Controller', () => {
               expect(res.body.message).to.be.eql(
                 'admin@mail.com has already registered on Ballers.',
               );
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
