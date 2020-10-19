@@ -1074,6 +1074,7 @@ describe('Offer Controller', () => {
     const offer2 = OfferFactory.build({
       enquiryId: enquiryId2,
       vendorId: adminId,
+      expires: '2005-11-12T00:00:00.000Z',
       status: OFFER_STATUS.INTERESTED,
     });
 
@@ -1123,7 +1124,7 @@ describe('Offer Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('offers');
-              expect(res.body.offers.length).to.be.eql(2);
+              expect(res.body.offers.length).to.be.eql(1);
               expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
               expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
