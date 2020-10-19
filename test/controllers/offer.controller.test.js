@@ -670,16 +670,48 @@ describe('Offer Controller', () => {
       status: OFFER_STATUS.ALLOCATED,
     });
 
+    const offerId5 = mongoose.Types.ObjectId();
+    const enquiryId5 = mongoose.Types.ObjectId();
+    const enquiry5 = EnquiryFactory.build({
+      _id: enquiryId5,
+      userId,
+      propertyId: propertyId1,
+    });
+    const offer5 = OfferFactory.build({
+      _id: offerId5,
+      enquiryId: enquiryId5,
+      vendorId: adminId,
+      status: OFFER_STATUS.REJECTED,
+    });
+
+    const offerId6 = mongoose.Types.ObjectId();
+    const enquiryId6 = mongoose.Types.ObjectId();
+    const enquiry6 = EnquiryFactory.build({
+      _id: enquiryId6,
+      userId,
+      propertyId: propertyId2,
+    });
+    const offer6 = OfferFactory.build({
+      _id: offerId6,
+      enquiryId: enquiryId6,
+      vendorId: adminId,
+      status: OFFER_STATUS.CANCELLED,
+    });
+
     beforeEach(async () => {
       unauthorizedVendorToken = await addUser(unauthorizedVendor);
       await addEnquiry(enquiry1);
       await addEnquiry(enquiry2);
       await addEnquiry(enquiry3);
       await addEnquiry(enquiry4);
+      await addEnquiry(enquiry5);
+      await addEnquiry(enquiry6);
       await createOffer(offer1);
       await createOffer(offer2);
       await createOffer(offer3);
       await createOffer(offer4);
+      await createOffer(offer5);
+      await createOffer(offer6);
     });
 
     context('with valid data & token', () => {
@@ -704,6 +736,21 @@ describe('Offer Controller', () => {
         request()
           .put('/api/v1/offer/cancel')
           .set('authorization', unauthorizedVendorToken)
+          .send(toCancelDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when offer is cancelled by unauthorized vendor', () => {
+      it('returns forbidden error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', userToken)
           .send(toCancelDetails)
           .end((err, res) => {
             expect(res).to.have.status(403);
@@ -754,6 +801,40 @@ describe('Offer Controller', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
+            done();
+          });
+      });
+    });
+
+    context('with valid data & token', () => {
+      it('returns cancelled offer', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId5 })
+          .end(async (err, res) => {
+            const enquiry = await getEnquiryById(enquiryId5);
+            expect(enquiry.approved).to.be.eql(false);
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Offer cancelled');
+            done();
+          });
+      });
+    });
+
+    context('with valid data & token', () => {
+      it('returns cancelled offer', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId6 })
+          .end(async (err, res) => {
+            const enquiry = await getEnquiryById(enquiryId6);
+            expect(enquiry.approved).to.be.eql(false);
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Offer cancelled');
             done();
           });
       });
