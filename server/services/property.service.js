@@ -336,9 +336,4 @@ export const getAssignedProperties = async (userId) =>
     {
       $unwind: '$property',
     },
-    {
-      $project: {
-        property: 1,
-      },
-    },
   ]);
