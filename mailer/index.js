@@ -46,7 +46,7 @@ const EMAIL_CONTENT = {
   OFFER_RESPONSE_VENDOR: {
     subject: 'Offer Accepted',
     contentTop:
-      'Your offer on [Property name] has been accepted. Check your dashboard for more details.',
+      'Note that your offer to [Buyers name] on [Property name] has been accepted. Check your dashboard for more details.',
   },
   OFFER_RESPONSE_USER: {
     subject: 'Offer Signed',
@@ -54,7 +54,7 @@ const EMAIL_CONTENT = {
     contentBottom: `Meanwhile, click below to read our article on <a href="https://ballers.ng">5 Things Every Intending Homeowner Should Know</a>. We look forward to an enjoyable process.`,
   },
   WELCOME_MESSAGE: {
-    subject: 'Welcome to BALLers',
+    subject: 'Welcome to BALLERS',
     contentTop: `Congratulations you're officially a BALLer.`,
   },
 };
