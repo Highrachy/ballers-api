@@ -7,8 +7,13 @@ import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
 import { addReferral, sendReferralInvite } from '../../server/services/referral.service';
 import { REFERRAL_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
+import * as MailService from '../../server/services/mailer.service';
+import EMAIL_CONTENT from '../../mailer';
 
 useDatabase();
+
+let sendMailSpy;
+const sandbox = sinon.createSandbox();
 
 let adminToken;
 let userToken;
@@ -28,6 +33,14 @@ const regularUser = UserFactory.build({
 });
 
 describe('Referral Controller', () => {
+  beforeEach(() => {
+    sendMailSpy = sandbox.spy(MailService, 'sendMail');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
@@ -45,6 +58,8 @@ describe('Referral Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Invite sent');
+            expect(sendMailSpy.callCount).to.eq(1);
+            expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.REFERRAL_INVITE);
             done();
           });
       });
@@ -61,6 +76,8 @@ describe('Referral Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Invite sent');
+            expect(sendMailSpy.callCount).to.eq(1);
+            expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.REFERRAL_INVITE);
             done();
           });
       });
@@ -80,6 +97,7 @@ describe('Referral Controller', () => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Invalid token');
+            expect(sendMailSpy.callCount).to.eq(0);
             done();
           });
       });
@@ -98,6 +116,7 @@ describe('Referral Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Email Address" is not allowed to be empty');
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
@@ -115,6 +134,7 @@ describe('Referral Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Email Address" is required');
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
@@ -139,6 +159,8 @@ describe('Referral Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Invite sent');
+              expect(sendMailSpy.callCount).to.eq(1);
+              expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.REFERRAL_INVITE);
               done();
             });
         });
@@ -159,6 +181,7 @@ describe('Referral Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Multiple invites cannot be sent to same email');
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
@@ -177,6 +200,7 @@ describe('Referral Controller', () => {
               expect(res.body.message).to.be.eql(
                 'admin@mail.com has already registered on Ballers.',
               );
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
