@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Offer from '../models/offer.model';
+import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS } from '../helpers/constants';
@@ -312,6 +313,10 @@ export const acceptOffer = async (offerToAccept) => {
       'You cannot accept offer of another user',
     );
   }
+
+  if (offer[0].status === OFFER_STATUS.CANCELLED) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'You cannot accept a cancelled offer');
+  }
   const propertyPrice = offer[0].propertyInfo.price;
   const offerPrice = offer[0].totalAmountPayable;
   const contributionReward = propertyPrice - offerPrice < 0 ? 0 : propertyPrice - offerPrice;
@@ -367,12 +372,25 @@ export const assignOffer = async (offerId) => {
   }
 };
 
-export const cancelOffer = async (offerId) => {
+export const cancelOffer = async ({ offerId, vendorId }) => {
   const offer = await getOfferById(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  if (offer.vendorId.toString() !== vendorId.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  if (
+    offer.status === OFFER_STATUS.INTERESTED ||
+    offer.status === OFFER_STATUS.ASSIGNED ||
+    offer.status === OFFER_STATUS.ALLOCATED
+  ) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'You cannot cancel an accepted offer');
+  }
+
   try {
+    await Enquiry.findByIdAndUpdate(offer.enquiryId, { $set: { approved: false } });
     return Offer.findByIdAndUpdate(
       offer.id,
       { $set: { status: OFFER_STATUS.CANCELLED } },

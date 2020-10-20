@@ -484,7 +484,7 @@ describe('Offer Service', () => {
 
     context('when all is valid', () => {
       it('returns a valid cancelled offer', async () => {
-        const rejectedOffer = await cancelOffer(offerId);
+        const rejectedOffer = await cancelOffer({ offerId, vendorId: userId });
         expect(rejectedOffer.status).to.eql('Cancelled');
       });
     });
@@ -493,7 +493,7 @@ describe('Offer Service', () => {
       it('throws an error', async () => {
         sinon.stub(Offer, 'findById').throws(new Error('error msg'));
         try {
-          await cancelOffer(offerId);
+          await cancelOffer({ offerId, vendorId: userId });
         } catch (err) {
           expect(err.statusCode).to.eql(500);
           expect(err.error).to.be.an('Error');

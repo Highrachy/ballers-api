@@ -33,6 +33,6 @@ export const acceptOfferSchema = Joi.object({
   signature: Joi.string().label('Signature').required(),
 });
 
-export const respondOfferSchema = Joi.object({
+export const validateOfferIdSchema = Joi.object({
   offerId: Joi.objectId().label('Offer Id').required(),
 });

@@ -1,6 +1,10 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import { createOfferSchema, acceptOfferSchema, respondOfferSchema } from '../schemas/offer.schema';
+import {
+  createOfferSchema,
+  acceptOfferSchema,
+  validateOfferIdSchema,
+} from '../schemas/offer.schema';
 import OfferController from '../controllers/offer.controllers';
 
 const router = express.Router();
@@ -84,7 +88,13 @@ router.put('/accept', authenticate, schemaValidation(acceptOfferSchema), OfferCo
  *      '500':
  *       description: Internal server error
  */
-router.put('/cancel', authenticate, schemaValidation(respondOfferSchema), OfferController.cancel);
+router.put(
+  '/cancel',
+  authenticate,
+  isAdmin,
+  schemaValidation(validateOfferIdSchema),
+  OfferController.cancel,
+);
 
 /**
  * @swagger
@@ -113,7 +123,7 @@ router.put(
   '/assign',
   authenticate,
   isAdmin,
-  schemaValidation(respondOfferSchema),
+  schemaValidation(validateOfferIdSchema),
   OfferController.assign,
 );
 

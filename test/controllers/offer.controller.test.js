@@ -7,7 +7,7 @@ import EnquiryFactory from '../factories/enquiry.factory';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
 import { createOffer } from '../../server/services/offer.service';
-import { addEnquiry } from '../../server/services/enquiry.service';
+import { addEnquiry, getEnquiryById } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { OFFER_STATUS } from '../../server/helpers/constants';
@@ -609,21 +609,109 @@ describe('Offer Controller', () => {
   });
 
   describe('Cancel Offer', () => {
-    const offerId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({
-      _id: enquiryId,
+    let unauthorizedVendorToken;
+    const unauthorizedVendorId = mongoose.Types.ObjectId();
+    const unauthorizedVendor = UserFactory.build({
+      _id: unauthorizedVendorId,
+      role: 0,
+      activated: true,
+    });
+    const offerId1 = mongoose.Types.ObjectId();
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
       userId: adminId,
       propertyId: propertyId1,
     });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
+    const offer1 = OfferFactory.build({ _id: offerId1, enquiryId: enquiryId1, vendorId: adminId });
     const toCancelDetails = {
-      offerId,
+      offerId: offerId1,
     };
 
+    const offerId2 = mongoose.Types.ObjectId();
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      userId: adminId,
+      propertyId: propertyId2,
+    });
+    const offer2 = OfferFactory.build({
+      _id: offerId2,
+      enquiryId: enquiryId2,
+      vendorId: adminId,
+      status: OFFER_STATUS.INTERESTED,
+    });
+
+    const offerId3 = mongoose.Types.ObjectId();
+    const enquiryId3 = mongoose.Types.ObjectId();
+    const enquiry3 = EnquiryFactory.build({
+      _id: enquiryId3,
+      userId: adminId,
+      propertyId: propertyId3,
+    });
+    const offer3 = OfferFactory.build({
+      _id: offerId3,
+      enquiryId: enquiryId3,
+      vendorId: adminId,
+      status: OFFER_STATUS.ASSIGNED,
+    });
+
+    const offerId4 = mongoose.Types.ObjectId();
+    const enquiryId4 = mongoose.Types.ObjectId();
+    const enquiry4 = EnquiryFactory.build({
+      _id: enquiryId4,
+      userId,
+      propertyId: propertyId3,
+    });
+    const offer4 = OfferFactory.build({
+      _id: offerId4,
+      enquiryId: enquiryId4,
+      vendorId: adminId,
+      status: OFFER_STATUS.ALLOCATED,
+    });
+
+    const offerId5 = mongoose.Types.ObjectId();
+    const enquiryId5 = mongoose.Types.ObjectId();
+    const enquiry5 = EnquiryFactory.build({
+      _id: enquiryId5,
+      userId,
+      propertyId: propertyId1,
+    });
+    const offer5 = OfferFactory.build({
+      _id: offerId5,
+      enquiryId: enquiryId5,
+      vendorId: adminId,
+      status: OFFER_STATUS.REJECTED,
+    });
+
+    const offerId6 = mongoose.Types.ObjectId();
+    const enquiryId6 = mongoose.Types.ObjectId();
+    const enquiry6 = EnquiryFactory.build({
+      _id: enquiryId6,
+      userId,
+      propertyId: propertyId2,
+    });
+    const offer6 = OfferFactory.build({
+      _id: offerId6,
+      enquiryId: enquiryId6,
+      vendorId: adminId,
+      status: OFFER_STATUS.CANCELLED,
+    });
+
     beforeEach(async () => {
-      await addEnquiry(enquiry);
-      await createOffer(offer);
+      unauthorizedVendorToken = await addUser(unauthorizedVendor);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await addEnquiry(enquiry3);
+      await addEnquiry(enquiry4);
+      await addEnquiry(enquiry5);
+      await addEnquiry(enquiry6);
+      await createOffer(offer1);
+      await createOffer(offer2);
+      await createOffer(offer3);
+      await createOffer(offer4);
+      await createOffer(offer5);
+      await createOffer(offer6);
     });
 
     context('with valid data & token', () => {
@@ -632,7 +720,118 @@ describe('Offer Controller', () => {
           .put('/api/v1/offer/cancel')
           .set('authorization', adminToken)
           .send(toCancelDetails)
+          .end(async (err, res) => {
+            const enquiry = await getEnquiryById(enquiryId1);
+            expect(enquiry.approved).to.be.eql(false);
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Offer cancelled');
+            done();
+          });
+      });
+    });
+
+    context('when offer is cancelled by unauthorized vendor', () => {
+      it('returns forbidden error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', unauthorizedVendorToken)
+          .send(toCancelDetails)
           .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when an offer is canceled by a user', () => {
+      it('returns forbidden error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', userToken)
+          .send(toCancelDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when offer has been accepted', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId2 })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
+            done();
+          });
+      });
+    });
+
+    context('when offer has been assigned', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId3 })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
+            done();
+          });
+      });
+    });
+
+    context('when offer has been allocated', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId4 })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
+            done();
+          });
+      });
+    });
+
+    context('when an offer has been rejected', () => {
+      it('returns cancelled offer', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId5 })
+          .end(async (err, res) => {
+            const enquiry = await getEnquiryById(enquiryId5);
+            expect(enquiry.approved).to.be.eql(false);
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Offer cancelled');
+            done();
+          });
+      });
+    });
+
+    context('when an offer has been cancelled', () => {
+      it('returns cancelled offer', (done) => {
+        request()
+          .put('/api/v1/offer/cancel')
+          .set('authorization', adminToken)
+          .send({ offerId: offerId6 })
+          .end(async (err, res) => {
+            const enquiry = await getEnquiryById(enquiryId6);
+            expect(enquiry.approved).to.be.eql(false);
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Offer cancelled');
