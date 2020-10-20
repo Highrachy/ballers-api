@@ -746,7 +746,7 @@ describe('Offer Controller', () => {
       });
     });
 
-    context('when offer is cancelled by unauthorized vendor', () => {
+    context('when an offer is canceled by a user', () => {
       it('returns forbidden error', (done) => {
         request()
           .put('/api/v1/offer/cancel')
@@ -806,7 +806,7 @@ describe('Offer Controller', () => {
       });
     });
 
-    context('with valid data & token', () => {
+    context('when an offer has been rejected', () => {
       it('returns cancelled offer', (done) => {
         request()
           .put('/api/v1/offer/cancel')
@@ -823,7 +823,7 @@ describe('Offer Controller', () => {
       });
     });
 
-    context('with valid data & token', () => {
+    context('when an offer has been cancelled', () => {
       it('returns cancelled offer', (done) => {
         request()
           .put('/api/v1/offer/cancel')
