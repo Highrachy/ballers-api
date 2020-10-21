@@ -41,8 +41,7 @@ const OfferController = {
         const vendor = offerResponse.vendorInfo;
         vendor.firstName = `${vendor.firstName}'s team`;
         const user = offerResponse.userInfo;
-        const contentTop = `Note that your offer to ${user.lastName} ${user.firstName} on ${offerResponse.propertyInfo.name} has been accepted. Check your dashboard for more details.`;
-
+        const contentTop = `Note that your offer to ${offerResponse.enquiryInfo.lastName} ${offerResponse.enquiryInfo.firstName} on ${offerResponse.propertyInfo.name} has been accepted. Check your dashboard for more details.`;
         sendMail(EMAIL_CONTENT.OFFER_RESPONSE_VENDOR, vendor, { contentTop });
         sendMail(EMAIL_CONTENT.OFFER_RESPONSE_USER, user, {});
 
