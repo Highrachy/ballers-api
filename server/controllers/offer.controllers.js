@@ -7,6 +7,8 @@ import {
   getAllOffersUser,
   getAllOffersAdmin,
   getActiveOffers,
+  raiseConcern,
+  resolveConcern,
 } from '../services/offer.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -122,6 +124,35 @@ const OfferController = {
     getActiveOffers(userId)
       .then((offers) => {
         res.status(httpStatus.OK).json({ success: true, offers });
+      })
+      .catch((error) => next(error));
+  },
+
+  raiseConcern(req, res, next) {
+    const concern = req.locals;
+    const userId = req.user._id;
+    raiseConcern({ ...concern, userId })
+      .then((offer) => {
+        const offerResponse = offer[0];
+        const vendor = offerResponse.vendorInfo;
+        const contentTop = `A concern has been raised on your offer to ${offerResponse.enquiryInfo.lastName}, ${offerResponse.enquiryInfo.firstName}. <br>The question states: <b style='color: #161d3f'>${concern.question}</b>.`;
+
+        sendMail(EMAIL_CONTENT.RAISE_CONCERN, vendor, { contentTop });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Concern raised', offer: offer[0] });
+      })
+      .catch((error) => next(error));
+  },
+
+  resolveConcern(req, res, next) {
+    const concern = req.locals;
+    const vendorId = req.user._id;
+    resolveConcern({ ...concern, vendorId })
+      .then((offer) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Concern resolved', offer: offer[0] });
       })
       .catch((error) => next(error));
   },
