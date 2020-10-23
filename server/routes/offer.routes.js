@@ -4,6 +4,8 @@ import {
   createOfferSchema,
   acceptOfferSchema,
   validateOfferIdSchema,
+  raiseConcernSchema,
+  resolveConcernSchema,
 } from '../schemas/offer.schema';
 import OfferController from '../controllers/offer.controllers';
 
@@ -125,6 +127,67 @@ router.put(
   isAdmin,
   schemaValidation(validateOfferIdSchema),
   OfferController.assign,
+);
+
+/**
+ * @swagger
+ * /offer/raise-concern:
+ *   put:
+ *     tags:
+ *       - Offer
+ *     description: Raise a concern for a particular offer
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Offer'
+ *      description: Raise a concern for a particular offer
+ *     responses:
+ *      '200':
+ *        description: Concern raised
+ *      '400':
+ *        description: Error raising concern
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/raise-concern',
+  authenticate,
+  schemaValidation(raiseConcernSchema),
+  OfferController.raiseConcern,
+);
+
+/**
+ * @swagger
+ * /offer/resolve-concern:
+ *   put:
+ *     tags:
+ *       - Offer
+ *     description: Resolve a concern for a particular offer
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Offer'
+ *      description: Resolve a concern for a particular offer
+ *     responses:
+ *      '200':
+ *        description: Concern resolved
+ *      '400':
+ *        description: Error resolving concern
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/resolve-concern',
+  authenticate,
+  isAdmin,
+  schemaValidation(resolveConcernSchema),
+  OfferController.resolveConcern,
 );
 
 /**

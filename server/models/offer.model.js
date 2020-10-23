@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { OFFER_STATUS } from '../helpers/constants';
+import { OFFER_STATUS, CONCERN_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -150,6 +150,18 @@ const OfferSchema = new mongoose.Schema(
     paymentFrequency: {
       type: Number,
       required: true,
+    },
+    concern: {
+      question: {
+        type: String,
+      },
+      response: {
+        type: String,
+      },
+      status: {
+        type: String,
+        default: CONCERN_STATUS.PENDING,
+      },
     },
   },
   { timestamps: true },
