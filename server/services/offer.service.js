@@ -435,9 +435,9 @@ export const raiseConcern = async (concern) => {
     await Offer.findByIdAndUpdate(
       offer.id,
       {
-        $set: { concern: { question: concern.question, status: CONCERN_STATUS.PENDING } },
+        $push: { concern: { question: concern.question, status: CONCERN_STATUS.PENDING } },
       },
-      { new: true },
+      { new: true, safe: true, upsert: true },
     );
     return await getOffer(concern.offerId);
   } catch (error) {
@@ -455,10 +455,13 @@ export const resolveConcern = async (concern) => {
   }
 
   try {
-    await Offer.findByIdAndUpdate(
-      offer.id,
+    await Offer.findOneAndUpdate(
+      { _id: offer.id, 'concern._id': concern.concernId },
       {
-        $set: { 'concern.response': concern.response, 'concern.status': CONCERN_STATUS.RESOLVED },
+        $set: {
+          'concern.$.response': concern.response,
+          'concern.$.status': CONCERN_STATUS.RESOLVED,
+        },
       },
       { new: true },
     );
