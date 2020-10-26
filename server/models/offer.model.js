@@ -151,18 +151,20 @@ const OfferSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    concern: {
-      question: {
-        type: String,
+    concern: [
+      {
+        question: {
+          type: String,
+        },
+        response: {
+          type: String,
+        },
+        status: {
+          type: String,
+          default: CONCERN_STATUS.PENDING,
+        },
       },
-      response: {
-        type: String,
-      },
-      status: {
-        type: String,
-        default: CONCERN_STATUS.PENDING,
-      },
-    },
+    ],
   },
   { timestamps: true },
 );
