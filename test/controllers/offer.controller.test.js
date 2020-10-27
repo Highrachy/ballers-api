@@ -6,7 +6,7 @@ import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
-import { createOffer } from '../../server/services/offer.service';
+import { createOffer, raiseConcern } from '../../server/services/offer.service';
 import { addEnquiry, getEnquiryById } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
@@ -1397,6 +1397,31 @@ describe('Offer Controller', () => {
               expect(res.body.offer.concern.length).to.be.eql(1);
               expect(res.body.offer.concern[0].status).to.be.eql('Pending');
               expect(res.body.offer.concern[0].question).to.be.eql(concern.question);
+              expect(sendMailSpy.callCount).to.eq(1);
+              expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.RAISE_CONCERN);
+              done();
+            });
+        });
+      });
+
+      context('when a concern has been raised previously on offer', async () => {
+        const firstConcern = { offerId, userId, question: 'Can you send me the house plan' };
+        beforeEach(async () => {
+          await raiseConcern(firstConcern);
+        });
+        it('returns successful payload', (done) => {
+          request()
+            .put('/api/v1/offer/raise-concern')
+            .set('authorization', userToken)
+            .send(concern)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('offer');
+              expect(res.body.offer.concern.length).to.be.eql(2);
+              expect(res.body.offer.concern[1].status).to.be.eql('Pending');
+              expect(res.body.offer.concern[0].question).to.be.eql(firstConcern.question);
+              expect(res.body.offer.concern[1].question).to.be.eql(concern.question);
               expect(sendMailSpy.callCount).to.eq(1);
               expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.RAISE_CONCERN);
               done();
