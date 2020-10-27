@@ -20,8 +20,8 @@ export const MailSender = {
       port: 2525,
       secure: false,
       auth: {
-        user: process.env.MAIL_TRAP_USER,
-        pass: process.env.MAIL_TRAP_PASSWORD,
+        user: process.env.MAIL_TRAP_USER || '',
+        pass: process.env.MAIL_TRAP_PASSWORD || '',
       },
     });
 
