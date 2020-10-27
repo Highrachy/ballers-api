@@ -45,5 +45,5 @@ export const raiseConcernSchema = Joi.object({
 export const resolveConcernSchema = Joi.object({
   offerId: Joi.objectId().label('Offer Id').required(),
   concernId: Joi.objectId().label('Concern Id').required(),
-  response: Joi.string().label('Question').required(),
+  response: Joi.string().label('Response').required(),
 });
