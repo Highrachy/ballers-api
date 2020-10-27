@@ -1397,6 +1397,8 @@ describe('Offer Controller', () => {
               expect(res.body.offer.concern.length).to.be.eql(1);
               expect(res.body.offer.concern[0].status).to.be.eql('Pending');
               expect(res.body.offer.concern[0].question).to.be.eql(concern.question);
+              expect(sendMailSpy.callCount).to.eq(1);
+              expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.RAISE_CONCERN);
               done();
             });
         });
@@ -1414,6 +1416,7 @@ describe('Offer Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+                expect(sendMailSpy.callCount).to.eq(0);
                 done();
               });
           });
@@ -1430,6 +1433,7 @@ describe('Offer Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"Question" is not allowed to be empty');
+                expect(sendMailSpy.callCount).to.eq(0);
                 done();
               });
           });
@@ -1445,6 +1449,7 @@ describe('Offer Controller', () => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Token needed to access resources');
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
@@ -1459,6 +1464,7 @@ describe('Offer Controller', () => {
             .send(concern)
             .end((err, res) => {
               expect(res).to.have.status(400);
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
               Offer.findByIdAndUpdate.restore();
             });
@@ -1515,6 +1521,8 @@ describe('Offer Controller', () => {
               expect(res.body.offer.concern[0].status).to.be.eql('Resolved');
               expect(res.body.offer.concern[0].question).to.be.eql(offer.concern[0].question);
               expect(res.body.offer.concern[0].response).to.be.eql(concern.response);
+              expect(sendMailSpy.callCount).to.eq(1);
+              expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.RESOLVE_CONCERN);
               done();
             });
         });
@@ -1532,6 +1540,7 @@ describe('Offer Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+                expect(sendMailSpy.callCount).to.eq(0);
                 done();
               });
           });
@@ -1548,6 +1557,7 @@ describe('Offer Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"Concern Id" is not allowed to be empty');
+                expect(sendMailSpy.callCount).to.eq(0);
                 done();
               });
           });
@@ -1564,6 +1574,7 @@ describe('Offer Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"Response" is not allowed to be empty');
+                expect(sendMailSpy.callCount).to.eq(0);
                 done();
               });
           });
@@ -1580,6 +1591,7 @@ describe('Offer Controller', () => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
@@ -1594,6 +1606,7 @@ describe('Offer Controller', () => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Token needed to access resources');
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
             });
         });
@@ -1608,6 +1621,7 @@ describe('Offer Controller', () => {
             .send(concern)
             .end((err, res) => {
               expect(res).to.have.status(400);
+              expect(sendMailSpy.callCount).to.eq(0);
               done();
               Offer.findOneAndUpdate.restore();
             });

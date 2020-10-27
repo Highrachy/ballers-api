@@ -140,7 +140,7 @@ const OfferController = {
         sendMail(EMAIL_CONTENT.RAISE_CONCERN, vendor, { contentTop });
         res
           .status(httpStatus.OK)
-          .json({ success: true, message: 'Concern raised', offer: offer[0] });
+          .json({ success: true, message: 'Concern raised', offer: offerResponse });
       })
       .catch((error) => next(error));
   },
@@ -150,9 +150,13 @@ const OfferController = {
     const vendorId = req.user._id;
     resolveConcern({ ...concern, vendorId })
       .then((offer) => {
+        const offerResponse = offer[0];
+        const user = offerResponse.userInfo;
+
+        sendMail(EMAIL_CONTENT.RESOLVE_CONCERN, user, {});
         res
           .status(httpStatus.OK)
-          .json({ success: true, message: 'Concern resolved', offer: offer[0] });
+          .json({ success: true, message: 'Concern resolved', offer: offerResponse });
       })
       .catch((error) => next(error));
   },
