@@ -20,12 +20,12 @@ import { addTransaction } from '../../server/services/transaction.service';
 
 useDatabase();
 
-let sendMailSpy;
+let sendMailStub;
 const sandbox = sinon.createSandbox();
 
 describe('User Controller', () => {
   beforeEach(() => {
-    sendMailSpy = sandbox.spy(MailService, 'sendMail');
+    sendMailStub = sandbox.stub(MailService, 'sendMail');
   });
 
   afterEach(() => {
@@ -44,8 +44,8 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('User registered');
             expect(res.body).to.have.property('token');
-            expect(sendMailSpy.callCount).to.eq(1);
-            expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
               link: `http://ballers.ng/activate?token=${res.body.token}`,
             });
             done();
@@ -54,9 +54,11 @@ describe('User Controller', () => {
     });
     context('when email exists in the db', () => {
       const user = UserFactory.build({ email: 'myemail@mail.com' });
+
       before(async () => {
         await User.create(user);
       });
+
       it('returns error for an existing email', (done) => {
         request()
           .post('/api/v1/user/register')
@@ -66,7 +68,7 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Email is linked to another account');
             expect(res.body.error).to.be.eql('Email is linked to another account');
-            expect(sendMailSpy.callCount).to.eq(0);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -94,7 +96,7 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('User registered');
             expect(res.body).to.have.property('token');
-            expect(sendMailSpy.callCount).to.eq(1);
+            expect(sendMailStub.callCount).to.eq(1);
             done();
           });
       });
@@ -112,7 +114,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"First Name" is not allowed to be empty');
-              expect(sendMailSpy.callCount).to.eq(0);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -129,7 +131,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Last Name" is not allowed to be empty');
-              expect(sendMailSpy.callCount).to.eq(0);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -146,7 +148,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Email Address" is not allowed to be empty');
-              expect(sendMailSpy.callCount).to.eq(0);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -163,7 +165,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Email Address" must be a valid email');
-              expect(sendMailSpy.callCount).to.eq(0);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -180,7 +182,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Password" is not allowed to be empty');
-              expect(sendMailSpy.callCount).to.eq(0);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -199,7 +201,7 @@ describe('User Controller', () => {
               expect(res.body.error).to.be.eql(
                 '"Password" length must be at least 6 characters long',
               );
-              expect(sendMailSpy.callCount).to.eq(0);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -216,7 +218,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('Password does not match');
-              expect(sendMailSpy.callCount).to.eq(0);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -233,7 +235,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('Password does not match');
-              expect(sendMailSpy.callCount).to.eq(0);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -251,7 +253,7 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('User registered');
             expect(res.body).to.have.property('token');
-            expect(sendMailSpy.callCount).to.eq(1);
+            expect(sendMailStub.callCount).to.eq(1);
             done();
           });
       });
@@ -269,7 +271,7 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('User registered');
             expect(res.body).to.have.property('token');
-            expect(sendMailSpy.callCount).to.eq(1);
+            expect(sendMailStub.callCount).to.eq(1);
             done();
           });
       });
@@ -407,8 +409,8 @@ describe('User Controller', () => {
             expect(res.body.user.activated).to.be.eql(true);
             expect(res.body.user.token).to.be.eql(token);
             expect(res.body.user).to.have.property('activationDate');
-            expect(sendMailSpy.callCount).to.eq(1);
-            expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.WELCOME_MESSAGE);
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.WELCOME_MESSAGE);
             done();
           });
       });
@@ -421,7 +423,7 @@ describe('User Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
-            expect(sendMailSpy.callCount).to.eq(0);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -447,8 +449,8 @@ describe('User Controller', () => {
             expect(res.body.message).to.be.eql(
               'A password reset link has been sent to your email account',
             );
-            expect(sendMailSpy.callCount).to.eq(1);
-            expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.RESET_PASSWORD_LINK);
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RESET_PASSWORD_LINK);
             done();
           });
       });
@@ -464,7 +466,7 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Your email address is not found.');
             expect(res.body.error).to.be.eql('Your email address is not found.');
-            expect(sendMailSpy.callCount).to.eq(0);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -490,8 +492,8 @@ describe('User Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Your password has been successfully changed');
-            expect(sendMailSpy.callCount).to.eq(1);
-            expect(sendMailSpy).to.have.be.calledWith(EMAIL_CONTENT.CHANGE_PASSWORD);
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.CHANGE_PASSWORD);
             done();
           });
       });
@@ -507,7 +509,7 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('"Password" is not allowed to be empty');
-            expect(sendMailSpy.callCount).to.eq(0);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -525,7 +527,7 @@ describe('User Controller', () => {
             expect(res.body.error).to.be.eql(
               '"Password" length must be at least 6 characters long',
             );
-            expect(sendMailSpy.callCount).to.eq(0);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -541,7 +543,7 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('Password does not match');
-            expect(sendMailSpy.callCount).to.eq(0);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -557,7 +559,7 @@ describe('User Controller', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Validation Error');
             expect(res.body.error).to.be.eql('Password does not match');
-            expect(sendMailSpy.callCount).to.eq(0);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -572,7 +574,7 @@ describe('User Controller', () => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('User not found');
-            expect(sendMailSpy.callCount).to.eq(0);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });

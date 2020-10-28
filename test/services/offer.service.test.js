@@ -37,7 +37,7 @@ describe('Offer Service', () => {
     const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
     const offer = OfferFactory.build({ _id, enquiryId, vendorId: userId });
 
-    before(async () => {
+    beforeEach(async () => {
       await addUser(user);
       await addProperty(property);
       await addEnquiry(enquiry);

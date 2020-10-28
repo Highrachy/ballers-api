@@ -9,8 +9,13 @@ import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { scheduleVisitation } from '../../server/services/visitation.service';
 import { USER_ROLE } from '../../server/helpers/constants';
+import * as MailService from '../../server/services/mailer.service';
+import EMAIL_CONTENT from '../../mailer';
 
 useDatabase();
+
+let sendMailStub;
+const sandbox = sinon.createSandbox();
 
 let userToken;
 let adminToken;
@@ -25,6 +30,10 @@ describe('Visitation Controller', () => {
   beforeEach(async () => {
     userToken = await addUser(user);
     adminToken = await addUser(admin);
+    sendMailStub = sandbox.stub(MailService, 'sendMail');
+  });
+  afterEach(() => {
+    sandbox.restore();
   });
 
   describe('Schedule Visit Route', () => {
@@ -45,7 +54,8 @@ describe('Visitation Controller', () => {
             expect(res.body.message).to.be.eql('Visit scheduled successfully');
             expect(res.body).to.have.property('schedule');
             expect(propId.equals(res.body.schedule.propertyId)).to.be.eql(true);
-            // TODO: add test for mail service
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.SCHEDULE_VISIT);
             done();
           });
       });
@@ -75,6 +85,7 @@ describe('Visitation Controller', () => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Invalid token');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -91,6 +102,7 @@ describe('Visitation Controller', () => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Property not found');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -109,6 +121,7 @@ describe('Visitation Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Property id" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -125,6 +138,7 @@ describe('Visitation Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Name" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -141,6 +155,7 @@ describe('Visitation Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Email address" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -157,6 +172,7 @@ describe('Visitation Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Phone" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -175,6 +191,7 @@ describe('Visitation Controller', () => {
               expect(res.body.error).to.be.eql(
                 '"Phone" length must be at least 11 characters long',
               );
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -193,6 +210,7 @@ describe('Visitation Controller', () => {
               expect(res.body.error).to.be.eql(
                 '"Phone" length must be less than or equal to 14 characters long',
               );
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -209,6 +227,7 @@ describe('Visitation Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Visit Date" must be a valid date');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -225,6 +244,7 @@ describe('Visitation Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Visit Date" must be a valid date');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -240,6 +260,7 @@ describe('Visitation Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -247,7 +268,7 @@ describe('Visitation Controller', () => {
     });
   });
 
-  describe('Get all properties', () => {
+  describe('Get all visitations', () => {
     const booking = VisitationFactory.build({ propertyId: propId, userId: adminId });
 
     context('when no schedule exists', () => {
