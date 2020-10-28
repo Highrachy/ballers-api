@@ -138,4 +138,54 @@ router.get(
   TransactionController.getTransactionsByProperty,
 );
 
+/**
+ * @swagger
+ * /transaction/user/referral-rewards:
+ *   get:
+ *     tags:
+ *       - Transaction
+ *     description: Gets all of user's referral rewards
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Transaction'
+ *      description: Gets all of user's referral rewards
+ *     responses:
+ *      '200':
+ *        description: returns object of transactions
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/user/referral-rewards', authenticate, TransactionController.getReferralRewards);
+
+/**
+ * @swagger
+ * /transaction/user/contribution-rewards:
+ *   get:
+ *     tags:
+ *       - Transaction
+ *     description: Gets all of user's contribution rewards
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Transaction'
+ *      description: Gets all of user's contribution rewards
+ *     responses:
+ *      '200':
+ *        description: returns object of transactions
+ *      '500':
+ *       description: Internal server error
+ */
+router.get(
+  '/user/contribution-rewards',
+  authenticate,
+  TransactionController.getContributionRewards,
+);
+
 module.exports = router;
