@@ -1213,12 +1213,6 @@ describe('Offer Controller', () => {
         await createOffer(offer2);
         await addEnquiry(enquiry3);
         await createOffer(offer3);
-        await addEnquiry(enquiry4);
-        await createOffer(offer4);
-        await addEnquiry(enquiry5);
-        await createOffer(offer5);
-        await addEnquiry(enquiry6);
-        await createOffer(offer6);
       });
 
       context('with a valid token & id', async () => {
@@ -1234,24 +1228,6 @@ describe('Offer Controller', () => {
               expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
               expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
-              done();
-            });
-        });
-      });
-
-      context('with a valid token & id', async () => {
-        it('returns sorted offers', (done) => {
-          request()
-            .get('/api/v1/offer/active')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offers');
-              expect(res.body.offers.length).to.be.eql(3);
-              expect(res.body.offers[0]._id).to.be.eql(offerId4.toString());
-              expect(res.body.offers[1]._id).to.be.eql(offerId6.toString());
-              expect(res.body.offers[2]._id).to.be.eql(offerId5.toString());
               done();
             });
         });
