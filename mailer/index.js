@@ -64,7 +64,7 @@ const EMAIL_CONTENT = {
   },
   RESOLVE_CONCERN: {
     subject: 'Concern Resolved',
-    contentTop: `Your raised concern has been resolved. Check your dashboard for more information.`,
+    contentTop: `Your raised concern has been resolved. Details below <br /> <strong>Question: </strong> [Question]<br /> <strong>Response: </strong>[Response]`,
   },
 };
 

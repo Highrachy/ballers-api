@@ -945,6 +945,7 @@ describe('Offer Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('offers');
+              expect(res.body.offers[0]).to.have.property('concern');
               expect(res.body.offers.length).to.be.eql(2);
               expect(res.body.offers[0].userId).to.be.eql(userId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
@@ -1092,6 +1093,7 @@ describe('Offer Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('offer');
+            expect(res.body.offer).to.have.property('concern');
             expect(res.body.offer._id).to.be.eql(offerId.toString());
             done();
           });
@@ -1526,14 +1528,14 @@ describe('Offer Controller', () => {
       response: 'Yes all rooms are',
     };
 
-    describe('when offers exist in db', () => {
+    describe('when an offer exist in db', () => {
       beforeEach(async () => {
         await addEnquiry(enquiry);
         await createOffer(offer);
       });
 
       context('with a valid token & id', async () => {
-        it('returns successful payload', (done) => {
+        it('resolves the right concern', (done) => {
           request()
             .put('/api/v1/offer/resolve-concern')
             .set('authorization', adminToken)

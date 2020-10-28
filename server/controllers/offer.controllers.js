@@ -152,8 +152,12 @@ const OfferController = {
       .then((offer) => {
         const offerResponse = offer[0];
         const user = offerResponse.userInfo;
+        const result = offerResponse.concern.find(
+          (obj) => obj._id.toString() === concern.concernId.toString(),
+        );
+        const contentTop = `Your raised concern has been resolved. Details below <br /> <strong>Question: </strong> ${result.question}<br /> <strong>Response: </strong>${result.response}`;
 
-        sendMail(EMAIL_CONTENT.RESOLVE_CONCERN, user, {});
+        sendMail(EMAIL_CONTENT.RESOLVE_CONCERN, user, { contentTop });
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Concern resolved', offer: offerResponse });
