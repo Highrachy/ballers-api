@@ -156,8 +156,14 @@ const OfferSchema = new mongoose.Schema(
         question: {
           type: String,
         },
+        dateAsked: {
+          type: Date,
+        },
         response: {
           type: String,
+        },
+        dateResponded: {
+          type: Date,
         },
         status: {
           type: String,
