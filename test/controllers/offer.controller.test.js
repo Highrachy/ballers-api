@@ -946,6 +946,8 @@ describe('Offer Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('offers');
               expect(res.body.offers[0]).to.have.property('concern');
+              expect(res.body.offers[0].concern.length).to.be.eql(0);
+              expect(res.body.offers[1]).to.have.property('concern');
               expect(res.body.offers.length).to.be.eql(2);
               expect(res.body.offers[0].userId).to.be.eql(userId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
@@ -1033,6 +1035,7 @@ describe('Offer Controller', () => {
               expect(res.body).to.have.property('offers');
               expect(res.body.offers.length).to.be.eql(2);
               expect(res.body.offers[0].vendorId).to.be.eql(adminId.toString());
+              expect(res.body.offers[0].concern.length).to.be.eql(0);
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
               expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
               done();
@@ -1094,6 +1097,7 @@ describe('Offer Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('offer');
             expect(res.body.offer).to.have.property('concern');
+            expect(res.body.offer.concern.length).to.be.eql(0);
             expect(res.body.offer._id).to.be.eql(offerId.toString());
             done();
           });
@@ -1325,6 +1329,8 @@ describe('Offer Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('offers');
               expect(res.body.offers.length).to.be.eql(2);
+              expect(res.body.offers[0]).to.have.property('concern');
+              expect(res.body.offers[0].concern.length).to.be.eql(0);
               expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
               expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
