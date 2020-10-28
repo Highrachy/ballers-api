@@ -122,12 +122,12 @@ describe('Mailer Service', () => {
     const user = userFactory.build();
     const defaultMailContent = generateOptions();
     const sandbox = sinon.createSandbox();
-    let mailTrapSpy;
-    let sendGridSpy;
+    let mailTrapStub;
+    let sendGridStub;
 
     beforeEach(() => {
-      mailTrapSpy = sandbox.spy(MailSender, 'mailTrap');
-      sendGridSpy = sandbox.spy(MailSender, 'sendGrid');
+      mailTrapStub = sandbox.stub(MailSender, 'mailTrap');
+      sendGridStub = sandbox.stub(MailSender, 'sendGrid');
     });
 
     afterEach(() => {
@@ -144,9 +144,9 @@ describe('Mailer Service', () => {
 
       it('sends mail to email via sendgrid', () => {
         sendMail(defaultMailContent, user);
-        expect(mailTrapSpy.callCount).to.eq(0);
-        expect(sendGridSpy.callCount).to.eq(1);
-        expect(sendGridSpy).to.have.be.calledWith(user.email, {
+        expect(mailTrapStub.callCount).to.eq(0);
+        expect(sendGridStub.callCount).to.eq(1);
+        expect(sendGridStub).to.have.be.calledWith(user.email, {
           ...defaultMailContent,
           firstName: user.firstName,
         });
@@ -163,9 +163,9 @@ describe('Mailer Service', () => {
 
       it('sends mail to email via mail trap', () => {
         sendMail(defaultMailContent, user);
-        expect(mailTrapSpy.callCount).to.eq(1);
-        expect(sendGridSpy.callCount).to.eq(0);
-        expect(mailTrapSpy).to.have.be.calledWith(user.email, {
+        expect(mailTrapStub.callCount).to.eq(1);
+        expect(sendGridStub.callCount).to.eq(0);
+        expect(mailTrapStub).to.have.be.calledWith(user.email, {
           ...defaultMailContent,
           firstName: user.firstName,
         });
@@ -175,8 +175,8 @@ describe('Mailer Service', () => {
     context('when email address is absent', () => {
       it('throws an error', () => {
         expect(() => sendMail(defaultMailContent, {})).to.throw('Email is needed to send email');
-        expect(mailTrapSpy.callCount).to.eq(0);
-        expect(sendGridSpy.callCount).to.eq(0);
+        expect(mailTrapStub.callCount).to.eq(0);
+        expect(sendGridStub.callCount).to.eq(0);
       });
     });
 
@@ -184,9 +184,9 @@ describe('Mailer Service', () => {
       it('it sends the mail', () => {
         const userWithNoFirstName = userFactory.build({ firstName: '' });
         sendMail(defaultMailContent, userWithNoFirstName);
-        expect(mailTrapSpy.callCount).to.eq(1);
-        expect(sendGridSpy.callCount).to.eq(0);
-        expect(mailTrapSpy).to.have.be.calledWith(userWithNoFirstName.email, {
+        expect(mailTrapStub.callCount).to.eq(1);
+        expect(sendGridStub.callCount).to.eq(0);
+        expect(mailTrapStub).to.have.be.calledWith(userWithNoFirstName.email, {
           ...defaultMailContent,
           firstName: null,
         });
