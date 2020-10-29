@@ -9,7 +9,7 @@ import { getUserById, assignPropertyToUser } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
 // eslint-disable-next-line import/no-cycle
 import { getOneProperty } from './property.service';
-import { getTodaysDateShortCode } from '../helpers/dates';
+import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -141,6 +141,8 @@ export const getActiveOffers = async (userId) =>
         ],
       },
     },
+    { $match: { expires: { $gte: new Date(getTodaysDateStandard()) } } },
+    { $sort: { expires: 1 } },
     {
       $lookup: {
         from: 'users',
