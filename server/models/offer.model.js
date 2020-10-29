@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { OFFER_STATUS } from '../helpers/constants';
+import { OFFER_STATUS, CONCERN_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -151,6 +151,26 @@ const OfferSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    concern: [
+      {
+        question: {
+          type: String,
+        },
+        dateAsked: {
+          type: Date,
+        },
+        response: {
+          type: String,
+        },
+        dateResponded: {
+          type: Date,
+        },
+        status: {
+          type: String,
+          default: CONCERN_STATUS.PENDING,
+        },
+      },
+    ],
   },
   { timestamps: true },
 );

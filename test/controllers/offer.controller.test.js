@@ -6,11 +6,11 @@ import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
-import { createOffer } from '../../server/services/offer.service';
+import { createOffer, raiseConcern } from '../../server/services/offer.service';
 import { addEnquiry, getEnquiryById } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
-import { OFFER_STATUS } from '../../server/helpers/constants';
+import { OFFER_STATUS, CONCERN_STATUS } from '../../server/helpers/constants';
 import {
   getTodaysDateShortCode,
   getTodaysDateStandard,
@@ -956,6 +956,8 @@ describe('Offer Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('offers');
+              expect(res.body.offers[0].concern.length).to.be.eql(0);
+              expect(res.body.offers[1].concern.length).to.be.eql(0);
               expect(res.body.offers.length).to.be.eql(2);
               expect(res.body.offers[0].userId).to.be.eql(userId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
@@ -1043,6 +1045,7 @@ describe('Offer Controller', () => {
               expect(res.body).to.have.property('offers');
               expect(res.body.offers.length).to.be.eql(2);
               expect(res.body.offers[0].vendorId).to.be.eql(adminId.toString());
+              expect(res.body.offers[0].concern.length).to.be.eql(0);
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
               expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
               done();
@@ -1103,6 +1106,7 @@ describe('Offer Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('offer');
+            expect(res.body.offer.concern.length).to.be.eql(0);
             expect(res.body.offer._id).to.be.eql(offerId.toString());
             done();
           });
@@ -1386,6 +1390,7 @@ describe('Offer Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('offers');
               expect(res.body.offers.length).to.be.eql(1);
+              expect(res.body.offers[0].concern.length).to.be.eql(0);
               expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
               expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
@@ -1435,6 +1440,301 @@ describe('Offer Controller', () => {
               expect(res).to.have.status(500);
               done();
               Offer.aggregate.restore();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Raise a concern', () => {
+    const enquiryId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({
+      _id: enquiryId,
+      userId,
+      propertyId: propertyId1,
+    });
+    const offerId = mongoose.Types.ObjectId();
+    const offer = OfferFactory.build({
+      _id: offerId,
+      enquiryId,
+      vendorId: adminId,
+    });
+    const concern = {
+      offerId,
+      question: 'Are all rooms ensuite',
+    };
+
+    describe('when offers exist in db', () => {
+      beforeEach(async () => {
+        await addEnquiry(enquiry);
+        await createOffer(offer);
+      });
+
+      context('with a valid token & id', async () => {
+        it('returns successful payload', (done) => {
+          request()
+            .put('/api/v1/offer/raise-concern')
+            .set('authorization', userToken)
+            .send(concern)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('offer');
+              expect(res.body.offer.concern.length).to.be.eql(1);
+              expect(res.body.offer.concern[0].status).to.be.eql('Pending');
+              expect(res.body.offer.concern[0].question).to.be.eql(concern.question);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RAISE_CONCERN);
+              done();
+            });
+        });
+      });
+
+      context('when a concern has been raised previously on offer', async () => {
+        const firstConcern = { offerId, userId, question: 'Can you send me the house plan' };
+        beforeEach(async () => {
+          await raiseConcern(firstConcern);
+        });
+        it('returns successful payload', (done) => {
+          request()
+            .put('/api/v1/offer/raise-concern')
+            .set('authorization', userToken)
+            .send(concern)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('offer');
+              expect(res.body.offer.concern.length).to.be.eql(2);
+              expect(res.body.offer.concern[1].status).to.be.eql('Pending');
+              expect(res.body.offer.concern[0].question).to.be.eql(firstConcern.question);
+              expect(res.body.offer.concern[1].question).to.be.eql(concern.question);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RAISE_CONCERN);
+              done();
+            });
+        });
+      });
+
+      context('with invalid data', () => {
+        context('when offer id is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              .put('/api/v1/offer/raise-concern')
+              .set('authorization', userToken)
+              .send({ offerId: '', question: 'Are all rooms ensuite' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+
+        context('when question is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              .put('/api/v1/offer/raise-concern')
+              .set('authorization', userToken)
+              .send({ offerId, question: '' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Question" is not allowed to be empty');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+      });
+
+      context('without token', () => {
+        it('returns error', (done) => {
+          request()
+            .put('/api/v1/offer/raise-concern')
+            .send(concern)
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Token needed to access resources');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('when getActiveOffers service fails', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            .put('/api/v1/offer/raise-concern')
+            .set('authorization', userToken)
+            .send(concern)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+              Offer.findByIdAndUpdate.restore();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Resolve a concern', () => {
+    const enquiryId = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({
+      _id: enquiryId,
+      userId,
+      propertyId: propertyId1,
+    });
+    const offerId = mongoose.Types.ObjectId();
+    const concernId = mongoose.Types.ObjectId();
+    const offer = OfferFactory.build({
+      _id: offerId,
+      enquiryId,
+      vendorId: adminId,
+      concern: [
+        {
+          _id: concernId,
+          question: 'Are all rooms ensuite',
+          status: CONCERN_STATUS.PENDING,
+        },
+      ],
+    });
+
+    const concern = {
+      offerId,
+      concernId,
+      response: 'Yes all rooms are',
+    };
+
+    describe('when an offer exist in db', () => {
+      beforeEach(async () => {
+        await addEnquiry(enquiry);
+        await createOffer(offer);
+      });
+
+      context('with a valid token & id', async () => {
+        it('resolves the right concern', (done) => {
+          request()
+            .put('/api/v1/offer/resolve-concern')
+            .set('authorization', adminToken)
+            .send(concern)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('offer');
+              expect(res.body.offer.concern.length).to.be.eql(1);
+              expect(res.body.offer.concern[0].status).to.be.eql('Resolved');
+              expect(res.body.offer.concern[0].question).to.be.eql(offer.concern[0].question);
+              expect(res.body.offer.concern[0].response).to.be.eql(concern.response);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RESOLVE_CONCERN);
+              done();
+            });
+        });
+      });
+
+      context('with invalid data', () => {
+        context('when offer id is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              .put('/api/v1/offer/resolve-concern')
+              .set('authorization', adminToken)
+              .send({ offerId: '', concernId, question: 'Are all rooms ensuite' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+
+        context('when concern id is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              .put('/api/v1/offer/resolve-concern')
+              .set('authorization', adminToken)
+              .send({ concernId: '', offerId, question: 'Are all rooms ensuite' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Concern Id" is not allowed to be empty');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+
+        context('when response is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              .put('/api/v1/offer/resolve-concern')
+              .set('authorization', adminToken)
+              .send({ offerId, concernId, response: '' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Response" is not allowed to be empty');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+      });
+
+      context('with unauthorized user access token', () => {
+        it('returns an error', (done) => {
+          request()
+            .put('/api/v1/offer/resolve-concern')
+            .set('authorization', userToken)
+            .send(concern)
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('without token', () => {
+        it('returns error', (done) => {
+          request()
+            .put('/api/v1/offer/resolve-concern')
+            .send(concern)
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Token needed to access resources');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('when getActiveOffers service fails', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Offer, 'findOneAndUpdate').throws(new Error('Type Error'));
+          request()
+            .put('/api/v1/offer/resolve-concern')
+            .set('authorization', adminToken)
+            .send(concern)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+              Offer.findOneAndUpdate.restore();
             });
         });
       });

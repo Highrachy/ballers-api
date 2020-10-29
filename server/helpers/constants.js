@@ -25,3 +25,8 @@ export const REWARD_STATUS = {
   PROGRESS: 'Progress',
   PAID: 'Paid',
 };
+
+export const CONCERN_STATUS = {
+  RESOLVED: 'Resolved',
+  PENDING: 'Pending',
+};

@@ -7,6 +7,8 @@ import {
   getAllOffersUser,
   getAllOffersAdmin,
   getActiveOffers,
+  raiseConcern,
+  resolveConcern,
 } from '../services/offer.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -122,6 +124,43 @@ const OfferController = {
     getActiveOffers(userId)
       .then((offers) => {
         res.status(httpStatus.OK).json({ success: true, offers });
+      })
+      .catch((error) => next(error));
+  },
+
+  raiseConcern(req, res, next) {
+    const concern = req.locals;
+    const userId = req.user._id;
+    raiseConcern({ ...concern, userId })
+      .then((offer) => {
+        const offerResponse = offer[0];
+        const vendor = offerResponse.vendorInfo;
+        const contentTop = `A concern has been raised on your offer to ${offerResponse.enquiryInfo.lastName}, ${offerResponse.enquiryInfo.firstName}. <br>The question states: <b style='color: #161d3f'>${concern.question}</b>.`;
+
+        sendMail(EMAIL_CONTENT.RAISE_CONCERN, vendor, { contentTop });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Concern raised', offer: offerResponse });
+      })
+      .catch((error) => next(error));
+  },
+
+  resolveConcern(req, res, next) {
+    const concern = req.locals;
+    const vendorId = req.user._id;
+    resolveConcern({ ...concern, vendorId })
+      .then((offer) => {
+        const offerResponse = offer[0];
+        const user = offerResponse.userInfo;
+        const result = offerResponse.concern.find(
+          (obj) => obj._id.toString() === concern.concernId.toString(),
+        );
+        const contentTop = `Your raised concern has been resolved. Details below <br /> <strong>Question: </strong> ${result.question}<br /> <strong>Response: </strong>${result.response}`;
+
+        sendMail(EMAIL_CONTENT.RESOLVE_CONCERN, user, { contentTop });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Concern resolved', offer: offerResponse });
       })
       .catch((error) => next(error));
   },

@@ -36,3 +36,14 @@ export const acceptOfferSchema = Joi.object({
 export const validateOfferIdSchema = Joi.object({
   offerId: Joi.objectId().label('Offer Id').required(),
 });
+
+export const raiseConcernSchema = Joi.object({
+  offerId: Joi.objectId().label('Offer Id').required(),
+  question: Joi.string().label('Question').required(),
+});
+
+export const resolveConcernSchema = Joi.object({
+  offerId: Joi.objectId().label('Offer Id').required(),
+  concernId: Joi.objectId().label('Concern Id').required(),
+  response: Joi.string().label('Response').required(),
+});

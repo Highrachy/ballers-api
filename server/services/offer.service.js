@@ -3,7 +3,7 @@ import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { OFFER_STATUS } from '../helpers/constants';
+import { OFFER_STATUS, CONCERN_STATUS } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, assignPropertyToUser } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
@@ -423,3 +423,59 @@ export const calculateContributionReward = async (userId) =>
       },
     },
   ]);
+
+export const raiseConcern = async (concern) => {
+  const offer = await getOfferById(concern.offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (offer.userId.toString() !== concern.userId.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    await Offer.findByIdAndUpdate(
+      offer.id,
+      {
+        $push: {
+          concern: {
+            question: concern.question,
+            status: CONCERN_STATUS.PENDING,
+            dateAsked: getTodaysDateStandard(),
+          },
+        },
+      },
+      { new: true, safe: true, upsert: true },
+    );
+    return await getOffer(concern.offerId);
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error raising concern', error);
+  }
+};
+
+export const resolveConcern = async (concern) => {
+  const offer = await getOfferById(concern.offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (offer.vendorId.toString() !== concern.vendorId.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    await Offer.findOneAndUpdate(
+      { _id: offer.id, 'concern._id': concern.concernId },
+      {
+        $set: {
+          'concern.$.response': concern.response,
+          'concern.$.status': CONCERN_STATUS.RESOLVED,
+          'concern.$.dateResponded': getTodaysDateStandard(),
+        },
+      },
+      { new: true },
+    );
+    return await getOffer(concern.offerId);
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving concern', error);
+  }
+};

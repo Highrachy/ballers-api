@@ -57,6 +57,15 @@ const EMAIL_CONTENT = {
     subject: 'Welcome to BALLERS',
     contentTop: `Congratulations you're officially a BALLer.`,
   },
+  RAISE_CONCERN: {
+    subject: 'Concern Raised',
+    contentTop: `A concern has been raised on your offer to [User name]. The question states [question].`,
+    contentBottom: `Check your dashboard to resolve this concern.`,
+  },
+  RESOLVE_CONCERN: {
+    subject: 'Concern Resolved',
+    contentTop: `Your raised concern has been resolved. Details below <br /> <strong>Question: </strong> [Question]<br /> <strong>Response: </strong>[Response]`,
+  },
 };
 
 module.exports = EMAIL_CONTENT;
