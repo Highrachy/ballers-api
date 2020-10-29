@@ -141,6 +141,8 @@ export const getActiveOffers = async (userId) =>
         ],
       },
     },
+    { $match: { expires: { $gte: new Date(getTodaysDateStandard()) } } },
+    { $sort: { expires: 1 } },
     {
       $lookup: {
         from: 'users',
