@@ -15,8 +15,9 @@ import EnquiryFactory from '../factories/enquiry.factory';
 import TransactionFactory from '../factories/transaction.factory';
 import ReferralFactory from '../factories/referral.factory';
 import { addEnquiry } from '../../server/services/enquiry.service';
-import { createOffer, acceptOffer } from '../../server/services/offer.service';
+import { createOffer, acceptOffer, assignOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
+import { OFFER_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
@@ -1107,6 +1108,7 @@ describe('User Controller', () => {
       vendorId,
       userId,
       totalAmountPayable: 19000000,
+      status: OFFER_STATUS.ALLOCATED,
     });
     const transaction = TransactionFactory.build({
       _id: transactionId,
@@ -1132,6 +1134,7 @@ describe('User Controller', () => {
             expect(res.body.accountOverview.contributionReward).to.be.eql(0);
             expect(res.body.accountOverview.totalAmountPaid).to.be.eql(0);
             expect(res.body.accountOverview.referralRewards).to.be.eql(0);
+            expect(res.body.accountOverview.properties.length).to.be.eql(0);
             done();
           });
       });
@@ -1145,6 +1148,7 @@ describe('User Controller', () => {
         await createOffer(offer);
         await addTransaction(transaction);
         await acceptOffer({ userId, offerId, signature: 'https://ballers.ng/signature.png' });
+        await assignOffer(offerId);
       });
 
       context('with valid token', () => {
@@ -1160,6 +1164,10 @@ describe('User Controller', () => {
               );
               expect(res.body.accountOverview.totalAmountPaid).to.be.eql(transaction.amount);
               expect(res.body.accountOverview.referralRewards).to.be.eql(referral.reward.amount);
+              expect(res.body.accountOverview.properties.length).to.be.eql(1);
+              expect(res.body.accountOverview.properties[0].property._id).to.be.eql(
+                propertyId.toString(),
+              );
               done();
             });
         });
