@@ -150,7 +150,7 @@ export const getTotalAmountPaidByUser = async (userId) =>
     },
   ]);
 
-export const getReferralRewards = async (userId) =>
+export const getContributionRewards = async (userId) =>
   Offer.aggregate([
     { $match: { userId: ObjectId(userId) } },
     {
@@ -165,5 +165,5 @@ export const getReferralRewards = async (userId) =>
     },
   ]);
 
-export const getContributionRewards = async (referrerId) =>
+export const getReferralRewards = async (referrerId) =>
   Referral.aggregate([{ $match: { referrerId: ObjectId(referrerId) } }]);
