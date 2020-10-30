@@ -1,21 +1,38 @@
 import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import Transaction from '../../server/models/transaction.model';
-import TransactionFactory from '../factories/transaction.factory';
-import { addTransaction } from '../../server/services/transaction.service';
+import Offer from '../../server/models/offer.model';
 import User from '../../server/models/user.model';
-import UserFactory from '../factories/user.factory';
-import { addUser } from '../../server/services/user.service';
+import Referral from '../../server/models/referral.model';
+import TransactionFactory from '../factories/transaction.factory';
+import OfferFactory from '../factories/offer.factory';
+import EnquiryFactory from '../factories/enquiry.factory';
 import PropertyFactory from '../factories/property.factory';
+import UserFactory from '../factories/user.factory';
+import ReferralFactory from '../factories/referral.factory';
+import { addTransaction } from '../../server/services/transaction.service';
+import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
+import { createOffer } from '../../server/services/offer.service';
+import { addEnquiry } from '../../server/services/enquiry.service';
+import { addReferral } from '../../server/services/referral.service';
+import { OFFER_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
 let adminToken;
 let userToken;
-const _id = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-const regularUser = UserFactory.build({ role: 1, activated: true });
+const userId = mongoose.Types.ObjectId();
+const adminId = mongoose.Types.ObjectId();
+const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true, vendorCode: 'HIG' });
+const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
+
+const propertyId1 = mongoose.Types.ObjectId();
+const propertyId2 = mongoose.Types.ObjectId();
+const propertyId3 = mongoose.Types.ObjectId();
+const property1 = PropertyFactory.build({ _id: propertyId1, addedBy: adminId, updatedBy: adminId });
+const property2 = PropertyFactory.build({ _id: propertyId2, addedBy: adminId, updatedBy: adminId });
+const property3 = PropertyFactory.build({ _id: propertyId3, addedBy: adminId, updatedBy: adminId });
 
 describe('Transaction Controller', () => {
   beforeEach(async () => {
@@ -43,7 +60,7 @@ describe('Transaction Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(adminId);
       });
       it('returns token error', (done) => {
         const transaction = TransactionFactory.build();
@@ -149,12 +166,16 @@ describe('Transaction Controller', () => {
   describe('Get all transactions', () => {
     const propertyId = mongoose.Types.ObjectId();
     const transactionId = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
     const transaction = TransactionFactory.build({
       _id: transactionId,
       propertyId,
-      userId: _id,
-      adminId: _id,
+      userId: adminId,
+      adminId,
     });
 
     context('when no transaction is found', () => {
@@ -189,7 +210,7 @@ describe('Transaction Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('transactions');
               expect(res.body.transactions[0]._id).to.be.eql(transactionId.toString());
-              expect(res.body.transactions[0].userInfo._id).to.be.eql(_id.toString());
+              expect(res.body.transactions[0].userInfo._id).to.be.eql(adminId.toString());
               expect(res.body.transactions[0].propertyInfo._id).to.be.eql(propertyId.toString());
               done();
             });
@@ -241,7 +262,7 @@ describe('Transaction Controller', () => {
 
   describe('Update Transaction route', () => {
     const transactionId = mongoose.Types.ObjectId();
-    const transaction = TransactionFactory.build({ _id: transactionId, userId: _id, adminId: _id });
+    const transaction = TransactionFactory.build({ _id: transactionId, userId: adminId, adminId });
 
     beforeEach(async () => {
       await addTransaction(transaction);
@@ -355,12 +376,16 @@ describe('Transaction Controller', () => {
   describe('Get all transactions made by a user route', () => {
     const propertyId = mongoose.Types.ObjectId();
     const transactionId = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
     const transaction = TransactionFactory.build({
       _id: transactionId,
       propertyId,
-      userId: _id,
-      adminId: _id,
+      userId: adminId,
+      adminId,
     });
 
     context('when no transaction is found', () => {
@@ -452,12 +477,16 @@ describe('Transaction Controller', () => {
   describe('Get User Transactions By Property route', () => {
     const propertyId = mongoose.Types.ObjectId();
     const transactionId = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
     const transaction = TransactionFactory.build({
       _id: transactionId,
       propertyId,
-      userId: _id,
-      adminId: _id,
+      userId: adminId,
+      adminId,
     });
 
     beforeEach(async () => {
@@ -476,7 +505,7 @@ describe('Transaction Controller', () => {
             expect(res.body).to.have.property('transactions');
             expect(res.body.transactions[0]._id).to.be.eql(transactionId.toString());
             expect(res.body.transactions[0].propertyInfo._id).to.be.eql(propertyId.toString());
-            expect(res.body.transactions[0].userInfo._id).to.be.eql(_id.toString());
+            expect(res.body.transactions[0].userInfo._id).to.be.eql(adminId.toString());
             done();
           });
       });
@@ -520,6 +549,196 @@ describe('Transaction Controller', () => {
             done();
             Transaction.aggregate.restore();
           });
+      });
+    });
+  });
+
+  describe('Get User Contribution Rewards', () => {
+    const enquiryId1 = mongoose.Types.ObjectId();
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
+      userId,
+      propertyId: propertyId1,
+    });
+    const offerId1 = mongoose.Types.ObjectId();
+    const offer1 = OfferFactory.build({
+      _id: offerId1,
+      enquiryId: enquiryId1,
+      vendorId: adminId,
+      status: OFFER_STATUS.ALLOCATED,
+    });
+
+    const enquiryId2 = mongoose.Types.ObjectId();
+    const enquiry2 = EnquiryFactory.build({
+      _id: enquiryId2,
+      userId,
+      propertyId: propertyId2,
+    });
+    const offerId2 = mongoose.Types.ObjectId();
+    const offer2 = OfferFactory.build({
+      _id: offerId2,
+      enquiryId: enquiryId2,
+      vendorId: adminId,
+      status: OFFER_STATUS.NEGLECTED,
+    });
+
+    const enquiryId3 = mongoose.Types.ObjectId();
+    const enquiry3 = EnquiryFactory.build({
+      _id: enquiryId3,
+      userId,
+      propertyId: propertyId3,
+    });
+    const offerId3 = mongoose.Types.ObjectId();
+    const offer3 = OfferFactory.build({
+      _id: offerId3,
+      enquiryId: enquiryId3,
+      vendorId: adminId,
+      status: OFFER_STATUS.ASSIGNED,
+    });
+
+    context('when no contribution reward is found', () => {
+      it('returns empty array of contribution reward', (done) => {
+        request()
+          .get('/api/v1/transaction/user/contribution-rewards')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('contributionRewards');
+            expect(res.body.contributionRewards.length).to.be.eql(0);
+            done();
+          });
+      });
+    });
+
+    describe('when offers exist in db', () => {
+      beforeEach(async () => {
+        await addProperty(property1);
+        await addProperty(property2);
+        await addProperty(property3);
+        await addEnquiry(enquiry1);
+        await createOffer(offer1);
+        await addEnquiry(enquiry2);
+        await createOffer(offer2);
+        await addEnquiry(enquiry3);
+        await createOffer(offer3);
+      });
+
+      context('with valid token', () => {
+        it('returns all contribution rewards', (done) => {
+          request()
+            .get('/api/v1/transaction/user/contribution-rewards')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('contributionRewards');
+              expect(res.body.contributionRewards.length).to.be.eql(2);
+              expect(res.body.contributionRewards[0]._id).to.be.eql(offerId1.toString());
+              expect(res.body.contributionRewards[1]._id).to.be.eql(offerId3.toString());
+              done();
+            });
+        });
+      });
+
+      context('without token', () => {
+        it('returns error', (done) => {
+          request()
+            .get('/api/v1/transaction/user/contribution-rewards')
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Token needed to access resources');
+              done();
+            });
+        });
+      });
+
+      context('when getContributionRewards service returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
+          request()
+            .get('/api/v1/transaction/user/contribution-rewards')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(500);
+              done();
+              Offer.aggregate.restore();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Get User Referal Rewards', () => {
+    const referral1 = ReferralFactory.build({ referrerId: userId, email: 'demo1@mail.com' });
+    const referral2 = ReferralFactory.build({ referrerId: adminId, email: 'demo1@mail.com' });
+    const referral3 = ReferralFactory.build({ referrerId: userId, email: 'demo2@mail.com' });
+
+    context('when no referral reward is found', () => {
+      it('returns empty array of referral reward', (done) => {
+        request()
+          .get('/api/v1/transaction/user/referral-rewards')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body).to.have.property('referralRewards');
+            expect(res.body.referralRewards.length).to.be.eql(0);
+            done();
+          });
+      });
+    });
+
+    describe('when offers exist in db', () => {
+      beforeEach(async () => {
+        await addReferral(referral1);
+        await addReferral(referral2);
+        await addReferral(referral3);
+      });
+
+      context('with valid token', () => {
+        it('returns all contribution rewards', (done) => {
+          request()
+            .get('/api/v1/transaction/user/referral-rewards')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('referralRewards');
+              expect(res.body.referralRewards.length).to.be.eql(2);
+              expect(res.body.referralRewards[0].referrerId).to.be.eql(userId.toString());
+              expect(res.body.referralRewards[1].referrerId).to.be.eql(userId.toString());
+              done();
+            });
+        });
+      });
+
+      context('without token', () => {
+        it('returns error', (done) => {
+          request()
+            .get('/api/v1/transaction/user/referral-rewards')
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Token needed to access resources');
+              done();
+            });
+        });
+      });
+
+      context('when getReferralRewards service returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Referral, 'aggregate').throws(new Error('Type Error'));
+          request()
+            .get('/api/v1/transaction/user/referral-rewards')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(500);
+              done();
+              Referral.aggregate.restore();
+            });
+        });
       });
     });
   });
