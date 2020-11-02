@@ -1,7 +1,8 @@
 export const USER_ROLE = {
   ADMIN: 0,
   USER: 1,
-  DEVELOPER: 2,
+  VENDOR: 2,
+  EDITOR: 3,
 };
 
 export const OFFER_STATUS = {
