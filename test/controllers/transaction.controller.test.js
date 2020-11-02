@@ -16,7 +16,7 @@ import { addProperty } from '../../server/services/property.service';
 import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addReferral } from '../../server/services/referral.service';
-import { OFFER_STATUS } from '../../server/helpers/constants';
+import { OFFER_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
@@ -262,7 +262,7 @@ describe('Transaction Controller', () => {
 
   describe('Update Transaction route', () => {
     const transactionId = mongoose.Types.ObjectId();
-    const transaction = TransactionFactory.build({ _id: transactionId, userId: adminId, adminId });
+    const transaction = TransactionFactory.build({ _id: transactionId, userId, adminId });
 
     beforeEach(async () => {
       await addTransaction(transaction);
@@ -554,46 +554,48 @@ describe('Transaction Controller', () => {
   });
 
   describe('Get User Contribution Rewards', () => {
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({
-      _id: enquiryId1,
+    const allocatedEnquiryId = mongoose.Types.ObjectId();
+    const allocatedEnquiry = EnquiryFactory.build({
+      _id: allocatedEnquiryId,
       userId,
       propertyId: propertyId1,
     });
-    const offerId1 = mongoose.Types.ObjectId();
-    const offer1 = OfferFactory.build({
-      _id: offerId1,
-      enquiryId: enquiryId1,
+    const allocatedOfferId = mongoose.Types.ObjectId();
+    const allocatedOffer = OfferFactory.build({
+      _id: allocatedOfferId,
+      enquiryId: allocatedEnquiryId,
       vendorId: adminId,
       status: OFFER_STATUS.ALLOCATED,
+      contributionReward: 50000,
     });
 
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({
-      _id: enquiryId2,
+    const neglectedEnquiryId = mongoose.Types.ObjectId();
+    const neglectedEnquiry = EnquiryFactory.build({
+      _id: neglectedEnquiryId,
       userId,
       propertyId: propertyId2,
     });
-    const offerId2 = mongoose.Types.ObjectId();
-    const offer2 = OfferFactory.build({
-      _id: offerId2,
-      enquiryId: enquiryId2,
+    const neglectedOfferId = mongoose.Types.ObjectId();
+    const neglectedOffer = OfferFactory.build({
+      _id: neglectedOfferId,
+      enquiryId: neglectedEnquiryId,
       vendorId: adminId,
       status: OFFER_STATUS.NEGLECTED,
     });
 
-    const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({
-      _id: enquiryId3,
+    const assignedEnquiryId = mongoose.Types.ObjectId();
+    const assignedEnquiry = EnquiryFactory.build({
+      _id: assignedEnquiryId,
       userId,
       propertyId: propertyId3,
     });
-    const offerId3 = mongoose.Types.ObjectId();
-    const offer3 = OfferFactory.build({
-      _id: offerId3,
-      enquiryId: enquiryId3,
+    const assignedOfferId = mongoose.Types.ObjectId();
+    const assignedOffer = OfferFactory.build({
+      _id: assignedOfferId,
+      enquiryId: assignedEnquiryId,
       vendorId: adminId,
       status: OFFER_STATUS.ASSIGNED,
+      contributionReward: 70000,
     });
 
     context('when no contribution reward is found', () => {
@@ -616,12 +618,12 @@ describe('Transaction Controller', () => {
         await addProperty(property1);
         await addProperty(property2);
         await addProperty(property3);
-        await addEnquiry(enquiry1);
-        await createOffer(offer1);
-        await addEnquiry(enquiry2);
-        await createOffer(offer2);
-        await addEnquiry(enquiry3);
-        await createOffer(offer3);
+        await addEnquiry(allocatedEnquiry);
+        await createOffer(allocatedOffer);
+        await addEnquiry(neglectedEnquiry);
+        await createOffer(neglectedOffer);
+        await addEnquiry(assignedEnquiry);
+        await createOffer(assignedOffer);
       });
 
       context('with valid token', () => {
@@ -634,8 +636,8 @@ describe('Transaction Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('contributionRewards');
               expect(res.body.contributionRewards.length).to.be.eql(2);
-              expect(res.body.contributionRewards[0]._id).to.be.eql(offerId1.toString());
-              expect(res.body.contributionRewards[1]._id).to.be.eql(offerId3.toString());
+              expect(res.body.contributionRewards[0]._id).to.be.eql(allocatedOfferId.toString());
+              expect(res.body.contributionRewards[1]._id).to.be.eql(assignedOfferId.toString());
               done();
             });
         });
@@ -671,9 +673,29 @@ describe('Transaction Controller', () => {
   });
 
   describe('Get User Referal Rewards', () => {
-    const referral1 = ReferralFactory.build({ referrerId: userId, email: 'demo1@mail.com' });
-    const referral2 = ReferralFactory.build({ referrerId: adminId, email: 'demo1@mail.com' });
-    const referral3 = ReferralFactory.build({ referrerId: userId, email: 'demo2@mail.com' });
+    const referral1 = ReferralFactory.build({
+      referrerId: userId,
+      email: 'demo1@mail.com',
+      reward: {
+        amount: 10000,
+        status: REWARD_STATUS.PAID,
+      },
+    });
+    const referral2 = ReferralFactory.build({
+      referrerId: adminId,
+      email: 'demo1@mail.com',
+      reward: {
+        status: REWARD_STATUS.PENDING,
+      },
+    });
+    const referral3 = ReferralFactory.build({
+      referrerId: userId,
+      email: 'demo2@mail.com',
+      reward: {
+        amount: 20000,
+        status: REWARD_STATUS.PAID,
+      },
+    });
 
     context('when no referral reward is found', () => {
       it('returns empty array of referral reward', (done) => {
@@ -698,7 +720,7 @@ describe('Transaction Controller', () => {
       });
 
       context('with valid token', () => {
-        it('returns all contribution rewards', (done) => {
+        it('returns all referral rewards', (done) => {
           request()
             .get('/api/v1/transaction/user/referral-rewards')
             .set('authorization', userToken)
@@ -708,7 +730,11 @@ describe('Transaction Controller', () => {
               expect(res.body).to.have.property('referralRewards');
               expect(res.body.referralRewards.length).to.be.eql(2);
               expect(res.body.referralRewards[0].referrerId).to.be.eql(userId.toString());
+              expect(res.body.referralRewards[0].reward.status).to.be.eql(referral1.reward.status);
+              expect(res.body.referralRewards[0].reward.amount).to.be.eql(referral1.reward.amount);
               expect(res.body.referralRewards[1].referrerId).to.be.eql(userId.toString());
+              expect(res.body.referralRewards[1].reward.status).to.be.eql(referral3.reward.status);
+              expect(res.body.referralRewards[1].reward.amount).to.be.eql(referral3.reward.amount);
               done();
             });
         });
