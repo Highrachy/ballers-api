@@ -9,6 +9,7 @@ import {
   getActiveOffers,
   raiseConcern,
   resolveConcern,
+  reactivateOffer,
 } from '../services/offer.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -161,6 +162,16 @@ const OfferController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Concern resolved', offer: offerResponse });
+      })
+      .catch((error) => next(error));
+  },
+
+  reactivate(req, res, next) {
+    const offer = req.locals;
+    const vendorId = req.user._id;
+    reactivateOffer({ ...offer, vendorId })
+      .then(() => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Offer reactivated' });
       })
       .catch((error) => next(error));
   },

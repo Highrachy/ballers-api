@@ -479,3 +479,23 @@ export const resolveConcern = async (concern) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving concern', error);
   }
 };
+
+export const reactivateOffer = async (offerDetails) => {
+  const offer = await getOfferById(offerDetails.offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (offer.vendorId.toString() !== offerDetails.vendorId.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    return Offer.findByIdAndUpdate(
+      offer.id,
+      { $set: { expires: offerDetails.expires } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error reactivating offer', error);
+  }
+};

@@ -47,3 +47,14 @@ export const resolveConcernSchema = Joi.object({
   concernId: Joi.objectId().label('Concern Id').required(),
   response: Joi.string().label('Response').required(),
 });
+
+export const reactivateOfferSchema = Joi.object({
+  offerId: Joi.objectId().label('Offer Id').required(),
+  expires: Joi.date()
+    .greater(getTodaysDateStandard())
+    .label('Expiry Date')
+    .required()
+    .messages({
+      'date.greater': `"Expiry Date" should a date later than ${getTodaysDateInWords()}`,
+    }),
+});
