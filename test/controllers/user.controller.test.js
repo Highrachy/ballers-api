@@ -1167,4 +1167,168 @@ describe('User Controller', () => {
       });
     });
   });
+
+  describe('Upgrade User to content editor', () => {
+    const userInfo = { userId };
+    context('with valid token', () => {
+      it('returns a upgraded user', (done) => {
+        request()
+          .put('/api/v1/user/editor/upgrade')
+          .set('authorization', adminToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('User is now a Content Editor');
+            expect(res.body.user.role).to.be.eql(3);
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/user/editor/upgrade')
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when non admin token is used', () => {
+      it('returns forbidden error', (done) => {
+        request()
+          .put('/api/v1/user/editor/upgrade')
+          .set('authorization', userToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when findByIdAndUpdate returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          .put('/api/v1/user/editor/upgrade')
+          .set('authorization', adminToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            User.findByIdAndUpdate.restore();
+          });
+      });
+    });
+
+    context('with invalid data', () => {
+      context('when user id is empty', () => {
+        it('returns an error', (done) => {
+          request()
+            .put('/api/v1/user/editor/upgrade')
+            .set('authorization', adminToken)
+            .send({ userId: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"User id" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Downgrade Content editor to user', () => {
+    const userInfo = { userId };
+    context('with valid token', () => {
+      it('returns a upgraded user', (done) => {
+        request()
+          .put('/api/v1/user/editor/downgrade')
+          .set('authorization', adminToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Content Editor is now a User');
+            expect(res.body.user.role).to.be.eql(1);
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/user/editor/downgrade')
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when non admin token is used', () => {
+      it('returns forbidden error', (done) => {
+        request()
+          .put('/api/v1/user/editor/downgrade')
+          .set('authorization', userToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when findByIdAndUpdate returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          .put('/api/v1/user/editor/downgrade')
+          .set('authorization', adminToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            User.findByIdAndUpdate.restore();
+          });
+      });
+    });
+
+    context('with invalid data', () => {
+      context('when user id is empty', () => {
+        it('returns an error', (done) => {
+          request()
+            .put('/api/v1/user/editor/downgrade')
+            .set('authorization', adminToken)
+            .send({ userId: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"User id" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+    });
+  });
 });
