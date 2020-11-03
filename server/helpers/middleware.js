@@ -61,6 +61,58 @@ export const isAdmin = async (req, res, next) => {
   return null;
 };
 
+export const isVendor = async (req, res, next) => {
+  const { user } = req;
+  if (user && user.role === USER_ROLE.VENDOR) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
+
+export const isEditor = async (req, res, next) => {
+  const { user } = req;
+  if (user && user.role === USER_ROLE.EDITOR) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
+
+export const isVendorOrAdmin = async (req, res, next) => {
+  const { user } = req;
+  if (user && (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.ADMIN)) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
+
+export const isEditorOrAdmin = async (req, res, next) => {
+  const { user } = req;
+  if (user && (user.role === USER_ROLE.EDITOR || user.role === USER_ROLE.ADMIN)) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
+
 export const hasValidObjectId = async (req, res, next) => {
   const { id } = req.params;
   const { ObjectId } = mongoose.Types;
