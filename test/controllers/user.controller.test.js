@@ -24,7 +24,7 @@ let adminToken;
 let userToken;
 const userId = mongoose.Types.ObjectId();
 const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true, vendorCode: 'HIG' });
+const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
 const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
 
 let sendMailStub;
