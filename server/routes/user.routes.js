@@ -6,6 +6,7 @@ import {
   changePasswordSchema,
   updateUserSchema,
   favoritePropertySchema,
+  userEditorSchema,
 } from '../schemas/user.schema';
 import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
@@ -388,5 +389,77 @@ router.post(
  *          description: Internal server error
  */
 router.get('/account-overview', authenticate, UserController.getAccountOverview);
+
+/**
+ * @swagger
+ * /user/editor/upgrade:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Upgrade access of user to a content editor
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              userId:
+ *                  type: string
+ *      description: ID of user to be upgraded
+ *     responses:
+ *      '200':
+ *        description: Upgrade access of user to a content editor
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/editor/upgrade',
+  authenticate,
+  isAdmin,
+  schemaValidation(userEditorSchema),
+  UserController.upgradeUserToEditor,
+);
+
+/**
+ * @swagger
+ * /user/editor/downgrade:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Downgrade access of user to a content editor
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              userId:
+ *                  type: string
+ *      description: ID of user to be downgraded
+ *     responses:
+ *      '200':
+ *        description: Downgrade access of content editor to a user
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/editor/downgrade',
+  authenticate,
+  isAdmin,
+  schemaValidation(userEditorSchema),
+  UserController.downgradeEditorToUser,
+);
 
 module.exports = router;

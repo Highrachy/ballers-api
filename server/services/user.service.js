@@ -9,7 +9,7 @@ import { getPropertyById, updateProperty } from './property.service';
 import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
-import { REFERRAL_STATUS } from '../helpers/constants';
+import { REFERRAL_STATUS, USER_ROLE } from '../helpers/constants';
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -302,4 +302,36 @@ export const getAccountOverview = async (userId) => {
     totalAmountPaid,
     referralRewards,
   };
+};
+
+export const upgradeUserToEditor = async (userId) => {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+  try {
+    return User.findByIdAndUpdate(
+      userId,
+      { $set: { role: USER_ROLE.EDITOR } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error upgrading user', error);
+  }
+};
+
+export const downgradeEditorToUser = async (userId) => {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+  try {
+    return User.findByIdAndUpdate(
+      userId,
+      { $set: { role: USER_ROLE.USER } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error downgrading user', error);
+  }
 };

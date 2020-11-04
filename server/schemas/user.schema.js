@@ -67,3 +67,7 @@ export const updateUserSchema = Joi.object({
 export const favoritePropertySchema = Joi.object({
   propertyId: Joi.objectId().label('Property id').required(),
 });
+
+export const userEditorSchema = Joi.object({
+  userId: Joi.objectId().label('User id').required(),
+});

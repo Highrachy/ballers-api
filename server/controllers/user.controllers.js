@@ -11,6 +11,8 @@ import {
   addPropertyToFavorites,
   removePropertyFromFavorites,
   getAccountOverview,
+  upgradeUserToEditor,
+  downgradeEditorToUser,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -156,6 +158,28 @@ const UserController = {
           success: true,
           accountOverview,
         });
+      })
+      .catch((error) => next(error));
+  },
+
+  upgradeUserToEditor(req, res, next) {
+    const { userId } = req.locals;
+    upgradeUserToEditor(userId)
+      .then((user) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'User is now a Content Editor', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  downgradeEditorToUser(req, res, next) {
+    const { userId } = req.locals;
+    downgradeEditorToUser(userId)
+      .then((user) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Content Editor is now a User', user });
       })
       .catch((error) => next(error));
   },

@@ -20,6 +20,13 @@ import { addTransaction } from '../../server/services/transaction.service';
 
 useDatabase();
 
+let adminToken;
+let userToken;
+const userId = mongoose.Types.ObjectId();
+const adminId = mongoose.Types.ObjectId();
+const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
+const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
+
 let sendMailStub;
 const sandbox = sinon.createSandbox();
 
@@ -30,6 +37,11 @@ describe('User Controller', () => {
 
   afterEach(() => {
     sandbox.restore();
+  });
+
+  beforeEach(async () => {
+    adminToken = await addUser(adminUser);
+    userToken = await addUser(regularUser);
   });
 
   describe('Register Route', () => {
@@ -582,13 +594,6 @@ describe('User Controller', () => {
   });
 
   describe('Current User', () => {
-    let token;
-    const user = UserFactory.build();
-
-    beforeEach(async () => {
-      token = await addUser(user);
-    });
-
     context('with no token', () => {
       it('returns a forbidden error', (done) => {
         request()
@@ -620,13 +625,13 @@ describe('User Controller', () => {
       it('returns a valid user', (done) => {
         request()
           .get('/api/v1/user/who-am-i')
-          .set('authorization', token)
+          .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.user.firstName).to.be.eql(user.firstName);
-            expect(res.body.user.lastName).to.be.eql(user.lastName);
-            expect(res.body.user.email).to.be.eql(user.email);
+            expect(res.body.user.firstName).to.be.eql(regularUser.firstName);
+            expect(res.body.user.lastName).to.be.eql(regularUser.lastName);
+            expect(res.body.user.email).to.be.eql(regularUser.email);
             expect(res.body.user).to.not.have.property('password');
             done();
           });
@@ -635,12 +640,12 @@ describe('User Controller', () => {
 
     context('when user is not found', () => {
       beforeEach(async () => {
-        await User.deleteOne({ firstName: user.firstName });
+        await User.findByIdAndDelete(userId);
       });
       it('returns token error', (done) => {
         request()
           .get('/api/v1/user/who-am-i')
-          .set('authorization', token)
+          .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
@@ -652,13 +657,6 @@ describe('User Controller', () => {
   });
 
   describe('Update User route', () => {
-    let token;
-    const user = UserFactory.build();
-
-    beforeEach(async () => {
-      token = await addUser(user);
-    });
-
     const newUser = {
       firstName: 'John',
       lastName: 'Doe',
@@ -669,7 +667,7 @@ describe('User Controller', () => {
       it('returns a updated user', (done) => {
         request()
           .put('/api/v1/user/update')
-          .set('authorization', token)
+          .set('authorization', userToken)
           .send(newUser)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -701,7 +699,7 @@ describe('User Controller', () => {
       it('returns a updated user', (done) => {
         request()
           .put('/api/v1/user/update')
-          .set('authorization', token)
+          .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
@@ -716,7 +714,7 @@ describe('User Controller', () => {
         sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
         request()
           .put('/api/v1/user/update')
-          .set('authorization', token)
+          .set('authorization', userToken)
           .send(newUser)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -733,7 +731,7 @@ describe('User Controller', () => {
           const invalidUser = UserFactory.build({ firstName: '' });
           request()
             .put('/api/v1/user/update')
-            .set('authorization', token)
+            .set('authorization', userToken)
             .send(invalidUser)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -750,7 +748,7 @@ describe('User Controller', () => {
           const invalidUser = UserFactory.build({ preferences: { houseType: '' } });
           request()
             .put('/api/v1/user/update')
-            .set('authorization', token)
+            .set('authorization', userToken)
             .send(invalidUser)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -766,7 +764,7 @@ describe('User Controller', () => {
           const invalidUser = UserFactory.build({ preferences: { location: '' } });
           request()
             .put('/api/v1/user/update')
-            .set('authorization', token)
+            .set('authorization', userToken)
             .send(invalidUser)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -782,7 +780,7 @@ describe('User Controller', () => {
           const invalidUser = UserFactory.build({ preferences: { maxPrice: '' } });
           request()
             .put('/api/v1/user/update')
-            .set('authorization', token)
+            .set('authorization', userToken)
             .send(invalidUser)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -798,7 +796,7 @@ describe('User Controller', () => {
           const invalidUser = UserFactory.build({ preferences: { minPrice: '' } });
           request()
             .put('/api/v1/user/update')
-            .set('authorization', token)
+            .set('authorization', userToken)
             .send(invalidUser)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -814,17 +812,6 @@ describe('User Controller', () => {
 
   describe('Get all users', () => {
     describe('when users exist in db', () => {
-      let adminToken;
-      let userToken;
-      const _id = mongoose.Types.ObjectId();
-      const adminUser = UserFactory.build({ _id, role: 0, activated: true });
-      const regularUser = UserFactory.build({ role: 1, activated: true });
-
-      beforeEach(async () => {
-        adminToken = await addUser(adminUser);
-        userToken = await addUser(regularUser);
-      });
-
       context('with a valid token & id', () => {
         it('returns successful payload', (done) => {
           request()
@@ -869,7 +856,7 @@ describe('User Controller', () => {
 
       context('when token is invalid', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(_id);
+          await User.findByIdAndDelete(adminId);
         });
         it('returns token error', (done) => {
           request()
@@ -901,14 +888,11 @@ describe('User Controller', () => {
   });
 
   describe('Add property to favorite route', () => {
-    let userToken;
     const _id = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
     const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
-    const regularUser = UserFactory.build({ role: 1, activated: true });
 
     beforeEach(async () => {
-      userToken = await addUser(regularUser);
       await addProperty(property);
     });
 
@@ -977,13 +961,7 @@ describe('User Controller', () => {
   });
 
   describe('Remove property from favorite route', () => {
-    let userToken;
     const propertyId = mongoose.Types.ObjectId();
-    const regularUser = UserFactory.build({ role: 1, activated: true });
-
-    beforeEach(async () => {
-      userToken = await addUser(regularUser);
-    });
 
     const favorite = {
       propertyId,
@@ -1078,13 +1056,10 @@ describe('User Controller', () => {
   });
 
   describe('Account Overview', () => {
-    let token;
-    const userId = mongoose.Types.ObjectId();
     const vendorId = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
     const offerId = mongoose.Types.ObjectId();
     const transactionId = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId });
     const vendor = UserFactory.build({ _id: vendorId });
     const property = PropertyFactory.build({
       _id: propertyId,
@@ -1117,7 +1092,6 @@ describe('User Controller', () => {
     });
 
     beforeEach(async () => {
-      token = await addUser(user);
       await addUser(vendor);
     });
 
@@ -1125,7 +1099,7 @@ describe('User Controller', () => {
       it('returns contribution reward of zero', (done) => {
         request()
           .get('/api/v1/user/account-overview')
-          .set('authorization', token)
+          .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
@@ -1151,7 +1125,7 @@ describe('User Controller', () => {
         it('returns a valid contribution reward', (done) => {
           request()
             .get('/api/v1/user/account-overview')
-            .set('authorization', token)
+            .set('authorization', userToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
@@ -1187,6 +1161,170 @@ describe('User Controller', () => {
               expect(res).to.have.status(401);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Authentication Failed');
+              done();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Upgrade User to content editor', () => {
+    const userInfo = { userId };
+    context('with valid token', () => {
+      it('returns a upgraded user', (done) => {
+        request()
+          .put('/api/v1/user/editor/upgrade')
+          .set('authorization', adminToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('User is now a Content Editor');
+            expect(res.body.user.role).to.be.eql(3);
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/user/editor/upgrade')
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when non admin token is used', () => {
+      it('returns forbidden error', (done) => {
+        request()
+          .put('/api/v1/user/editor/upgrade')
+          .set('authorization', userToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when findByIdAndUpdate returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          .put('/api/v1/user/editor/upgrade')
+          .set('authorization', adminToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            User.findByIdAndUpdate.restore();
+          });
+      });
+    });
+
+    context('with invalid data', () => {
+      context('when user id is empty', () => {
+        it('returns an error', (done) => {
+          request()
+            .put('/api/v1/user/editor/upgrade')
+            .set('authorization', adminToken)
+            .send({ userId: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"User id" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Downgrade Content editor to user', () => {
+    const userInfo = { userId };
+    context('with valid token', () => {
+      it('returns a upgraded user', (done) => {
+        request()
+          .put('/api/v1/user/editor/downgrade')
+          .set('authorization', adminToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Content Editor is now a User');
+            expect(res.body.user.role).to.be.eql(1);
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/user/editor/downgrade')
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when non admin token is used', () => {
+      it('returns forbidden error', (done) => {
+        request()
+          .put('/api/v1/user/editor/downgrade')
+          .set('authorization', userToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when findByIdAndUpdate returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          .put('/api/v1/user/editor/downgrade')
+          .set('authorization', adminToken)
+          .send(userInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            User.findByIdAndUpdate.restore();
+          });
+      });
+    });
+
+    context('with invalid data', () => {
+      context('when user id is empty', () => {
+        it('returns an error', (done) => {
+          request()
+            .put('/api/v1/user/editor/downgrade')
+            .set('authorization', adminToken)
+            .send({ userId: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"User id" is not allowed to be empty');
               done();
             });
         });
