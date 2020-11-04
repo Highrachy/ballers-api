@@ -4,6 +4,8 @@ import {
   updateTransaction,
   getUserTransactionsByProperty,
   getTransactionsByUser,
+  getReferralRewards,
+  getContributionRewards,
 } from '../services/transaction.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -53,6 +55,24 @@ const TransactionController = {
     getUserTransactionsByProperty(propertyId)
       .then((transactions) => {
         res.status(httpStatus.OK).json({ success: true, transactions });
+      })
+      .catch((error) => next(error));
+  },
+
+  getContributionRewards(req, res, next) {
+    const userId = req.user._id;
+    getContributionRewards(userId)
+      .then((contributionRewards) => {
+        res.status(httpStatus.OK).json({ success: true, contributionRewards });
+      })
+      .catch((error) => next(error));
+  },
+
+  getReferralRewards(req, res, next) {
+    const userId = req.user._id;
+    getReferralRewards(userId)
+      .then((referralRewards) => {
+        res.status(httpStatus.OK).json({ success: true, referralRewards });
       })
       .catch((error) => next(error));
   },
