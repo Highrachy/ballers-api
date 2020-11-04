@@ -673,7 +673,7 @@ describe('Transaction Controller', () => {
   });
 
   describe('Get User Referal Rewards', () => {
-    const referral1 = ReferralFactory.build({
+    const paidReferral = ReferralFactory.build({
       referrerId: userId,
       email: 'demo1@mail.com',
       reward: {
@@ -681,14 +681,14 @@ describe('Transaction Controller', () => {
         status: REWARD_STATUS.PAID,
       },
     });
-    const referral2 = ReferralFactory.build({
+    const pendingReferral = ReferralFactory.build({
       referrerId: adminId,
       email: 'demo1@mail.com',
       reward: {
         status: REWARD_STATUS.PENDING,
       },
     });
-    const referral3 = ReferralFactory.build({
+    const paidReferral2 = ReferralFactory.build({
       referrerId: userId,
       email: 'demo2@mail.com',
       reward: {
@@ -714,9 +714,9 @@ describe('Transaction Controller', () => {
 
     describe('when offers exist in db', () => {
       beforeEach(async () => {
-        await addReferral(referral1);
-        await addReferral(referral2);
-        await addReferral(referral3);
+        await addReferral(paidReferral);
+        await addReferral(pendingReferral);
+        await addReferral(paidReferral2);
       });
 
       context('with valid token', () => {
@@ -730,11 +730,19 @@ describe('Transaction Controller', () => {
               expect(res.body).to.have.property('referralRewards');
               expect(res.body.referralRewards.length).to.be.eql(2);
               expect(res.body.referralRewards[0].referrerId).to.be.eql(userId.toString());
-              expect(res.body.referralRewards[0].reward.status).to.be.eql(referral1.reward.status);
-              expect(res.body.referralRewards[0].reward.amount).to.be.eql(referral1.reward.amount);
+              expect(res.body.referralRewards[0].reward.status).to.be.eql(
+                paidReferral.reward.status,
+              );
+              expect(res.body.referralRewards[0].reward.amount).to.be.eql(
+                paidReferral.reward.amount,
+              );
               expect(res.body.referralRewards[1].referrerId).to.be.eql(userId.toString());
-              expect(res.body.referralRewards[1].reward.status).to.be.eql(referral3.reward.status);
-              expect(res.body.referralRewards[1].reward.amount).to.be.eql(referral3.reward.amount);
+              expect(res.body.referralRewards[1].reward.status).to.be.eql(
+                paidReferral2.reward.status,
+              );
+              expect(res.body.referralRewards[1].reward.amount).to.be.eql(
+                paidReferral2.reward.amount,
+              );
               done();
             });
         });
