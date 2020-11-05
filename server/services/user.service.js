@@ -245,14 +245,21 @@ export const updateUser = async (updatedUser) => {
   }
 };
 
-export const getAllRegisteredUsers = async () =>
+export const getAllRegisteredUsers = async (skip, limit) =>
   User.aggregate([
     {
       $lookup: {
         from: 'properties',
-        localField: 'assignedProperties.propertyId',
-        foreignField: '_id',
+        localField: '_id',
+        foreignField: 'assignedTo',
         as: 'assignedProperties',
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }], //  { $addFields: { page: 1 } }
+        // eslint-disable-next-line radix
+        data: [{ $skip: parseInt(skip) }, { $limit: parseInt(limit) }],
       },
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },

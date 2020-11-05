@@ -121,9 +121,15 @@ const UserController = {
   },
 
   getAllRegisteredUsers(req, res, next) {
-    getAllRegisteredUsers()
+    const skip = req.params.count;
+    const { limit } = req.params;
+    getAllRegisteredUsers(skip, limit)
       .then((users) => {
-        res.status(httpStatus.OK).json({ success: true, users });
+        res.status(httpStatus.OK).json({
+          success: true,
+          totalDocumentCount: users[0].metadata[0].total,
+          users: users[0].data,
+        });
       })
       .catch((error) => next(error));
   },

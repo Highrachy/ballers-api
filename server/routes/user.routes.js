@@ -278,7 +278,7 @@ router.post('/upload-image', authenticate, Upload.uploadImage, UploadController.
 
 /**
  * @swagger
- * /user/all:
+ * /user/all/:limit/:count:
  *   get:
  *     tags:
  *       - User
@@ -297,7 +297,7 @@ router.post('/upload-image', authenticate, Upload.uploadImage, UploadController.
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, UserController.getAllRegisteredUsers);
+router.get('/all/:limit/:count', authenticate, isAdmin, UserController.getAllRegisteredUsers);
 
 /**
  * @swagger
