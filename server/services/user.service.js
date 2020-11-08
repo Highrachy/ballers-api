@@ -245,8 +245,10 @@ export const updateUser = async (updatedUser) => {
   }
 };
 
-export const getAllRegisteredUsers = async (skip, limit) =>
-  User.aggregate([
+export const getAllRegisteredUsers = async (pageNumber, resultLimit) => {
+  const page = pageNumber || 1;
+  const limit = resultLimit || 10;
+  return User.aggregate([
     {
       $lookup: {
         from: 'properties',
@@ -257,13 +259,14 @@ export const getAllRegisteredUsers = async (skip, limit) =>
     },
     {
       $facet: {
-        metadata: [{ $count: 'total' }], //  { $addFields: { page: 1 } }
+        metadata: [{ $count: 'total' }, { $addFields: { page } }],
         // eslint-disable-next-line radix
-        data: [{ $skip: parseInt(skip) }, { $limit: parseInt(limit) }],
+        data: [{ $skip: parseInt((page - 1) * limit) }, { $limit: parseInt(limit) }],
       },
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },
   ]);
+};
 
 export const addPropertyToFavorites = async (favorite) => {
   const property = await getPropertyById(favorite.propertyId).catch((error) => {

@@ -121,14 +121,20 @@ const UserController = {
   },
 
   getAllRegisteredUsers(req, res, next) {
-    const skip = req.params.count;
-    const { limit } = req.params;
-    getAllRegisteredUsers(skip, limit)
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 10;
+    getAllRegisteredUsers(page, limit)
       .then((users) => {
         res.status(httpStatus.OK).json({
           success: true,
-          totalDocumentCount: users[0].metadata[0].total,
-          users: users[0].data,
+          pagination: {
+            currentPage: page,
+            limit,
+            offset: (page - 1) * limit,
+            total: users[0].metadata[0].total,
+            totalPage: Math.ceil(users[0].metadata[0].total / limit),
+          },
+          result: users[0].data,
         });
       })
       .catch((error) => next(error));
