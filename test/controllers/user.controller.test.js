@@ -820,8 +820,12 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('users');
-              expect(res.body.users[0]).to.have.property('assignedProperties');
+              expect(res.body.result.length).to.be.eql(2);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.pagination.total).to.be.eql(2);
+              expect(res.body.pagination.totalPage).to.be.eql(1);
               done();
             });
         });

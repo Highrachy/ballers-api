@@ -647,9 +647,9 @@ describe('User Service', () => {
     context('when user added is valid', async () => {
       it('returns total users', async () => {
         countedUsers = await User.countDocuments({});
-        const users = await getAllRegisteredUsers();
+        const users = await getAllRegisteredUsers(1);
         expect(users).to.be.an('array');
-        expect(users.length).to.be.eql(countedUsers);
+        expect(users[0].metadata[0].total).to.be.eql(countedUsers);
       });
     });
     context('when new user is added', async () => {
@@ -659,7 +659,7 @@ describe('User Service', () => {
       it('returns total users plus one', async () => {
         const users = await getAllRegisteredUsers();
         expect(users).to.be.an('array');
-        expect(users.length).to.be.eql(countedUsers + 1);
+        expect(users[0].metadata[0].total).to.be.eql(countedUsers + 1);
       });
     });
   });
