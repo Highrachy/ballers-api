@@ -811,21 +811,83 @@ describe('User Controller', () => {
   });
 
   describe('Get all users', () => {
+    const dummyUsers = UserFactory.buildList(18);
+    beforeEach(async () => {
+      await User.insertMany(dummyUsers);
+    });
+
     describe('when users exist in db', () => {
-      context('with a valid token & id', () => {
-        it('returns successful payload', (done) => {
+      context('when no parameters are passed', () => {
+        it('returns first page with ten items', (done) => {
           request()
             .get('/api/v1/user/all')
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.result.length).to.be.eql(2);
+              expect(res.body.result.length).to.be.eql(10);
               expect(res.body.pagination.currentPage).to.be.eql(1);
               expect(res.body.pagination.limit).to.be.eql(10);
               expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.pagination.total).to.be.eql(2);
-              expect(res.body.pagination.totalPage).to.be.eql(1);
+              expect(res.body.pagination.total).to.be.eql(20);
+              expect(res.body.pagination.totalPage).to.be.eql(2);
+              done();
+            });
+        });
+      });
+
+      context('when parameters page and limit are passed', () => {
+        it('returns second page with five items', (done) => {
+          request()
+            .get('/api/v1/user/all?page=2&limit=5')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.result.length).to.be.eql(5);
+              expect(res.body.pagination.currentPage).to.be.eql('2');
+              expect(res.body.pagination.limit).to.be.eql('5');
+              expect(res.body.pagination.offset).to.be.eql(5);
+              expect(res.body.pagination.total).to.be.eql(20);
+              expect(res.body.pagination.totalPage).to.be.eql(4);
+              done();
+            });
+        });
+      });
+
+      context('when only parameter page is passed', () => {
+        it('returns second page with limit of 10', (done) => {
+          request()
+            .get('/api/v1/user/all?page=2')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.result.length).to.be.eql(10);
+              expect(res.body.pagination.currentPage).to.be.eql('2');
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.offset).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(20);
+              expect(res.body.pagination.totalPage).to.be.eql(2);
+              done();
+            });
+        });
+      });
+
+      context('when only parameter limit is passed', () => {
+        it('returns first page with four items', (done) => {
+          request()
+            .get('/api/v1/user/all?limit=4')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.result.length).to.be.eql(4);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql('4');
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.pagination.total).to.be.eql(20);
+              expect(res.body.pagination.totalPage).to.be.eql(5);
               done();
             });
         });

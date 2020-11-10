@@ -128,11 +128,11 @@ const UserController = {
         res.status(httpStatus.OK).json({
           success: true,
           pagination: {
-            currentPage: page,
-            limit,
-            offset: (page - 1) * limit,
+            currentPage: users[0].metadata[0].page,
+            limit: users[0].metadata[0].limit,
+            offset: (page - 1) * users[0].metadata[0].limit,
             total: users[0].metadata[0].total,
-            totalPage: Math.ceil(users[0].metadata[0].total / limit),
+            totalPage: Math.ceil(users[0].metadata[0].total / users[0].metadata[0].limit),
           },
           result: users[0].data,
         });

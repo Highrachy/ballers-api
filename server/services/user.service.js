@@ -259,7 +259,7 @@ export const getAllRegisteredUsers = async (pageNumber, resultLimit) => {
     },
     {
       $facet: {
-        metadata: [{ $count: 'total' }, { $addFields: { page } }],
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
         // eslint-disable-next-line radix
         data: [{ $skip: parseInt((page - 1) * limit) }, { $limit: parseInt(limit) }],
       },
