@@ -7,24 +7,15 @@ import mongoose from 'mongoose';
  *      ContentProperty:
  *        type: object
  *        required:
- *          - state
- *          - area
- *          - longitude
- *          - latitude
+ *          - areaId
  *          - category
  *          - houseType
  *          - price
  *          - website
  *          - link
  *        properties:
- *          state:
- *            type: string
- *          area:
- *            type: string
- *          longitude:
- *            type: number
- *          latitude:
- *            type: number
+ *          areaId:
+ *            type: objectid
  *          category:
  *            type: string
  *          houseType:
@@ -36,10 +27,7 @@ import mongoose from 'mongoose';
  *          link:
  *            type: string
  *        example:
- *           state: Lagos
- *           area: Lekki Phase 1
- *           longitude: 3.23453
- *           latitude: 3.23453
+ *           areaId: 5f2b39035a086cfc4b7fa7f6
  *           category: For Sale
  *           houseType: 3 bedroom semi-detached duplex
  *           price: 10000000
@@ -47,21 +35,12 @@ import mongoose from 'mongoose';
  *           link: https://ballers.ng/property.html
  */
 
+const { ObjectId } = mongoose.Schema.Types;
 const ContentPropertySchema = new mongoose.Schema(
   {
-    state: {
-      type: String,
+    areaId: {
+      type: ObjectId,
       required: true,
-    },
-    area: {
-      type: String,
-      required: true,
-    },
-    longitude: {
-      type: Number,
-    },
-    latitude: {
-      type: Number,
     },
     category: {
       type: String,
