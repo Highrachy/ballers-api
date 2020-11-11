@@ -10,6 +10,7 @@ import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
 import { REFERRAL_STATUS, USER_ROLE } from '../helpers/constants';
+import generatePagination from '../helpers/pagination';
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -248,7 +249,7 @@ export const updateUser = async (updatedUser) => {
 export const getAllRegisteredUsers = async (pageNumber, resultLimit) => {
   const page = pageNumber || 1;
   const limit = resultLimit || 10;
-  return User.aggregate([
+  const users = await User.aggregate([
     {
       $lookup: {
         from: 'properties',
@@ -260,12 +261,15 @@ export const getAllRegisteredUsers = async (pageNumber, resultLimit) => {
     {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
-        // eslint-disable-next-line radix
-        data: [{ $skip: parseInt((page - 1) * limit) }, { $limit: parseInt(limit) }],
+        data: [{ $skip: parseInt((page - 1) * limit, 10) }, { $limit: parseInt(limit, 10) }],
       },
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },
   ]);
+  const { total } = users[0].metadata[0];
+  const pagination = generatePagination(page, limit, total);
+  const result = users[0].data;
+  return { pagination, result };
 };
 
 export const addPropertyToFavorites = async (favorite) => {

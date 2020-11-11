@@ -121,20 +121,14 @@ const UserController = {
   },
 
   getAllRegisteredUsers(req, res, next) {
-    const page = req.query.page || 1;
-    const limit = req.query.limit || 10;
+    const { page } = req.query;
+    const { limit } = req.query;
     getAllRegisteredUsers(page, limit)
-      .then((users) => {
+      .then((response) => {
         res.status(httpStatus.OK).json({
           success: true,
-          pagination: {
-            currentPage: users[0].metadata[0].page,
-            limit: users[0].metadata[0].limit,
-            offset: (page - 1) * users[0].metadata[0].limit,
-            total: users[0].metadata[0].total,
-            totalPage: Math.ceil(users[0].metadata[0].total / users[0].metadata[0].limit),
-          },
-          result: users[0].data,
+          pagination: response.pagination,
+          result: response.result,
         });
       })
       .catch((error) => next(error));
