@@ -121,8 +121,7 @@ const UserController = {
   },
 
   getAllRegisteredUsers(req, res, next) {
-    const { page } = req.query;
-    const { limit } = req.query;
+    const { page, limit } = req.query;
     getAllRegisteredUsers(page, limit)
       .then((response) => {
         res.status(httpStatus.OK).json({

@@ -40,7 +40,7 @@ describe('User Controller', () => {
     sandbox.restore();
   });
 
-  describe('', () => {
+  describe('User Controller', () => {
     beforeEach(async () => {
       adminToken = await addUser(adminUser);
       userToken = await addUser(regularUser);
@@ -1271,6 +1271,14 @@ describe('User Controller', () => {
       userToken = await addUser(regularUser);
       await User.insertMany(dummyUsers);
     });
+    const defaultPaginationResult = {
+      result: 10,
+      currentPage: 1,
+      limit: 10,
+      offset: 0,
+      total: 18,
+      totalPage: 2,
+    };
 
     describe('when users exist in db', () => {
       context('when no parameters are passed', () => {
@@ -1279,14 +1287,7 @@ describe('User Controller', () => {
             .get('/api/v1/user/all')
             .set('authorization', adminToken)
             .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                result: 10,
-                currentPage: 1,
-                limit: 10,
-                offset: 0,
-                total: 18,
-                totalPage: 2,
-              });
+              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
               done();
             });
         });
@@ -1299,11 +1300,11 @@ describe('User Controller', () => {
             .set('authorization', adminToken)
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
                 result: 5,
                 currentPage: 2,
                 limit: 5,
                 offset: 5,
-                total: 18,
                 totalPage: 4,
               });
               done();
@@ -1318,12 +1319,10 @@ describe('User Controller', () => {
             .set('authorization', adminToken)
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
                 result: 8,
-                currentPage: 2,
-                limit: 10,
                 offset: 10,
-                total: 18,
-                totalPage: 2,
+                currentPage: 2,
               });
               done();
             });
@@ -1337,11 +1336,9 @@ describe('User Controller', () => {
             .set('authorization', adminToken)
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
                 result: 4,
-                currentPage: 1,
                 limit: 4,
-                offset: 0,
-                total: 18,
                 totalPage: 5,
               });
               done();

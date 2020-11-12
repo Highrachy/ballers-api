@@ -246,9 +246,7 @@ export const updateUser = async (updatedUser) => {
   }
 };
 
-export const getAllRegisteredUsers = async (pageNumber, resultLimit) => {
-  const page = pageNumber || 1;
-  const limit = resultLimit || 10;
+export const getAllRegisteredUsers = async (page = 1, limit = 10) => {
   const users = await User.aggregate([
     {
       $lookup: {
