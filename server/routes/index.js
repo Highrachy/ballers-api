@@ -11,6 +11,8 @@ import referral from './referral.routes';
 import user from './user.routes';
 import visitation from './visitation.routes';
 import welcome from './welcome.routes';
+import area from './area.routes';
+import contentProperty from './contentProperty.routes';
 
 export default (app) => {
   app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, { explorer: true }));
@@ -25,4 +27,6 @@ export default (app) => {
   app.use('/api/v1/user', user);
   app.use('/api/v1/visitation', visitation);
   app.use('/api/v1/', welcome);
+  app.use('/api/v1/area', area);
+  app.use('/api/v1/content-property', contentProperty);
 };
