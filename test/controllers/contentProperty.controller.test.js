@@ -21,8 +21,6 @@ const area = AreaFactory.build({ _id: areaId });
 
 describe('Content Property Controller', () => {
   beforeEach(async () => {
-    userToken = await addUser(user);
-    adminToken = await addUser(admin);
     editorToken = await addUser(editor);
     await addArea(area);
   });
@@ -39,7 +37,7 @@ describe('Content Property Controller', () => {
             expect(res).to.have.status(201);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Property added successfully');
-            expect(res.body).to.have.property('property');
+            expect(res.body.property).to.include({ ...property, areaId: areaId.toString() });
             expect(res.body.property.areaId).to.be.eql(areaId.toString());
             done();
           });
@@ -47,6 +45,9 @@ describe('Content Property Controller', () => {
     });
 
     context('when admin token is used', () => {
+      beforeEach(async () => {
+        adminToken = await addUser(admin);
+      });
       it('returns successful property', (done) => {
         const property = ContentPropertyFactory.build({ areaId });
         request()
@@ -57,7 +58,7 @@ describe('Content Property Controller', () => {
             expect(res).to.have.status(201);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Property added successfully');
-            expect(res.body).to.have.property('property');
+            expect(res.body.property).to.include({ ...property, areaId: areaId.toString() });
             expect(res.body.property.areaId).to.be.eql(areaId.toString());
             done();
           });
@@ -65,6 +66,9 @@ describe('Content Property Controller', () => {
     });
 
     context('when user token is used', () => {
+      beforeEach(async () => {
+        userToken = await addUser(user);
+      });
       it('returns forbidden', (done) => {
         const property = ContentPropertyFactory.build({ areaId });
         request()

@@ -16,8 +16,6 @@ const editor = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
 
 describe('Area Controller', () => {
   beforeEach(async () => {
-    userToken = await addUser(user);
-    adminToken = await addUser(admin);
     editorToken = await addUser(editor);
   });
 
@@ -33,13 +31,17 @@ describe('Area Controller', () => {
             expect(res).to.have.status(201);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Area added successfully');
-            expect(res.body).to.have.property('area');
+            expect(res.body.area).to.include(area);
             done();
           });
       });
     });
 
     context('when admin token is used', () => {
+      beforeEach(async () => {
+        adminToken = await addUser(admin);
+      });
+
       it('returns successful area', (done) => {
         const area = AreaFactory.build();
         request()
@@ -50,13 +52,17 @@ describe('Area Controller', () => {
             expect(res).to.have.status(201);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Area added successfully');
-            expect(res.body).to.have.property('area');
+            expect(res.body.area).to.include(area);
             done();
           });
       });
     });
 
     context('when user token is used', () => {
+      beforeEach(async () => {
+        userToken = await addUser(user);
+      });
+
       it('returns forbidden', (done) => {
         const area = AreaFactory.build();
         request()
