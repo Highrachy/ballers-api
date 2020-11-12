@@ -121,9 +121,14 @@ const UserController = {
   },
 
   getAllRegisteredUsers(req, res, next) {
-    getAllRegisteredUsers()
-      .then((users) => {
-        res.status(httpStatus.OK).json({ success: true, users });
+    const { page, limit } = req.query;
+    getAllRegisteredUsers(page, limit)
+      .then(({ pagination, result }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          pagination,
+          result,
+        });
       })
       .catch((error) => next(error));
   },

@@ -648,8 +648,12 @@ describe('User Service', () => {
       it('returns total users', async () => {
         countedUsers = await User.countDocuments({});
         const users = await getAllRegisteredUsers();
-        expect(users).to.be.an('array');
-        expect(users.length).to.be.eql(countedUsers);
+        expect(users.pagination.total).to.be.eql(countedUsers);
+        expect(users.pagination.currentPage).to.be.eql(1);
+        expect(users.pagination.limit).to.be.eql(10);
+        expect(users.pagination.offset).to.be.eql(0);
+        expect(users.pagination.total).to.be.eql(2);
+        expect(users.pagination.totalPage).to.be.eql(1);
       });
     });
     context('when new user is added', async () => {
@@ -658,8 +662,12 @@ describe('User Service', () => {
       });
       it('returns total users plus one', async () => {
         const users = await getAllRegisteredUsers();
-        expect(users).to.be.an('array');
-        expect(users.length).to.be.eql(countedUsers + 1);
+        expect(users.pagination.total).to.be.eql(countedUsers + 1);
+        expect(users.pagination.currentPage).to.be.eql(1);
+        expect(users.pagination.limit).to.be.eql(10);
+        expect(users.pagination.offset).to.be.eql(0);
+        expect(users.pagination.total).to.be.eql(3);
+        expect(users.pagination.totalPage).to.be.eql(1);
       });
     });
   });
