@@ -1272,10 +1272,10 @@ describe('User Controller', () => {
       await User.insertMany(dummyUsers);
     });
     const defaultPaginationResult = {
-      result: 10,
       currentPage: 1,
       limit: 10,
       offset: 0,
+      result: 10,
       total: 18,
       totalPage: 2,
     };
@@ -1301,10 +1301,10 @@ describe('User Controller', () => {
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
                 ...defaultPaginationResult,
-                result: 5,
                 currentPage: 2,
                 limit: 5,
                 offset: 5,
+                result: 5,
                 totalPage: 4,
               });
               done();
@@ -1337,8 +1337,8 @@ describe('User Controller', () => {
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
                 ...defaultPaginationResult,
-                result: 4,
                 limit: 4,
+                result: 4,
                 totalPage: 5,
               });
               done();
