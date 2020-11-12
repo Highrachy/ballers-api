@@ -1,25 +1,25 @@
 import express from 'express';
 import addContentPropertySchema from '../schemas/contentProperty.schema';
-import { schemaValidation, authenticate, isEditor } from '../helpers/middleware';
+import { schemaValidation, authenticate, isEditorOrAdmin } from '../helpers/middleware';
 import ContentPropertyController from '../controllers/contentProperty.controllers';
 
 const router = express.Router();
 
 /**
  * @swagger
- * content-property/add:
+ * /content-property/add:
  *   post:
  *     tags:
  *       - ContentProperty
- *     description: Allows content editor add a property
+ *     description: Allows content editor or admin add a property
  *     produces:
  *       - application/json
  *     requestBody:
  *      content:
  *        application/json:
  *          schema:
- *            $ref: '#/components/schemas/Visit'
- *      description: Allows content editor add a property
+ *            $ref: '#/components/schemas/ContentProperty'
+ *      description: Allows content editor or admin add a property
  *     responses:
  *      '201':
  *        description: Property added successfully
@@ -31,7 +31,7 @@ const router = express.Router();
 router.post(
   '/add',
   authenticate,
-  isEditor,
+  isEditorOrAdmin,
   schemaValidation(addContentPropertySchema),
   ContentPropertyController.add,
 );
