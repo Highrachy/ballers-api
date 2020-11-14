@@ -3,7 +3,9 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getAreaById } from './area.service';
 
-const addContentProperty = async (property) => {
+export const getContentPropertyById = async (id) => ContentProperty.findById(id).select();
+
+export const addContentProperty = async (property) => {
   const area = await getAreaById(property.areaId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -19,4 +21,37 @@ const addContentProperty = async (property) => {
   }
 };
 
-export default addContentProperty;
+export const updateContentProperty = async (updatedContentProperty) => {
+  const property = await getContentPropertyById(updatedContentProperty.id).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Property not found');
+  }
+  if (updatedContentProperty.areaId) {
+    const area = await getAreaById(updatedContentProperty.areaId).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+
+    if (!area) {
+      throw new ErrorHandler(httpStatus.NOT_FOUND, 'Area not found');
+    }
+  }
+  try {
+    return ContentProperty.findByIdAndUpdate(property.id, updatedContentProperty, { new: true });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating content property', error);
+  }
+};
+
+export const deleteContentProperty = async (id) => {
+  const plan = await getContentPropertyById(id).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    return ContentProperty.findByIdAndDelete(plan.id);
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting content property', error);
+  }
+};
