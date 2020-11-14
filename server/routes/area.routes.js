@@ -36,4 +36,27 @@ router.post(
   AreaController.add,
 );
 
+/**
+ * @swagger
+ * /area/:
+ *   get:
+ *     tags:
+ *       - Area
+ *     description: Get all states and areas based on query parameters
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Area'
+ *      description: Get all states and areas based on query parameters
+ *     responses:
+ *      '200':
+ *        description: returns states or areas
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/', authenticate, isEditorOrAdmin, AreaController.search);
+
 module.exports = router;
