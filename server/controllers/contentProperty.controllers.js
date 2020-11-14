@@ -12,16 +12,18 @@ const ContentPropertyController = {
       .then((property) => {
         res
           .status(httpStatus.CREATED)
-          .json({ success: true, message: 'Property added successfully', property });
+          .json({ success: true, message: 'Content property added successfully', property });
       })
       .catch((error) => next(error));
   },
 
   update(req, res, next) {
-    const updatedPaymentPlan = req.locals;
-    updateContentProperty(updatedPaymentPlan)
-      .then((plan) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Property updated', plan });
+    const updatedContentProperty = req.locals;
+    updateContentProperty(updatedContentProperty)
+      .then((property) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Content property updated', property });
       })
       .catch((error) => next(error));
   },
@@ -30,7 +32,7 @@ const ContentPropertyController = {
     const { id } = req.params;
     deleteContentProperty(id)
       .then(() => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Property deleted' });
+        res.status(httpStatus.OK).json({ success: true, message: 'Content property deleted' });
       })
       .catch((error) => next(error));
   },

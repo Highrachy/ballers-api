@@ -45,12 +45,16 @@ export const updateContentProperty = async (updatedContentProperty) => {
 };
 
 export const deleteContentProperty = async (id) => {
-  const plan = await getContentPropertyById(id).catch((error) => {
+  const property = await getContentPropertyById(id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Property not found');
+  }
+
   try {
-    return ContentProperty.findByIdAndDelete(plan.id);
+    return ContentProperty.findByIdAndDelete(property.id);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting content property', error);
   }

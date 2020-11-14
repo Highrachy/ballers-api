@@ -30,7 +30,7 @@ const router = express.Router();
  *      description: Allows content editor or admin add a property
  *     responses:
  *      '201':
- *        description: Property added successfully
+ *        description: Content Property added successfully
  *      '400':
  *        description: Error adding property
  *      '500':

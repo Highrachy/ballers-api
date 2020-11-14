@@ -12,7 +12,7 @@ export const addContentPropertySchema = Joi.object({
 });
 
 export const updateContentPropertySchema = Joi.object({
-  id: Joi.objectId().label('Property ID').required(),
+  id: Joi.objectId().label('Property Id').required(),
   areaId: Joi.objectId().label('Area Id').optional(),
   category: Joi.string().label('Category').optional(),
   houseType: Joi.string().label('Property Type').optional(),
