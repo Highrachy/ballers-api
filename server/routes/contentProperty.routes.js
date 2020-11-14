@@ -104,4 +104,33 @@ router.delete(
   ContentPropertyController.delete,
 );
 
+/**
+ * @swagger
+ * /content-property/area/:id:
+ *   get:
+ *     tags:
+ *       - ContentProperty
+ *     description: Get all house types based on the area id
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/ContentProperty'
+ *      description:  Get all house types based on the area id
+ *     responses:
+ *      '200':
+ *        description: returns house types
+ *      '500':
+ *       description: Internal server error
+ */
+router.get(
+  '/area/:id',
+  authenticate,
+  hasValidObjectId,
+  isEditorOrAdmin,
+  ContentPropertyController.search,
+);
+
 module.exports = router;
