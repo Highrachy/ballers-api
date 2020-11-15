@@ -42,7 +42,7 @@ router.post(
  *   get:
  *     tags:
  *       - Area
- *     description: Get all states and areas based on query parameters
+ *     description: Get all states
  *     produces:
  *       - application/json
  *     requestBody:
@@ -50,13 +50,36 @@ router.post(
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/Area'
- *      description: Get all states and areas based on query parameters
+ *      description: Get all states
  *     responses:
  *      '200':
- *        description: returns states or areas
+ *        description: returns states
  *      '500':
  *       description: Internal server error
  */
-router.get('/', authenticate, isEditorOrAdmin, AreaController.search);
+router.get('/', authenticate, isEditorOrAdmin, AreaController.getState);
+
+/**
+ * @swagger
+ * /area/:state:
+ *   get:
+ *     tags:
+ *       - Area
+ *     description: Get all areas based on query parameters
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Area'
+ *      description: Get all areas based on query parameters
+ *     responses:
+ *      '200':
+ *        description: returns areas
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/:state', authenticate, isEditorOrAdmin, AreaController.getArea);
 
 module.exports = router;

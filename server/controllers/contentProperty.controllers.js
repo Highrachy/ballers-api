@@ -38,7 +38,7 @@ const ContentPropertyController = {
       .catch((error) => next(error));
   },
 
-  search(req, res, next) {
+  getHouseTypesByAreaId(req, res, next) {
     const areaId = req.params.id;
     getHouseTypesByAreaId(areaId)
       .then((houseTypes) => {

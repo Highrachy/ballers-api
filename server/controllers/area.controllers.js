@@ -13,11 +13,19 @@ const AreaController = {
       .catch((error) => next(error));
   },
 
-  search(req, res, next) {
-    const { state } = req.query;
+  getState(req, res, next) {
+    getStateAndArea()
+      .then((states) => {
+        res.status(httpStatus.OK).json({ success: true, states: states.states });
+      })
+      .catch((error) => next(error));
+  },
+
+  getArea(req, res, next) {
+    const { state } = req.params;
     getStateAndArea(state)
-      .then((locations) => {
-        res.status(httpStatus.OK).json({ success: true, locations });
+      .then((areas) => {
+        res.status(httpStatus.OK).json({ success: true, areas: areas.areas });
       })
       .catch((error) => next(error));
   },

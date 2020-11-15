@@ -130,7 +130,7 @@ router.get(
   authenticate,
   hasValidObjectId,
   isEditorOrAdmin,
-  ContentPropertyController.search,
+  ContentPropertyController.getHouseTypesByAreaId,
 );
 
 module.exports = router;
