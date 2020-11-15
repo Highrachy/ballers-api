@@ -1,7 +1,9 @@
-import { expect, request, useDatabase } from '../config';
+import { expect, request, useDatabase, sinon } from '../config';
+import Area from '../../server/models/area.model';
 import AreaFactory from '../factories/area.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
+import { addArea } from '../../server/services/area.service';
 import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
@@ -17,6 +19,8 @@ const editor = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
 describe('Area Controller', () => {
   beforeEach(async () => {
     editorToken = await addUser(editor);
+    userToken = await addUser(user);
+    adminToken = await addUser(admin);
   });
 
   describe('Add Area Route', () => {
@@ -38,10 +42,6 @@ describe('Area Controller', () => {
     });
 
     context('when admin token is used', () => {
-      beforeEach(async () => {
-        adminToken = await addUser(admin);
-      });
-
       it('returns successful area', (done) => {
         const area = AreaFactory.build();
         request()
@@ -59,10 +59,6 @@ describe('Area Controller', () => {
     });
 
     context('when user token is used', () => {
-      beforeEach(async () => {
-        userToken = await addUser(user);
-      });
-
       it('returns forbidden', (done) => {
         const area = AreaFactory.build();
         request()
@@ -145,6 +141,161 @@ describe('Area Controller', () => {
               done();
             });
         });
+      });
+    });
+  });
+
+  describe('Get all states', () => {
+    const lagosState = AreaFactory.build({ state: 'lagos' });
+    const oyoState = AreaFactory.build({ state: 'oyo' });
+    beforeEach(async () => {
+      await addArea(lagosState);
+      await addArea(oyoState);
+    });
+
+    context('when editor token is used', () => {
+      it('returns array of five states', (done) => {
+        request()
+          .get('/api/v1/area')
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.states.length).to.be.eql(2);
+            done();
+          });
+      });
+    });
+
+    context('when admin token is used', () => {
+      it('returns array of five states', (done) => {
+        request()
+          .get('/api/v1/area')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.states.length).to.be.eql(2);
+            done();
+          });
+      });
+    });
+
+    context('when user token is is used', () => {
+      it('returns forbidden', (done) => {
+        request()
+          .get('/api/v1/area')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/area')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getStateAndArea service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Area, 'distinct').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/area')
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Area.distinct.restore();
+          });
+      });
+    });
+  });
+
+  describe('Get all areas', () => {
+    const state = 'lagos';
+    const areas = AreaFactory.buildList(5, { state });
+    beforeEach(async () => {
+      await Area.insertMany(areas);
+    });
+
+    context('when editor token is used', () => {
+      it('returns array of five areas', (done) => {
+        request()
+          .get(`/api/v1/area/${state}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.areas.length).to.be.eql(5);
+            done();
+          });
+      });
+    });
+
+    context('when admin token is used', () => {
+      it('returns array of five states', (done) => {
+        request()
+          .get(`/api/v1/area/${state}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.areas.length).to.be.eql(5);
+            done();
+          });
+      });
+    });
+
+    context('when user token is is used', () => {
+      it('returns forbidden', (done) => {
+        request()
+          .get(`/api/v1/area/${state}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/area/${state}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getStateAndArea service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Area, 'find').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/area/${state}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Area.find.restore();
+          });
       });
     });
   });
