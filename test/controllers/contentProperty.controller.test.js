@@ -469,9 +469,14 @@ describe('Content Property Controller', () => {
   });
 
   describe('Get all house types for an area', () => {
-    const properties = ContentPropertyFactory.buildList(5, { areaId });
+    const randomProperties = ContentPropertyFactory.buildList(5, { areaId });
+    const duplexProperties = ContentPropertyFactory.buildList(5, {
+      areaId,
+      houseType: 'Terrace duplex',
+    });
     beforeEach(async () => {
-      await ContentProperty.insertMany(properties);
+      await ContentProperty.insertMany(randomProperties);
+      await ContentProperty.insertMany(duplexProperties);
     });
 
     context('when editor token is used', () => {
@@ -482,7 +487,7 @@ describe('Content Property Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.houseTypes.length).to.be.eql(5);
+            expect(res.body.houseTypes.length).to.be.eql(6);
             done();
           });
       });
@@ -496,7 +501,7 @@ describe('Content Property Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.houseTypes.length).to.be.eql(5);
+            expect(res.body.houseTypes.length).to.be.eql(6);
             done();
           });
       });

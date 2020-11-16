@@ -75,6 +75,26 @@ describe('Area Controller', () => {
     });
 
     context('with invalid data', () => {
+      context('when area already exists with same state', () => {
+        const ogunState = AreaFactory.build({ state: 'ogun', area: 'abeokuta' });
+        beforeEach(async () => {
+          await addArea(ogunState);
+        });
+        it('returns an error', (done) => {
+          request()
+            .post('/api/v1/area/add')
+            .set('authorization', editorToken)
+            .send(ogunState)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Area already exists');
+              expect(res.body.error).to.be.eql('Area already exists');
+              done();
+            });
+        });
+      });
+
       context('when area is empty', () => {
         it('returns an error', (done) => {
           const area = AreaFactory.build({ area: '' });
@@ -147,16 +167,16 @@ describe('Area Controller', () => {
 
   describe('Get all states', () => {
     const lagosState = AreaFactory.build({ state: 'lagos' });
-    const oyoState = AreaFactory.build({ state: 'oyo' });
+    const areasInOyoState = AreaFactory.buildList(5, { state: 'oyo' });
     beforeEach(async () => {
       await addArea(lagosState);
-      await addArea(oyoState);
+      await Area.insertMany(areasInOyoState);
     });
 
     context('when editor token is used', () => {
-      it('returns array of five states', (done) => {
+      it('returns array of two states', (done) => {
         request()
-          .get('/api/v1/area')
+          .get('/api/v1/area/states')
           .set('authorization', editorToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -168,9 +188,9 @@ describe('Area Controller', () => {
     });
 
     context('when admin token is used', () => {
-      it('returns array of five states', (done) => {
+      it('returns array of two states', (done) => {
         request()
-          .get('/api/v1/area')
+          .get('/api/v1/area/states')
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -184,7 +204,7 @@ describe('Area Controller', () => {
     context('when user token is is used', () => {
       it('returns forbidden', (done) => {
         request()
-          .get('/api/v1/area')
+          .get('/api/v1/area/states')
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(403);
@@ -198,7 +218,7 @@ describe('Area Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get('/api/v1/area')
+          .get('/api/v1/area/states')
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -212,7 +232,7 @@ describe('Area Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Area, 'distinct').throws(new Error('Type Error'));
         request()
-          .get('/api/v1/area')
+          .get('/api/v1/area/states')
           .set('authorization', editorToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
@@ -245,7 +265,7 @@ describe('Area Controller', () => {
     });
 
     context('when admin token is used', () => {
-      it('returns array of five states', (done) => {
+      it('returns array of five areas', (done) => {
         request()
           .get(`/api/v1/area/${state}`)
           .set('authorization', adminToken)

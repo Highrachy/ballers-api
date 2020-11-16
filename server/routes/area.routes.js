@@ -38,7 +38,7 @@ router.post(
 
 /**
  * @swagger
- * /area/:
+ * /area/states:
  *   get:
  *     tags:
  *       - Area
@@ -57,7 +57,7 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.get('/', authenticate, isEditorOrAdmin, AreaController.getState);
+router.get('/states', authenticate, isEditorOrAdmin, AreaController.getState);
 
 /**
  * @swagger
