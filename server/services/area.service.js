@@ -25,12 +25,12 @@ export const addArea = async (area) => {
   }
 };
 
-export const getState = async () => {
+export const getStates = async () => {
   const states = await Area.distinct('state');
   return { states };
 };
 
-export const getArea = async (state) => {
+export const getAreas = async (state) => {
   const areas = await Area.find({ state }).select('area');
   return { areas };
 };

@@ -1,4 +1,4 @@
-import { addArea, getState, getArea } from '../services/area.service';
+import { addArea, getStates, getAreas } from '../services/area.service';
 import httpStatus from '../helpers/httpStatus';
 
 const AreaController = {
@@ -13,17 +13,17 @@ const AreaController = {
       .catch((error) => next(error));
   },
 
-  getState(req, res, next) {
-    getState()
+  getStates(req, res, next) {
+    getStates()
       .then((states) => {
         res.status(httpStatus.OK).json({ success: true, states: states.states });
       })
       .catch((error) => next(error));
   },
 
-  getArea(req, res, next) {
+  getAreas(req, res, next) {
     const { state } = req.params;
-    getArea(state)
+    getAreas(state)
       .then((areas) => {
         res.status(httpStatus.OK).json({ success: true, areas: areas.areas });
       })
