@@ -467,4 +467,85 @@ describe('Content Property Controller', () => {
       });
     });
   });
+
+  describe('Get all house types for an area', () => {
+    const randomProperties = ContentPropertyFactory.buildList(5, { areaId });
+    const duplexProperties = ContentPropertyFactory.buildList(5, {
+      areaId,
+      houseType: 'Terrace duplex',
+    });
+    beforeEach(async () => {
+      await ContentProperty.insertMany(randomProperties);
+      await ContentProperty.insertMany(duplexProperties);
+    });
+
+    context('when editor token is used', () => {
+      it('returns array of house types', (done) => {
+        request()
+          .get(`/api/v1/content-property/area/${areaId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.houseTypes.length).to.be.eql(6);
+            done();
+          });
+      });
+    });
+
+    context('when admin token is used', () => {
+      it('returns array of house types', (done) => {
+        request()
+          .get(`/api/v1/content-property/area/${areaId}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.houseTypes.length).to.be.eql(6);
+            done();
+          });
+      });
+    });
+
+    context('when user token is is used', () => {
+      it('returns forbidden', (done) => {
+        request()
+          .get(`/api/v1/content-property/area/${areaId}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/content-property/area/${areaId}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getHouseTypesByAreaId service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(ContentProperty, 'find').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/content-property/area/${areaId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            ContentProperty.find.restore();
+          });
+      });
+    });
+  });
 });

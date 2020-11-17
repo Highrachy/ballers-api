@@ -2,6 +2,7 @@ import {
   addContentProperty,
   updateContentProperty,
   deleteContentProperty,
+  getHouseTypesByAreaId,
 } from '../services/contentProperty.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -33,6 +34,15 @@ const ContentPropertyController = {
     deleteContentProperty(id)
       .then(() => {
         res.status(httpStatus.OK).json({ success: true, message: 'Content property deleted' });
+      })
+      .catch((error) => next(error));
+  },
+
+  getHouseTypesByAreaId(req, res, next) {
+    const areaId = req.params.id;
+    getHouseTypesByAreaId(areaId)
+      .then((houseTypes) => {
+        res.status(httpStatus.OK).json({ success: true, houseTypes });
       })
       .catch((error) => next(error));
   },

@@ -59,3 +59,14 @@ export const deleteContentProperty = async (id) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting content property', error);
   }
 };
+
+export const getHouseTypesByAreaId = async (areaId) => {
+  const area = await getAreaById(areaId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!area) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Area not found');
+  }
+  return ContentProperty.find({ areaId }).distinct('houseType');
+};
