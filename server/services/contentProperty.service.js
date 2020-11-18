@@ -93,11 +93,18 @@ export const getPropertiesByParameters = async ({ areaId, houseType }) => {
       $group: {
         _id: '$category',
         minimumPrice: { $min: '$price' },
-        maxPrice: { $max: '$price' },
-        avgPrice: { $avg: '$price' },
+        maximumPrice: { $max: '$price' },
+        averagePrice: { $avg: '$price' },
       },
     },
   ]);
 
-  return { ...prices[0], houseType, area: area.area };
+  return {
+    ...prices[0],
+    type: houseType,
+    areaName: area.area,
+    stateName: area.state,
+    longitude: area.longitude,
+    latitude: area.latitude,
+  };
 };
