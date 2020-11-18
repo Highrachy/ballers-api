@@ -38,7 +38,6 @@ export const getAreas = async (state) => {
 };
 
 export const updateArea = async (updatedArea) => {
-  let newupdatedarea;
   const area = await getAreaById(updatedArea.id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -46,26 +45,14 @@ export const updateArea = async (updatedArea) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Area not found');
   }
 
-  if (updatedArea.area && updatedArea.state) {
-    newupdatedarea = {
-      ...updatedArea,
-      area: updatedArea.area.toLowerCase() || area.area,
-      state: updatedArea.state.toLowerCase() || area.state,
-    };
-  } else if (updatedArea.state) {
-    newupdatedarea = {
-      ...updatedArea,
-      state: updatedArea.state.toLowerCase() || area.state,
-    };
-  } else if (updatedArea.area) {
-    newupdatedarea = {
-      ...updatedArea,
-      area: updatedArea.area.toLowerCase() || area.area,
-    };
-  }
+  const areaPayload = {
+    ...updatedArea,
+    area: updatedArea.area ? updatedArea.area.toLowerCase() : area.area,
+    state: updatedArea.state ? updatedArea.state.toLowerCase() : area.state,
+  };
 
   try {
-    return Area.findByIdAndUpdate(area.id, newupdatedarea, { new: true });
+    return Area.findByIdAndUpdate(area.id, areaPayload, { new: true });
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating area', error);
   }
@@ -87,7 +74,9 @@ export const deleteArea = async (id) => {
   if (attachedProperties.length > 0) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
-      'Area is linked to one or more content properties',
+      `Area is linked to ${attachedProperties.length} content ${
+        attachedProperties.length > 1 ? 'properites' : 'property'
+      }`,
     );
   }
 
