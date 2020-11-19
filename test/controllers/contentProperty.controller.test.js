@@ -8,6 +8,7 @@ import { addUser } from '../../server/services/user.service';
 import { addArea } from '../../server/services/area.service';
 import { addContentProperty } from '../../server/services/contentProperty.service';
 import { USER_ROLE } from '../../server/helpers/constants';
+import expectsPaginationToReturnTheRightValues from '../helpers';
 
 useDatabase();
 
@@ -545,6 +546,149 @@ describe('Content Property Controller', () => {
             done();
             ContentProperty.find.restore();
           });
+      });
+    });
+  });
+
+  describe('Get all content properties', () => {
+    const dummyProperties = ContentPropertyFactory.buildList(18, { areaId });
+
+    beforeEach(async () => {
+      await ContentProperty.insertMany(dummyProperties);
+    });
+    const defaultPaginationResult = {
+      currentPage: 1,
+      limit: 10,
+      offset: 0,
+      result: 10,
+      total: 18,
+      totalPage: 2,
+    };
+
+    describe('when properties exist in db', () => {
+      context('when no parameters are passed', () => {
+        it('returns the default values', (done) => {
+          request()
+            .get('/api/v1/content-property/all')
+            .set('authorization', editorToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+              done();
+            });
+        });
+      });
+
+      context('when editor token is used', () => {
+        it('returns the given page and limit', (done) => {
+          request()
+            .get('/api/v1/content-property/all?page=2&limit=5')
+            .set('authorization', editorToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                currentPage: 2,
+                limit: 5,
+                offset: 5,
+                result: 5,
+                totalPage: 4,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when admin token is used', () => {
+        it('returns the given page and limit', (done) => {
+          request()
+            .get('/api/v1/content-property/all?page=2&limit=5')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                currentPage: 2,
+                limit: 5,
+                offset: 5,
+                result: 5,
+                totalPage: 4,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when page is set to 2', () => {
+        it('returns the second page', (done) => {
+          request()
+            .get('/api/v1/content-property/all?page=2')
+            .set('authorization', editorToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                result: 8,
+                offset: 10,
+                currentPage: 2,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when limit is set to 4', () => {
+        it('returns 4 properties', (done) => {
+          request()
+            .get('/api/v1/content-property/all?limit=4')
+            .set('authorization', editorToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                limit: 4,
+                result: 4,
+                totalPage: 5,
+              });
+              done();
+            });
+        });
+      });
+
+      context('with a user access token', () => {
+        it('returns successful payload', (done) => {
+          request()
+            .get('/api/v1/content-property/all')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+              done();
+            });
+        });
+      });
+
+      context('without token', () => {
+        it('returns error', (done) => {
+          request()
+            .get('/api/v1/content-property/all')
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Token needed to access resources');
+              done();
+            });
+        });
+      });
+
+      context('when getAllProperties service fails', () => {
+        it('returns the error', (done) => {
+          sinon.stub(ContentProperty, 'aggregate').throws(new Error('Type Error'));
+          request()
+            .get('/api/v1/content-property/all')
+            .set('authorization', editorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(500);
+              done();
+              ContentProperty.aggregate.restore();
+            });
+        });
       });
     });
   });

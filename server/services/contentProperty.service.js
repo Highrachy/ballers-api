@@ -99,5 +99,5 @@ export const getAllProperties = async (page = 1, limit = 10) => {
 
   const { total } = properties[0].metadata[0];
   const pagination = generatePagination(page, limit, total);
-  return { pagination, properties: properties[0].data };
+  return { pagination, result: properties[0].data };
 };
