@@ -75,7 +75,7 @@ export const deleteArea = async (id) => {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
       `Area is linked to ${attachedProperties.length} content ${
-        attachedProperties.length > 1 ? 'properites' : 'property'
+        attachedProperties.length > 1 ? 'properties' : 'property'
       }`,
     );
   }

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { expect, request, useDatabase, sinon } from '../config';
 import Area from '../../server/models/area.model';
+import ContentProperty from '../../server/models/contentProperty.model';
 import AreaFactory from '../factories/area.factory';
 import UserFactory from '../factories/user.factory';
 import ContentPropertyFactory from '../factories/contentProperty.factory';
@@ -334,8 +335,8 @@ describe('Area Controller', () => {
     });
     const updatedArea = {
       id: areaId,
-      area: 'oshogbo',
-      state: 'oyo',
+      area: 'Oshogbo',
+      state: 'Oyo',
       longitude: 30.7128,
       latitude: 79.666,
     };
@@ -354,8 +355,8 @@ describe('Area Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.area._id).to.be.eql(areaId.toString());
-            expect(res.body.area.area).to.be.eql(updatedArea.area);
-            expect(res.body.area.state).to.be.eql(updatedArea.state);
+            expect(res.body.area.area).to.be.eql(updatedArea.area.toLowerCase());
+            expect(res.body.area.state).to.be.eql(updatedArea.state.toLowerCase());
             expect(res.body.area.longitude).to.be.eql(updatedArea.longitude);
             expect(res.body.area.latitude).to.be.eql(updatedArea.latitude);
             done();
@@ -373,8 +374,8 @@ describe('Area Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.area._id).to.be.eql(areaId.toString());
-            expect(res.body.area.area).to.be.eql(updatedArea.area);
-            expect(res.body.area.state).to.be.eql(updatedArea.state);
+            expect(res.body.area.area).to.be.eql(updatedArea.area.toLowerCase());
+            expect(res.body.area.state).to.be.eql(updatedArea.state.toLowerCase());
             expect(res.body.area.longitude).to.be.eql(updatedArea.longitude);
             expect(res.body.area.latitude).to.be.eql(updatedArea.latitude);
             done();
@@ -610,7 +611,7 @@ describe('Area Controller', () => {
         await addContentProperty(contentProperty);
       });
 
-      it('deletes area', (done) => {
+      it('returns error', (done) => {
         request()
           .delete(`/api/v1/area/delete/${areaId}`)
           .set('authorization', editorToken)
@@ -618,6 +619,26 @@ describe('Area Controller', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Area is linked to 1 content property');
+            done();
+          });
+      });
+    });
+
+    context('when area is assigned to 5 content properties', () => {
+      const contentProperties = ContentPropertyFactory.buildList(5, { areaId });
+
+      beforeEach(async () => {
+        await ContentProperty.insertMany(contentProperties);
+      });
+
+      it('returns error', (done) => {
+        request()
+          .delete(`/api/v1/area/delete/${areaId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Area is linked to 5 content properties');
             done();
           });
       });
