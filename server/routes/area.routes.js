@@ -1,6 +1,11 @@
 import express from 'express';
-import addAreaSchema from '../schemas/area.schema';
-import { schemaValidation, authenticate, isEditorOrAdmin } from '../helpers/middleware';
+import { addAreaSchema, updateAreaSchema } from '../schemas/area.schema';
+import {
+  schemaValidation,
+  authenticate,
+  isEditorOrAdmin,
+  hasValidObjectId,
+} from '../helpers/middleware';
 import AreaController from '../controllers/area.controllers';
 
 const router = express.Router();
@@ -81,5 +86,65 @@ router.get('/states', authenticate, isEditorOrAdmin, AreaController.getStates);
  *       description: Internal server error
  */
 router.get('/:state', authenticate, isEditorOrAdmin, AreaController.getAreas);
+
+/**
+ * @swagger
+ * /area/update:
+ *   put:
+ *     tags:
+ *       - Area
+ *     description: Updates existing area
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Area'
+ *      description: Updates existing area
+ *     responses:
+ *      '200':
+ *        description: Area updated
+ *      '400':
+ *        description: Error updating area
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/update',
+  authenticate,
+  isEditorOrAdmin,
+  schemaValidation(updateAreaSchema),
+  AreaController.update,
+);
+
+/**
+ * @swagger
+ * /area/delete/:id:
+ *   delete:
+ *     tags:
+ *       - Area
+ *     description: Deletes specific area
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Area'
+ *      description: Deletes specific area
+ *     responses:
+ *      '200':
+ *        description: Area deleted
+ *      '500':
+ *       description: Internal server error
+ */
+router.delete(
+  '/delete/:id',
+  authenticate,
+  hasValidObjectId,
+  isEditorOrAdmin,
+  AreaController.delete,
+);
 
 module.exports = router;

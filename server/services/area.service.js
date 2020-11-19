@@ -1,6 +1,8 @@
 import Area from '../models/area.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+// eslint-disable-next-line import/no-cycle
+import { getContentPropertyByAreaId } from './contentProperty.service';
 
 export const getAreaById = async (id) => Area.findById(id).select();
 
@@ -33,4 +35,54 @@ export const getStates = async () => {
 export const getAreas = async (state) => {
   const areas = await Area.find({ state }).select('area');
   return { areas };
+};
+
+export const updateArea = async (updatedArea) => {
+  const area = await getAreaById(updatedArea.id).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+  if (!area) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Area not found');
+  }
+
+  const areaPayload = {
+    ...updatedArea,
+    area: updatedArea.area ? updatedArea.area.toLowerCase() : area.area,
+    state: updatedArea.state ? updatedArea.state.toLowerCase() : area.state,
+  };
+
+  try {
+    return Area.findByIdAndUpdate(area.id, areaPayload, { new: true });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating area', error);
+  }
+};
+
+export const deleteArea = async (id) => {
+  const area = await getAreaById(id).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!area) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Area not found');
+  }
+
+  const attachedProperties = await getContentPropertyByAreaId(id).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (attachedProperties.length > 0) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      `Area is linked to ${attachedProperties.length} content ${
+        attachedProperties.length > 1 ? 'properties' : 'property'
+      }`,
+    );
+  }
+
+  try {
+    return Area.findByIdAndDelete(area.id);
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting area', error);
+  }
 };

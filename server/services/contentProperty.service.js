@@ -1,9 +1,13 @@
 import ContentProperty from '../models/contentProperty.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+// eslint-disable-next-line import/no-cycle
 import { getAreaById } from './area.service';
 
 export const getContentPropertyById = async (id) => ContentProperty.findById(id).select();
+
+export const getContentPropertyByAreaId = async (areaId) =>
+  ContentProperty.find({ areaId }).select();
 
 export const addContentProperty = async (property) => {
   const area = await getAreaById(property.areaId).catch((error) => {
