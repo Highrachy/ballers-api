@@ -133,4 +133,27 @@ router.get(
   ContentPropertyController.getHouseTypesByAreaId,
 );
 
+/**
+ * @swagger
+ * /content-property/all:
+ *   get:
+ *     tags:
+ *       - ContentProperty
+ *     description: Get all content propertties
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/ContentProperty'
+ *      description:  Get all content propertties
+ *     responses:
+ *      '200':
+ *        description: returns all content properties
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/all', authenticate, isEditorOrAdmin, ContentPropertyController.getAllProperties);
+
 module.exports = router;
