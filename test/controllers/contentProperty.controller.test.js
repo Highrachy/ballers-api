@@ -578,7 +578,7 @@ describe('Content Property Controller', () => {
         });
       });
 
-      context('when editor token is used', () => {
+      context('when parameters page and limit are passed', () => {
         it('returns the given page and limit', (done) => {
           request()
             .get('/api/v1/content-property/all?page=2&limit=5')
@@ -600,17 +600,10 @@ describe('Content Property Controller', () => {
       context('when admin token is used', () => {
         it('returns the given page and limit', (done) => {
           request()
-            .get('/api/v1/content-property/all?page=2&limit=5')
+            .get('/api/v1/content-property/all')
             .set('authorization', adminToken)
             .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                currentPage: 2,
-                limit: 5,
-                offset: 5,
-                result: 5,
-                totalPage: 4,
-              });
+              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
               done();
             });
         });

@@ -10,7 +10,7 @@ import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
 import { REFERRAL_STATUS, USER_ROLE } from '../helpers/constants';
-import generatePagination from '../helpers/pagination';
+import { generatePagination, generateFacetData } from '../helpers/pagination';
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -259,7 +259,7 @@ export const getAllRegisteredUsers = async (page = 1, limit = 10) => {
     {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
-        data: [{ $skip: parseInt((page - 1) * limit, 10) }, { $limit: parseInt(limit, 10) }],
+        data: generateFacetData(page, limit),
       },
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },

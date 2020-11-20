@@ -3,7 +3,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getAreaById } from './area.service';
-import generatePagination from '../helpers/pagination';
+import { generatePagination, generateFacetData } from '../helpers/pagination';
 
 export const getContentPropertyById = async (id) => ContentProperty.findById(id).select();
 
@@ -76,7 +76,7 @@ export const getHouseTypesByAreaId = async (areaId) => {
   return ContentProperty.find({ areaId }).distinct('houseType');
 };
 
-export const getAllProperties = async (page = 1, limit = 10) => {
+export const getAllContentProperties = async (page = 1, limit = 10) => {
   const properties = await ContentProperty.aggregate([
     {
       $lookup: {
@@ -92,7 +92,7 @@ export const getAllProperties = async (page = 1, limit = 10) => {
     {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
-        data: [{ $skip: parseInt((page - 1) * limit, 10) }, { $limit: parseInt(limit, 10) }],
+        data: generateFacetData(page, limit),
       },
     },
   ]);

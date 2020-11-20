@@ -3,7 +3,7 @@ import {
   updateContentProperty,
   deleteContentProperty,
   getHouseTypesByAreaId,
-  getAllProperties,
+  getAllContentProperties,
 } from '../services/contentProperty.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -48,9 +48,9 @@ const ContentPropertyController = {
       .catch((error) => next(error));
   },
 
-  getAllProperties(req, res, next) {
+  getAllContentProperties(req, res, next) {
     const { page, limit } = req.query;
-    getAllProperties(page, limit)
+    getAllContentProperties(page, limit)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
       })

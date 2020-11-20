@@ -154,6 +154,11 @@ router.get(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isEditorOrAdmin, ContentPropertyController.getAllProperties);
+router.get(
+  '/all',
+  authenticate,
+  isEditorOrAdmin,
+  ContentPropertyController.getAllContentProperties,
+);
 
 module.exports = router;
