@@ -135,6 +135,29 @@ router.get(
 
 /**
  * @swagger
+ * /content-property/:
+ *   get:
+ *     tags:
+ *       - ContentProperty
+ *     description: Get related content properties based on search parameters
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/ContentProperty'
+ *      description:  Get related content properties based on search parameters
+ *     responses:
+ *      '200':
+ *        description: returns related content properties
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/', authenticate, ContentPropertyController.search);
+
+/**
+ * @swagger
  * /content-property/all:
  *   get:
  *     tags:
