@@ -70,6 +70,47 @@ const UserSchema = new mongoose.Schema(
       companyAddress: {
         type: String,
       },
+      identification: {
+        type: String,
+      },
+      phone: {
+        type: String,
+      },
+      email: {
+        type: String,
+      },
+      website: {
+        type: String,
+      },
+      accountNumber: {
+        type: String,
+      },
+      redanNumber: {
+        type: String,
+      },
+      directors: [
+        {
+          firstName: {
+            type: String,
+          },
+          lastName: {
+            type: String,
+          },
+        },
+      ],
+      socialMedia: [
+        {
+          name: {
+            type: String,
+          },
+          url: {
+            type: String,
+          },
+        },
+      ],
+      vendorCode: {
+        type: String,
+      },
     },
     email: {
       type: String,
