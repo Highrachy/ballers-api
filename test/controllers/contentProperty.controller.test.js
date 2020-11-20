@@ -593,7 +593,7 @@ describe('Content Property Controller', () => {
       });
     });
 
-    context('when parameters areaId is sent', () => {
+    context('when the areaId parameter is given only', () => {
       it('returns evaluation of 8 properties', (done) => {
         request()
           .get(`/api/v1/content-property?areaId=${areaId}`)
@@ -612,7 +612,7 @@ describe('Content Property Controller', () => {
       });
     });
 
-    context('when parameters house type is sent', () => {
+    context('when the houseType parameter is given only', () => {
       it('returns not found', (done) => {
         request()
           .get(`/api/v1/content-property?houseType=${houseType}`)
