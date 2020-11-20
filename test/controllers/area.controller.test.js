@@ -661,4 +661,111 @@ describe('Area Controller', () => {
       });
     });
   });
+
+  describe('Get all areas and correponding properties', () => {
+    const ajah = AreaFactory.build({ area: 'ajah' });
+    const lekkiId = mongoose.Types.ObjectId();
+    const lekki = AreaFactory.build({ _id: lekkiId, area: 'lekki' });
+    const lekkiProperties = ContentPropertyFactory.buildList(5, {
+      areaId: lekkiId,
+      price: 100000,
+    });
+
+    beforeEach(async () => {
+      await addArea(lekki);
+      await addArea(ajah);
+      await ContentProperty.insertMany(lekkiProperties);
+    });
+
+    context('when editor token is used', () => {
+      it('returns all areas and properties', (done) => {
+        request()
+          .get('/api/v1/area/all')
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.areas.length).to.be.eql(2);
+            expect(res.body.areas[0].area).to.be.eql(ajah.area);
+            expect(res.body.areas[0].numOfProperties).to.be.eql(0);
+            expect(res.body.areas[0].minimumPrice).to.be.eql(null);
+            expect(res.body.areas[0].maximumPrice).to.be.eql(null);
+            expect(res.body.areas[0].averagePrice).to.be.eql(null);
+            expect(res.body.areas[1]._id).to.be.eql(lekkiId.toString());
+            expect(res.body.areas[1].area).to.be.eql(lekki.area);
+            expect(res.body.areas[1].numOfProperties).to.be.eql(5);
+            expect(res.body.areas[1].minimumPrice).to.be.eql(100000);
+            expect(res.body.areas[1].maximumPrice).to.be.eql(100000);
+            expect(res.body.areas[1].averagePrice).to.be.eql(100000);
+            done();
+          });
+      });
+    });
+
+    context('when admin token is used', () => {
+      it('returns all areas and properties', (done) => {
+        request()
+          .get('/api/v1/area/all')
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.areas.length).to.be.eql(2);
+            expect(res.body.areas[0].area).to.be.eql(ajah.area);
+            expect(res.body.areas[0].numOfProperties).to.be.eql(0);
+            expect(res.body.areas[0].minimumPrice).to.be.eql(null);
+            expect(res.body.areas[0].maximumPrice).to.be.eql(null);
+            expect(res.body.areas[0].averagePrice).to.be.eql(null);
+            expect(res.body.areas[1]._id).to.be.eql(lekkiId.toString());
+            expect(res.body.areas[1].area).to.be.eql(lekki.area);
+            expect(res.body.areas[1].numOfProperties).to.be.eql(5);
+            expect(res.body.areas[1].minimumPrice).to.be.eql(100000);
+            expect(res.body.areas[1].maximumPrice).to.be.eql(100000);
+            expect(res.body.areas[1].averagePrice).to.be.eql(100000);
+            done();
+          });
+      });
+    });
+
+    context('when user token is is used', () => {
+      it('returns forbidden', (done) => {
+        request()
+          .get('/api/v1/area/all')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/area/all')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getAllAreas service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Area, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/area/all')
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Area.aggregate.restore();
+          });
+      });
+    });
+  });
 });

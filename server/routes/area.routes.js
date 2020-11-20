@@ -66,29 +66,6 @@ router.get('/states', authenticate, isEditorOrAdmin, AreaController.getStates);
 
 /**
  * @swagger
- * /area/:state:
- *   get:
- *     tags:
- *       - Area
- *     description: Get all areas based on query parameters
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/Area'
- *      description: Get all areas based on query parameters
- *     responses:
- *      '200':
- *        description: returns areas
- *      '500':
- *       description: Internal server error
- */
-router.get('/:state', authenticate, isEditorOrAdmin, AreaController.getAreas);
-
-/**
- * @swagger
  * /area/update:
  *   put:
  *     tags:
@@ -149,7 +126,7 @@ router.delete(
 
 /**
  * @swagger
- * /area/:
+ * /area/all:
  *   get:
  *     tags:
  *       - Area
@@ -168,6 +145,29 @@ router.delete(
  *      '500':
  *       description: Internal server error
  */
-router.get('/', authenticate, isEditorOrAdmin, AreaController.getAllAreas);
+router.get('/all', authenticate, isEditorOrAdmin, AreaController.getAllAreas);
+
+/**
+ * @swagger
+ * /area/:state:
+ *   get:
+ *     tags:
+ *       - Area
+ *     description: Get all areas based on query parameters
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Area'
+ *      description: Get all areas based on query parameters
+ *     responses:
+ *      '200':
+ *        description: returns areas
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/:state', authenticate, isEditorOrAdmin, AreaController.getAreas);
 
 module.exports = router;

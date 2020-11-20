@@ -97,6 +97,7 @@ export const getAllAreas = async () => {
         as: 'linkedProperties',
       },
     },
+    { $sort: { area: 1 } },
     {
       $project: {
         _id: 1,
