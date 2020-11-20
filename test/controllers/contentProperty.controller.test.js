@@ -548,4 +548,123 @@ describe('Content Property Controller', () => {
       });
     });
   });
+
+  describe('Get Search content properties calculation', () => {
+    const houseType = 'Terrace duplex';
+    const randomProperties = ContentPropertyFactory.buildList(5, { areaId, price: 5000000 });
+    const duplexProperty1 = ContentPropertyFactory.build({
+      areaId,
+      houseType,
+      price: 1000000,
+    });
+    const duplexProperty2 = ContentPropertyFactory.build({
+      areaId,
+      houseType,
+      price: 2000000,
+    });
+    const duplexProperty3 = ContentPropertyFactory.build({
+      areaId,
+      houseType,
+      price: 3000000,
+    });
+    beforeEach(async () => {
+      await ContentProperty.insertMany(randomProperties);
+      await addContentProperty(duplexProperty1);
+      await addContentProperty(duplexProperty2);
+      await addContentProperty(duplexProperty3);
+    });
+
+    context('when parameters are sent', () => {
+      it('returns evaluation of 3 properties', (done) => {
+        request()
+          .get(`/api/v1/content-property?areaId=${areaId}&houseType=${houseType}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.evaluation.minimumPrice).to.be.eql(1000000);
+            expect(res.body.evaluation.maximumPrice).to.be.eql(3000000);
+            expect(res.body.evaluation.averagePrice).to.be.eql(2000000);
+            expect(res.body.evaluation.type).to.be.eql(houseType);
+            expect(res.body.evaluation.areaName).to.be.eql(area.area);
+            expect(res.body.evaluation.stateName).to.be.eql(area.state);
+            done();
+          });
+      });
+    });
+
+    context('when the areaId parameter is given only', () => {
+      it('returns evaluation of 8 properties', (done) => {
+        request()
+          .get(`/api/v1/content-property?areaId=${areaId}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.evaluation.minimumPrice).to.be.eql(1000000);
+            expect(res.body.evaluation.maximumPrice).to.be.eql(5000000);
+            expect(res.body.evaluation.averagePrice).to.be.eql(3875000);
+            expect(res.body.evaluation).to.not.have.property('type');
+            expect(res.body.evaluation.areaName).to.be.eql(area.area);
+            expect(res.body.evaluation.stateName).to.be.eql(area.state);
+            done();
+          });
+      });
+    });
+
+    context('when the houseType parameter is given only', () => {
+      it('returns not found', (done) => {
+        request()
+          .get(`/api/v1/content-property?houseType=${houseType}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Area not found');
+            done();
+          });
+      });
+    });
+
+    context('without parameters', () => {
+      it('returns not found', (done) => {
+        request()
+          .get('/api/v1/content-property')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Area not found');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/content-property?areaId=${areaId}&houseType=${houseType}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getPropertiesByParameters service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(ContentProperty, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/content-property?areaId=${areaId}&houseType=${houseType}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            ContentProperty.aggregate.restore();
+          });
+      });
+    });
+  });
 });

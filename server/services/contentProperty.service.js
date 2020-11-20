@@ -1,8 +1,11 @@
+import mongoose from 'mongoose';
 import ContentProperty from '../models/contentProperty.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getAreaById } from './area.service';
+
+const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getContentPropertyById = async (id) => ContentProperty.findById(id).select();
 
@@ -73,4 +76,39 @@ export const getHouseTypesByAreaId = async (areaId) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Area not found');
   }
   return ContentProperty.find({ areaId }).distinct('houseType');
+};
+
+export const getPropertiesByParameters = async ({ areaId, houseType }) => {
+  const area = await getAreaById(areaId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!area) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Area not found');
+  }
+
+  const prices = await ContentProperty.aggregate([
+    {
+      $match: {
+        $and: [{ houseType: houseType || /.*/ }, { areaId: ObjectId(areaId) || /.*/ }],
+      },
+    },
+    {
+      $group: {
+        _id: '$category',
+        minimumPrice: { $min: '$price' },
+        maximumPrice: { $max: '$price' },
+        averagePrice: { $avg: '$price' },
+      },
+    },
+  ]);
+
+  return {
+    ...prices[0],
+    type: houseType,
+    areaName: area.area,
+    stateName: area.state,
+    longitude: area.longitude,
+    latitude: area.latitude,
+  };
 };
