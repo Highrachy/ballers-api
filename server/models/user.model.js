@@ -63,6 +63,14 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    vendor: {
+      companyName: {
+        type: String,
+      },
+      companyAddress: {
+        type: String,
+      },
+    },
     email: {
       type: String,
       unique: true,
