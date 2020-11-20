@@ -86,3 +86,29 @@ export const deleteArea = async (id) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting area', error);
   }
 };
+
+export const getAllAreas = async () => {
+  return Area.aggregate([
+    {
+      $lookup: {
+        from: 'contentproperties',
+        localField: '_id',
+        foreignField: 'areaId',
+        as: 'linkedProperties',
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        state: '$state',
+        area: '$area',
+        longitude: '$longitude',
+        latitude: '$latitude',
+        numOfProperties: { $size: '$linkedProperties' },
+        minimumPrice: { $min: '$linkedProperties.price' },
+        maximumPrice: { $max: '$linkedProperties.price' },
+        averagePrice: { $avg: '$linkedProperties.price' },
+      },
+    },
+  ]);
+};
