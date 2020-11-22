@@ -11,31 +11,33 @@ const phone = Joi.string().allow(null, '').optional().default('');
 const requiredString = (label) => Joi.string().label(label).required();
 const optionalString = (label) => Joi.string().label(label).optional();
 
-const directors = [
-  {
-    firstName: optionalString('First Name'),
-    lastName: optionalString('Last Name'),
-  },
-];
+// const directors = [
+//   {
+//     firstName: optionalString('First Name'),
+//     lastName: optionalString('Last Name'),
+//   },
+// ];
 
-const socialMedia = [
-  {
-    name: optionalString('First Name'),
-    url: optionalString('Last Name'),
-  },
-];
+// const socialMedia = [
+//   {
+//     name: optionalString('First Name'),
+//     url: optionalString('Last Name'),
+//   },
+// ];
+
+// const vendor = Joi.object().keys({
+//   companyName: optionalString('Company Name'),
+//   companyAddress: optionalString('Company Address'),
+//   identification: optionalString('Company Identification'),
+//   website: optionalString('Website'),
+//   accountNumber: optionalString('Account Number'),
+//   redanNumber: optionalString('Redan Number'),
+//   directors,
+//   socialMedia,
+// });
 
 const vendor = Joi.object().keys({
   companyName: optionalString('Company Name'),
-  companyAddress: optionalString('Company Address'),
-  identification: optionalString('Company Identification'),
-  phone: optionalString('Company Phone'),
-  email: Joi.string().label('Company Email Address').email().optional(),
-  website: optionalString('Website'),
-  accountNumber: optionalString('Account Number'),
-  redanNumber: optionalString('Redan Number'),
-  directors,
-  socialMedia,
 });
 
 export const registerSchema = Joi.object({

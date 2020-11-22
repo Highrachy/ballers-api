@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { USER_ROLE } from '../helpers/constants';
 
 /**
  * @swagger
@@ -71,12 +72,6 @@ const UserSchema = new mongoose.Schema(
         type: String,
       },
       identification: {
-        type: String,
-      },
-      phone: {
-        type: String,
-      },
-      email: {
         type: String,
       },
       website: {
@@ -181,7 +176,7 @@ const UserSchema = new mongoose.Schema(
     },
     role: {
       type: Number,
-      default: 1,
+      default: USER_ROLE.USER,
     },
     profileImage: {
       id: String,
