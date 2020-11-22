@@ -662,11 +662,12 @@ describe('Area Controller', () => {
     });
   });
 
-  describe('Get all areas and correponding properties', () => {
-    const ajah = AreaFactory.build({ area: 'ajah' });
+  describe('Get all areas and corresponding properties', () => {
+    const ajah = AreaFactory.build({ area: 'Ajah' });
     const lekkiId = mongoose.Types.ObjectId();
-    const lekki = AreaFactory.build({ _id: lekkiId, area: 'lekki' });
-    const lekkiProperties = ContentPropertyFactory.buildList(5, {
+    const lekki = AreaFactory.build({ _id: lekkiId, area: 'Lekki' });
+    const lekkiProperty = ContentPropertyFactory.build({ areaId: lekkiId, price: 500000 });
+    const lekkiProperties = ContentPropertyFactory.buildList(4, {
       areaId: lekkiId,
       price: 100000,
     });
@@ -674,6 +675,7 @@ describe('Area Controller', () => {
     beforeEach(async () => {
       await addArea(lekki);
       await addArea(ajah);
+      await addContentProperty(lekkiProperty);
       await ContentProperty.insertMany(lekkiProperties);
     });
 
@@ -686,17 +688,17 @@ describe('Area Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.areas.length).to.be.eql(2);
-            expect(res.body.areas[0].area).to.be.eql(ajah.area);
+            expect(res.body.areas[0].area).to.be.eql(ajah.area.toLowerCase());
             expect(res.body.areas[0].numOfProperties).to.be.eql(0);
             expect(res.body.areas[0].minimumPrice).to.be.eql(null);
             expect(res.body.areas[0].maximumPrice).to.be.eql(null);
             expect(res.body.areas[0].averagePrice).to.be.eql(null);
             expect(res.body.areas[1]._id).to.be.eql(lekkiId.toString());
-            expect(res.body.areas[1].area).to.be.eql(lekki.area);
+            expect(res.body.areas[1].area).to.be.eql(lekki.area.toLowerCase());
             expect(res.body.areas[1].numOfProperties).to.be.eql(5);
             expect(res.body.areas[1].minimumPrice).to.be.eql(100000);
-            expect(res.body.areas[1].maximumPrice).to.be.eql(100000);
-            expect(res.body.areas[1].averagePrice).to.be.eql(100000);
+            expect(res.body.areas[1].maximumPrice).to.be.eql(500000);
+            expect(res.body.areas[1].averagePrice).to.be.eql(180000);
             done();
           });
       });
@@ -711,17 +713,17 @@ describe('Area Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.areas.length).to.be.eql(2);
-            expect(res.body.areas[0].area).to.be.eql(ajah.area);
+            expect(res.body.areas[0].area).to.be.eql(ajah.area.toLowerCase());
             expect(res.body.areas[0].numOfProperties).to.be.eql(0);
             expect(res.body.areas[0].minimumPrice).to.be.eql(null);
             expect(res.body.areas[0].maximumPrice).to.be.eql(null);
             expect(res.body.areas[0].averagePrice).to.be.eql(null);
-            expect(res.body.areas[1]._id).to.be.eql(lekkiId.toString());
-            expect(res.body.areas[1].area).to.be.eql(lekki.area);
+            expect(res.body.areas[1]._id).to.be.eql(lekkiId.toString().toLowerCase());
+            expect(res.body.areas[1].area).to.be.eql(lekki.area.toLowerCase());
             expect(res.body.areas[1].numOfProperties).to.be.eql(5);
             expect(res.body.areas[1].minimumPrice).to.be.eql(100000);
-            expect(res.body.areas[1].maximumPrice).to.be.eql(100000);
-            expect(res.body.areas[1].averagePrice).to.be.eql(100000);
+            expect(res.body.areas[1].maximumPrice).to.be.eql(500000);
+            expect(res.body.areas[1].averagePrice).to.be.eql(180000);
             done();
           });
       });
