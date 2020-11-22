@@ -1,6 +1,6 @@
 import { expect } from './config';
 
-const expectsPaginationToReturnTheRightValues = (
+export const expectsPaginationToReturnTheRightValues = (
   res,
   { result, currentPage, limit, offset, total, totalPage },
 ) => {
@@ -14,4 +14,11 @@ const expectsPaginationToReturnTheRightValues = (
   expect(res.body.pagination.totalPage).to.be.eql(totalPage);
 };
 
-export default expectsPaginationToReturnTheRightValues;
+export const defaultPaginationResult = {
+  currentPage: 1,
+  limit: 10,
+  offset: 0,
+  result: 10,
+  total: 18,
+  totalPage: 2,
+};

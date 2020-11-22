@@ -17,7 +17,7 @@ import ReferralFactory from '../factories/referral.factory';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
-import expectsPaginationToReturnTheRightValues from '../helpers';
+import { expectsPaginationToReturnTheRightValues, defaultPaginationResult } from '../helpers';
 
 useDatabase();
 
@@ -1271,14 +1271,6 @@ describe('User Controller', () => {
       userToken = await addUser(regularUser);
       await User.insertMany(dummyUsers);
     });
-    const defaultPaginationResult = {
-      currentPage: 1,
-      limit: 10,
-      offset: 0,
-      result: 10,
-      total: 18,
-      totalPage: 2,
-    };
 
     describe('when users exist in db', () => {
       context('when no parameters are passed', () => {

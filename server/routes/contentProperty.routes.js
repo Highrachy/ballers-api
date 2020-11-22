@@ -156,4 +156,32 @@ router.get(
  */
 router.get('/', authenticate, ContentPropertyController.search);
 
+/**
+ * @swagger
+ * /content-property/all:
+ *   get:
+ *     tags:
+ *       - ContentProperty
+ *     description: Get all content properties
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/ContentProperty'
+ *      description:  Get all content properties
+ *     responses:
+ *      '200':
+ *        description: returns all content properties
+ *      '500':
+ *       description: Internal server error
+ */
+router.get(
+  '/all',
+  authenticate,
+  isEditorOrAdmin,
+  ContentPropertyController.getAllContentProperties,
+);
+
 module.exports = router;

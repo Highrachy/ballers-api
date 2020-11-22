@@ -4,6 +4,7 @@ import {
   deleteContentProperty,
   getHouseTypesByAreaId,
   getPropertiesByParameters,
+  getAllContentProperties,
 } from '../services/contentProperty.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -53,6 +54,15 @@ const ContentPropertyController = {
     getPropertiesByParameters({ areaId, houseType })
       .then((evaluation) => {
         res.status(httpStatus.OK).json({ success: true, evaluation });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAllContentProperties(req, res, next) {
+    const { page, limit } = req.query;
+    getAllContentProperties(page, limit)
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },

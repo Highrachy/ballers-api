@@ -4,6 +4,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getAreaById } from './area.service';
+import { generatePagination, generateFacetData } from '../helpers/pagination';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -111,4 +112,30 @@ export const getPropertiesByParameters = async ({ areaId, houseType }) => {
     longitude: area.longitude,
     latitude: area.latitude,
   };
+};
+
+export const getAllContentProperties = async (page = 1, limit = 10) => {
+  const properties = await ContentProperty.aggregate([
+    {
+      $lookup: {
+        from: 'areas',
+        localField: 'areaId',
+        foreignField: '_id',
+        as: 'areaInfo',
+      },
+    },
+    {
+      $unwind: '$areaInfo',
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+  ]);
+
+  const { total } = properties[0].metadata[0];
+  const pagination = generatePagination(page, limit, total);
+  return { pagination, result: properties[0].data };
 };
