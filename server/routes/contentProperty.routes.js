@@ -162,7 +162,7 @@ router.get('/', authenticate, ContentPropertyController.search);
  *   get:
  *     tags:
  *       - ContentProperty
- *     description: Get all content propertties
+ *     description: Get all content properties
  *     produces:
  *       - application/json
  *     requestBody:
@@ -170,7 +170,7 @@ router.get('/', authenticate, ContentPropertyController.search);
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/ContentProperty'
- *      description:  Get all content propertties
+ *      description:  Get all content properties
  *     responses:
  *      '200':
  *        description: returns all content properties

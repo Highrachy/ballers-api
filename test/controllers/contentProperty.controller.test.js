@@ -8,7 +8,7 @@ import { addUser } from '../../server/services/user.service';
 import { addArea } from '../../server/services/area.service';
 import { addContentProperty } from '../../server/services/contentProperty.service';
 import { USER_ROLE } from '../../server/helpers/constants';
-import expectsPaginationToReturnTheRightValues from '../helpers';
+import { expectsPaginationToReturnTheRightValues, defaultPaginationResult } from '../helpers';
 
 useDatabase();
 
@@ -675,14 +675,6 @@ describe('Content Property Controller', () => {
     beforeEach(async () => {
       await ContentProperty.insertMany(dummyProperties);
     });
-    const defaultPaginationResult = {
-      currentPage: 1,
-      limit: 10,
-      offset: 0,
-      result: 10,
-      total: 18,
-      totalPage: 2,
-    };
 
     describe('when properties exist in db', () => {
       context('when no parameters are passed', () => {
