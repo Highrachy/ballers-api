@@ -149,6 +149,29 @@ router.delete(
 
 /**
  * @swagger
+ * /area/all:
+ *   get:
+ *     tags:
+ *       - Area
+ *     description: Get all areas in db with their properties info
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Area'
+ *      description: Get all areas in db with their properties info
+ *     responses:
+ *      '200':
+ *        description: returns areas
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/all', authenticate, isEditorOrAdmin, AreaController.getAllAreas);
+
+/**
+ * @swagger
  * path:
  *  /area/:id:
  *    get:

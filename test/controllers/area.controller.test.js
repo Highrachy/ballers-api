@@ -28,38 +28,23 @@ describe('Area Controller', () => {
   });
 
   describe('Add Area Route', () => {
-    context('when editor token is used', () => {
-      it('returns successful area', (done) => {
-        const area = AreaFactory.build();
-        request()
-          .post('/api/v1/area/add')
-          .set('authorization', editorToken)
-          .send(area)
-          .end((err, res) => {
-            expect(res).to.have.status(201);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Area added successfully');
-            expect(res.body.area).to.include(area);
-            done();
-          });
-      });
-    });
-
-    context('when admin token is used', () => {
-      it('returns successful area', (done) => {
-        const area = AreaFactory.build();
-        request()
-          .post('/api/v1/area/add')
-          .set('authorization', adminToken)
-          .send(area)
-          .end((err, res) => {
-            expect(res).to.have.status(201);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Area added successfully');
-            expect(res.body.area).to.include(area);
-            done();
-          });
-      });
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns successful area', (done) => {
+          const area = AreaFactory.build();
+          request()
+            .post('/api/v1/area/add')
+            .set('authorization', [editorToken, adminToken][index])
+            .send(area)
+            .end((err, res) => {
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Area added successfully');
+              expect(res.body.area).to.include(area);
+              done();
+            });
+        }),
+      );
     });
 
     context('when user token is used', () => {
@@ -177,32 +162,20 @@ describe('Area Controller', () => {
       await Area.insertMany(areasInOyoState);
     });
 
-    context('when editor token is used', () => {
-      it('returns array of two states', (done) => {
-        request()
-          .get('/api/v1/area/states')
-          .set('authorization', editorToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.states.length).to.be.eql(2);
-            done();
-          });
-      });
-    });
-
-    context('when admin token is used', () => {
-      it('returns array of two states', (done) => {
-        request()
-          .get('/api/v1/area/states')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.states.length).to.be.eql(2);
-            done();
-          });
-      });
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns array of two states', (done) => {
+          request()
+            .get('/api/v1/area/states')
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.states.length).to.be.eql(2);
+              done();
+            });
+        }),
+      );
     });
 
     context('when user token is is used', () => {
@@ -254,32 +227,20 @@ describe('Area Controller', () => {
       await Area.insertMany(areas);
     });
 
-    context('when editor token is used', () => {
-      it('returns array of five areas', (done) => {
-        request()
-          .get(`/api/v1/area/state/${state}`)
-          .set('authorization', editorToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.areas.length).to.be.eql(5);
-            done();
-          });
-      });
-    });
-
-    context('when admin token is used', () => {
-      it('returns array of five areas', (done) => {
-        request()
-          .get(`/api/v1/area/state/${state}`)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.areas.length).to.be.eql(5);
-            done();
-          });
-      });
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns array of five areas', (done) => {
+          request()
+            .get(`/api/v1/area/state/${state}`)
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.areas.length).to.be.eql(5);
+              done();
+            });
+        }),
+      );
     });
 
     context('when user token is is used', () => {
@@ -345,42 +306,25 @@ describe('Area Controller', () => {
       await addArea(area);
     });
 
-    context('when editor token is used', () => {
-      it('returns updated area', (done) => {
-        request()
-          .put('/api/v1/area/update')
-          .set('authorization', editorToken)
-          .send(updatedArea)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.area._id).to.be.eql(areaId.toString());
-            expect(res.body.area.area).to.be.eql(updatedArea.area.toLowerCase());
-            expect(res.body.area.state).to.be.eql(updatedArea.state.toLowerCase());
-            expect(res.body.area.longitude).to.be.eql(updatedArea.longitude);
-            expect(res.body.area.latitude).to.be.eql(updatedArea.latitude);
-            done();
-          });
-      });
-    });
-
-    context('when admin token is used', () => {
-      it('returns updated area', (done) => {
-        request()
-          .put('/api/v1/area/update')
-          .set('authorization', adminToken)
-          .send(updatedArea)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.area._id).to.be.eql(areaId.toString());
-            expect(res.body.area.area).to.be.eql(updatedArea.area.toLowerCase());
-            expect(res.body.area.state).to.be.eql(updatedArea.state.toLowerCase());
-            expect(res.body.area.longitude).to.be.eql(updatedArea.longitude);
-            expect(res.body.area.latitude).to.be.eql(updatedArea.latitude);
-            done();
-          });
-      });
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns updated area', (done) => {
+          request()
+            .put('/api/v1/area/update')
+            .set('authorization', [editorToken, adminToken][index])
+            .send(updatedArea)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.area._id).to.be.eql(areaId.toString());
+              expect(res.body.area.area).to.be.eql(updatedArea.area.toLowerCase());
+              expect(res.body.area.state).to.be.eql(updatedArea.state.toLowerCase());
+              expect(res.body.area.longitude).to.be.eql(updatedArea.longitude);
+              expect(res.body.area.latitude).to.be.eql(updatedArea.latitude);
+              done();
+            });
+        }),
+      );
     });
 
     context('when user token is used', () => {
@@ -535,32 +479,20 @@ describe('Area Controller', () => {
       await addArea(area);
     });
 
-    context('when editor token is used', () => {
-      it('deletes area', (done) => {
-        request()
-          .delete(`/api/v1/area/delete/${areaId}`)
-          .set('authorization', editorToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Area deleted');
-            done();
-          });
-      });
-    });
-
-    context('when admin token is used', () => {
-      it('deletes area', (done) => {
-        request()
-          .delete(`/api/v1/area/delete/${areaId}`)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Area deleted');
-            done();
-          });
-      });
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('deletes area', (done) => {
+          request()
+            .delete(`/api/v1/area/delete/${areaId}`)
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Area deleted');
+              done();
+            });
+        }),
+      );
     });
 
     context('when user token is used', () => {
@@ -658,6 +590,92 @@ describe('Area Controller', () => {
               done();
             });
         });
+      });
+    });
+  });
+
+  describe('Get all areas and corresponding properties', () => {
+    const ajah = AreaFactory.build({ area: 'Ajah' });
+    const lekkiId = mongoose.Types.ObjectId();
+    const lekki = AreaFactory.build({ _id: lekkiId, area: 'Lekki' });
+    const lekkiProperty = ContentPropertyFactory.build({ areaId: lekkiId, price: 500000 });
+    const lekkiProperties = ContentPropertyFactory.buildList(4, {
+      areaId: lekkiId,
+      price: 100000,
+    });
+
+    beforeEach(async () => {
+      await addArea(lekki);
+      await addArea(ajah);
+      await addContentProperty(lekkiProperty);
+      await ContentProperty.insertMany(lekkiProperties);
+    });
+
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns all areas and properties', (done) => {
+          request()
+            .get('/api/v1/area/all')
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.areas.length).to.be.eql(2);
+              expect(res.body.areas[0].area).to.be.eql(ajah.area.toLowerCase());
+              expect(res.body.areas[0].numOfProperties).to.be.eql(0);
+              expect(res.body.areas[0].minimumPrice).to.be.eql(null);
+              expect(res.body.areas[0].maximumPrice).to.be.eql(null);
+              expect(res.body.areas[0].averagePrice).to.be.eql(null);
+              expect(res.body.areas[1]._id).to.be.eql(lekkiId.toString());
+              expect(res.body.areas[1].area).to.be.eql(lekki.area.toLowerCase());
+              expect(res.body.areas[1].numOfProperties).to.be.eql(5);
+              expect(res.body.areas[1].minimumPrice).to.be.eql(100000);
+              expect(res.body.areas[1].maximumPrice).to.be.eql(500000);
+              expect(res.body.areas[1].averagePrice).to.be.eql(180000);
+              done();
+            });
+        }),
+      );
+    });
+
+    context('when user token is is used', () => {
+      it('returns forbidden', (done) => {
+        request()
+          .get('/api/v1/area/all')
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get('/api/v1/area/all')
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getAllAreas service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Area, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get('/api/v1/area/all')
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Area.aggregate.restore();
+          });
       });
     });
   });

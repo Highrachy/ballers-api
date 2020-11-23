@@ -5,6 +5,7 @@ import {
   updateArea,
   deleteArea,
   getAreaById,
+  getAllAreas,
 } from '../services/area.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -51,6 +52,14 @@ const AreaController = {
     deleteArea(id)
       .then(() => {
         res.status(httpStatus.OK).json({ success: true, message: 'Area deleted' });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAllAreas(req, res, next) {
+    getAllAreas()
+      .then((areas) => {
+        res.status(httpStatus.OK).json({ success: true, areas });
       })
       .catch((error) => next(error));
   },
