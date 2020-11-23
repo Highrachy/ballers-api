@@ -71,6 +71,9 @@ const UserSchema = new mongoose.Schema(
       companyAddress: {
         type: String,
       },
+      companyLogo: {
+        type: String,
+      },
       identification: {
         type: String,
       },
@@ -85,10 +88,16 @@ const UserSchema = new mongoose.Schema(
       },
       directors: [
         {
-          firstName: {
+          name: {
             type: String,
           },
-          lastName: {
+          isSignatory: {
+            type: Boolean,
+          },
+          signature: {
+            type: String,
+          },
+          phone: {
             type: String,
           },
         },

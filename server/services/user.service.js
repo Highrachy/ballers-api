@@ -71,9 +71,10 @@ export const generateReferralCode = async (firstName) => {
   return referralCode;
 };
 
-export const addUser = async (newUser) => {
-  let user = newUser;
+export const addUser = async (user) => {
   let referrer;
+  const role = user.vendor && user.vendor.companyName ? USER_ROLE.VENDOR : USER_ROLE.USER;
+
   const referralCode = await generateReferralCode(user.firstName).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -95,13 +96,9 @@ export const addUser = async (newUser) => {
     }
   }
 
-  if (user.vendor && user.vendor.companyName) {
-    user = { ...user, role: USER_ROLE.VENDOR };
-  }
-
   try {
     const password = await hashPassword(user.password);
-    const savedUser = await new User({ ...user, password, referralCode }).save();
+    const savedUser = await new User({ ...user, password, referralCode, role }).save();
 
     if (referrer) {
       await addReferral({
