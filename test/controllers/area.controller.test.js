@@ -679,4 +679,71 @@ describe('Area Controller', () => {
       });
     });
   });
+
+  describe('Get area by id', () => {
+    const areaId = mongoose.Types.ObjectId();
+    const area = AreaFactory.build({ _id: areaId });
+
+    beforeEach(async () => {
+      await addArea(area);
+    });
+
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns array of five areas', (done) => {
+          request()
+            .get(`/api/v1/area/${areaId}`)
+            .set('authorization', [editorToken, adminToken, userToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.area._id).to.be.eql(areaId.toString());
+              done();
+            });
+        }),
+      );
+    });
+
+    context('when area id is invalid', () => {
+      const invalidAreaId = mongoose.Types.ObjectId();
+      it('returns not found', (done) => {
+        request()
+          .get(`/api/v1/area/${invalidAreaId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Area not found');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/area/${areaId}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getAreaById service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Area, 'findById').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/area/${areaId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Area.findById.restore();
+          });
+      });
+    });
+  });
 });

@@ -436,20 +436,6 @@ describe('Content Property Controller', () => {
       await ContentProperty.insertMany(duplexProperties);
     });
 
-    context('when editor token is used', () => {
-      it('returns array of house types', (done) => {
-        request()
-          .get(`/api/v1/content-property/area/${areaId}`)
-          .set('authorization', editorToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.houseTypes.length).to.be.eql(6);
-            done();
-          });
-      });
-    });
-
     context('when a valid token is used', () => {
       [...new Array(2)].map((_, index) =>
         it('returns array of house types', (done) => {
@@ -751,6 +737,74 @@ describe('Content Property Controller', () => {
               ContentProperty.aggregate.restore();
             });
         });
+      });
+    });
+  });
+
+  describe('Get property by property id', () => {
+    const contentPropertyId = mongoose.Types.ObjectId();
+    const contentProperty = ContentPropertyFactory.build({ _id: contentPropertyId, areaId });
+
+    beforeEach(async () => {
+      await addContentProperty(contentProperty);
+    });
+
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns array of house types', (done) => {
+          request()
+            .get(`/api/v1/content-property/${contentPropertyId}`)
+            .set('authorization', [editorToken, adminToken, userToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.property._id).to.be.eql(contentPropertyId.toString());
+              expect(res.body.property.area._id).to.be.eql(areaId.toString());
+              done();
+            });
+        }),
+      );
+    });
+
+    context('when property id is invalid', () => {
+      const invalidContentPropertyId = mongoose.Types.ObjectId();
+      it('returns forbidden', (done) => {
+        request()
+          .get(`/api/v1/content-property/${invalidContentPropertyId}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Property not found');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/content-property/${contentPropertyId}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getOneContentProperty service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(ContentProperty, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/content-property/${contentPropertyId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            ContentProperty.aggregate.restore();
+          });
       });
     });
   });

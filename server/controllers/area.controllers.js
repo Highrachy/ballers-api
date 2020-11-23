@@ -68,7 +68,7 @@ const AreaController = {
     const { id } = req.params;
     getAreaById(id)
       .then((area) => {
-        if (area === null) {
+        if (!area) {
           res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Area not found' });
         } else {
           res.status(httpStatus.OK).json({ success: true, area });
