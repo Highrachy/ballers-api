@@ -257,7 +257,7 @@ describe('Area Controller', () => {
     context('when editor token is used', () => {
       it('returns array of five areas', (done) => {
         request()
-          .get(`/api/v1/area/${state}`)
+          .get(`/api/v1/area/state/${state}`)
           .set('authorization', editorToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -271,7 +271,7 @@ describe('Area Controller', () => {
     context('when admin token is used', () => {
       it('returns array of five areas', (done) => {
         request()
-          .get(`/api/v1/area/${state}`)
+          .get(`/api/v1/area/state/${state}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -285,7 +285,7 @@ describe('Area Controller', () => {
     context('when user token is is used', () => {
       it('returns forbidden', (done) => {
         request()
-          .get(`/api/v1/area/${state}`)
+          .get(`/api/v1/area/state/${state}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(403);
@@ -299,7 +299,7 @@ describe('Area Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(`/api/v1/area/${state}`)
+          .get(`/api/v1/area/state/${state}`)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -313,7 +313,7 @@ describe('Area Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Area, 'find').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/area/${state}`)
+          .get(`/api/v1/area/state/${state}`)
           .set('authorization', editorToken)
           .end((err, res) => {
             expect(res).to.have.status(500);

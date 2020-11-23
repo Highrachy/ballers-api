@@ -1,4 +1,11 @@
-import { addArea, getStates, getAreas, updateArea, deleteArea } from '../services/area.service';
+import {
+  addArea,
+  getStates,
+  getAreas,
+  updateArea,
+  deleteArea,
+  getAreaById,
+} from '../services/area.service';
 import httpStatus from '../helpers/httpStatus';
 
 const AreaController = {
@@ -44,6 +51,19 @@ const AreaController = {
     deleteArea(id)
       .then(() => {
         res.status(httpStatus.OK).json({ success: true, message: 'Area deleted' });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAreaById(req, res, next) {
+    const { id } = req.params;
+    getAreaById(id)
+      .then((area) => {
+        if (area === null) {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Area not found' });
+        } else {
+          res.status(httpStatus.OK).json({ success: true, area });
+        }
       })
       .catch((error) => next(error));
   },

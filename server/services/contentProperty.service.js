@@ -139,3 +139,19 @@ export const getAllContentProperties = async (page = 1, limit = 10) => {
   const pagination = generatePagination(page, limit, total);
   return { pagination, result: properties[0].data };
 };
+
+export const getOneContentProperty = async (propertyId) =>
+  ContentProperty.aggregate([
+    { $match: { _id: ObjectId(propertyId) } },
+    {
+      $lookup: {
+        from: 'areas',
+        localField: 'areaId',
+        foreignField: '_id',
+        as: 'area',
+      },
+    },
+    {
+      $unwind: '$area',
+    },
+  ]);

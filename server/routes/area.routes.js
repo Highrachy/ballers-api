@@ -66,7 +66,7 @@ router.get('/states', authenticate, isEditorOrAdmin, AreaController.getStates);
 
 /**
  * @swagger
- * /area/:state:
+ * /area/state/:state:
  *   get:
  *     tags:
  *       - Area
@@ -85,7 +85,7 @@ router.get('/states', authenticate, isEditorOrAdmin, AreaController.getStates);
  *      '500':
  *       description: Internal server error
  */
-router.get('/:state', authenticate, isEditorOrAdmin, AreaController.getAreas);
+router.get('/state/:state', authenticate, isEditorOrAdmin, AreaController.getAreas);
 
 /**
  * @swagger
@@ -146,5 +146,27 @@ router.delete(
   isEditorOrAdmin,
   AreaController.delete,
 );
+
+/**
+ * @swagger
+ * path:
+ *  /area/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *      summary: Get an area by the area ID
+ *      tags: [Area]
+ *      responses:
+ *        '200':
+ *          description: Area found
+ *        '404':
+ *          description: Area not found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/:id', authenticate, hasValidObjectId, AreaController.getAreaById);
 
 module.exports = router;
