@@ -162,44 +162,14 @@ describe('Area Controller', () => {
       await Area.insertMany(areasInOyoState);
     });
 
-    context('when a valid token is used', () => {
-      [...new Array(2)].map((_, index) =>
-        it('returns array of two states', (done) => {
-          request()
-            .get('/api/v1/area/states')
-            .set('authorization', [editorToken, adminToken][index])
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.states.length).to.be.eql(2);
-              done();
-            });
-        }),
-      );
-    });
-
-    context('when user token is is used', () => {
-      it('returns forbidden', (done) => {
-        request()
-          .get('/api/v1/area/states')
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-            done();
-          });
-      });
-    });
-
     context('without token', () => {
-      it('returns error', (done) => {
+      it('returns array of two states', (done) => {
         request()
           .get('/api/v1/area/states')
           .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.states.length).to.be.eql(2);
             done();
           });
       });
@@ -210,7 +180,6 @@ describe('Area Controller', () => {
         sinon.stub(Area, 'distinct').throws(new Error('Type Error'));
         request()
           .get('/api/v1/area/states')
-          .set('authorization', editorToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
@@ -227,44 +196,14 @@ describe('Area Controller', () => {
       await Area.insertMany(areas);
     });
 
-    context('when a valid token is used', () => {
-      [...new Array(2)].map((_, index) =>
-        it('returns array of five areas', (done) => {
-          request()
-            .get(`/api/v1/area/${state}`)
-            .set('authorization', [editorToken, adminToken][index])
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.areas.length).to.be.eql(5);
-              done();
-            });
-        }),
-      );
-    });
-
-    context('when user token is is used', () => {
-      it('returns forbidden', (done) => {
-        request()
-          .get(`/api/v1/area/${state}`)
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-            done();
-          });
-      });
-    });
-
     context('without token', () => {
-      it('returns error', (done) => {
+      it('returns array of five areas', (done) => {
         request()
           .get(`/api/v1/area/${state}`)
           .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.areas.length).to.be.eql(5);
             done();
           });
       });
@@ -275,7 +214,6 @@ describe('Area Controller', () => {
         sinon.stub(Area, 'find').throws(new Error('Type Error'));
         request()
           .get(`/api/v1/area/${state}`)
-          .set('authorization', editorToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
