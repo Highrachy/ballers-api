@@ -30,40 +30,24 @@ describe('Content Property Controller', () => {
   });
 
   describe('Add Content Property Route', () => {
-    context('when editor token is used', () => {
-      it('returns successful property', (done) => {
-        const property = ContentPropertyFactory.build({ areaId });
-        request()
-          .post('/api/v1/content-property/add')
-          .set('authorization', editorToken)
-          .send(property)
-          .end((err, res) => {
-            expect(res).to.have.status(201);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Content property added successfully');
-            expect(res.body.property).to.include({ ...property, areaId: areaId.toString() });
-            expect(res.body.property.areaId).to.be.eql(areaId.toString());
-            done();
-          });
-      });
-    });
-
-    context('when admin token is used', () => {
-      it('returns successful property', (done) => {
-        const property = ContentPropertyFactory.build({ areaId });
-        request()
-          .post('/api/v1/content-property/add')
-          .set('authorization', adminToken)
-          .send(property)
-          .end((err, res) => {
-            expect(res).to.have.status(201);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Content property added successfully');
-            expect(res.body.property).to.include({ ...property, areaId: areaId.toString() });
-            expect(res.body.property.areaId).to.be.eql(areaId.toString());
-            done();
-          });
-      });
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns successful property', (done) => {
+          const property = ContentPropertyFactory.build({ areaId });
+          request()
+            .post('/api/v1/content-property/add')
+            .set('authorization', [editorToken, adminToken][index])
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Content property added successfully');
+              expect(res.body.property).to.include({ ...property, areaId: areaId.toString() });
+              expect(res.body.property.areaId).to.be.eql(areaId.toString());
+              done();
+            });
+        }),
+      );
     });
 
     context('when user token is used', () => {
@@ -191,40 +175,24 @@ describe('Content Property Controller', () => {
       await addContentProperty(contentProperty);
     });
 
-    context('when editor token is used', () => {
-      it('returns updated content property', (done) => {
-        request()
-          .put('/api/v1/content-property/update')
-          .set('authorization', editorToken)
-          .send(newContentProperty)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.property.category).to.be.eql(newContentProperty.category);
-            expect(res.body.property.areaId).to.be.eql(areaId.toString());
-            expect(res.body.property.houseType).to.be.eql(newContentProperty.houseType);
-            expect(res.body.property.price).to.be.eql(newContentProperty.price);
-            done();
-          });
-      });
-    });
-
-    context('when admin token is used', () => {
-      it('returns updated content property', (done) => {
-        request()
-          .put('/api/v1/content-property/update')
-          .set('authorization', adminToken)
-          .send(newContentProperty)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.property.category).to.be.eql(newContentProperty.category);
-            expect(res.body.property.areaId).to.be.eql(areaId.toString());
-            expect(res.body.property.houseType).to.be.eql(newContentProperty.houseType);
-            expect(res.body.property.price).to.be.eql(newContentProperty.price);
-            done();
-          });
-      });
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns updated content property', (done) => {
+          request()
+            .put('/api/v1/content-property/update')
+            .set('authorization', [editorToken, adminToken][index])
+            .send(newContentProperty)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.property.category).to.be.eql(newContentProperty.category);
+              expect(res.body.property.areaId).to.be.eql(areaId.toString());
+              expect(res.body.property.houseType).to.be.eql(newContentProperty.houseType);
+              expect(res.body.property.price).to.be.eql(newContentProperty.price);
+              done();
+            });
+        }),
+      );
     });
 
     context('when user token is used', () => {
@@ -380,32 +348,20 @@ describe('Content Property Controller', () => {
       await addContentProperty(contentProperty);
     });
 
-    context('when editor token is used', () => {
-      it('deletes content property', (done) => {
-        request()
-          .delete(`/api/v1/content-property/delete/${contentPropertyId}`)
-          .set('authorization', editorToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Content property deleted');
-            done();
-          });
-      });
-    });
-
-    context('when admin token is used', () => {
-      it('deletes content property', (done) => {
-        request()
-          .delete(`/api/v1/content-property/delete/${contentPropertyId}`)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Content property deleted');
-            done();
-          });
-      });
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('deletes content property', (done) => {
+          request()
+            .delete(`/api/v1/content-property/delete/${contentPropertyId}`)
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Content property deleted');
+              done();
+            });
+        }),
+      );
     });
 
     context('when user token is used', () => {
@@ -493,18 +449,20 @@ describe('Content Property Controller', () => {
       });
     });
 
-    context('when admin token is used', () => {
-      it('returns array of house types', (done) => {
-        request()
-          .get(`/api/v1/content-property/area/${areaId}`)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.houseTypes.length).to.be.eql(6);
-            done();
-          });
-      });
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns array of house types', (done) => {
+          request()
+            .get(`/api/v1/content-property/area/${areaId}`)
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.houseTypes.length).to.be.eql(6);
+              done();
+            });
+        }),
+      );
     });
 
     context('when user token is is used', () => {
