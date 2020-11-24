@@ -716,6 +716,33 @@ describe('Area Controller', () => {
       );
     });
 
+    context('when area has no content property', () => {
+      const demoAreaId = mongoose.Types.ObjectId();
+      const demoArea = AreaFactory.build({ _id: demoAreaId });
+      beforeEach(async () => {
+        await addArea(demoArea);
+      });
+      it('returns not found', (done) => {
+        request()
+          .get(`/api/v1/area/${demoAreaId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.area._id).to.be.eql(demoAreaId.toString());
+            expect(res.body.area.state).to.be.eql(demoArea.state);
+            expect(res.body.area.area).to.be.eql(demoArea.area);
+            expect(res.body.area.longitude).to.be.eql(demoArea.longitude);
+            expect(res.body.area.latitude).to.be.eql(demoArea.latitude);
+            expect(res.body.area.minimumPrice).to.be.eql(null);
+            expect(res.body.area.maximumPrice).to.be.eql(null);
+            expect(res.body.area.averagePrice).to.be.eql(null);
+            expect(res.body.area.numOfProperties).to.be.eql(0);
+            done();
+          });
+      });
+    });
+
     context('when area id is invalid', () => {
       const invalidAreaId = mongoose.Types.ObjectId();
       it('returns not found', (done) => {
