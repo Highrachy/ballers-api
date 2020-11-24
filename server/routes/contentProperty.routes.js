@@ -125,13 +125,7 @@ router.delete(
  *      '500':
  *       description: Internal server error
  */
-router.get(
-  '/area/:id',
-  authenticate,
-  hasValidObjectId,
-  isEditorOrAdmin,
-  ContentPropertyController.getHouseTypesByAreaId,
-);
+router.get('/area/:id', hasValidObjectId, ContentPropertyController.getHouseTypesByAreaId);
 
 /**
  * @swagger
@@ -154,7 +148,7 @@ router.get(
  *      '500':
  *       description: Internal server error
  */
-router.get('/', authenticate, ContentPropertyController.search);
+router.get('/', ContentPropertyController.search);
 
 /**
  * @swagger
