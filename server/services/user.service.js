@@ -73,7 +73,6 @@ export const generateReferralCode = async (firstName) => {
 
 export const addUser = async (user) => {
   let referrer;
-  const role = user.vendor && user.vendor.companyName ? USER_ROLE.VENDOR : USER_ROLE.USER;
 
   const referralCode = await generateReferralCode(user.firstName).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -95,6 +94,8 @@ export const addUser = async (user) => {
       throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid referral code');
     }
   }
+
+  const role = user.vendor && user.vendor.companyName ? USER_ROLE.VENDOR : USER_ROLE.USER;
 
   try {
     const password = await hashPassword(user.password);
