@@ -62,7 +62,7 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.get('/states', authenticate, isEditorOrAdmin, AreaController.getStates);
+router.get('/states', AreaController.getStates);
 
 /**
  * @swagger
@@ -168,6 +168,6 @@ router.get('/all', authenticate, isEditorOrAdmin, AreaController.getAllAreas);
  *      '500':
  *       description: Internal server error
  */
-router.get('/:state', authenticate, isEditorOrAdmin, AreaController.getAreas);
+router.get('/:state', AreaController.getAreas);
 
 module.exports = router;
