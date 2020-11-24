@@ -162,6 +162,22 @@ describe('Area Controller', () => {
       await Area.insertMany(areasInOyoState);
     });
 
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns array of two states', (done) => {
+          request()
+            .get('/api/v1/area/states')
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.states.length).to.be.eql(2);
+              done();
+            });
+        }),
+      );
+    });
+
     context('without token', () => {
       it('returns array of two states', (done) => {
         request()
@@ -194,6 +210,22 @@ describe('Area Controller', () => {
     const areas = AreaFactory.buildList(5, { state });
     beforeEach(async () => {
       await Area.insertMany(areas);
+    });
+
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns array of five areas', (done) => {
+          request()
+            .get(`/api/v1/area/${state}`)
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.areas.length).to.be.eql(5);
+              done();
+            });
+        }),
+      );
     });
 
     context('without token', () => {
