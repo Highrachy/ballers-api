@@ -754,12 +754,18 @@ describe('Content Property Controller', () => {
         it('returns array of house types', (done) => {
           request()
             .get(`/api/v1/content-property/${contentPropertyId}`)
-            .set('authorization', [editorToken, adminToken, userToken][index])
+            .set('authorization', [editorToken, adminToken][index])
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.property._id).to.be.eql(contentPropertyId.toString());
+              expect(res.body.property.category).to.be.eql(contentProperty.category);
+              expect(res.body.property.houseType).to.be.eql(contentProperty.houseType);
+              expect(res.body.property.price).to.be.eql(contentProperty.price);
               expect(res.body.property.area._id).to.be.eql(areaId.toString());
+              expect(res.body.property.area.state).to.be.eql(area.state);
+              expect(res.body.property.area.longitude).to.be.eql(area.longitude);
+              expect(res.body.property.area.latitude).to.be.eql(area.latitude);
               done();
             });
         }),

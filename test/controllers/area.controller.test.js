@@ -683,21 +683,33 @@ describe('Area Controller', () => {
   describe('Get area by id', () => {
     const areaId = mongoose.Types.ObjectId();
     const area = AreaFactory.build({ _id: areaId });
+    const demoAssignedProperty1 = ContentPropertyFactory.build({ areaId, price: 100000 });
+    const demoAssignedProperty2 = ContentPropertyFactory.build({ areaId, price: 500000 });
 
     beforeEach(async () => {
       await addArea(area);
+      await addContentProperty(demoAssignedProperty1);
+      await addContentProperty(demoAssignedProperty2);
     });
 
     context('when a valid token is used', () => {
       [...new Array(2)].map((_, index) =>
-        it('returns array of five areas', (done) => {
+        it('returns the specified area', (done) => {
           request()
             .get(`/api/v1/area/${areaId}`)
-            .set('authorization', [editorToken, adminToken, userToken][index])
+            .set('authorization', [editorToken, adminToken][index])
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.area._id).to.be.eql(areaId.toString());
+              expect(res.body.area.state).to.be.eql(area.state);
+              expect(res.body.area.area).to.be.eql(area.area);
+              expect(res.body.area.longitude).to.be.eql(area.longitude);
+              expect(res.body.area.latitude).to.be.eql(area.latitude);
+              expect(res.body.area.minimumPrice).to.be.eql(100000);
+              expect(res.body.area.maximumPrice).to.be.eql(500000);
+              expect(res.body.area.averagePrice).to.be.eql(300000);
+              expect(res.body.area.numOfProperties).to.be.eql(2);
               done();
             });
         }),
@@ -734,14 +746,14 @@ describe('Area Controller', () => {
 
     context('when getAreaById service fails', () => {
       it('returns the error', (done) => {
-        sinon.stub(Area, 'findById').throws(new Error('Type Error'));
+        sinon.stub(Area, 'aggregate').throws(new Error('Type Error'));
         request()
           .get(`/api/v1/area/${areaId}`)
           .set('authorization', editorToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
-            Area.findById.restore();
+            Area.aggregate.restore();
           });
       });
     });
