@@ -85,7 +85,7 @@ router.get('/states', AreaController.getStates);
  *      '500':
  *       description: Internal server error
  */
-router.get('/state/:state', authenticate, isEditorOrAdmin, AreaController.getAreas);
+router.get('/state/:state', AreaController.getAreas);
 
 /**
  * @swagger
@@ -169,29 +169,6 @@ router.delete(
  *       description: Internal server error
  */
 router.get('/all', authenticate, isEditorOrAdmin, AreaController.getAllAreas);
-
-/**
- * @swagger
- * /area/:state:
- *   get:
- *     tags:
- *       - Area
- *     description: Get all areas based on query parameters
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/Area'
- *      description: Get all areas based on query parameters
- *     responses:
- *      '200':
- *        description: returns areas
- *      '500':
- *       description: Internal server error
- */
-router.get('/:state', AreaController.getAreas);
 
 /**
  * @swagger

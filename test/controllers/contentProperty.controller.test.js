@@ -436,44 +436,14 @@ describe('Content Property Controller', () => {
       await ContentProperty.insertMany(duplexProperties);
     });
 
-    context('when a valid token is used', () => {
-      [...new Array(2)].map((_, index) =>
-        it('returns array of house types', (done) => {
-          request()
-            .get(`/api/v1/content-property/area/${areaId}`)
-            .set('authorization', [editorToken, adminToken][index])
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.houseTypes.length).to.be.eql(6);
-              done();
-            });
-        }),
-      );
-    });
-
-    context('when user token is is used', () => {
-      it('returns forbidden', (done) => {
-        request()
-          .get(`/api/v1/content-property/area/${areaId}`)
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-            done();
-          });
-      });
-    });
-
     context('without token', () => {
-      it('returns error', (done) => {
+      it('returns array of house types', (done) => {
         request()
           .get(`/api/v1/content-property/area/${areaId}`)
           .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.houseTypes.length).to.be.eql(6);
             done();
           });
       });

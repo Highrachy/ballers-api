@@ -228,20 +228,6 @@ describe('Area Controller', () => {
       );
     });
 
-    context('when user token is is used', () => {
-      it('returns forbidden', (done) => {
-        request()
-          .get(`/api/v1/area/state/${state}`)
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-            done();
-          });
-      });
-    });
-
     context('without token', () => {
       it('returns array of five areas', (done) => {
         request()
@@ -260,7 +246,6 @@ describe('Area Controller', () => {
         sinon.stub(Area, 'find').throws(new Error('Type Error'));
         request()
           .get(`/api/v1/area/state/${state}`)
-          .set('authorization', editorToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
@@ -756,7 +741,7 @@ describe('Area Controller', () => {
       });
     });
 
-    context('when getAreaById service fails', () => {
+    context('when getAreaAndContentPropertiesByAreaId service fails', () => {
       it('returns the error', (done) => {
         sinon.stub(Area, 'aggregate').throws(new Error('Type Error'));
         request()
