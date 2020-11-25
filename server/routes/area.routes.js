@@ -66,6 +66,29 @@ router.get('/states', AreaController.getStates);
 
 /**
  * @swagger
+ * /area/state/:state:
+ *   get:
+ *     tags:
+ *       - Area
+ *     description: Get all areas based on query parameters
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Area'
+ *      description: Get all areas based on query parameters
+ *     responses:
+ *      '200':
+ *        description: returns areas
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/state/:state', AreaController.getAreas);
+
+/**
+ * @swagger
  * /area/update:
  *   put:
  *     tags:
@@ -149,25 +172,24 @@ router.get('/all', authenticate, isEditorOrAdmin, AreaController.getAllAreas);
 
 /**
  * @swagger
- * /area/:state:
- *   get:
- *     tags:
- *       - Area
- *     description: Get all areas based on query parameters
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
+ * path:
+ *  /area/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
  *          schema:
- *            $ref: '#/components/schemas/Area'
- *      description: Get all areas based on query parameters
- *     responses:
- *      '200':
- *        description: returns areas
- *      '500':
- *       description: Internal server error
+ *            type: string
+ *      summary: Get an area by the area ID
+ *      tags: [Area]
+ *      responses:
+ *        '200':
+ *          description: Area found
+ *        '404':
+ *          description: Area not found
+ *        '500':
+ *          description: Internal server error
  */
-router.get('/:state', AreaController.getAreas);
+router.get('/:id', authenticate, hasValidObjectId, AreaController.getAreaById);
 
 module.exports = router;

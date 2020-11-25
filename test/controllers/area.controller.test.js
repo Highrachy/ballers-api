@@ -216,7 +216,7 @@ describe('Area Controller', () => {
       [...new Array(2)].map((_, index) =>
         it('returns array of five areas', (done) => {
           request()
-            .get(`/api/v1/area/${state}`)
+            .get(`/api/v1/area/state/${state}`)
             .set('authorization', [editorToken, adminToken][index])
             .end((err, res) => {
               expect(res).to.have.status(200);
@@ -231,7 +231,7 @@ describe('Area Controller', () => {
     context('without token', () => {
       it('returns array of five areas', (done) => {
         request()
-          .get(`/api/v1/area/${state}`)
+          .get(`/api/v1/area/state/${state}`)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
@@ -245,7 +245,7 @@ describe('Area Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Area, 'find').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/area/${state}`)
+          .get(`/api/v1/area/state/${state}`)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
@@ -640,6 +640,112 @@ describe('Area Controller', () => {
         sinon.stub(Area, 'aggregate').throws(new Error('Type Error'));
         request()
           .get('/api/v1/area/all')
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            Area.aggregate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Get area by id', () => {
+    const areaId = mongoose.Types.ObjectId();
+    const area = AreaFactory.build({ _id: areaId });
+    const demoAssignedProperty1 = ContentPropertyFactory.build({ areaId, price: 100000 });
+    const demoAssignedProperty2 = ContentPropertyFactory.build({ areaId, price: 500000 });
+
+    beforeEach(async () => {
+      await addArea(area);
+      await addContentProperty(demoAssignedProperty1);
+      await addContentProperty(demoAssignedProperty2);
+    });
+
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns the specified area', (done) => {
+          request()
+            .get(`/api/v1/area/${areaId}`)
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.area._id).to.be.eql(areaId.toString());
+              expect(res.body.area.state).to.be.eql(area.state);
+              expect(res.body.area.area).to.be.eql(area.area);
+              expect(res.body.area.longitude).to.be.eql(area.longitude);
+              expect(res.body.area.latitude).to.be.eql(area.latitude);
+              expect(res.body.area.minimumPrice).to.be.eql(100000);
+              expect(res.body.area.maximumPrice).to.be.eql(500000);
+              expect(res.body.area.averagePrice).to.be.eql(300000);
+              expect(res.body.area.numOfProperties).to.be.eql(2);
+              done();
+            });
+        }),
+      );
+    });
+
+    context('when area has no content property', () => {
+      const demoAreaId = mongoose.Types.ObjectId();
+      const demoArea = AreaFactory.build({ _id: demoAreaId });
+      beforeEach(async () => {
+        await addArea(demoArea);
+      });
+      it('returns not found', (done) => {
+        request()
+          .get(`/api/v1/area/${demoAreaId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.area._id).to.be.eql(demoAreaId.toString());
+            expect(res.body.area.state).to.be.eql(demoArea.state);
+            expect(res.body.area.area).to.be.eql(demoArea.area);
+            expect(res.body.area.longitude).to.be.eql(demoArea.longitude);
+            expect(res.body.area.latitude).to.be.eql(demoArea.latitude);
+            expect(res.body.area.minimumPrice).to.be.eql(null);
+            expect(res.body.area.maximumPrice).to.be.eql(null);
+            expect(res.body.area.averagePrice).to.be.eql(null);
+            expect(res.body.area.numOfProperties).to.be.eql(0);
+            done();
+          });
+      });
+    });
+
+    context('when area id is invalid', () => {
+      const invalidAreaId = mongoose.Types.ObjectId();
+      it('returns not found', (done) => {
+        request()
+          .get(`/api/v1/area/${invalidAreaId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Area not found');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/area/${areaId}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getAreaAndContentPropertiesByAreaId service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Area, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/area/${areaId}`)
           .set('authorization', editorToken)
           .end((err, res) => {
             expect(res).to.have.status(500);

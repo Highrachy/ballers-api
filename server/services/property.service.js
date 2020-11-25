@@ -148,9 +148,9 @@ export const getAllProperties = async () =>
   ]);
 
 // get a property by its id and admin details
-export const getOneProperty = async (propertId) =>
+export const getOneProperty = async (propertyId) =>
   Property.aggregate([
-    { $match: { _id: ObjectId(propertId) } },
+    { $match: { _id: ObjectId(propertyId) } },
     {
       $lookup: {
         from: 'users',

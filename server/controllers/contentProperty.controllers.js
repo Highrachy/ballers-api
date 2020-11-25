@@ -5,6 +5,7 @@ import {
   getHouseTypesByAreaId,
   getPropertiesByParameters,
   getAllContentProperties,
+  getOneContentProperty,
 } from '../services/contentProperty.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -63,6 +64,19 @@ const ContentPropertyController = {
     getAllContentProperties(page, limit)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
+      })
+      .catch((error) => next(error));
+  },
+
+  getContentPropertyById(req, res, next) {
+    const { id } = req.params;
+    getOneContentProperty(id)
+      .then((property) => {
+        if (property.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, property: property[0] });
+        } else {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Property not found' });
+        }
       })
       .catch((error) => next(error));
   },

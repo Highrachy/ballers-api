@@ -1,8 +1,11 @@
+import mongoose from 'mongoose';
 import Area from '../models/area.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getContentPropertyByAreaId } from './contentProperty.service';
+
+const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getAreaById = async (id) => Area.findById(id).select();
 
@@ -113,3 +116,31 @@ export const getAllAreas = async () => {
     },
   ]);
 };
+
+export const getAreaAndContentPropertiesByAreaId = async (areaId) =>
+  Area.aggregate([
+    { $match: { _id: ObjectId(areaId) } },
+    {
+      $lookup: {
+        from: 'contentproperties',
+        localField: '_id',
+        foreignField: 'areaId',
+        as: 'linkedProperties',
+      },
+    },
+    { $sort: { area: 1 } },
+    {
+      $project: {
+        _id: 1,
+        state: '$state',
+        area: '$area',
+        longitude: '$longitude',
+        latitude: '$latitude',
+        numOfProperties: { $size: '$linkedProperties' },
+        minimumPrice: { $min: '$linkedProperties.price' },
+        maximumPrice: { $max: '$linkedProperties.price' },
+        averagePrice: { $avg: '$linkedProperties.price' },
+        linkedProperties: 1,
+      },
+    },
+  ]);

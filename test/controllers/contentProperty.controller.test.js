@@ -691,4 +691,78 @@ describe('Content Property Controller', () => {
       });
     });
   });
+
+  describe('Get property by property id', () => {
+    const contentPropertyId = mongoose.Types.ObjectId();
+    const contentProperty = ContentPropertyFactory.build({ _id: contentPropertyId, areaId });
+
+    beforeEach(async () => {
+      await addContentProperty(contentProperty);
+    });
+
+    context('when a valid token is used', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns array of house types', (done) => {
+          request()
+            .get(`/api/v1/content-property/${contentPropertyId}`)
+            .set('authorization', [editorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.property._id).to.be.eql(contentPropertyId.toString());
+              expect(res.body.property.category).to.be.eql(contentProperty.category);
+              expect(res.body.property.houseType).to.be.eql(contentProperty.houseType);
+              expect(res.body.property.price).to.be.eql(contentProperty.price);
+              expect(res.body.property.area._id).to.be.eql(areaId.toString());
+              expect(res.body.property.area.state).to.be.eql(area.state);
+              expect(res.body.property.area.longitude).to.be.eql(area.longitude);
+              expect(res.body.property.area.latitude).to.be.eql(area.latitude);
+              done();
+            });
+        }),
+      );
+    });
+
+    context('when property id is invalid', () => {
+      const invalidContentPropertyId = mongoose.Types.ObjectId();
+      it('returns forbidden', (done) => {
+        request()
+          .get(`/api/v1/content-property/${invalidContentPropertyId}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Property not found');
+            done();
+          });
+      });
+    });
+
+    context('without token', () => {
+      it('returns error', (done) => {
+        request()
+          .get(`/api/v1/content-property/${contentPropertyId}`)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Token needed to access resources');
+            done();
+          });
+      });
+    });
+
+    context('when getOneContentProperty service fails', () => {
+      it('returns the error', (done) => {
+        sinon.stub(ContentProperty, 'aggregate').throws(new Error('Type Error'));
+        request()
+          .get(`/api/v1/content-property/${contentPropertyId}`)
+          .set('authorization', editorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(500);
+            done();
+            ContentProperty.aggregate.restore();
+          });
+      });
+    });
+  });
 });

@@ -178,4 +178,31 @@ router.get(
   ContentPropertyController.getAllContentProperties,
 );
 
+/**
+ * @swagger
+ * path:
+ *  /content-property/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *      summary: Get a content property by the property ID
+ *      tags: [ContentProperty]
+ *      responses:
+ *        '200':
+ *          description: Property found
+ *        '404':
+ *          description: Property not found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get(
+  '/:id',
+  authenticate,
+  hasValidObjectId,
+  ContentPropertyController.getContentPropertyById,
+);
+
 module.exports = router;

@@ -4,6 +4,7 @@ import {
   getAreas,
   updateArea,
   deleteArea,
+  getAreaAndContentPropertiesByAreaId,
   getAllAreas,
 } from '../services/area.service';
 import httpStatus from '../helpers/httpStatus';
@@ -59,6 +60,19 @@ const AreaController = {
     getAllAreas()
       .then((areas) => {
         res.status(httpStatus.OK).json({ success: true, areas });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAreaById(req, res, next) {
+    const { id } = req.params;
+    getAreaAndContentPropertiesByAreaId(id)
+      .then((area) => {
+        if (area.length < 1) {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Area not found' });
+        } else {
+          res.status(httpStatus.OK).json({ success: true, area: area[0] });
+        }
       })
       .catch((error) => next(error));
   },
