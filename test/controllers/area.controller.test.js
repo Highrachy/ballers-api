@@ -287,8 +287,8 @@ describe('Area Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.area._id).to.be.eql(areaId.toString());
-              expect(res.body.area.area).to.be.eql(updatedArea.area.toLowerCase());
-              expect(res.body.area.state).to.be.eql(updatedArea.state.toLowerCase());
+              expect(res.body.area.area).to.be.eql(updatedArea.area);
+              expect(res.body.area.state).to.be.eql(updatedArea.state);
               expect(res.body.area.longitude).to.be.eql(updatedArea.longitude);
               expect(res.body.area.latitude).to.be.eql(updatedArea.latitude);
               done();
@@ -591,13 +591,13 @@ describe('Area Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.areas.length).to.be.eql(2);
-              expect(res.body.areas[0].area).to.be.eql(ajah.area.toLowerCase());
+              expect(res.body.areas[0].area).to.be.eql(ajah.area);
               expect(res.body.areas[0].numOfProperties).to.be.eql(0);
               expect(res.body.areas[0].minimumPrice).to.be.eql(null);
               expect(res.body.areas[0].maximumPrice).to.be.eql(null);
               expect(res.body.areas[0].averagePrice).to.be.eql(null);
               expect(res.body.areas[1]._id).to.be.eql(lekkiId.toString());
-              expect(res.body.areas[1].area).to.be.eql(lekki.area.toLowerCase());
+              expect(res.body.areas[1].area).to.be.eql(lekki.area);
               expect(res.body.areas[1].numOfProperties).to.be.eql(5);
               expect(res.body.areas[1].minimumPrice).to.be.eql(100000);
               expect(res.body.areas[1].maximumPrice).to.be.eql(500000);

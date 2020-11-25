@@ -45,6 +45,7 @@ const AreaSchema = new mongoose.Schema(
     },
   },
   { timestamps: true },
+  { collation: { locale: 'en', strength: 2 } },
 );
 
 const Area = mongoose.model('Area', AreaSchema);

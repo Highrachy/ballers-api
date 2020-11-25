@@ -129,7 +129,7 @@ router.get('/area/:id', hasValidObjectId, ContentPropertyController.getHouseType
 
 /**
  * @swagger
- * /content-property/:
+ * /content-property/search:
  *   get:
  *     tags:
  *       - ContentProperty
@@ -148,7 +148,7 @@ router.get('/area/:id', hasValidObjectId, ContentPropertyController.getHouseType
  *      '500':
  *       description: Internal server error
  */
-router.get('/', ContentPropertyController.search);
+router.get('/search', ContentPropertyController.search);
 
 /**
  * @swagger

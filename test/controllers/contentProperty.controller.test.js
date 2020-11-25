@@ -20,7 +20,7 @@ const user = UserFactory.build({ role: USER_ROLE.USER, activated: true });
 const admin = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
 const editor = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
 const areaId = mongoose.Types.ObjectId();
-const area = AreaFactory.build({ _id: areaId });
+const area = AreaFactory.build({ _id: areaId, area: 'Ikoyi', state: 'Lagos' });
 
 describe('Content Property Controller', () => {
   beforeEach(async () => {
@@ -491,7 +491,9 @@ describe('Content Property Controller', () => {
     context('when parameters are sent', () => {
       it('returns evaluation of 3 properties', (done) => {
         request()
-          .get(`/api/v1/content-property?areaId=${areaId}&houseType=${houseType}`)
+          .get(
+            `/api/v1/content-property/search?area=${area.area}&state=${area.state}&type=${houseType}`,
+          )
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
@@ -506,10 +508,10 @@ describe('Content Property Controller', () => {
       });
     });
 
-    context('when the areaId parameter is given only', () => {
+    context('when the area and state parameters are sent', () => {
       it('returns evaluation of 8 properties', (done) => {
         request()
-          .get(`/api/v1/content-property?areaId=${areaId}`)
+          .get(`/api/v1/content-property/search?area=${area.area}&state=${area.state}`)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
@@ -524,14 +526,40 @@ describe('Content Property Controller', () => {
       });
     });
 
+    context('when the area parameter is given only', () => {
+      it('returns not found', (done) => {
+        request()
+          .get(`/api/v1/content-property/search?area=${area.area}`)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid state or area');
+            done();
+          });
+      });
+    });
+
+    context('when the state parameter is given only', () => {
+      it('returns not found', (done) => {
+        request()
+          .get(`/api/v1/content-property/search?state=${area.state}`)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid state or area');
+            done();
+          });
+      });
+    });
+
     context('when the houseType parameter is given only', () => {
       it('returns not found', (done) => {
         request()
-          .get(`/api/v1/content-property?houseType=${houseType}`)
+          .get(`/api/v1/content-property/search?type=${houseType}`)
           .end((err, res) => {
-            expect(res).to.have.status(404);
+            expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Area not found');
+            expect(res.body.message).to.be.eql('Invalid state or area');
             done();
           });
       });
@@ -540,11 +568,11 @@ describe('Content Property Controller', () => {
     context('without parameters', () => {
       it('returns not found', (done) => {
         request()
-          .get('/api/v1/content-property')
+          .get('/api/v1/content-property/search')
           .end((err, res) => {
-            expect(res).to.have.status(404);
+            expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Area not found');
+            expect(res.body.message).to.be.eql('Invalid state or area');
             done();
           });
       });
@@ -554,7 +582,9 @@ describe('Content Property Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(ContentProperty, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/content-property?areaId=${areaId}&houseType=${houseType}`)
+          .get(
+            `/api/v1/content-property/search?area=${area.area}&state=${area.state}&type=${houseType}`,
+          )
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();

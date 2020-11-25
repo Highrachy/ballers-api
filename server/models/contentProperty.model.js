@@ -62,6 +62,7 @@ const ContentPropertySchema = new mongoose.Schema(
     },
   },
   { timestamps: true },
+  { collation: { locale: 'en', strength: 2 } },
 );
 
 const ContentProperty = mongoose.model('ContentProperty', ContentPropertySchema);
