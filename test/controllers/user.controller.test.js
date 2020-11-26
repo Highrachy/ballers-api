@@ -56,7 +56,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(201);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('User registered');
+              expect(res.body.message).to.be.eql('Registration successful');
               expect(res.body).to.have.property('token');
               expect(sendMailStub.callCount).to.eq(1);
               expect(sendMailStub).to.have.be.calledWith(
@@ -70,6 +70,31 @@ describe('User Controller', () => {
             });
         });
       });
+
+      context('when user registers as a vendor ', () => {
+        it('returns successful token', (done) => {
+          const vendor = UserFactory.build({ vendor: { companyName: 'Highrachy Investment' } });
+          request()
+            .post('/api/v1/user/register')
+            .send(vendor)
+            .end((err, res) => {
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Registration successful');
+              expect(res.body).to.have.property('token');
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(
+                EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT,
+                vendor,
+                {
+                  link: `http://ballers.ng/activate?token=${res.body.token}`,
+                },
+              );
+              done();
+            });
+        });
+      });
+
       context('when email exists in the db', () => {
         const user = UserFactory.build({ email: 'myemail@mail.com' });
 
@@ -112,7 +137,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(201);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('User registered');
+              expect(res.body.message).to.be.eql('Registration successful');
               expect(res.body).to.have.property('token');
               expect(sendMailStub.callCount).to.eq(1);
               done();
@@ -269,7 +294,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(201);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('User registered');
+              expect(res.body.message).to.be.eql('Registration successful');
               expect(res.body).to.have.property('token');
               expect(sendMailStub.callCount).to.eq(1);
               done();
@@ -287,7 +312,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(201);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('User registered');
+              expect(res.body.message).to.be.eql('Registration successful');
               expect(res.body).to.have.property('token');
               expect(sendMailStub.callCount).to.eq(1);
               done();

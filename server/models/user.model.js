@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { USER_ROLE } from '../helpers/constants';
 
 /**
  * @swagger
@@ -55,6 +56,36 @@ import mongoose from 'mongoose';
 const { ObjectId } = mongoose.Schema.Types;
 const UserSchema = new mongoose.Schema(
   {
+    activated: {
+      type: Boolean,
+      default: false,
+    },
+    activationDate: Date,
+    address: {
+      city: {
+        type: String,
+      },
+      country: {
+        type: String,
+      },
+      state: {
+        type: String,
+      },
+      street1: {
+        type: String,
+      },
+      street2: {
+        type: String,
+      },
+    },
+    email: {
+      type: String,
+      unique: true,
+      required: true,
+    },
+    favorites: {
+      type: [ObjectId],
+    },
     firstName: {
       type: String,
       required: true,
@@ -62,52 +93,6 @@ const UserSchema = new mongoose.Schema(
     lastName: {
       type: String,
       required: true,
-    },
-    email: {
-      type: String,
-      unique: true,
-      required: true,
-    },
-    password: {
-      type: String,
-      required: true,
-      select: false,
-    },
-    phone: String,
-    phone2: String,
-    address: {
-      street1: {
-        type: String,
-      },
-      street2: {
-        type: String,
-      },
-      city: {
-        type: String,
-      },
-      state: {
-        type: String,
-      },
-      country: {
-        type: String,
-      },
-    },
-    preferences: {
-      houseType: {
-        type: String,
-      },
-      location: {
-        type: String,
-      },
-      maxPrice: {
-        type: Number,
-      },
-      minPrice: {
-        type: Number,
-      },
-      paymentPlan: {
-        String,
-      },
     },
     notifications: [
       {
@@ -126,26 +111,94 @@ const UserSchema = new mongoose.Schema(
         dateAdded: Date,
       },
     ],
+    password: {
+      type: String,
+      required: true,
+      select: false,
+    },
+    phone: String,
+    phone2: String,
+    preferences: {
+      houseType: {
+        type: String,
+      },
+      location: {
+        type: String,
+      },
+      maxPrice: {
+        type: Number,
+      },
+      minPrice: {
+        type: Number,
+      },
+      paymentPlan: {
+        String,
+      },
+    },
+    profileImage: {
+      id: String,
+      url: String,
+    },
     referralCode: {
       type: String,
       unique: true,
     },
     role: {
       type: Number,
-      default: 1,
+      default: USER_ROLE.USER,
     },
-    profileImage: {
-      id: String,
-      url: String,
+    vendor: {
+      accountNumber: {
+        type: String,
+      },
+      companyAddress: {
+        type: String,
+      },
+      companyLogo: {
+        type: String,
+      },
+      companyName: {
+        type: String,
+      },
+      directors: [
+        {
+          name: {
+            type: String,
+          },
+          isSignatory: {
+            type: Boolean,
+          },
+          signature: {
+            type: String,
+          },
+          phone: {
+            type: String,
+          },
+        },
+      ],
+      identification: {
+        type: String,
+      },
+      redanNumber: {
+        type: String,
+      },
+      socialMedia: [
+        {
+          name: {
+            type: String,
+          },
+          url: {
+            type: String,
+          },
+        },
+      ],
+      vendorCode: {
+        type: String,
+      },
+      website: {
+        type: String,
+      },
     },
-    favorites: {
-      type: [ObjectId],
-    },
-    activated: {
-      type: Boolean,
-      default: false,
-    },
-    activationDate: Date,
   },
   { timestamps: true },
 );

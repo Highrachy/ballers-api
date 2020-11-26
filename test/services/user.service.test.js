@@ -177,6 +177,28 @@ describe('User Service', () => {
       });
     });
 
+    context('when user registers as a vendor', () => {
+      const vendorId = mongoose.Types.ObjectId();
+      const vendor = UserFactory.build({
+        _id: vendorId,
+        vendor: { companyName: 'Highrachy Investment' },
+      });
+
+      beforeEach(async () => {
+        await addUser(vendor);
+      });
+
+      it('adds a new vendor', async () => {
+        const currentCountedUsers = await User.countDocuments({});
+        expect(currentCountedUsers).to.eql(countedUsers + 1);
+      });
+
+      it('user role should be 2', async () => {
+        const registeredVendor = await getUserById(vendorId);
+        expect(registeredVendor.role).to.eql(2);
+      });
+    });
+
     context('when an existing user is entered', () => {
       it('throws an error', async () => {
         try {

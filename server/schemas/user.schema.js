@@ -9,10 +9,16 @@ const confirmPassword = Joi.string().valid(Joi.ref('password')).required().stric
 });
 const phone = Joi.string().allow(null, '').optional().default('');
 const requiredString = (label) => Joi.string().label(label).required();
+const optionalString = (label) => Joi.string().label(label).optional();
+
+const vendor = Joi.object().keys({
+  companyName: optionalString('Company Name'),
+});
 
 export const registerSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
+  vendor,
   email,
   phone,
   password,

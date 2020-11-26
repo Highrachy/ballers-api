@@ -27,7 +27,9 @@ const UserController = {
         sendMail(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
           link: `${HOST}/activate?token=${token}`,
         });
-        res.status(httpStatus.CREATED).json({ success: true, message: 'User registered', token });
+        res
+          .status(httpStatus.CREATED)
+          .json({ success: true, message: 'Registration successful', token });
       })
       .catch((error) => next(error));
   },
