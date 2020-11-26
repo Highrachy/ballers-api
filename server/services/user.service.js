@@ -111,7 +111,6 @@ export const addUser = async (user) => {
       });
     }
     return generateToken(savedUser._id);
-    // return { token: generateToken(savedUser._id), userType: isVendor ? 'Company' : 'User' };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding user', error);
   }

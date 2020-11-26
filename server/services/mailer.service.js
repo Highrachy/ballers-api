@@ -61,7 +61,8 @@ export const sendMail = (defaultMailContent, user, additionalOptions = {}) => {
   const options = {
     ...defaultMailContent,
     ...additionalOptions,
-    firstName: user.firstName || user.vendor.companyName ? user.vendor.companyName : null,
+    firstName:
+      user.vendor && user.vendor.companyName ? user.vendor.companyName : user.firstName || null,
   };
 
   return process.env.NODE_ENV === 'production'

@@ -23,13 +23,13 @@ const UserController = {
   register(req, res, next) {
     const user = req.locals;
     addUser(user)
-      .then(({ token, userType }) => {
+      .then((token) => {
         sendMail(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
           link: `${HOST}/activate?token=${token}`,
         });
         res
           .status(httpStatus.CREATED)
-          .json({ success: true, message: `${userType} registered`, token });
+          .json({ success: true, message: 'Registration successful', token });
       })
       .catch((error) => next(error));
   },
