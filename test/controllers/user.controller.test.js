@@ -80,7 +80,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(201);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('User registered');
+              expect(res.body.message).to.be.eql('Company registered');
               expect(res.body).to.have.property('token');
               expect(sendMailStub.callCount).to.eq(1);
               expect(sendMailStub).to.have.be.calledWith(
