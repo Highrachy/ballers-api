@@ -51,8 +51,7 @@ const ContentPropertyController = {
   },
 
   search(req, res, next) {
-    const { area, state } = req.query;
-    const houseType = req.query.type;
+    const { area, state, houseType } = req.query;
     getPropertiesByParameters({ area, state, houseType })
       .then((evaluation) => {
         res.status(httpStatus.OK).json({ success: true, evaluation });

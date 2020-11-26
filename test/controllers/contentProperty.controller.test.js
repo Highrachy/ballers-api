@@ -492,7 +492,7 @@ describe('Content Property Controller', () => {
       it('returns evaluation of 3 properties', (done) => {
         request()
           .get(
-            `/api/v1/content-property/search?area=${area.area}&state=${area.state}&type=${houseType}`,
+            `/api/v1/content-property/search?area=${area.area}&state=${area.state}&houseType=${houseType}`,
           )
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -506,6 +506,29 @@ describe('Content Property Controller', () => {
             done();
           });
       });
+    });
+
+    context('when areas are sent in different cases', () => {
+      const areaNameInDifferentCases = ['Ikoyi', 'IKOYI', 'IKOyi', 'ikoyi'];
+      [...new Array(4)].map((_, index) =>
+        it('returns array of house types', (done) => {
+          request()
+            .get(
+              `/api/v1/content-property/search?area=${areaNameInDifferentCases[index]}&state=${area.state}&houseType=${houseType}`,
+            )
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.evaluation.minimumPrice).to.be.eql(1000000);
+              expect(res.body.evaluation.maximumPrice).to.be.eql(3000000);
+              expect(res.body.evaluation.averagePrice).to.be.eql(2000000);
+              expect(res.body.evaluation.type).to.be.eql(houseType);
+              expect(res.body.evaluation.areaName).to.be.eql(area.area);
+              expect(res.body.evaluation.stateName).to.be.eql(area.state);
+              done();
+            });
+        }),
+      );
     });
 
     context('when the area and state parameters are sent', () => {
@@ -583,7 +606,7 @@ describe('Content Property Controller', () => {
         sinon.stub(ContentProperty, 'aggregate').throws(new Error('Type Error'));
         request()
           .get(
-            `/api/v1/content-property/search?area=${area.area}&state=${area.state}&type=${houseType}`,
+            `/api/v1/content-property/search?area=${area.area}&state=${area.state}&houseType=${houseType}`,
           )
           .end((err, res) => {
             expect(res).to.have.status(500);
