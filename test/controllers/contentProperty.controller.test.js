@@ -510,11 +510,11 @@ describe('Content Property Controller', () => {
 
     context('when areas are sent in different cases', () => {
       const areaNameInDifferentCases = ['Ikoyi', 'IKOYI', 'IKOyi', 'ikoyi'];
-      [...new Array(4)].map((_, index) =>
+      areaNameInDifferentCases.map((areaName) =>
         it('returns array of house types', (done) => {
           request()
             .get(
-              `/api/v1/content-property/search?area=${areaNameInDifferentCases[index]}&state=${area.state}&houseType=${houseType}`,
+              `/api/v1/content-property/search?area=${areaName}&state=${area.state}&houseType=${houseType}`,
             )
             .end((err, res) => {
               expect(res).to.have.status(200);

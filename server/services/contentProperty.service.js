@@ -97,11 +97,7 @@ export const getPropertiesByParameters = async ({ area, state, houseType }) => {
   const prices = await ContentProperty.aggregate([
     {
       $match: {
-        $and: [
-          { houseType: houseType || /.*/ },
-          // { houseType: houseType ? new RegExp(['^', houseType, '$'], 'i') : /.*/ },
-          { areaId: ObjectId(areaId) || /.*/ },
-        ],
+        $and: [{ houseType: houseType || /.*/ }, { areaId: ObjectId(areaId) || /.*/ }],
       },
     },
     {
