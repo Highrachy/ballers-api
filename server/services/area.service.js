@@ -9,11 +9,11 @@ const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getAreaById = async (id) => Area.findById(id).select();
 
-export const getAreaByAreaName = async (areaName, stateName) =>
-  Area.find({ area: areaName.toLowerCase(), state: stateName.toLowerCase() }).select();
+export const getAreaByAreaAndStateName = async (areaName, stateName) =>
+  Area.find({ area: areaName, state: stateName }).collation({ locale: 'en', strength: 2 });
 
 export const addArea = async (area) => {
-  const areaExists = await getAreaByAreaName(area.area, area.state);
+  const areaExists = await getAreaByAreaAndStateName(area.area, area.state);
 
   if (areaExists.length > 0) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Area already exists');
@@ -21,8 +21,8 @@ export const addArea = async (area) => {
   try {
     const addedArea = await new Area({
       ...area,
-      area: area.area.toLowerCase(),
-      state: area.state.toLowerCase(),
+      area: area.area,
+      state: area.state,
     }).save();
     return addedArea;
   } catch (error) {
@@ -36,7 +36,7 @@ export const getStates = async () => {
 };
 
 export const getAreas = async (state) => {
-  const areas = await Area.find({ state }).select('area');
+  const areas = await Area.find({ state }).collation({ locale: 'en', strength: 2 });
   return { areas };
 };
 
@@ -50,8 +50,8 @@ export const updateArea = async (updatedArea) => {
 
   const areaPayload = {
     ...updatedArea,
-    area: updatedArea.area ? updatedArea.area.toLowerCase() : area.area,
-    state: updatedArea.state ? updatedArea.state.toLowerCase() : area.state,
+    area: updatedArea.area ? updatedArea.area : area.area,
+    state: updatedArea.state ? updatedArea.state : area.state,
   };
 
   try {
