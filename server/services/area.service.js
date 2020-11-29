@@ -4,6 +4,8 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getContentPropertyByAreaId } from './contentProperty.service';
+import { getUserById } from './user.service';
+import { USER_ROLE } from '../helpers/constants';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -35,8 +37,38 @@ export const getStates = async () => {
   return { states };
 };
 
-export const getAreas = async (state) => {
+export const getAreas = async ({ state, adminOrEditorId }) => {
   const areas = await Area.find({ state }).collation({ locale: 'en', strength: 2 });
+
+  const user = await getUserById(adminOrEditorId);
+
+  if (!(user && (user.role === USER_ROLE.EDITOR || user.role === USER_ROLE.ADMIN))) {
+    const linkedProperties = await Area.aggregate([
+      { $match: { state } },
+      {
+        $lookup: {
+          from: 'contentproperties',
+          localField: '_id',
+          foreignField: 'areaId',
+          as: 'linkedProperties',
+        },
+      },
+      {
+        $project: {
+          linkedProperties: 1,
+        },
+      },
+    ]);
+
+    linkedProperties.map((propertyArea) => {
+      if (propertyArea.linkedProperties.length < 1) {
+        const index = areas.indexOf(linkedProperties);
+        areas.splice(index, 1);
+      }
+      return true;
+    });
+  }
+
   return { areas };
 };
 
