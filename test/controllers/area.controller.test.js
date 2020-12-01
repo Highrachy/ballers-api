@@ -207,9 +207,15 @@ describe('Area Controller', () => {
 
   describe('Get all areas', () => {
     const state = 'lagos';
-    const areas = AreaFactory.buildList(5, { state });
+    const areaId = mongoose.Types.ObjectId();
+    const epe = AreaFactory.build({ _id: areaId, state, area: 'epe' });
+    const randomAreas = AreaFactory.buildList(4, { state });
+    const contentProperties = ContentPropertyFactory.buildList(3, { areaId });
+
     beforeEach(async () => {
-      await Area.insertMany(areas);
+      await addArea(epe);
+      await Area.insertMany(randomAreas);
+      await ContentProperty.insertMany(contentProperties);
     });
 
     context('when a valid token is used', () => {
@@ -229,27 +235,27 @@ describe('Area Controller', () => {
     });
 
     context('without token', () => {
-      it('returns array of five areas', (done) => {
+      it('returns array of one area', (done) => {
         request()
           .get(`/api/v1/area/state/${state}`)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.areas.length).to.be.eql(5);
+            expect(res.body.areas.length).to.be.eql(1);
             done();
           });
       });
     });
 
-    context('when getStateAndArea service fails', () => {
+    context('when getAreasByState service fails', () => {
       it('returns the error', (done) => {
-        sinon.stub(Area, 'find').throws(new Error('Type Error'));
+        sinon.stub(Area, 'aggregate').throws(new Error('Type Error'));
         request()
           .get(`/api/v1/area/state/${state}`)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
-            Area.find.restore();
+            Area.aggregate.restore();
           });
       });
     });

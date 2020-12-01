@@ -35,8 +35,26 @@ export const getStates = async () => {
   return { states };
 };
 
-export const getAreas = async (state) => {
-  const areas = await Area.find({ state }).collation({ locale: 'en', strength: 2 });
+export const getAreasByState = async ({ state, tokenIsPresent }) => {
+  const linkedProperties = await Area.aggregate([
+    { $match: { state } },
+    {
+      $lookup: {
+        from: 'contentproperties',
+        localField: '_id',
+        foreignField: 'areaId',
+        as: 'linkedProperties',
+      },
+    },
+  ]).collation({ locale: 'en', strength: 2 });
+
+  const areas = linkedProperties.reduce((acc, area) => {
+    if (tokenIsPresent || area.linkedProperties.length > 0) {
+      acc.push({ _id: area._id, area: area.area });
+    }
+    return acc;
+  }, []);
+
   return { areas };
 };
 

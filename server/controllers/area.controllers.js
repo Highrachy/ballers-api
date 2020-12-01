@@ -1,7 +1,7 @@
 import {
   addArea,
   getStates,
-  getAreas,
+  getAreasByState,
   updateArea,
   deleteArea,
   getAreaAndContentPropertiesByAreaId,
@@ -31,7 +31,8 @@ const AreaController = {
 
   getAreas(req, res, next) {
     const { state } = req.params;
-    getAreas(state)
+    const tokenIsPresent = !!req.headers.authorization;
+    getAreasByState({ state, tokenIsPresent })
       .then((areas) => {
         res.status(httpStatus.OK).json({ success: true, areas: areas.areas });
       })
