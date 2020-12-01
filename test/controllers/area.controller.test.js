@@ -247,15 +247,15 @@ describe('Area Controller', () => {
       });
     });
 
-    context('when getStateAndArea service fails', () => {
+    context('when getAreasByState service fails', () => {
       it('returns the error', (done) => {
-        sinon.stub(Area, 'find').throws(new Error('Type Error'));
+        sinon.stub(Area, 'aggregate').throws(new Error('Type Error'));
         request()
           .get(`/api/v1/area/state/${state}`)
           .end((err, res) => {
             expect(res).to.have.status(500);
             done();
-            Area.find.restore();
+            Area.aggregate.restore();
           });
       });
     });

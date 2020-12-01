@@ -1,14 +1,13 @@
 import {
   addArea,
   getStates,
-  getAreas,
+  getAreasByState,
   updateArea,
   deleteArea,
   getAreaAndContentPropertiesByAreaId,
   getAllAreas,
 } from '../services/area.service';
 import httpStatus from '../helpers/httpStatus';
-import { decodeToken } from '../services/user.service';
 
 const AreaController = {
   add(req, res, next) {
@@ -32,10 +31,8 @@ const AreaController = {
 
   getAreas(req, res, next) {
     const { state } = req.params;
-    const adminOrEditorId = req.headers.authorization
-      ? decodeToken(req.headers.authorization).id
-      : null;
-    getAreas({ state, adminOrEditorId })
+    const tokenIsPresent = !!req.headers.authorization;
+    getAreasByState({ state, tokenIsPresent })
       .then((areas) => {
         res.status(httpStatus.OK).json({ success: true, areas: areas.areas });
       })
