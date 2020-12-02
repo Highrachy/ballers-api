@@ -462,4 +462,25 @@ router.put(
   UserController.downgradeEditorToUser,
 );
 
+/**
+ * @swagger
+ * path:
+ *  /user/vendor/all:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: the auto generated user token via jwt
+ *      summary: Returns all vendors
+ *      tags: [User]
+ *      responses:
+ *        '200':
+ *          description: Returns array of vendors
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/vendor/all', authenticate, isAdmin, UserController.getAllVendors);
+
 module.exports = router;
