@@ -17,7 +17,7 @@ import ReferralFactory from '../factories/referral.factory';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
-import { expectsPaginationToReturnTheRightValues, defaultPaginationResult } from '../helpers';
+import { paginationTest } from '../helpers';
 import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
@@ -1291,7 +1291,9 @@ describe('User Controller', () => {
   });
 
   describe('Get all users', () => {
+    const endpoint = '/api/v1/user/all';
     const dummyUsers = UserFactory.buildList(16);
+
     beforeEach(async () => {
       adminToken = await addUser(adminUser);
       userToken = await addUser(regularUser);
@@ -1299,105 +1301,23 @@ describe('User Controller', () => {
     });
 
     describe('when users exist in db', () => {
-      context('when no parameters are passed', () => {
-        it('returns the default values', (done) => {
-          request()
-            .get('/api/v1/user/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
-              done();
-            });
-        });
-      });
+      const paginationParameters = {
+        validToken: adminToken,
+        invalidToken: userToken,
+        endpoint,
+        model: User,
+        modelMethod: 'aggregate',
+      };
 
-      context('when both page and limit parameters are set', () => {
-        it('returns the given page and limit', (done) => {
-          request()
-            .get('/api/v1/user/all?page=2&limit=5')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                currentPage: 2,
-                limit: 5,
-                offset: 5,
-                result: 5,
-                totalPage: 4,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when page is set to 2', () => {
-        it('returns the second page', (done) => {
-          request()
-            .get('/api/v1/user/all?page=2')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                result: 8,
-                offset: 10,
-                currentPage: 2,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when limit is set to 4', () => {
-        it('returns 4 users', (done) => {
-          request()
-            .get('/api/v1/user/all?limit=4')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                limit: 4,
-                result: 4,
-                totalPage: 5,
-              });
-              done();
-            });
-        });
-      });
-
-      context('with a user access token', () => {
-        it('returns successful payload', (done) => {
-          request()
-            .get('/api/v1/user/all')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/user/all')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
+      paginationTest(paginationParameters);
 
       context('when token is invalid', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(adminId);
+          await paginationParameters.model.findByIdAndDelete(adminId);
         });
         it('returns token error', (done) => {
           request()
-            .get('/api/v1/user/all')
+            .get(endpoint)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(404);
@@ -1407,24 +1327,11 @@ describe('User Controller', () => {
             });
         });
       });
-
-      context('when getAllRegisteredUsers service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(User, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/user/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              User.aggregate.restore();
-            });
-        });
-      });
     });
   });
 
   describe('Get all vendors', () => {
+    const endpoint = '/api/v1/user/vendor/all';
     const dummyVendors = UserFactory.buildList(17, {
       vendor: { companyName: 'Google', verified: false },
       role: USER_ROLE.VENDOR,
@@ -1441,125 +1348,29 @@ describe('User Controller', () => {
     });
 
     describe('when vendors exist in db', () => {
-      context('when no parameters are passed', () => {
-        it('returns the default values', (done) => {
-          request()
-            .get('/api/v1/user/vendor/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
-              done();
-            });
-        });
-      });
+      const paginationParameters = {
+        validToken: adminToken,
+        invalidToken: userToken,
+        endpoint,
+        model: User,
+        modelMethod: 'aggregate',
+      };
 
-      context('when both page and limit parameters are set', () => {
-        it('returns the given page and limit', (done) => {
-          request()
-            .get('/api/v1/user/vendor/all?page=2&limit=5')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                currentPage: 2,
-                limit: 5,
-                offset: 5,
-                result: 5,
-                totalPage: 4,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when page is set to 2', () => {
-        it('returns the second page', (done) => {
-          request()
-            .get('/api/v1/user/vendor/all?page=2')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                result: 8,
-                offset: 10,
-                currentPage: 2,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when limit is set to 4', () => {
-        it('returns 4 vendors', (done) => {
-          request()
-            .get('/api/v1/user/vendor/all?limit=4')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                limit: 4,
-                result: 4,
-                totalPage: 5,
-              });
-              done();
-            });
-        });
-      });
-
-      context('with a user access token', () => {
-        it('returns forbidden', (done) => {
-          request()
-            .get('/api/v1/user/vendor/all')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/user/vendor/all')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
+      paginationTest(paginationParameters);
 
       context('when token is invalid', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(adminId);
+          await paginationParameters.model.findByIdAndDelete(adminId);
         });
         it('returns token error', (done) => {
           request()
-            .get('/api/v1/user/vendor/all')
+            .get(endpoint)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(404);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Invalid token');
               done();
-            });
-        });
-      });
-
-      context('when getAllVendors service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(User, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/user/vendor/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              User.aggregate.restore();
             });
         });
       });
