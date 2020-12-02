@@ -23,12 +23,12 @@ export const defaultPaginationResult = {
   totalPage: 2,
 };
 
-export const paginationTest = ({ validToken, invalidToken, endpoint, model, modelMethod }) => {
-  context('when no parameters are passed', () => {
+export const itReturnsTheRightPaginationValue = (token, endpoint) => {
+  context('when no pagination parameter is passed', () => {
     it('returns the default values', (done) => {
       request()
         .get(endpoint)
-        .set('authorization', validToken)
+        .set('authorization', token)
         .end((err, res) => {
           expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
           done();
@@ -40,7 +40,7 @@ export const paginationTest = ({ validToken, invalidToken, endpoint, model, mode
     it('returns the given page and limit', (done) => {
       request()
         .get(`${endpoint}?page=2&limit=5`)
-        .set('authorization', validToken)
+        .set('authorization', token)
         .end((err, res) => {
           expectsPaginationToReturnTheRightValues(res, {
             ...defaultPaginationResult,
@@ -59,7 +59,7 @@ export const paginationTest = ({ validToken, invalidToken, endpoint, model, mode
     it('returns the second page', (done) => {
       request()
         .get(`${endpoint}?page=2`)
-        .set('authorization', validToken)
+        .set('authorization', token)
         .end((err, res) => {
           expectsPaginationToReturnTheRightValues(res, {
             ...defaultPaginationResult,
@@ -76,7 +76,7 @@ export const paginationTest = ({ validToken, invalidToken, endpoint, model, mode
     it('returns 4 items', (done) => {
       request()
         .get(`${endpoint}?limit=4`)
-        .set('authorization', validToken)
+        .set('authorization', token)
         .end((err, res) => {
           expectsPaginationToReturnTheRightValues(res, {
             ...defaultPaginationResult,
@@ -88,7 +88,9 @@ export const paginationTest = ({ validToken, invalidToken, endpoint, model, mode
         });
     });
   });
+};
 
+export const itReturnsForbiddenForInvalidToken = (invalidToken, endpoint) => {
   context('with a invalid access token', () => {
     it('returns forbidden', (done) => {
       request()
@@ -102,7 +104,9 @@ export const paginationTest = ({ validToken, invalidToken, endpoint, model, mode
         });
     });
   });
+};
 
+export const itReturnsForbiddenForNoToken = (endpoint) => {
   context('without token', () => {
     it('returns error', (done) => {
       request()
@@ -115,13 +119,15 @@ export const paginationTest = ({ validToken, invalidToken, endpoint, model, mode
         });
     });
   });
+};
 
+export const itReturnsAnErrorWhenServiceFails = (token, endpoint, model, modelMethod) => {
   context('when service fails', () => {
     it('returns the error', (done) => {
-      sinon.stub(model, `${modelMethod}`).throws(new Error('Type Error'));
+      sinon.stub(model, modelMethod).throws(new Error('Type Error'));
       request()
         .get(endpoint)
-        .set('authorization', validToken)
+        .set('authorization', token)
         .end((err, res) => {
           expect(res).to.have.status(500);
           done();

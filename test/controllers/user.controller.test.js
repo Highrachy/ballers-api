@@ -17,7 +17,12 @@ import ReferralFactory from '../factories/referral.factory';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
-import { paginationTest } from '../helpers';
+import {
+  itReturnsTheRightPaginationValue,
+  itReturnsForbiddenForInvalidToken,
+  itReturnsForbiddenForNoToken,
+  itReturnsAnErrorWhenServiceFails,
+} from '../helpers';
 import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
@@ -1301,19 +1306,17 @@ describe('User Controller', () => {
     });
 
     describe('when users exist in db', () => {
-      const paginationParameters = {
-        validToken: adminToken,
-        invalidToken: userToken,
-        endpoint,
-        model: User,
-        modelMethod: 'aggregate',
-      };
+      itReturnsTheRightPaginationValue(adminToken, endpoint);
 
-      paginationTest(paginationParameters);
+      itReturnsForbiddenForInvalidToken(userToken, endpoint);
+
+      itReturnsForbiddenForNoToken(endpoint);
+
+      itReturnsAnErrorWhenServiceFails(adminToken, endpoint, User, 'aggregate');
 
       context('when token is invalid', () => {
         beforeEach(async () => {
-          await paginationParameters.model.findByIdAndDelete(adminId);
+          await User.findByIdAndDelete(adminId);
         });
         it('returns token error', (done) => {
           request()
@@ -1348,19 +1351,17 @@ describe('User Controller', () => {
     });
 
     describe('when vendors exist in db', () => {
-      const paginationParameters = {
-        validToken: adminToken,
-        invalidToken: userToken,
-        endpoint,
-        model: User,
-        modelMethod: 'aggregate',
-      };
+      itReturnsTheRightPaginationValue(adminToken, endpoint);
 
-      paginationTest(paginationParameters);
+      itReturnsForbiddenForInvalidToken(userToken, endpoint);
+
+      itReturnsForbiddenForNoToken(endpoint);
+
+      itReturnsAnErrorWhenServiceFails(adminToken, endpoint, User, 'aggregate');
 
       context('when token is invalid', () => {
         beforeEach(async () => {
-          await paginationParameters.model.findByIdAndDelete(adminId);
+          await User.findByIdAndDelete(adminId);
         });
         it('returns token error', (done) => {
           request()
