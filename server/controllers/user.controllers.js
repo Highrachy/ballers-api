@@ -13,8 +13,10 @@ import {
   getAccountOverview,
   upgradeUserToEditor,
   downgradeEditorToUser,
-  verifyVendor,
+  verifyVendorStep,
   getAllVendors,
+  addCommentToVerificationStep,
+  verifyVendor,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -206,14 +208,34 @@ const UserController = {
       .catch((error) => next(error));
   },
 
-  verifyVendor(req, res, next) {
-    const vendorInfo = req.locals;
+  verifyVendorStep(req, res, next) {
+    const verificationInfo = req.locals;
     const adminId = req.user._id;
-    verifyVendor({ ...vendorInfo, adminId })
+    verifyVendorStep({ ...verificationInfo, adminId })
       .then((vendor) => {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Company information verified', vendor });
+      })
+      .catch((error) => next(error));
+  },
+
+  addCommentToVerificationStep(req, res, next) {
+    const commentInfo = req.locals;
+    const adminId = req.user._id;
+    addCommentToVerificationStep({ ...commentInfo, adminId })
+      .then((vendor) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Comment added', vendor });
+      })
+      .catch((error) => next(error));
+  },
+
+  verifyVendor(req, res, next) {
+    const { vendorId } = req.locals;
+    const adminId = req.user._id;
+    verifyVendor({ vendorId, adminId })
+      .then((vendor) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Vendor verified', vendor });
       })
       .catch((error) => next(error));
   },

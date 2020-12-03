@@ -8,6 +8,8 @@ import {
   favoritePropertySchema,
   userEditorSchema,
   verifyVendorSchema,
+  addCommentVendorSchema,
+  verifyVendorInfoSchema,
 } from '../schemas/user.schema';
 import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
@@ -490,7 +492,7 @@ router.get('/vendor/all', authenticate, isAdmin, UserController.getAllVendors);
  *   put:
  *     tags:
  *       - User
- *     description: Allows an admin to verify a vendor's information
+ *     description: Allows an admin to verify a vendor's
  *     produces:
  *       - application/json
  *     requestBody:
@@ -499,11 +501,11 @@ router.get('/vendor/all', authenticate, isAdmin, UserController.getAllVendors);
  *          schema:
  *            type: object
  *            properties:
- *              userId:
+ *              vendorId:
  *                  type: string
  *     responses:
  *      '200':
- *        description: Information verified
+ *        description: Vendor verified
  *      '404':
  *        description: User not found
  *      '400':
@@ -517,6 +519,82 @@ router.put(
   isAdmin,
   schemaValidation(verifyVendorSchema),
   UserController.verifyVendor,
+);
+
+/**
+ * @swagger
+ * /user/vendor/verify/step:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to verify a vendor's information
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              vendorId:
+ *                  type: string
+ *              step:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Information verified
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/verify/step',
+  authenticate,
+  isAdmin,
+  schemaValidation(verifyVendorInfoSchema),
+  UserController.verifyVendorStep,
+);
+
+/**
+ * @swagger
+ * /user/vendor/verify/comment:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to add comment
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              vendorId:
+ *                  type: string
+ *              step:
+ *                  type: string
+ *              comment:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Comment added
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/verify/comment',
+  authenticate,
+  isAdmin,
+  schemaValidation(addCommentVendorSchema),
+  UserController.addCommentToVerificationStep,
 );
 
 module.exports = router;

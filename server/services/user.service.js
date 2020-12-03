@@ -371,12 +371,12 @@ export const getAllVendors = async (page = 1, limit = 10) => {
   return { pagination, result };
 };
 
-export const verifyVendor = async ({ vendorId, adminId, step }) => {
+export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
   const validSteps = ['companyInfo', 'bankDetails', 'directorInfo'];
   const stepIsValid = validSteps.includes(step);
 
   if (!stepIsValid) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User not found');
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid step');
   }
 
   const vendor = await getUserById(vendorId);
@@ -402,5 +402,67 @@ export const verifyVendor = async ({ vendorId, adminId, step }) => {
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, `Error verifying ${step}`, error);
+  }
+};
+
+export const addCommentToVerificationStep = async ({ vendorId, adminId, step, comment }) => {
+  const validSteps = ['companyInfo', 'bankDetails', 'directorInfo'];
+  const stepIsValid = validSteps.includes(step);
+
+  if (!stepIsValid) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User not found');
+  }
+
+  const vendor = await getUserById(vendorId);
+
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (vendor && vendor.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  const commentInfo = {
+    comment,
+    addedBy: adminId,
+  };
+
+  try {
+    return User.findByIdAndUpdate(
+      vendorId,
+      { $push: { [`vendor.verification.${step}.comments`]: commentInfo } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, `Error verifying ${step}`, error);
+  }
+};
+
+export const verifyVendor = async ({ vendorId, adminId }) => {
+  const vendor = await getUserById(vendorId);
+
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (vendor && vendor.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  try {
+    return User.findByIdAndUpdate(
+      vendorId,
+      {
+        $set: {
+          'vendor.verified': true,
+          'vendor.verifiedBy': adminId,
+          'vendor.verifiedOn': getTodaysDateStandard(),
+        },
+      },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error verifying vendor', error);
   }
 };
