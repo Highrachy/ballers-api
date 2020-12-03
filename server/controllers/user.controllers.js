@@ -14,6 +14,7 @@ import {
   upgradeUserToEditor,
   downgradeEditorToUser,
   verifyVendor,
+  getAllVendors,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -188,6 +189,19 @@ const UserController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Content Editor is now a User', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAllVendors(req, res, next) {
+    const { page, limit } = req.query;
+    getAllVendors(page, limit)
+      .then(({ pagination, result }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          pagination,
+          result,
+        });
       })
       .catch((error) => next(error));
   },

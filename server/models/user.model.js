@@ -195,6 +195,16 @@ const UserSchema = new mongoose.Schema(
       vendorCode: {
         type: String,
       },
+      verified: {
+        type: Boolean,
+        default: false,
+      },
+      verifiedBy: {
+        type: ObjectId,
+      },
+      verifiedOn: {
+        type: Date,
+      },
       website: {
         type: String,
       },
