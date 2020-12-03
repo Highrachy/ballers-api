@@ -1306,13 +1306,13 @@ describe('User Controller', () => {
     });
 
     describe('when users exist in db', () => {
-      itReturnsTheRightPaginationValue(adminToken, endpoint);
+      itReturnsTheRightPaginationValue(endpoint, adminToken);
 
-      itReturnsForbiddenForInvalidToken(userToken, endpoint);
+      itReturnsForbiddenForInvalidToken(endpoint, userToken);
 
       itReturnsForbiddenForNoToken(endpoint);
 
-      itReturnsAnErrorWhenServiceFails(adminToken, endpoint, User, 'aggregate');
+      itReturnsAnErrorWhenServiceFails(endpoint, adminToken, User, 'aggregate');
 
       context('when token is invalid', () => {
         beforeEach(async () => {
@@ -1351,13 +1351,13 @@ describe('User Controller', () => {
     });
 
     describe('when vendors exist in db', () => {
-      itReturnsTheRightPaginationValue(adminToken, endpoint);
+      itReturnsTheRightPaginationValue(endpoint, adminToken);
 
-      itReturnsForbiddenForInvalidToken(userToken, endpoint);
+      itReturnsForbiddenForInvalidToken(endpoint, userToken);
 
       itReturnsForbiddenForNoToken(endpoint);
 
-      itReturnsAnErrorWhenServiceFails(adminToken, endpoint, User, 'aggregate');
+      itReturnsAnErrorWhenServiceFails(endpoint, adminToken, User, 'aggregate');
 
       context('when token is invalid', () => {
         beforeEach(async () => {

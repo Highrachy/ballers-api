@@ -23,7 +23,7 @@ export const defaultPaginationResult = {
   totalPage: 2,
 };
 
-export const itReturnsTheRightPaginationValue = (token, endpoint) => {
+export const itReturnsTheRightPaginationValue = (endpoint, token) => {
   context('when no pagination parameter is passed', () => {
     it('returns the default values', (done) => {
       request()
@@ -90,12 +90,12 @@ export const itReturnsTheRightPaginationValue = (token, endpoint) => {
   });
 };
 
-export const itReturnsForbiddenForInvalidToken = (invalidToken, endpoint) => {
+export const itReturnsForbiddenForInvalidToken = (endpoint, token) => {
   context('with a invalid access token', () => {
     it('returns forbidden', (done) => {
       request()
         .get(endpoint)
-        .set('authorization', invalidToken)
+        .set('authorization', token)
         .end((err, res) => {
           expect(res).to.have.status(403);
           expect(res.body.success).to.be.eql(false);
@@ -121,7 +121,12 @@ export const itReturnsForbiddenForNoToken = (endpoint) => {
   });
 };
 
-export const itReturnsAnErrorWhenServiceFails = (token, endpoint, model, modelMethod) => {
+export const itReturnsAnErrorWhenServiceFails = (
+  endpoint,
+  token,
+  model,
+  modelMethod = 'aggregate',
+) => {
   context('when service fails', () => {
     it('returns the error', (done) => {
       sinon.stub(model, modelMethod).throws(new Error('Type Error'));
