@@ -9,8 +9,9 @@ import { getPropertyById, updateProperty } from './property.service';
 import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
-import { REFERRAL_STATUS, USER_ROLE } from '../helpers/constants';
+import { REFERRAL_STATUS, USER_ROLE, VENDOR_VERIFICATION_INFO_STATUS } from '../helpers/constants';
 import { generatePagination, generateFacetData } from '../helpers/pagination';
+import { getTodaysDateStandard } from '../helpers/dates';
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -349,5 +350,86 @@ export const downgradeEditorToUser = async (userId) => {
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error downgrading user', error);
+  }
+};
+
+export const verifyCompanyInfo = async ({ vendorId, adminId }) => {
+  const vendor = await getUserById(vendorId);
+
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (vendor && vendor.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  const verificationInfo = {
+    'vendor.verification.companyInfo.status': VENDOR_VERIFICATION_INFO_STATUS.VERIFIED,
+    'vendor.verification.companyInfo.verifiedBy': adminId,
+    'vendor.verification.companyInfo.verifiedOn': getTodaysDateStandard(),
+  };
+  try {
+    return User.findByIdAndUpdate(
+      vendorId,
+      { $set: verificationInfo },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error verifying company information', error);
+  }
+};
+
+export const verifyBankDetails = async ({ vendorId, adminId }) => {
+  const vendor = await getUserById(vendorId);
+
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (vendor && vendor.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  const verificationInfo = {
+    'vendor.verification.bankDetails.status': VENDOR_VERIFICATION_INFO_STATUS.VERIFIED,
+    'vendor.verification.bankDetails.verifiedBy': adminId,
+    'vendor.verification.bankDetails.verifiedOn': getTodaysDateStandard(),
+  };
+  try {
+    return User.findByIdAndUpdate(
+      vendorId,
+      { $set: verificationInfo },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error verifying bank details', error);
+  }
+};
+
+export const verifyDirectorInfo = async ({ vendorId, adminId }) => {
+  const vendor = await getUserById(vendorId);
+
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (vendor && vendor.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  const verificationInfo = {
+    'vendor.verification.directorInfo.status': VENDOR_VERIFICATION_INFO_STATUS.VERIFIED,
+    'vendor.verification.directorInfo.verifiedBy': adminId,
+    'vendor.verification.directorInfo.verifiedOn': getTodaysDateStandard(),
+  };
+  try {
+    return User.findByIdAndUpdate(
+      vendorId,
+      { $set: verificationInfo },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error verifying directors information', error);
   }
 };

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { USER_ROLE } from '../helpers/constants';
+import { USER_ROLE, VENDOR_VERIFICATION_INFO_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -197,6 +197,74 @@ const UserSchema = new mongoose.Schema(
       },
       website: {
         type: String,
+      },
+      verification: {
+        companyInfo: {
+          comments: [
+            {
+              comment: {
+                type: String,
+              },
+              addedBy: {
+                type: ObjectId,
+              },
+            },
+          ],
+          status: {
+            type: String,
+            default: VENDOR_VERIFICATION_INFO_STATUS.NOT_VERIFIED,
+          },
+          verifiedBy: {
+            type: ObjectId,
+          },
+          verifiedOn: {
+            type: Date,
+          },
+        },
+        bankDetails: {
+          comments: [
+            {
+              comment: {
+                type: String,
+              },
+              addedBy: {
+                type: ObjectId,
+              },
+            },
+          ],
+          status: {
+            type: String,
+            default: VENDOR_VERIFICATION_INFO_STATUS.NOT_VERIFIED,
+          },
+          verifiedBy: {
+            type: ObjectId,
+          },
+          verifiedOn: {
+            type: Date,
+          },
+        },
+        directorInfo: {
+          comments: [
+            {
+              comment: {
+                type: String,
+              },
+              addedBy: {
+                type: ObjectId,
+              },
+            },
+          ],
+          status: {
+            type: String,
+            default: VENDOR_VERIFICATION_INFO_STATUS.NOT_VERIFIED,
+          },
+          verifiedBy: {
+            type: ObjectId,
+          },
+          verifiedOn: {
+            type: Date,
+          },
+        },
       },
     },
   },

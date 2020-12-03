@@ -7,6 +7,7 @@ import {
   updateUserSchema,
   favoritePropertySchema,
   userEditorSchema,
+  verifyVendorSchema,
 } from '../schemas/user.schema';
 import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
@@ -460,6 +461,111 @@ router.put(
   isAdmin,
   schemaValidation(userEditorSchema),
   UserController.downgradeEditorToUser,
+);
+
+/**
+ * @swagger
+ * /user/vendor/verify/company:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to verify a vendor's company information
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              userId:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Company information verified
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/verify/company',
+  authenticate,
+  isAdmin,
+  schemaValidation(verifyVendorSchema),
+  UserController.verifyCompanyInfo,
+);
+
+/**
+ * @swagger
+ * /user/vendor/verify/bank:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to verify a vendor's banking information
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              userId:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Banking information verified
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/verify/bank',
+  authenticate,
+  isAdmin,
+  schemaValidation(verifyVendorSchema),
+  UserController.verifyBankDetails,
+);
+
+/**
+ * @swagger
+ * /user/vendor/verify/director:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to verify a vendor's director information
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              userId:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Director information verified
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/verify/director',
+  authenticate,
+  isAdmin,
+  schemaValidation(verifyVendorSchema),
+  UserController.verifyDirectorInfo,
 );
 
 module.exports = router;

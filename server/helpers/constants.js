@@ -31,3 +31,9 @@ export const CONCERN_STATUS = {
   RESOLVED: 'Resolved',
   PENDING: 'Pending',
 };
+
+export const VENDOR_VERIFICATION_INFO_STATUS = {
+  PENDING: 'Pending',
+  VERIFIED: 'Verified',
+  NOT_VERIFIED: 'Not Verified',
+};

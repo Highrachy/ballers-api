@@ -77,3 +77,7 @@ export const favoritePropertySchema = Joi.object({
 export const userEditorSchema = Joi.object({
   userId: Joi.objectId().label('User id').required(),
 });
+
+export const verifyVendorSchema = Joi.object({
+  vendorId: Joi.objectId().label('Vendor id').required(),
+});
