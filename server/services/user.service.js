@@ -351,3 +351,21 @@ export const downgradeEditorToUser = async (userId) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error downgrading user', error);
   }
 };
+
+export const getAllVendors = async (page = 1, limit = 10) => {
+  const vendors = await User.aggregate([
+    { $match: { role: USER_ROLE.VENDOR } },
+    { $sort: { 'vendor.verified': 1, 'vendor.companyName': 1 } },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+    { $project: { preferences: 0, password: 0, notifications: 0 } },
+  ]);
+  const { total } = vendors[0].metadata[0];
+  const pagination = generatePagination(page, limit, total);
+  const result = vendors[0].data;
+  return { pagination, result };
+};
