@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { USER_ROLE, VENDOR_VERIFICATION_INFO_STATUS } from '../helpers/constants';
+import { USER_ROLE, VENDOR_INFO_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -212,7 +212,7 @@ const UserSchema = new mongoose.Schema(
           ],
           status: {
             type: String,
-            default: VENDOR_VERIFICATION_INFO_STATUS.NOT_VERIFIED,
+            default: VENDOR_INFO_STATUS.IN_REVIEW,
           },
           verifiedBy: {
             type: ObjectId,
@@ -234,7 +234,7 @@ const UserSchema = new mongoose.Schema(
           ],
           status: {
             type: String,
-            default: VENDOR_VERIFICATION_INFO_STATUS.NOT_VERIFIED,
+            default: VENDOR_INFO_STATUS.IN_REVIEW,
           },
           verifiedBy: {
             type: ObjectId,
@@ -256,7 +256,7 @@ const UserSchema = new mongoose.Schema(
           ],
           status: {
             type: String,
-            default: VENDOR_VERIFICATION_INFO_STATUS.NOT_VERIFIED,
+            default: VENDOR_INFO_STATUS.IN_REVIEW,
           },
           verifiedBy: {
             type: ObjectId,

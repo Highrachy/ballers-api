@@ -32,8 +32,8 @@ export const CONCERN_STATUS = {
   PENDING: 'Pending',
 };
 
-export const VENDOR_VERIFICATION_INFO_STATUS = {
+export const VENDOR_INFO_STATUS = {
   PENDING: 'Pending',
   VERIFIED: 'Verified',
-  NOT_VERIFIED: 'Not Verified',
+  IN_REVIEW: 'In Review',
 };

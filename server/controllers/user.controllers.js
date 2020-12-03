@@ -13,9 +13,7 @@ import {
   getAccountOverview,
   upgradeUserToEditor,
   downgradeEditorToUser,
-  verifyCompanyInfo,
-  verifyBankDetails,
-  verifyDirectorInfo,
+  verifyVendor,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -194,38 +192,14 @@ const UserController = {
       .catch((error) => next(error));
   },
 
-  verifyCompanyInfo(req, res, next) {
-    const { vendorId } = req.locals;
+  verifyVendor(req, res, next) {
+    const vendorInfo = req.locals;
     const adminId = req.user._id;
-    verifyCompanyInfo({ vendorId, adminId })
+    verifyVendor({ ...vendorInfo, adminId })
       .then((vendor) => {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Company information verified', vendor });
-      })
-      .catch((error) => next(error));
-  },
-
-  verifyBankDetails(req, res, next) {
-    const { vendorId } = req.locals;
-    const adminId = req.user._id;
-    verifyBankDetails({ vendorId, adminId })
-      .then((vendor) => {
-        res
-          .status(httpStatus.OK)
-          .json({ success: true, message: 'Bank information verified', vendor });
-      })
-      .catch((error) => next(error));
-  },
-
-  verifyDirectorInfo(req, res, next) {
-    const { vendorId } = req.locals;
-    const adminId = req.user._id;
-    verifyDirectorInfo({ vendorId, adminId })
-      .then((vendor) => {
-        res
-          .status(httpStatus.OK)
-          .json({ success: true, message: 'Director information verified', vendor });
       })
       .catch((error) => next(error));
   },

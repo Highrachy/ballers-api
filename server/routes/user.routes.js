@@ -465,11 +465,11 @@ router.put(
 
 /**
  * @swagger
- * /user/vendor/verify/company:
+ * /user/vendor/verify:
  *   put:
  *     tags:
  *       - User
- *     description: Allows an admin to verify a vendor's company information
+ *     description: Allows an admin to verify a vendor's information
  *     produces:
  *       - application/json
  *     requestBody:
@@ -482,7 +482,7 @@ router.put(
  *                  type: string
  *     responses:
  *      '200':
- *        description: Company information verified
+ *        description: Information verified
  *      '404':
  *        description: User not found
  *      '400':
@@ -491,81 +491,11 @@ router.put(
  *       description: Internal server error
  */
 router.put(
-  '/vendor/verify/company',
+  '/vendor/verify',
   authenticate,
   isAdmin,
   schemaValidation(verifyVendorSchema),
-  UserController.verifyCompanyInfo,
-);
-
-/**
- * @swagger
- * /user/vendor/verify/bank:
- *   put:
- *     tags:
- *       - User
- *     description: Allows an admin to verify a vendor's banking information
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            type: object
- *            properties:
- *              userId:
- *                  type: string
- *     responses:
- *      '200':
- *        description: Banking information verified
- *      '404':
- *        description: User not found
- *      '400':
- *        description: Bad request
- *      '500':
- *       description: Internal server error
- */
-router.put(
-  '/vendor/verify/bank',
-  authenticate,
-  isAdmin,
-  schemaValidation(verifyVendorSchema),
-  UserController.verifyBankDetails,
-);
-
-/**
- * @swagger
- * /user/vendor/verify/director:
- *   put:
- *     tags:
- *       - User
- *     description: Allows an admin to verify a vendor's director information
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            type: object
- *            properties:
- *              userId:
- *                  type: string
- *     responses:
- *      '200':
- *        description: Director information verified
- *      '404':
- *        description: User not found
- *      '400':
- *        description: Bad request
- *      '500':
- *       description: Internal server error
- */
-router.put(
-  '/vendor/verify/director',
-  authenticate,
-  isAdmin,
-  schemaValidation(verifyVendorSchema),
-  UserController.verifyDirectorInfo,
+  UserController.verifyVendor,
 );
 
 module.exports = router;

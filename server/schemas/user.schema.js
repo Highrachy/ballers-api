@@ -80,4 +80,5 @@ export const userEditorSchema = Joi.object({
 
 export const verifyVendorSchema = Joi.object({
   vendorId: Joi.objectId().label('Vendor id').required(),
+  step: requiredString('Step'),
 });
