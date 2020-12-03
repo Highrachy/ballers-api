@@ -22,6 +22,7 @@ import {
   itReturnsForbiddenForInvalidToken,
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
+  itReturnsAnErrorForInvalidToken,
 } from '../helpers';
 import { USER_ROLE } from '../../server/helpers/constants';
 
@@ -1297,84 +1298,38 @@ describe('User Controller', () => {
 
   describe('Get all users', () => {
     const endpoint = '/api/v1/user/all';
-    const dummyUsers = UserFactory.buildList(16);
+    const dummyUsers = UserFactory.buildList(17);
 
     beforeEach(async () => {
-      adminToken = await addUser(adminUser);
-      userToken = await addUser(regularUser);
       await User.insertMany(dummyUsers);
     });
 
-    describe('when users exist in db', () => {
-      itReturnsTheRightPaginationValue(endpoint, adminToken);
-
-      itReturnsForbiddenForInvalidToken(endpoint, userToken);
-
+    describe('User pagination', () => {
+      itReturnsTheRightPaginationValue(endpoint, adminUser);
+      itReturnsForbiddenForInvalidToken(endpoint, regularUser);
       itReturnsForbiddenForNoToken(endpoint);
-
-      itReturnsAnErrorWhenServiceFails(endpoint, adminToken, User, 'aggregate');
-
-      context('when token is invalid', () => {
-        beforeEach(async () => {
-          await User.findByIdAndDelete(adminId);
-        });
-        it('returns token error', (done) => {
-          request()
-            .get(endpoint)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(404);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Invalid token');
-              done();
-            });
-        });
-      });
+      itReturnsAnErrorWhenServiceFails(endpoint, adminUser, User, 'aggregate');
+      itReturnsAnErrorForInvalidToken(endpoint, adminUser, User, adminId);
     });
   });
 
   describe('Get all vendors', () => {
     const endpoint = '/api/v1/user/vendor/all';
-    const dummyVendors = UserFactory.buildList(17, {
+    const dummyVendors = UserFactory.buildList(18, {
       vendor: { companyName: 'Google', verified: false },
       role: USER_ROLE.VENDOR,
     });
-    const vendor = UserFactory.build({
-      vendor: { companyName: 'Highrachy investment', verified: true },
-    });
 
     beforeEach(async () => {
-      adminToken = await addUser(adminUser);
-      userToken = await addUser(regularUser);
       await User.insertMany(dummyVendors);
-      await addUser(vendor);
     });
 
-    describe('when vendors exist in db', () => {
-      itReturnsTheRightPaginationValue(endpoint, adminToken);
-
-      itReturnsForbiddenForInvalidToken(endpoint, userToken);
-
+    describe('Vendor pagination', () => {
+      itReturnsTheRightPaginationValue(endpoint, adminUser);
+      itReturnsForbiddenForInvalidToken(endpoint, regularUser);
       itReturnsForbiddenForNoToken(endpoint);
-
-      itReturnsAnErrorWhenServiceFails(endpoint, adminToken, User, 'aggregate');
-
-      context('when token is invalid', () => {
-        beforeEach(async () => {
-          await User.findByIdAndDelete(adminId);
-        });
-        it('returns token error', (done) => {
-          request()
-            .get(endpoint)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(404);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Invalid token');
-              done();
-            });
-        });
-      });
+      itReturnsAnErrorWhenServiceFails(endpoint, adminUser, User, 'aggregate');
+      itReturnsAnErrorForInvalidToken(endpoint, adminUser, User, adminId);
     });
   });
 });
