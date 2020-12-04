@@ -215,7 +215,7 @@ const UserController = {
       .then((vendor) => {
         res
           .status(httpStatus.OK)
-          .json({ success: true, message: 'Company information verified', vendor });
+          .json({ success: true, message: 'Vendor information verified', vendor });
       })
       .catch((error) => next(error));
   },

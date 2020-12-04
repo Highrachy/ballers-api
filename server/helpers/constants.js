@@ -37,3 +37,5 @@ export const VENDOR_INFO_STATUS = {
   VERIFIED: 'Verified',
   IN_REVIEW: 'In Review',
 };
+
+export const VENDOR_STEPS = ['companyInfo', 'bankDetails', 'directorInfo'];

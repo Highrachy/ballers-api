@@ -9,7 +9,7 @@ import { getPropertyById, updateProperty } from './property.service';
 import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
-import { REFERRAL_STATUS, USER_ROLE, VENDOR_INFO_STATUS } from '../helpers/constants';
+import { REFERRAL_STATUS, USER_ROLE, VENDOR_INFO_STATUS, VENDOR_STEPS } from '../helpers/constants';
 import { generatePagination, generateFacetData } from '../helpers/pagination';
 import { getTodaysDateStandard } from '../helpers/dates';
 
@@ -372,8 +372,7 @@ export const getAllVendors = async (page = 1, limit = 10) => {
 };
 
 export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
-  const validSteps = ['companyInfo', 'bankDetails', 'directorInfo'];
-  const stepIsValid = validSteps.includes(step);
+  const stepIsValid = VENDOR_STEPS.includes(step);
 
   if (!stepIsValid) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid step');
@@ -406,11 +405,10 @@ export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
 };
 
 export const addCommentToVerificationStep = async ({ vendorId, adminId, step, comment }) => {
-  const validSteps = ['companyInfo', 'bankDetails', 'directorInfo'];
-  const stepIsValid = validSteps.includes(step);
+  const stepIsValid = VENDOR_STEPS.includes(step);
 
   if (!stepIsValid) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User not found');
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid step');
   }
 
   const vendor = await getUserById(vendorId);
@@ -431,7 +429,10 @@ export const addCommentToVerificationStep = async ({ vendorId, adminId, step, co
   try {
     return User.findByIdAndUpdate(
       vendorId,
-      { $push: { [`vendor.verification.${step}.comments`]: commentInfo } },
+      {
+        $push: { [`vendor.verification.${step}.comments`]: commentInfo },
+        $set: { [`vendor.verification.${step}.status`]: VENDOR_INFO_STATUS.PENDING },
+      },
       { new: true, fields: '-password' },
     );
   } catch (error) {

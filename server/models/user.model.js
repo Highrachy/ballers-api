@@ -54,6 +54,28 @@ import { USER_ROLE, VENDOR_INFO_STATUS } from '../helpers/constants';
  */
 
 const { ObjectId } = mongoose.Schema.Types;
+const vendorInfoSchema = {
+  comments: [
+    {
+      comment: {
+        type: String,
+      },
+      addedBy: {
+        type: ObjectId,
+      },
+    },
+  ],
+  status: {
+    type: String,
+    default: VENDOR_INFO_STATUS.PENDING,
+  },
+  verifiedBy: {
+    type: ObjectId,
+  },
+  verifiedOn: {
+    type: Date,
+  },
+};
 const UserSchema = new mongoose.Schema(
   {
     activated: {
@@ -209,72 +231,9 @@ const UserSchema = new mongoose.Schema(
         type: String,
       },
       verification: {
-        companyInfo: {
-          comments: [
-            {
-              comment: {
-                type: String,
-              },
-              addedBy: {
-                type: ObjectId,
-              },
-            },
-          ],
-          status: {
-            type: String,
-            default: VENDOR_INFO_STATUS.IN_REVIEW,
-          },
-          verifiedBy: {
-            type: ObjectId,
-          },
-          verifiedOn: {
-            type: Date,
-          },
-        },
-        bankDetails: {
-          comments: [
-            {
-              comment: {
-                type: String,
-              },
-              addedBy: {
-                type: ObjectId,
-              },
-            },
-          ],
-          status: {
-            type: String,
-            default: VENDOR_INFO_STATUS.IN_REVIEW,
-          },
-          verifiedBy: {
-            type: ObjectId,
-          },
-          verifiedOn: {
-            type: Date,
-          },
-        },
-        directorInfo: {
-          comments: [
-            {
-              comment: {
-                type: String,
-              },
-              addedBy: {
-                type: ObjectId,
-              },
-            },
-          ],
-          status: {
-            type: String,
-            default: VENDOR_INFO_STATUS.IN_REVIEW,
-          },
-          verifiedBy: {
-            type: ObjectId,
-          },
-          verifiedOn: {
-            type: Date,
-          },
-        },
+        companyInfo: vendorInfoSchema,
+        bankDetails: vendorInfoSchema,
+        directorInfo: vendorInfoSchema,
       },
     },
   },
