@@ -24,7 +24,7 @@ export const defaultPaginationResult = {
   totalPage: 2,
 };
 
-export const itReturnsTheRightPaginationValue = (endpoint, method, user, data = {}) => {
+export const itReturnsTheRightPaginationValue = ({ endpoint, method, user, data }) => {
   let token;
 
   describe('pagination', () => {
@@ -103,7 +103,7 @@ export const itReturnsTheRightPaginationValue = (endpoint, method, user, data = 
   });
 };
 
-export const itReturnsForbiddenForInvalidToken = (endpoint, method, user, data = {}) => {
+export const itReturnsForbiddenForInvalidToken = ({ endpoint, method, user, data }) => {
   context('with a invalid access token', () => {
     let token;
 
@@ -126,7 +126,7 @@ export const itReturnsForbiddenForInvalidToken = (endpoint, method, user, data =
   });
 };
 
-export const itReturnsForbiddenForNoToken = (endpoint, method, data = {}) => {
+export const itReturnsForbiddenForNoToken = ({ endpoint, method, data }) => {
   context('without token', () => {
     it('returns error', (done) => {
       request()
@@ -142,14 +142,14 @@ export const itReturnsForbiddenForNoToken = (endpoint, method, data = {}) => {
   });
 };
 
-export const itReturnsAnErrorWhenServiceFails = (
+export const itReturnsAnErrorWhenServiceFails = ({
   endpoint,
   method,
   user,
   model,
-  modelMethod = 'aggregate',
-  data = {},
-) => {
+  modelMethod,
+  data,
+}) => {
   context('when service fails', () => {
     let token;
 
@@ -171,14 +171,14 @@ export const itReturnsAnErrorWhenServiceFails = (
   });
 };
 
-export const itReturnsAnErrorForInvalidToken = (
+export const itReturnsAnErrorForInvalidToken = ({
   endpoint,
   method,
   user,
   model,
   userId,
-  data = {},
-) => {
+  data,
+}) => {
   let token;
   context('Invalid Token', () => {
     beforeEach(async () => {

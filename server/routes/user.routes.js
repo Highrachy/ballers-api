@@ -492,7 +492,7 @@ router.get('/vendor/all', authenticate, isAdmin, UserController.getAllVendors);
  *   put:
  *     tags:
  *       - User
- *     description: Allows an admin to verify a vendor's
+ *     description: Allows an admin to verify a vendor
  *     produces:
  *       - application/json
  *     requestBody:

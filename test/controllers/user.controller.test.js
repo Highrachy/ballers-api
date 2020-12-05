@@ -24,7 +24,7 @@ import {
   itReturnsAnErrorWhenServiceFails,
   itReturnsAnErrorForInvalidToken,
 } from '../helpers';
-import { USER_ROLE, VENDOR_STEPS } from '../../server/helpers/constants';
+import { USER_ROLE, VENDOR_STEPS, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
 
 useDatabase();
 
@@ -1297,7 +1297,24 @@ describe('User Controller', () => {
 
     describe('Verify vendor', () => {
       const vendorId = mongoose.Types.ObjectId();
-      const vendorUser = UserFactory.build({ _id: vendorId, role: 2, activated: true });
+      const vendorUser = UserFactory.build({
+        _id: vendorId,
+        role: 2,
+        activated: true,
+        vendor: {
+          verification: {
+            companyInfo: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+            bankDetails: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+            directorInfo: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+          },
+        },
+      });
       const invalidUserId = mongoose.Types.ObjectId();
       const invalidUser = UserFactory.build({ _id: invalidUserId });
       const endpoint = '/api/v1/user/vendor/verify';
@@ -1326,9 +1343,55 @@ describe('User Controller', () => {
         });
       });
 
-      itReturnsForbiddenForNoToken(endpoint, method, data);
-      itReturnsForbiddenForInvalidToken(endpoint, method, invalidUser, data);
-      itReturnsAnErrorForInvalidToken(endpoint, method, invalidUser, User, invalidUserId, data);
+      context('when vendor step has not been verified', () => {
+        const unverifiedVendorId = mongoose.Types.ObjectId();
+        const unverifiedVendor = UserFactory.build({
+          _id: unverifiedVendorId,
+          role: 2,
+          activated: true,
+          vendor: {
+            verification: {
+              companyInfo: {
+                status: VENDOR_INFO_STATUS.PENDING,
+              },
+              bankDetails: {
+                status: VENDOR_INFO_STATUS.VERIFIED,
+              },
+              directorInfo: {
+                status: VENDOR_INFO_STATUS.VERIFIED,
+              },
+            },
+          },
+        });
+
+        beforeEach(async () => {
+          await addUser(unverifiedVendor);
+        });
+
+        it('returns an erro', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ vendorId: unverifiedVendorId })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('companyInfo has not been verified');
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method, data });
+      itReturnsForbiddenForInvalidToken({ endpoint, method, user: invalidUser, data });
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        model: User,
+        userId: invalidUserId,
+        data,
+      });
 
       context('when findByIdAndUpdate returns an error', () => {
         it('returns the error', (done) => {
@@ -1402,14 +1465,30 @@ describe('User Controller', () => {
         );
       });
 
-      itReturnsForbiddenForNoToken(endpoint, method, { ...data, status: VENDOR_STEPS[0] });
-      itReturnsForbiddenForInvalidToken(endpoint, method, invalidUser, {
-        ...data,
-        status: VENDOR_STEPS[0],
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+        data: { ...data, status: VENDOR_STEPS[0] },
       });
-      itReturnsAnErrorForInvalidToken(endpoint, method, invalidUser, User, invalidUserId, {
-        ...data,
-        status: VENDOR_STEPS[0],
+      itReturnsForbiddenForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        data: {
+          ...data,
+          status: VENDOR_STEPS[0],
+        },
+      });
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        model: User,
+        userId: invalidUserId,
+        data: {
+          ...data,
+          status: VENDOR_STEPS[0],
+        },
       });
 
       context('when findByIdAndUpdate returns an error', () => {
@@ -1507,14 +1586,30 @@ describe('User Controller', () => {
         );
       });
 
-      itReturnsForbiddenForNoToken(endpoint, method, { ...data, status: VENDOR_STEPS[0] });
-      itReturnsForbiddenForInvalidToken(endpoint, method, invalidUser, {
-        ...data,
-        status: VENDOR_STEPS[0],
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+        data: { ...data, status: VENDOR_STEPS[0] },
       });
-      itReturnsAnErrorForInvalidToken(endpoint, method, invalidUser, User, invalidUserId, {
-        ...data,
-        status: VENDOR_STEPS[0],
+      itReturnsForbiddenForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        data: {
+          ...data,
+          status: VENDOR_STEPS[0],
+        },
+      });
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        model: User,
+        userId: invalidUserId,
+        data: {
+          ...data,
+          status: VENDOR_STEPS[0],
+        },
       });
 
       context('when findByIdAndUpdate returns an error', () => {
@@ -1583,11 +1678,23 @@ describe('User Controller', () => {
     });
 
     describe('User pagination', () => {
-      itReturnsTheRightPaginationValue(endpoint, method, adminUser);
-      itReturnsForbiddenForInvalidToken(endpoint, method, regularUser);
-      itReturnsForbiddenForNoToken(endpoint, method);
-      itReturnsAnErrorWhenServiceFails(endpoint, method, adminUser, User, 'aggregate');
-      itReturnsAnErrorForInvalidToken(endpoint, method, adminUser, User, adminId);
+      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
+      itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
+      itReturnsForbiddenForNoToken({ endpoint, method });
+      itReturnsAnErrorWhenServiceFails({
+        endpoint,
+        method,
+        user: adminUser,
+        model: User,
+        modelMethod: 'aggregate',
+      });
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        model: User,
+        userId: adminId,
+      });
     });
   });
 
@@ -1604,11 +1711,23 @@ describe('User Controller', () => {
     });
 
     describe('Vendor pagination', () => {
-      itReturnsTheRightPaginationValue(endpoint, method, adminUser);
-      itReturnsForbiddenForInvalidToken(endpoint, method, regularUser);
-      itReturnsForbiddenForNoToken(endpoint, method);
-      itReturnsAnErrorWhenServiceFails(endpoint, method, adminUser, User, 'aggregate');
-      itReturnsAnErrorForInvalidToken(endpoint, method, adminUser, User, adminId);
+      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
+      itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
+      itReturnsForbiddenForNoToken({ endpoint, method });
+      itReturnsAnErrorWhenServiceFails({
+        endpoint,
+        method,
+        user: adminUser,
+        model: User,
+        modelMethod: 'aggregate',
+      });
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        model: User,
+        userId: adminId,
+      });
     });
   });
 });
