@@ -24,7 +24,7 @@ import {
   itReturnsAnErrorWhenServiceFails,
   itReturnsAnErrorForInvalidToken,
 } from '../helpers';
-import { USER_ROLE } from '../../server/helpers/constants';
+import { USER_ROLE, VENDOR_STEPS } from '../../server/helpers/constants';
 
 useDatabase();
 
@@ -1294,27 +1294,306 @@ describe('User Controller', () => {
         });
       });
     });
+
+    describe('Verify vendor', () => {
+      const vendorId = mongoose.Types.ObjectId();
+      const vendorUser = UserFactory.build({ _id: vendorId, role: 2, activated: true });
+      const invalidUserId = mongoose.Types.ObjectId();
+      const invalidUser = UserFactory.build({ _id: invalidUserId });
+      const endpoint = '/api/v1/user/vendor/verify';
+      const method = 'put';
+
+      const data = { vendorId };
+
+      beforeEach(async () => {
+        await addUser(vendorUser);
+      });
+
+      context('with valid token', () => {
+        it('returns a verified vendor', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Vendor verified');
+              expect(res.body.vendor.vendor.verified).to.be.eql(true);
+              expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminId.toString());
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken(endpoint, method, data);
+      itReturnsForbiddenForInvalidToken(endpoint, method, invalidUser, data);
+      itReturnsAnErrorForInvalidToken(endpoint, method, invalidUser, User, invalidUserId, data);
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findByIdAndUpdate.restore();
+            });
+        });
+      });
+
+      context('with invalid data', () => {
+        context('when user id is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ vendorId: '' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Vendor id" is not allowed to be empty');
+                done();
+              });
+          });
+        });
+      });
+    });
+
+    describe('Verify vendor step', () => {
+      const vendorId = mongoose.Types.ObjectId();
+      const vendorUser = UserFactory.build({ _id: vendorId, role: 2, activated: true });
+      const invalidUserId = mongoose.Types.ObjectId();
+      const invalidUser = UserFactory.build({ _id: invalidUserId });
+      const endpoint = '/api/v1/user/vendor/verify/step';
+      const method = 'put';
+
+      const data = { vendorId };
+
+      beforeEach(async () => {
+        await addUser(vendorUser);
+      });
+
+      context('when a valid token is used', () => {
+        [...new Array(3)].map((_, index) =>
+          it('returns verified step', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: VENDOR_STEPS[index] })
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.message).to.be.eql('Vendor information verified');
+                expect(res.body.vendor.vendor.verification[VENDOR_STEPS[index]].status).to.be.eql(
+                  'Verified',
+                );
+                expect(
+                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].verifiedBy,
+                ).to.be.eql(adminId.toString());
+                done();
+              });
+          }),
+        );
+      });
+
+      itReturnsForbiddenForNoToken(endpoint, method, { ...data, status: VENDOR_STEPS[0] });
+      itReturnsForbiddenForInvalidToken(endpoint, method, invalidUser, {
+        ...data,
+        status: VENDOR_STEPS[0],
+      });
+      itReturnsAnErrorForInvalidToken(endpoint, method, invalidUser, User, invalidUserId, {
+        ...data,
+        status: VENDOR_STEPS[0],
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        [...new Array(3)].map((_, index) =>
+          it('returns the error', (done) => {
+            sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: VENDOR_STEPS[index] })
+              .end((err, res) => {
+                expect(res).to.have.status(400);
+                expect(res.body.success).to.be.eql(false);
+                done();
+                User.findByIdAndUpdate.restore();
+              });
+          }),
+        );
+      });
+
+      context('with invalid data', () => {
+        context('when step is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: '' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Step" is not allowed to be empty');
+                done();
+              });
+          });
+        });
+
+        context('when vendor id is empty', () => {
+          [...new Array(3)].map((_, index) =>
+            it('returns an error', (done) => {
+              request()
+                [method](endpoint)
+                .set('authorization', adminToken)
+                .send({ vendorId: '', step: VENDOR_STEPS[index] })
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Vendor id" is not allowed to be empty');
+                  done();
+                });
+            }),
+          );
+        });
+      });
+    });
+
+    describe('Add comment to vendor info', () => {
+      const vendorId = mongoose.Types.ObjectId();
+      const vendorUser = UserFactory.build({ _id: vendorId, role: 2, activated: true });
+      const invalidUserId = mongoose.Types.ObjectId();
+      const invalidUser = UserFactory.build({ _id: invalidUserId });
+      const endpoint = '/api/v1/user/vendor/verify/comment';
+      const method = 'put';
+
+      const data = { vendorId, comment: 'sample comment 1' };
+
+      beforeEach(async () => {
+        await addUser(vendorUser);
+      });
+
+      context('when a valid token is used', () => {
+        [...new Array(3)].map((_, index) =>
+          it('returns verified step', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: VENDOR_STEPS[index] })
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.message).to.be.eql('Comment added');
+                expect(res.body.vendor.vendor.verification[VENDOR_STEPS[index]].status).to.be.eql(
+                  'Pending',
+                );
+                expect(
+                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].comment,
+                ).to.be.eql(data.comment);
+                expect(
+                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].addedBy,
+                ).to.be.eql(adminId.toString());
+                done();
+              });
+          }),
+        );
+      });
+
+      itReturnsForbiddenForNoToken(endpoint, method, { ...data, status: VENDOR_STEPS[0] });
+      itReturnsForbiddenForInvalidToken(endpoint, method, invalidUser, {
+        ...data,
+        status: VENDOR_STEPS[0],
+      });
+      itReturnsAnErrorForInvalidToken(endpoint, method, invalidUser, User, invalidUserId, {
+        ...data,
+        status: VENDOR_STEPS[0],
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        [...new Array(3)].map((_, index) =>
+          it('returns the error', (done) => {
+            sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: VENDOR_STEPS[index] })
+              .end((err, res) => {
+                expect(res).to.have.status(400);
+                expect(res.body.success).to.be.eql(false);
+                done();
+                User.findByIdAndUpdate.restore();
+              });
+          }),
+        );
+      });
+
+      context('with invalid data', () => {
+        context('when step is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: '' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Step" is not allowed to be empty');
+                done();
+              });
+          });
+        });
+
+        context('when vendor id is empty', () => {
+          [...new Array(3)].map((_, index) =>
+            it('returns an error', (done) => {
+              request()
+                [method](endpoint)
+                .set('authorization', adminToken)
+                .send({ vendorId: '', step: VENDOR_STEPS[index] })
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Vendor id" is not allowed to be empty');
+                  done();
+                });
+            }),
+          );
+        });
+      });
+    });
   });
 
   describe('Get all users', () => {
     const endpoint = '/api/v1/user/all';
     const dummyUsers = UserFactory.buildList(17);
+    const method = 'get';
 
     beforeEach(async () => {
       await User.insertMany(dummyUsers);
     });
 
     describe('User pagination', () => {
-      itReturnsTheRightPaginationValue(endpoint, adminUser);
-      itReturnsForbiddenForInvalidToken(endpoint, regularUser);
-      itReturnsForbiddenForNoToken(endpoint);
-      itReturnsAnErrorWhenServiceFails(endpoint, adminUser, User, 'aggregate');
-      itReturnsAnErrorForInvalidToken(endpoint, adminUser, User, adminId);
+      itReturnsTheRightPaginationValue(endpoint, method, adminUser);
+      itReturnsForbiddenForInvalidToken(endpoint, method, regularUser);
+      itReturnsForbiddenForNoToken(endpoint, method);
+      itReturnsAnErrorWhenServiceFails(endpoint, method, adminUser, User, 'aggregate');
+      itReturnsAnErrorForInvalidToken(endpoint, method, adminUser, User, adminId);
     });
   });
 
   describe('Get all vendors', () => {
     const endpoint = '/api/v1/user/vendor/all';
+    const method = 'get';
     const dummyVendors = UserFactory.buildList(18, {
       vendor: { companyName: 'Google', verified: false },
       role: USER_ROLE.VENDOR,
@@ -1325,11 +1604,11 @@ describe('User Controller', () => {
     });
 
     describe('Vendor pagination', () => {
-      itReturnsTheRightPaginationValue(endpoint, adminUser);
-      itReturnsForbiddenForInvalidToken(endpoint, regularUser);
-      itReturnsForbiddenForNoToken(endpoint);
-      itReturnsAnErrorWhenServiceFails(endpoint, adminUser, User, 'aggregate');
-      itReturnsAnErrorForInvalidToken(endpoint, adminUser, User, adminId);
+      itReturnsTheRightPaginationValue(endpoint, method, adminUser);
+      itReturnsForbiddenForInvalidToken(endpoint, method, regularUser);
+      itReturnsForbiddenForNoToken(endpoint, method);
+      itReturnsAnErrorWhenServiceFails(endpoint, method, adminUser, User, 'aggregate');
+      itReturnsAnErrorForInvalidToken(endpoint, method, adminUser, User, adminId);
     });
   });
 });

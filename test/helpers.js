@@ -24,7 +24,7 @@ export const defaultPaginationResult = {
   totalPage: 2,
 };
 
-export const itReturnsTheRightPaginationValue = (endpoint, user) => {
+export const itReturnsTheRightPaginationValue = (endpoint, method, user, data = {}) => {
   let token;
 
   describe('pagination', () => {
@@ -35,8 +35,9 @@ export const itReturnsTheRightPaginationValue = (endpoint, user) => {
     context('when no pagination parameter is passed', () => {
       it('returns the default values', (done) => {
         request()
-          .get(endpoint)
+          [method](endpoint)
           .set('authorization', token)
+          .send(data)
           .end((err, res) => {
             expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
             done();
@@ -47,8 +48,9 @@ export const itReturnsTheRightPaginationValue = (endpoint, user) => {
     context('when both page and limit parameters are set', () => {
       it('returns the given page and limit', (done) => {
         request()
-          .get(`${endpoint}?page=2&limit=5`)
+          [method](`${endpoint}?page=2&limit=5`)
           .set('authorization', token)
+          .send(data)
           .end((err, res) => {
             expectsPaginationToReturnTheRightValues(res, {
               ...defaultPaginationResult,
@@ -66,8 +68,9 @@ export const itReturnsTheRightPaginationValue = (endpoint, user) => {
     context('when page is set to 2', () => {
       it('returns the second page', (done) => {
         request()
-          .get(`${endpoint}?page=2`)
+          [method](`${endpoint}?page=2`)
           .set('authorization', token)
+          .send(data)
           .end((err, res) => {
             expectsPaginationToReturnTheRightValues(res, {
               ...defaultPaginationResult,
@@ -83,8 +86,9 @@ export const itReturnsTheRightPaginationValue = (endpoint, user) => {
     context('when limit is set to 4', () => {
       it('returns 4 items', (done) => {
         request()
-          .get(`${endpoint}?limit=4`)
+          [method](`${endpoint}?limit=4`)
           .set('authorization', token)
+          .send(data)
           .end((err, res) => {
             expectsPaginationToReturnTheRightValues(res, {
               ...defaultPaginationResult,
@@ -99,7 +103,7 @@ export const itReturnsTheRightPaginationValue = (endpoint, user) => {
   });
 };
 
-export const itReturnsForbiddenForInvalidToken = (endpoint, user) => {
+export const itReturnsForbiddenForInvalidToken = (endpoint, method, user, data = {}) => {
   context('with a invalid access token', () => {
     let token;
 
@@ -109,8 +113,9 @@ export const itReturnsForbiddenForInvalidToken = (endpoint, user) => {
 
     it('returns forbidden', (done) => {
       request()
-        .get(endpoint)
+        [method](endpoint)
         .set('authorization', token)
+        .send(data)
         .end((err, res) => {
           expect(res).to.have.status(403);
           expect(res.body.success).to.be.eql(false);
@@ -121,11 +126,12 @@ export const itReturnsForbiddenForInvalidToken = (endpoint, user) => {
   });
 };
 
-export const itReturnsForbiddenForNoToken = (endpoint) => {
+export const itReturnsForbiddenForNoToken = (endpoint, method, data = {}) => {
   context('without token', () => {
     it('returns error', (done) => {
       request()
-        .get(endpoint)
+        [method](endpoint)
+        .send(data)
         .end((err, res) => {
           expect(res).to.have.status(403);
           expect(res.body.success).to.be.eql(false);
@@ -138,9 +144,11 @@ export const itReturnsForbiddenForNoToken = (endpoint) => {
 
 export const itReturnsAnErrorWhenServiceFails = (
   endpoint,
+  method,
   user,
   model,
   modelMethod = 'aggregate',
+  data = {},
 ) => {
   context('when service fails', () => {
     let token;
@@ -151,8 +159,9 @@ export const itReturnsAnErrorWhenServiceFails = (
     it('returns the error', (done) => {
       sinon.stub(model, modelMethod).throws(new Error('Type Error'));
       request()
-        .get(endpoint)
+        [method](endpoint)
         .set('authorization', token)
+        .send(data)
         .end((err, res) => {
           expect(res).to.have.status(500);
           done();
@@ -162,7 +171,14 @@ export const itReturnsAnErrorWhenServiceFails = (
   });
 };
 
-export const itReturnsAnErrorForInvalidToken = (endpoint, user, model, userId) => {
+export const itReturnsAnErrorForInvalidToken = (
+  endpoint,
+  method,
+  user,
+  model,
+  userId,
+  data = {},
+) => {
   let token;
   context('Invalid Token', () => {
     beforeEach(async () => {
@@ -176,8 +192,9 @@ export const itReturnsAnErrorForInvalidToken = (endpoint, user, model, userId) =
 
       it('returns token error', (done) => {
         request()
-          .get(endpoint)
+          [method](endpoint)
           .set('authorization', token)
+          .send(data)
           .end((err, res) => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
