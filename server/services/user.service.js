@@ -369,3 +369,19 @@ export const getAllVendors = async (page = 1, limit = 10) => {
   const result = vendors[0].data;
   return { pagination, result };
 };
+
+export const updateVendor = async ({ updatedVendor, vendorId }) => {
+  const vendor = await getUserById(vendorId);
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Vendor not found');
+  }
+  try {
+    return User.findByIdAndUpdate(
+      vendor._id,
+      { $set: { vendor: updatedVendor } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating vendor information', error);
+  }
+};

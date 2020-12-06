@@ -11,14 +11,26 @@ const phone = Joi.string().allow(null, '').optional().default('');
 const requiredString = (label) => Joi.string().label(label).required();
 const optionalString = (label) => Joi.string().label(label).optional();
 
-const vendor = Joi.object().keys({
-  companyName: optionalString('Company Name'),
-});
+const directors = [
+  {
+    name: optionalString('Name'),
+    isSignatory: Joi.boolean().label('Signatory').optional(),
+    signature: optionalString('Signature'),
+    phone: optionalString('Phone'),
+  },
+];
+
+const socialMedia = [
+  {
+    name: optionalString('First Name'),
+    url: optionalString('Last Name'),
+  },
+];
 
 export const registerSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
-  vendor,
+  companyName: optionalString('Company Name'),
   email,
   phone,
   password,
@@ -76,4 +88,16 @@ export const favoritePropertySchema = Joi.object({
 
 export const userEditorSchema = Joi.object({
   userId: Joi.objectId().label('User id').required(),
+});
+
+export const updateVendorSchema = Joi.object({
+  accountNumber: optionalString('Account Number'),
+  companyAddress: optionalString('Company Address'),
+  companyLogo: optionalString('Company Logo'),
+  companyName: optionalString('Company Name'),
+  directors,
+  identification: optionalString('Identification'),
+  redanNumber: optionalString('Redan Number'),
+  socialMedia,
+  website: optionalString('Website'),
 });

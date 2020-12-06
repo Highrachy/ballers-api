@@ -7,8 +7,9 @@ import {
   updateUserSchema,
   favoritePropertySchema,
   userEditorSchema,
+  updateVendorSchema,
 } from '../schemas/user.schema';
-import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
+import { schemaValidation, authenticate, isAdmin, isVendor } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
 import Upload, { UploadController } from '../helpers/uploadImage';
 
@@ -482,5 +483,36 @@ router.put(
  *          description: Internal server error
  */
 router.get('/vendor/all', authenticate, isAdmin, UserController.getAllVendors);
+
+/**
+ * @swagger
+ * /user/vendor/update:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Updates vendor information
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Updates vendor information
+ *     responses:
+ *      '200':
+ *        description: Vendor Information updated
+ *      '400':
+ *        description: Error updating vendor
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/update',
+  authenticate,
+  isVendor,
+  schemaValidation(updateVendorSchema),
+  UserController.updateVendor,
+);
 
 module.exports = router;

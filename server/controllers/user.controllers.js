@@ -14,6 +14,7 @@ import {
   upgradeUserToEditor,
   downgradeEditorToUser,
   getAllVendors,
+  updateVendor,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -201,6 +202,18 @@ const UserController = {
           pagination,
           result,
         });
+      })
+      .catch((error) => next(error));
+  },
+
+  updateVendor(req, res, next) {
+    const updatedVendor = req.locals;
+    const vendorId = req.user._id;
+    updateVendor({ updatedVendor, vendorId })
+      .then((vendor) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Vendor information updated', vendor });
       })
       .catch((error) => next(error));
   },
