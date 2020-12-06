@@ -12,21 +12,21 @@ const requiredString = (label) => Joi.string().label(label).required();
 const optionalString = (label) => Joi.string().label(label).optional();
 const optionalBoolean = (label) => Joi.boolean().label(label).optional();
 
-const directors = [
-  {
+const directors = Joi.array().items(
+  Joi.object().keys({
     name: optionalString('Name'),
     isSignatory: optionalBoolean('Signatory'),
     signature: optionalString('Signature'),
     phone: optionalString('Phone'),
-  },
-];
+  }),
+);
 
-const socialMedia = [
-  {
+const socialMedia = Joi.array().items(
+  Joi.object().keys({
     name: optionalString('First Name'),
     url: optionalString('Last Name'),
-  },
-];
+  }),
+);
 
 const vendor = Joi.object().keys({
   companyName: optionalString('Company Name'),

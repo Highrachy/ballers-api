@@ -1666,6 +1666,112 @@ describe('User Controller', () => {
         });
       });
     });
+
+    describe('Add comment to vendor info', () => {
+      let vendorToken;
+      const vendorId = mongoose.Types.ObjectId();
+      const vendorUser = UserFactory.build({
+        _id: vendorId,
+        role: 2,
+        activated: true,
+        vendor: {
+          companyName: 'Highrachy Investment Limited',
+        },
+      });
+      const invalidUserId = mongoose.Types.ObjectId();
+      const invalidUser = UserFactory.build({ _id: invalidUserId });
+      const endpoint = '/api/v1/user/vendor/update';
+      const method = 'put';
+
+      const data = {
+        accountNumber: '1234567890',
+        companyAddress: '123 sesame street',
+        companyLogo: 'https://ballers.ng/logo.png',
+        directors: [
+          {
+            name: 'John Doe',
+            isSignatory: false,
+            phone: '08012345678',
+          },
+        ],
+        identification: 'https://ballers.ng/cac-certificate.png',
+        redanNumber: '1234567890',
+        socialMedia: [
+          {
+            name: 'Instagram',
+            url: 'https://instagram.com/highrachy',
+          },
+          {
+            name: 'Facebook',
+            url: 'https://facebook.com/highrachy',
+          },
+        ],
+        website: 'https://highrachy.com/',
+      };
+
+      beforeEach(async () => {
+        vendorToken = await addUser(vendorUser);
+      });
+
+      context('when a valid token is used', () => {
+        it('returns updated vendor', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Vendor information updated');
+              expect(res.body.vendor._id).to.be.eql(vendorId.toString());
+              expect(res.body.vendor.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
+              expect(res.body.vendor.vendor.accountNumber).to.be.eql(data.accountNumber);
+              expect(res.body.vendor.vendor.companyAddress).to.be.eql(data.companyAddress);
+              expect(res.body.vendor.vendor.socialMedia.length).to.be.eql(data.socialMedia.length);
+              expect(res.body.vendor.vendor.directors.length).to.be.eql(data.directors.length);
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+        data,
+      });
+
+      itReturnsForbiddenForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        data,
+      });
+
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        model: User,
+        userId: invalidUserId,
+        data,
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findByIdAndUpdate.restore();
+            });
+        });
+      });
+    });
   });
 
   describe('Get all users', () => {
