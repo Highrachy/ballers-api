@@ -378,7 +378,7 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
   try {
     return User.findByIdAndUpdate(
       vendor._id,
-      { $set: { vendor: updatedVendor } },
+      { $set: { vendor: { ...vendor.vendor, ...updatedVendor } } },
       { new: true, fields: '-password' },
     );
   } catch (error) {
