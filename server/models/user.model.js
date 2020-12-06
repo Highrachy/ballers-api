@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { USER_ROLE } from '../helpers/constants';
+import { USER_ROLE, VENDOR_INFO_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -54,6 +54,28 @@ import { USER_ROLE } from '../helpers/constants';
  */
 
 const { ObjectId } = mongoose.Schema.Types;
+const vendorInfoSchema = {
+  comments: [
+    {
+      comment: {
+        type: String,
+      },
+      addedBy: {
+        type: ObjectId,
+      },
+    },
+  ],
+  status: {
+    type: String,
+    default: VENDOR_INFO_STATUS.PENDING,
+  },
+  verifiedBy: {
+    type: ObjectId,
+  },
+  verifiedOn: {
+    type: Date,
+  },
+};
 const UserSchema = new mongoose.Schema(
   {
     activated: {
@@ -207,6 +229,11 @@ const UserSchema = new mongoose.Schema(
       },
       website: {
         type: String,
+      },
+      verification: {
+        companyInfo: vendorInfoSchema,
+        bankDetails: vendorInfoSchema,
+        directorInfo: vendorInfoSchema,
       },
     },
   },

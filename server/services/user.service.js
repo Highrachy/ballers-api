@@ -9,8 +9,9 @@ import { getPropertyById, updateProperty } from './property.service';
 import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
-import { REFERRAL_STATUS, USER_ROLE } from '../helpers/constants';
+import { REFERRAL_STATUS, USER_ROLE, VENDOR_INFO_STATUS, VENDOR_STEPS } from '../helpers/constants';
 import { generatePagination, generateFacetData } from '../helpers/pagination';
+import { getTodaysDateStandard } from '../helpers/dates';
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -368,6 +369,110 @@ export const getAllVendors = async (page = 1, limit = 10) => {
   const pagination = generatePagination(page, limit, total);
   const result = vendors[0].data;
   return { pagination, result };
+};
+
+export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
+  const stepIsValid = VENDOR_STEPS.includes(step);
+
+  if (!stepIsValid) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid step');
+  }
+
+  const vendor = await getUserById(vendorId);
+
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (vendor && vendor.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  const verificationInfo = {
+    [`vendor.verification.${step}.status`]: VENDOR_INFO_STATUS.VERIFIED,
+    [`vendor.verification.${step}.verifiedBy`]: adminId,
+    [`vendor.verification.${step}.verifiedOn`]: getTodaysDateStandard(),
+  };
+  try {
+    return User.findByIdAndUpdate(
+      vendorId,
+      { $set: verificationInfo },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, `Error verifying ${step}`, error);
+  }
+};
+
+export const addCommentToVerificationStep = async ({ vendorId, adminId, step, comment }) => {
+  const stepIsValid = VENDOR_STEPS.includes(step);
+
+  if (!stepIsValid) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid step');
+  }
+
+  const vendor = await getUserById(vendorId);
+
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (vendor && vendor.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  const commentInfo = {
+    comment,
+    addedBy: adminId,
+  };
+
+  try {
+    return User.findByIdAndUpdate(
+      vendorId,
+      {
+        $push: { [`vendor.verification.${step}.comments`]: commentInfo },
+        $set: { [`vendor.verification.${step}.status`]: VENDOR_INFO_STATUS.PENDING },
+      },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, `Error verifying ${step}`, error);
+  }
+};
+
+export const verifyVendor = async ({ vendorId, adminId }) => {
+  const vendor = await getUserById(vendorId);
+
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (vendor && vendor.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  VENDOR_STEPS.map((step) => {
+    if (vendor.vendor.verification[step].status !== VENDOR_INFO_STATUS.VERIFIED) {
+      throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, `${step} has not been verified`);
+    }
+    return true;
+  });
+
+  try {
+    return User.findByIdAndUpdate(
+      vendorId,
+      {
+        $set: {
+          'vendor.verified': true,
+          'vendor.verifiedBy': adminId,
+          'vendor.verifiedOn': getTodaysDateStandard(),
+        },
+      },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error verifying vendor', error);
+  }
 };
 
 export const updateVendor = async ({ updatedVendor, vendorId }) => {

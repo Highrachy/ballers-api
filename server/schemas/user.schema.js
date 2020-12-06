@@ -95,6 +95,21 @@ export const userEditorSchema = Joi.object({
   userId: Joi.objectId().label('User id').required(),
 });
 
+export const verifyVendorSchema = Joi.object({
+  vendorId: Joi.objectId().label('Vendor id').required(),
+});
+
+export const verifyVendorInfoSchema = Joi.object({
+  vendorId: Joi.objectId().label('Vendor id').required(),
+  step: requiredString('Step'),
+});
+
+export const addCommentVendorSchema = Joi.object({
+  vendorId: Joi.objectId().label('Vendor id').required(),
+  step: requiredString('Step'),
+  comment: requiredString('Comment'),
+});
+
 export const updateVendorSchema = Joi.object({
   accountNumber: optionalString('Account Number'),
   companyAddress: optionalString('Company Address'),

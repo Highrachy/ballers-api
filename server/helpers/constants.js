@@ -31,3 +31,11 @@ export const CONCERN_STATUS = {
   RESOLVED: 'Resolved',
   PENDING: 'Pending',
 };
+
+export const VENDOR_INFO_STATUS = {
+  PENDING: 'Pending',
+  VERIFIED: 'Verified',
+  IN_REVIEW: 'In Review',
+};
+
+export const VENDOR_STEPS = ['companyInfo', 'bankDetails', 'directorInfo'];
