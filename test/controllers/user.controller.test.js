@@ -1368,7 +1368,7 @@ describe('User Controller', () => {
           await addUser(unverifiedVendor);
         });
 
-        it('returns an erro', (done) => {
+        it('returns an error', (done) => {
           request()
             [method](endpoint)
             .set('authorization', adminToken)

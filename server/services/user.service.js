@@ -451,12 +451,9 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
   }
 
-  [...new Array(3)].map((_, index) => {
-    if (vendor.vendor.verification[VENDOR_STEPS[index]].status !== VENDOR_INFO_STATUS.VERIFIED) {
-      throw new ErrorHandler(
-        httpStatus.PRECONDITION_FAILED,
-        `${VENDOR_STEPS[index]} has not been verified`,
-      );
+  VENDOR_STEPS.map((step) => {
+    if (vendor.vendor.verification[step].status !== VENDOR_INFO_STATUS.VERIFIED) {
+      throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, `${step} has not been verified`);
     }
     return true;
   });
