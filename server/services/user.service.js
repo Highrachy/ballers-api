@@ -474,3 +474,19 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error verifying vendor', error);
   }
 };
+
+export const updateVendor = async ({ updatedVendor, vendorId }) => {
+  const vendor = await getUserById(vendorId);
+  if (!vendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Vendor not found');
+  }
+  try {
+    return User.findByIdAndUpdate(
+      vendor._id,
+      { $set: { vendor: { ...vendor.vendor, ...updatedVendor } } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating vendor information', error);
+  }
+};

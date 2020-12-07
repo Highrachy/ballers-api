@@ -10,6 +10,23 @@ const confirmPassword = Joi.string().valid(Joi.ref('password')).required().stric
 const phone = Joi.string().allow(null, '').optional().default('');
 const requiredString = (label) => Joi.string().label(label).required();
 const optionalString = (label) => Joi.string().label(label).optional();
+const optionalBoolean = (label) => Joi.boolean().label(label).optional();
+
+const directors = Joi.array().items(
+  Joi.object().keys({
+    name: optionalString('Name'),
+    isSignatory: optionalBoolean('Signatory'),
+    signature: optionalString('Signature'),
+    phone: optionalString('Phone'),
+  }),
+);
+
+const socialMedia = Joi.array().items(
+  Joi.object().keys({
+    name: optionalString('First Name'),
+    url: optionalString('Last Name'),
+  }),
+);
 
 const vendor = Joi.object().keys({
   companyName: optionalString('Company Name'),
@@ -23,7 +40,7 @@ export const registerSchema = Joi.object({
   phone,
   password,
   confirmPassword,
-  referralCode: Joi.string().label('Referral Code').optional(),
+  referralCode: optionalString('Referral Code'),
 });
 
 export const loginSchema = Joi.object({
@@ -91,4 +108,16 @@ export const addCommentVendorSchema = Joi.object({
   vendorId: Joi.objectId().label('Vendor id').required(),
   step: requiredString('Step'),
   comment: requiredString('Comment'),
+});
+
+export const updateVendorSchema = Joi.object({
+  accountNumber: optionalString('Account Number'),
+  companyAddress: optionalString('Company Address'),
+  companyLogo: optionalString('Company Logo'),
+  companyName: optionalString('Company Name'),
+  directors,
+  identification: optionalString('Identification'),
+  redanNumber: optionalString('Redan Number'),
+  socialMedia,
+  website: optionalString('Website'),
 });

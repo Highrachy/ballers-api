@@ -15,6 +15,7 @@ import {
   downgradeEditorToUser,
   verifyVendorStep,
   getAllVendors,
+  updateVendor,
   addCommentToVerificationStep,
   verifyVendor,
 } from '../services/user.service';
@@ -236,6 +237,18 @@ const UserController = {
     verifyVendor({ vendorId, adminId })
       .then((vendor) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Vendor verified', vendor });
+      })
+      .catch((error) => next(error));
+  },
+
+  updateVendor(req, res, next) {
+    const updatedVendor = req.locals;
+    const vendorId = req.user._id;
+    updateVendor({ updatedVendor, vendorId })
+      .then((user) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Vendor information updated', user });
       })
       .catch((error) => next(error));
   },
