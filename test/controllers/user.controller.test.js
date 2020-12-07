@@ -1667,7 +1667,7 @@ describe('User Controller', () => {
       });
     });
 
-    describe('Add comment to vendor info', () => {
+    describe('Update vendor info', () => {
       let vendorToken;
       const vendorId = mongoose.Types.ObjectId();
       const vendorUser = UserFactory.build({
@@ -1723,15 +1723,34 @@ describe('User Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Vendor information updated');
-              expect(res.body.vendor._id).to.be.eql(vendorId.toString());
-              expect(res.body.vendor.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
-              expect(res.body.vendor.vendor.accountNumber).to.be.eql(data.accountNumber);
-              expect(res.body.vendor.vendor.companyAddress).to.be.eql(data.companyAddress);
-              expect(res.body.vendor.vendor.socialMedia.length).to.be.eql(data.socialMedia.length);
-              expect(res.body.vendor.vendor.directors.length).to.be.eql(data.directors.length);
+              expect(res.body.user._id).to.be.eql(vendorId.toString());
+              expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
+              expect(res.body.user.vendor.accountNumber).to.be.eql(data.accountNumber);
+              expect(res.body.user.vendor.companyAddress).to.be.eql(data.companyAddress);
+              expect(res.body.user.vendor.socialMedia.length).to.be.eql(data.socialMedia.length);
+              expect(res.body.user.vendor.directors.length).to.be.eql(data.directors.length);
               done();
             });
         });
+      });
+
+      context('updating a single field', () => {
+        Object.keys(data).map((field) =>
+          it('returns updated vendor', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendorToken)
+              .send({ [field]: data[field] })
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.message).to.be.eql('Vendor information updated');
+                expect(res.body.user._id).to.be.eql(vendorId.toString());
+                expect(res.body.user.vendor).to.have.property(field);
+                done();
+              });
+          }),
+        );
       });
 
       itReturnsForbiddenForNoToken({

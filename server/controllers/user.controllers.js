@@ -245,10 +245,10 @@ const UserController = {
     const updatedVendor = req.locals;
     const vendorId = req.user._id;
     updateVendor({ updatedVendor, vendorId })
-      .then((vendor) => {
+      .then((user) => {
         res
           .status(httpStatus.OK)
-          .json({ success: true, message: 'Vendor information updated', vendor });
+          .json({ success: true, message: 'Vendor information updated', user });
       })
       .catch((error) => next(error));
   },
