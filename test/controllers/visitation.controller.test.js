@@ -19,31 +19,48 @@ const sandbox = sinon.createSandbox();
 
 let userToken;
 let adminToken;
+let vendorToken;
 
-const user = UserFactory.build({ role: USER_ROLE.USER, activated: true });
+const userId = mongoose.Types.ObjectId();
+const user = UserFactory.build({ _id: userId, role: USER_ROLE.USER, activated: true });
 const adminId = mongoose.Types.ObjectId();
 const admin = UserFactory.build({ _id: adminId, role: USER_ROLE.ADMIN, activated: true });
-const propId = mongoose.Types.ObjectId();
-const demoProperty = PropertyFactory.build({ _id: propId, addedBy: adminId, updatedBy: adminId });
+const vendorId = mongoose.Types.ObjectId();
+const vendor = UserFactory.build({
+  _id: vendorId,
+  role: USER_ROLE.VENDOR,
+  activated: true,
+  email: 'vendor@mail.com',
+});
+const demoPropertyId = mongoose.Types.ObjectId();
+const demoProperty = PropertyFactory.build({
+  _id: demoPropertyId,
+  addedBy: vendorId,
+  updatedBy: vendorId,
+});
 
 describe('Visitation Controller', () => {
   beforeEach(async () => {
     userToken = await addUser(user);
     adminToken = await addUser(admin);
+    vendorToken = await addUser(vendor);
+    await addProperty(demoProperty);
     sendMailStub = sandbox.stub(MailService, 'sendMail');
   });
+
   afterEach(() => {
     sandbox.restore();
   });
 
   describe('Schedule Visit Route', () => {
-    beforeEach(async () => {
-      await addProperty(demoProperty);
-    });
-
     context('with valid data', () => {
       it('returns successful property', (done) => {
-        const booking = VisitationFactory.build({ propertyId: propId });
+        const contentBottom = `
+          <strong> Name: </strong>: John Doe<br /> 
+          <strong> Phone: </strong> 08012345678<br />
+          <strong> Email: </strong> johndoe@mail.com <br />
+        `;
+        const booking = VisitationFactory.build({ propertyId: demoPropertyId });
         request()
           .post('/api/v1/visitation/schedule')
           .set('authorization', userToken)
@@ -53,9 +70,16 @@ describe('Visitation Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Visit scheduled successfully');
             expect(res.body).to.have.property('schedule');
-            expect(propId.equals(res.body.schedule.propertyId)).to.be.eql(true);
+            expect(demoPropertyId.equals(res.body.schedule.propertyId)).to.be.eql(true);
             expect(sendMailStub.callCount).to.eq(1);
-            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.SCHEDULE_VISIT);
+            expect(sendMailStub).to.have.be.calledWith();
+            expect(sendMailStub).to.have.be.calledWith(
+              EMAIL_CONTENT.SCHEDULE_VISIT,
+              {
+                email: vendor.email,
+              },
+              { contentBottom },
+            );
             done();
           });
       });
@@ -76,7 +100,7 @@ describe('Visitation Controller', () => {
       });
 
       it('returns token error', (done) => {
-        const booking = VisitationFactory.build({ propertyId: propId });
+        const booking = VisitationFactory.build({ propertyId: demoPropertyId });
         request()
           .post('/api/v1/visitation/schedule')
           .set('authorization', invalidUserToken)
@@ -269,7 +293,20 @@ describe('Visitation Controller', () => {
   });
 
   describe('Get all visitations', () => {
-    const booking = VisitationFactory.build({ propertyId: propId, userId: adminId });
+    const testAdminPropertyId = mongoose.Types.ObjectId();
+    const testAdminProperty = PropertyFactory.build({
+      _id: testAdminPropertyId,
+      addedBy: adminId,
+      updatedBy: adminId,
+    });
+    const testVendorPropertyId = mongoose.Types.ObjectId();
+    const testVendorProperty = PropertyFactory.build({
+      _id: testVendorPropertyId,
+      addedBy: vendorId,
+      updatedBy: vendorId,
+    });
+    const bookingForAdmin = VisitationFactory.build({ propertyId: testAdminPropertyId, userId });
+    const bookingForVendor = VisitationFactory.build({ propertyId: testVendorPropertyId, userId });
 
     context('when no schedule exists', () => {
       it('returns not found', (done) => {
@@ -277,10 +314,9 @@ describe('Visitation Controller', () => {
           .get('/api/v1/visitation/all')
           .set('authorization', adminToken)
           .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('schedules');
-            expect(res.body.schedules.length).to.be.eql(0);
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('No schedules available');
             done();
           });
       });
@@ -288,14 +324,14 @@ describe('Visitation Controller', () => {
 
     describe('when scheduled visits exist in db', () => {
       beforeEach(async () => {
-        await addProperty(demoProperty);
+        await addProperty(testAdminProperty);
+        await addProperty(testVendorProperty);
+        await scheduleVisitation(bookingForAdmin);
+        await scheduleVisitation(bookingForVendor);
       });
 
-      context('with a valid token & id', () => {
-        beforeEach(async () => {
-          await scheduleVisitation(booking);
-        });
-        it('returns successful payload', (done) => {
+      context('when an admin token is used', () => {
+        it('returns 2 visitations', (done) => {
           request()
             .get('/api/v1/visitation/all')
             .set('authorization', adminToken)
@@ -303,16 +339,51 @@ describe('Visitation Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('schedules');
-              expect(propId.equals(res.body.schedules[0].propertyId)).to.be.eql(true);
-              expect(adminId.equals(res.body.schedules[0].userId)).to.be.eql(true);
-              expect(res.body.schedules[0].visitorName).to.be.eql(booking.visitorName);
-              expect(res.body.schedules[0].visitorEmail).to.be.eql(booking.visitorEmail);
-              expect(res.body.schedules[0].visitorPhone).to.be.eql(booking.visitorPhone);
-              expect(propId.equals(res.body.schedules[0].propertyInfo[0]._id)).to.be.eql(true);
-              expect(res.body.schedules[0].propertyInfo[0].name).to.be.eql(demoProperty.name);
-              expect(res.body.schedules[0].propertyInfo[0].price).to.be.eql(demoProperty.price);
+              expect(res.body.schedules.length).to.be.eql(2);
+              expect(testAdminPropertyId.equals(res.body.schedules[0].propertyId)).to.be.eql(true);
+              expect(userId.equals(res.body.schedules[0].userId)).to.be.eql(true);
+              expect(res.body.schedules[0].visitorName).to.be.eql(bookingForAdmin.visitorName);
+              expect(res.body.schedules[0].visitorEmail).to.be.eql(bookingForAdmin.visitorEmail);
+              expect(res.body.schedules[0].visitorPhone).to.be.eql(bookingForAdmin.visitorPhone);
+              expect(
+                testAdminPropertyId.equals(res.body.schedules[0].propertyInfo[0]._id),
+              ).to.be.eql(true);
+              expect(res.body.schedules[0].propertyInfo[0].name).to.be.eql(testAdminProperty.name);
+              expect(res.body.schedules[0].propertyInfo[0].price).to.be.eql(
+                testAdminProperty.price,
+              );
               expect(res.body.schedules[0].propertyInfo[0].description).to.be.eql(
-                demoProperty.description,
+                testAdminProperty.description,
+              );
+              done();
+            });
+        });
+      });
+
+      context('when an vendor token is used', () => {
+        it('returns 1 visitation', (done) => {
+          request()
+            .get('/api/v1/visitation/all')
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('schedules');
+              expect(res.body.schedules.length).to.be.eql(1);
+              expect(testVendorPropertyId.equals(res.body.schedules[0].propertyId)).to.be.eql(true);
+              expect(userId.equals(res.body.schedules[0].userId)).to.be.eql(true);
+              expect(res.body.schedules[0].visitorName).to.be.eql(bookingForVendor.visitorName);
+              expect(res.body.schedules[0].visitorEmail).to.be.eql(bookingForVendor.visitorEmail);
+              expect(res.body.schedules[0].visitorPhone).to.be.eql(bookingForVendor.visitorPhone);
+              expect(
+                testVendorPropertyId.equals(res.body.schedules[0].propertyInfo[0]._id),
+              ).to.be.eql(true);
+              expect(res.body.schedules[0].propertyInfo[0].name).to.be.eql(testVendorProperty.name);
+              expect(res.body.schedules[0].propertyInfo[0].price).to.be.eql(
+                testVendorProperty.price,
+              );
+              expect(res.body.schedules[0].propertyInfo[0].description).to.be.eql(
+                testVendorProperty.description,
               );
               done();
             });
