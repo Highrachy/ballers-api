@@ -2,15 +2,21 @@ import Visitation from '../models/visitation.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById } from './property.service';
+import { getUserById } from './user.service';
 
 export const scheduleVisitation = async (schedule) => {
   const property = await getPropertyById(schedule.propertyId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
   if (property) {
+    const vendor = await getUserById(property.addedBy).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+
     try {
       const newSchedule = await new Visitation(schedule).save();
-      return newSchedule;
+      return { newSchedule, vendorEmail: vendor.email };
     } catch (error) {
       throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error scheduling visit', error);
     }

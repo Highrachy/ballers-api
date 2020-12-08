@@ -3,25 +3,23 @@ import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
 import httpStatus from '../helpers/httpStatus';
 
-const BALLERS_EMAIL = process.env.BALLERS_EMAIL || 'dev@highrachy.com';
-
 const VisitationController = {
   book(req, res, next) {
     const booking = req.locals;
     const { user } = req;
     scheduleVisitation({ ...booking, userId: user._id })
-      .then((schedule) => {
+      .then(({ newSchedule, vendorEmail }) => {
         const contentBottom = `
-          <strong> Name: </strong>: ${schedule.visitorName}<br /> 
-          <strong> Phone: </strong> ${schedule.visitorPhone}<br />
+          <strong> Name: </strong>: ${newSchedule.visitorName}<br /> 
+          <strong> Phone: </strong> ${newSchedule.visitorPhone}<br />
           <strong> Email: </strong> ${
-            schedule.visitorEmail ? schedule.visitorEmail : 'No email provided'
+            newSchedule.visitorEmail ? newSchedule.visitorEmail : 'No email provided'
           } <br />
         `;
-        sendMail(EMAIL_CONTENT.SCHEDULE_VISIT, { email: BALLERS_EMAIL }, { contentBottom });
+        sendMail(EMAIL_CONTENT.SCHEDULE_VISIT, { email: vendorEmail }, { contentBottom });
         res
           .status(httpStatus.CREATED)
-          .json({ success: true, message: 'Visit scheduled successfully', schedule });
+          .json({ success: true, message: 'Visit scheduled successfully', schedule: newSchedule });
       })
       .catch((error) => next(error));
   },

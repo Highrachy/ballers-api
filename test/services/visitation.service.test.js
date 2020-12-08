@@ -3,20 +3,26 @@ import { expect, sinon, useDatabase } from '../config';
 import { scheduleVisitation, getAllVisitations } from '../../server/services/visitation.service';
 import VisitationFactory from '../factories/visitation.factory';
 import PropertyFactory from '../factories/property.factory';
+import UserFactory from '../factories/user.factory';
 import Visitation from '../../server/models/visitation.model';
 import Property from '../../server/models/property.model';
+import { addUser } from '../../server/services/user.service';
 
 useDatabase();
 
 describe('Visitation Service', () => {
   describe('#scheduleVisitation', () => {
     let countedVisitations;
+    const email = 'vendoremail@mail.com';
     const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: id, updatedBy: id });
+    const vendorId = mongoose.Types.ObjectId();
+    const vendor = UserFactory.build({ _id: vendorId, email });
+    const property = PropertyFactory.build({ _id: id, addedBy: vendorId, updatedBy: vendorId });
 
     beforeEach(async () => {
       countedVisitations = await Visitation.countDocuments({});
       await Property.create(property);
+      await addUser(vendor);
     });
 
     context('when a valid schedule is entered', () => {
@@ -24,7 +30,8 @@ describe('Visitation Service', () => {
         const validBooking = VisitationFactory.build({ propertyId: id, userId: id });
         const schedule = await scheduleVisitation(validBooking);
         const currentcountedVisitations = await Visitation.countDocuments({});
-        expect(schedule.propertyId).to.eql(validBooking.propertyId);
+        expect(schedule.newSchedule.propertyId).to.eql(validBooking.propertyId);
+        expect(schedule.vendorEmail).to.eql(email);
         expect(currentcountedVisitations).to.eql(countedVisitations + 1);
       });
     });
