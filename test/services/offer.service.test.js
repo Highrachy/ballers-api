@@ -5,8 +5,7 @@ import {
   getOfferById,
   generateReferenceCode,
   createOffer,
-  getAllOffersUser,
-  getAllOffersAdmin,
+  getAllOffers,
   getOffer,
   acceptOffer,
   assignOffer,
@@ -21,7 +20,7 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import EnquiryFactory from '../factories/enquiry.factory';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
-import { OFFER_STATUS } from '../../server/helpers/constants';
+import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
 
 useDatabase();
@@ -168,14 +167,17 @@ describe('Offer Service', () => {
     });
   });
 
-  describe('#getAllOffersUser', () => {
+  describe('#getAllOffers', () => {
     const userId = mongoose.Types.ObjectId();
     const vendorId = mongoose.Types.ObjectId();
+    const adminId = mongoose.Types.ObjectId();
     const propertyId1 = mongoose.Types.ObjectId();
     const propertyId2 = mongoose.Types.ObjectId();
     const propertyId3 = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId });
-    const vendor = UserFactory.build({ _id: vendorId });
+    const user = UserFactory.build({ _id: userId, role: USER_ROLE.USER });
+    const vendor = UserFactory.build({ _id: vendorId, role: USER_ROLE.VENDOR });
+    const admin = UserFactory.build({ _id: adminId, role: USER_ROLE.ADMIN });
+
     const property1 = PropertyFactory.build({
       _id: propertyId1,
       addedBy: vendorId,
@@ -199,10 +201,10 @@ describe('Offer Service', () => {
     const enquiryId2 = mongoose.Types.ObjectId();
     const enquiry2 = EnquiryFactory.build({
       _id: enquiryId2,
-      userId: vendorId,
+      userId: adminId,
       propertyId: propertyId2,
     });
-    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId, userId: vendorId });
+    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId, userId: adminId });
 
     const enquiryId3 = mongoose.Types.ObjectId();
     const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
@@ -211,6 +213,7 @@ describe('Offer Service', () => {
     beforeEach(async () => {
       await addUser(user);
       await addUser(vendor);
+      await addUser(admin);
       await addProperty(property1);
       await addProperty(property2);
       await addProperty(property3);
@@ -223,87 +226,31 @@ describe('Offer Service', () => {
 
     context('when offers added are valid', () => {
       it('returns 1 offer', async () => {
-        const offers = await getAllOffersUser(userId);
-        expect(offers).to.be.an('array');
-        expect(offers.length).to.be.eql(1);
-        expect(offers[0].userId).to.be.eql(userId);
+        const userOffers = await getAllOffers(userId);
+        expect(userOffers).to.be.an('array');
+        expect(userOffers.length).to.be.eql(1);
+        expect(userOffers[0].userId).to.be.eql(userId);
+
+        const vendorOffers = await getAllOffers(vendorId);
+        expect(vendorOffers).to.be.an('array');
+        expect(vendorOffers.length).to.be.eql(2);
+        expect(vendorOffers[1].userId).to.be.eql(adminId);
       });
     });
     context('when new offer is added', () => {
       it('returns 2 offers', async () => {
         await createOffer(offer3);
-        const offers = await getAllOffersUser(userId);
-        expect(offers).to.be.an('array');
-        expect(offers.length).to.be.eql(2);
-        expect(offers[0].userId).to.be.eql(userId);
-      });
-    });
-  });
+        const userOffers = await getAllOffers(userId);
+        expect(userOffers).to.be.an('array');
+        expect(userOffers.length).to.be.eql(2);
+        expect(userOffers[0].userId).to.be.eql(userId);
 
-  describe('#getAllOffersAdmin', () => {
-    const userId = mongoose.Types.ObjectId();
-    const vendorId = mongoose.Types.ObjectId();
-    const propertyId1 = mongoose.Types.ObjectId();
-    const propertyId2 = mongoose.Types.ObjectId();
-    const propertyId3 = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId });
-    const vendor = UserFactory.build({ _id: vendorId });
-    const property1 = PropertyFactory.build({
-      _id: propertyId1,
-      addedBy: vendorId,
-      updatedBy: vendorId,
-    });
-    const property2 = PropertyFactory.build({
-      _id: propertyId2,
-      addedBy: vendorId,
-      updatedBy: vendorId,
-    });
-    const property3 = PropertyFactory.build({
-      _id: propertyId3,
-      addedBy: vendorId,
-      updatedBy: vendorId,
-    });
-
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
-    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId, userId });
-
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId: propertyId2 });
-    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: userId, userId });
-
-    const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
-    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId, userId });
-
-    beforeEach(async () => {
-      await addUser(user);
-      await addUser(vendor);
-      await addProperty(property1);
-      await addProperty(property2);
-      await addProperty(property3);
-      await addEnquiry(enquiry1);
-      await addEnquiry(enquiry2);
-      await addEnquiry(enquiry3);
-      await createOffer(offer1);
-      await createOffer(offer2);
-    });
-
-    context('when offers added are valid', () => {
-      it('returns 1 offer', async () => {
-        const offers = await getAllOffersAdmin(vendorId);
-        expect(offers).to.be.an('array');
-        expect(offers.length).to.be.eql(1);
-        expect(offers[0].vendorId).to.be.eql(vendorId);
-      });
-    });
-    context('when new enquiry is added', () => {
-      it('returns 2 offers', async () => {
-        await createOffer(offer3);
-        const offers = await getAllOffersAdmin(vendorId);
-        expect(offers).to.be.an('array');
-        expect(offers.length).to.be.eql(2);
-        expect(offers[0].vendorId).to.be.eql(vendorId);
+        const vendorOffers = await getAllOffers(vendorId);
+        expect(vendorOffers).to.be.an('array');
+        expect(vendorOffers.length).to.be.eql(3);
+        expect(vendorOffers[0].userId).to.be.eql(userId);
+        expect(vendorOffers[1].userId).to.be.eql(adminId);
+        expect(vendorOffers[2].userId).to.be.eql(userId);
       });
     });
   });

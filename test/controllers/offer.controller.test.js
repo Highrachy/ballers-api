@@ -10,7 +10,7 @@ import { createOffer, raiseConcern } from '../../server/services/offer.service';
 import { addEnquiry, getEnquiryById } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
-import { OFFER_STATUS, CONCERN_STATUS } from '../../server/helpers/constants';
+import { OFFER_STATUS, CONCERN_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import {
   getTodaysDateShortCode,
   getTodaysDateStandard,
@@ -18,6 +18,7 @@ import {
 } from '../../server/helpers/dates';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import { itReturnsForbiddenForNoToken, itReturnsAnErrorWhenServiceFails } from '../helpers';
 
 useDatabase();
 
@@ -26,16 +27,40 @@ const sandbox = sinon.createSandbox();
 
 let adminToken;
 let userToken;
+let vendorToken;
 const userId = mongoose.Types.ObjectId();
 const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true, vendorCode: 'HIG' });
-const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
+const vendorId = mongoose.Types.ObjectId();
+const regularUser = UserFactory.build({ _id: userId, role: USER_ROLE.USER, activated: true });
+const adminUser = UserFactory.build({
+  _id: adminId,
+  role: USER_ROLE.ADMIN,
+  activated: true,
+});
+const vendorUser = UserFactory.build({
+  _id: vendorId,
+  role: USER_ROLE.VENDOR,
+  activated: true,
+  vendor: { companyName: 'Highrachy Investment' },
+});
 const propertyId1 = mongoose.Types.ObjectId();
 const propertyId2 = mongoose.Types.ObjectId();
 const propertyId3 = mongoose.Types.ObjectId();
-const property1 = PropertyFactory.build({ _id: propertyId1, addedBy: adminId, updatedBy: adminId });
-const property2 = PropertyFactory.build({ _id: propertyId2, addedBy: adminId, updatedBy: adminId });
-const property3 = PropertyFactory.build({ _id: propertyId3, addedBy: adminId, updatedBy: adminId });
+const property1 = PropertyFactory.build({
+  _id: propertyId1,
+  addedBy: vendorId,
+  updatedBy: vendorId,
+});
+const property2 = PropertyFactory.build({
+  _id: propertyId2,
+  addedBy: vendorId,
+  updatedBy: vendorId,
+});
+const property3 = PropertyFactory.build({
+  _id: propertyId3,
+  addedBy: vendorId,
+  updatedBy: vendorId,
+});
 
 describe('Offer Controller', () => {
   beforeEach(() => {
@@ -49,6 +74,7 @@ describe('Offer Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
+    vendorToken = await addUser(vendorUser);
     await addProperty(property1);
     await addProperty(property2);
     await addProperty(property3);
@@ -60,7 +86,7 @@ describe('Offer Controller', () => {
 
     const enquiry = EnquiryFactory.build({
       _id: enquiryId,
-      userId: adminId,
+      userId,
       propertyId: createPropertyId,
     });
 
@@ -68,8 +94,8 @@ describe('Offer Controller', () => {
       _id: createPropertyId,
       name: 'Lekki Ville Estate',
       houseType: 'Maisonette',
-      addedBy: adminId,
-      updatedBy: adminId,
+      addedBy: vendorId,
+      updatedBy: vendorId,
     });
 
     beforeEach(async () => {
@@ -82,15 +108,14 @@ describe('Offer Controller', () => {
         const offer = OfferFactory.build({ enquiryId });
         request()
           .post('/api/v1/offer/create')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(offer)
           .end((err, res) => {
             expect(res).to.have.status(201);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Offer created');
             expect(res.body.offer).to.have.property('userInfo');
-            expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
-            expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
+            expect(res.body.offer.vendorInfo._id).to.be.eql(vendorId.toString());
             expect(res.body.offer.propertyInfo._id).to.be.eql(createPropertyId.toString());
             expect(res.body.offer.referenceCode).to.be.eql(
               `HIG/LVE/OLM/01/${getTodaysDateShortCode()}`,
@@ -102,13 +127,13 @@ describe('Offer Controller', () => {
 
     context('when an invalid token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(adminId);
+        await User.findByIdAndDelete(vendorId);
       });
       it('returns token error', (done) => {
         const offer = OfferFactory.build({ enquiryId });
         request()
           .post('/api/v1/offer/create')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(offer)
           .end((err, res) => {
             expect(res).to.have.status(404);
@@ -141,7 +166,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ enquiryId: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -158,7 +183,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ handOverDate: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -175,7 +200,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ handOverDate: getTodaysDateStandard() });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -194,7 +219,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ deliveryState: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -211,7 +236,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ totalAmountPayable: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -228,7 +253,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ allocationInPercentage: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -245,7 +270,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ allocationInPercentage: 0 });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -264,7 +289,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ allocationInPercentage: 101 });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -283,7 +308,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ title: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -300,7 +325,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ expires: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -316,7 +341,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ expires: getTodaysDateStandard() });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -334,7 +359,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ initialPayment: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -350,7 +375,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ monthlyPayment: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -366,7 +391,7 @@ describe('Offer Controller', () => {
           const offer = OfferFactory.build({ paymentFrequency: '' });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -388,7 +413,7 @@ describe('Offer Controller', () => {
       userId,
       propertyId: propertyId1,
     });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId });
     const acceptanceInfo = {
       offerId,
       signature: 'http://ballers.ng/signature.png',
@@ -514,13 +539,13 @@ describe('Offer Controller', () => {
     const enquiryId = mongoose.Types.ObjectId();
     const enquiry = EnquiryFactory.build({
       _id: enquiryId,
-      userId: adminId,
+      userId,
       propertyId: propertyId1,
     });
     const offer = OfferFactory.build({
       _id: offerId,
       enquiryId,
-      vendorId: adminId,
+      vendorId,
       status: OFFER_STATUS.INTERESTED,
     });
     const toAssignDetails = {
@@ -536,7 +561,7 @@ describe('Offer Controller', () => {
       it('returns assigned offer', (done) => {
         request()
           .put('/api/v1/offer/assign')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(toAssignDetails)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -546,7 +571,7 @@ describe('Offer Controller', () => {
             expect(res.body.offer._id).to.be.eql(offerId.toString());
             expect(res.body.offer.status).to.be.eql('Assigned');
             expect(res.body.offer.signature).to.be.eql(toAssignDetails.signature);
-            expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
+            expect(res.body.offer.vendorInfo._id).to.be.eql(vendorId.toString());
             expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiryId.toString());
             expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
             done();
@@ -588,7 +613,7 @@ describe('Offer Controller', () => {
         sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
         request()
           .put('/api/v1/offer/assign')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(toAssignDetails)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -605,7 +630,7 @@ describe('Offer Controller', () => {
           const invalidData = { offerId: '' };
           request()
             .put('/api/v1/offer/assign')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidData)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -631,10 +656,10 @@ describe('Offer Controller', () => {
     const enquiryId1 = mongoose.Types.ObjectId();
     const enquiry1 = EnquiryFactory.build({
       _id: enquiryId1,
-      userId: adminId,
+      userId,
       propertyId: propertyId1,
     });
-    const offer1 = OfferFactory.build({ _id: offerId1, enquiryId: enquiryId1, vendorId: adminId });
+    const offer1 = OfferFactory.build({ _id: offerId1, enquiryId: enquiryId1, vendorId });
     const toCancelDetails = {
       offerId: offerId1,
     };
@@ -643,13 +668,13 @@ describe('Offer Controller', () => {
     const enquiryId2 = mongoose.Types.ObjectId();
     const enquiry2 = EnquiryFactory.build({
       _id: enquiryId2,
-      userId: adminId,
+      userId,
       propertyId: propertyId2,
     });
     const offer2 = OfferFactory.build({
       _id: offerId2,
       enquiryId: enquiryId2,
-      vendorId: adminId,
+      vendorId,
       status: OFFER_STATUS.INTERESTED,
     });
 
@@ -657,13 +682,13 @@ describe('Offer Controller', () => {
     const enquiryId3 = mongoose.Types.ObjectId();
     const enquiry3 = EnquiryFactory.build({
       _id: enquiryId3,
-      userId: adminId,
+      userId,
       propertyId: propertyId3,
     });
     const offer3 = OfferFactory.build({
       _id: offerId3,
       enquiryId: enquiryId3,
-      vendorId: adminId,
+      vendorId,
       status: OFFER_STATUS.ASSIGNED,
     });
 
@@ -671,13 +696,13 @@ describe('Offer Controller', () => {
     const enquiryId4 = mongoose.Types.ObjectId();
     const enquiry4 = EnquiryFactory.build({
       _id: enquiryId4,
-      userId,
+      userId: adminId,
       propertyId: propertyId3,
     });
     const offer4 = OfferFactory.build({
       _id: offerId4,
       enquiryId: enquiryId4,
-      vendorId: adminId,
+      vendorId,
       status: OFFER_STATUS.ALLOCATED,
     });
 
@@ -685,13 +710,13 @@ describe('Offer Controller', () => {
     const enquiryId5 = mongoose.Types.ObjectId();
     const enquiry5 = EnquiryFactory.build({
       _id: enquiryId5,
-      userId,
+      userId: adminId,
       propertyId: propertyId1,
     });
     const offer5 = OfferFactory.build({
       _id: offerId5,
       enquiryId: enquiryId5,
-      vendorId: adminId,
+      vendorId,
       status: OFFER_STATUS.REJECTED,
     });
 
@@ -699,13 +724,13 @@ describe('Offer Controller', () => {
     const enquiryId6 = mongoose.Types.ObjectId();
     const enquiry6 = EnquiryFactory.build({
       _id: enquiryId6,
-      userId,
+      userId: adminId,
       propertyId: propertyId2,
     });
     const offer6 = OfferFactory.build({
       _id: offerId6,
       enquiryId: enquiryId6,
-      vendorId: adminId,
+      vendorId,
       status: OFFER_STATUS.CANCELLED,
     });
 
@@ -729,7 +754,7 @@ describe('Offer Controller', () => {
       it('returns cancelled offer', (done) => {
         request()
           .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(toCancelDetails)
           .end(async (err, res) => {
             const enquiry = await getEnquiryById(enquiryId1);
@@ -776,7 +801,7 @@ describe('Offer Controller', () => {
       it('returns error', (done) => {
         request()
           .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send({ offerId: offerId2 })
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -791,7 +816,7 @@ describe('Offer Controller', () => {
       it('returns error', (done) => {
         request()
           .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send({ offerId: offerId3 })
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -806,7 +831,7 @@ describe('Offer Controller', () => {
       it('returns error', (done) => {
         request()
           .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send({ offerId: offerId4 })
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -821,7 +846,7 @@ describe('Offer Controller', () => {
       it('returns cancelled offer', (done) => {
         request()
           .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send({ offerId: offerId5 })
           .end(async (err, res) => {
             const enquiry = await getEnquiryById(enquiryId5);
@@ -838,7 +863,7 @@ describe('Offer Controller', () => {
       it('returns cancelled offer', (done) => {
         request()
           .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send({ offerId: offerId6 })
           .end(async (err, res) => {
             const enquiry = await getEnquiryById(enquiryId6);
@@ -870,7 +895,7 @@ describe('Offer Controller', () => {
         sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
         request()
           .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(toCancelDetails)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -887,7 +912,7 @@ describe('Offer Controller', () => {
           const invalidData = { offerId: '' };
           request()
             .put('/api/v1/offer/cancel')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidData)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -901,31 +926,40 @@ describe('Offer Controller', () => {
     });
   });
 
-  describe('Get all user owned offers', () => {
+  describe('Get all owned offers', () => {
+    const endpoint = '/api/v1/offer/all';
+    const method = 'get';
+
     const enquiryId1 = mongoose.Types.ObjectId();
     const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
-    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId, userId });
+    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId, userId });
 
     const enquiryId2 = mongoose.Types.ObjectId();
     const enquiry2 = EnquiryFactory.build({
       _id: enquiryId2,
-      userId: adminId,
+      userId,
       propertyId: propertyId2,
     });
     const offer2 = OfferFactory.build({
       enquiryId: enquiryId2,
-      vendorId: adminId,
-      userId: adminId,
+      vendorId,
+      userId,
     });
 
     const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
-    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId, userId });
+    const enquiry3 = EnquiryFactory.build({
+      _id: enquiryId3,
+      userId: adminId,
+      propertyId: propertyId3,
+    });
+    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId, userId: adminId });
+
+    const demoVendorUser = UserFactory.build({ role: USER_ROLE.VENDOR, activated: true });
 
     context('when no offer is found', () => {
       it('returns empty array of offers', (done) => {
         request()
-          .get('/api/v1/offer/user/all')
+          [method](endpoint)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -947,10 +981,10 @@ describe('Offer Controller', () => {
         await createOffer(offer3);
       });
 
-      context('with a valid token & id', async () => {
-        it('returns successful payload', (done) => {
+      context('with a valid user token & id', async () => {
+        it('returns 2 offers', (done) => {
           request()
-            .get('/api/v1/offer/user/all')
+            [method](endpoint)
             .set('authorization', userToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
@@ -967,117 +1001,29 @@ describe('Offer Controller', () => {
         });
       });
 
-      context('without token', () => {
-        it('returns error', (done) => {
+      context('with a valid vendor token & id', async () => {
+        it('returns 3 offers', (done) => {
           request()
-            .get('/api/v1/offer/user/all')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when getAllOffers service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/offer/user/all')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Offer.aggregate.restore();
-            });
-        });
-      });
-    });
-  });
-
-  describe('Get all admin owned offers', () => {
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
-    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId, userId });
-
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId: propertyId2 });
-    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: userId, userId });
-
-    const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
-    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId, userId });
-
-    context('when no offer is found', () => {
-      it('returns empty array of offers', (done) => {
-        request()
-          .get('/api/v1/offer/admin/all')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('offers');
-            expect(res.body.offers.length).to.be.eql(0);
-            done();
-          });
-      });
-    });
-
-    describe('when offers exist in db', () => {
-      beforeEach(async () => {
-        await addEnquiry(enquiry1);
-        await createOffer(offer1);
-        await addEnquiry(enquiry2);
-        await createOffer(offer2);
-        await addEnquiry(enquiry3);
-        await createOffer(offer3);
-      });
-
-      context('with a valid token & id', async () => {
-        it('returns successful payload', (done) => {
-          request()
-            .get('/api/v1/offer/admin/all')
-            .set('authorization', adminToken)
+            [method](endpoint)
+            .set('authorization', vendorToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offers');
-              expect(res.body.offers.length).to.be.eql(2);
-              expect(res.body.offers[0].vendorId).to.be.eql(adminId.toString());
-              expect(res.body.offers[0].concern.length).to.be.eql(0);
-              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
+              expect(res.body.offers.length).to.be.eql(3);
+              expect(res.body.offers[0].vendorId).to.be.eql(vendorId.toString());
               done();
             });
         });
       });
 
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/offer/admin/all')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
+      itReturnsForbiddenForNoToken({ endpoint, method });
 
-      context('when getAllOffers service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/offer/admin/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Offer.aggregate.restore();
-            });
-        });
+      itReturnsAnErrorWhenServiceFails({
+        endpoint,
+        method,
+        user: demoVendorUser,
+        model: Offer,
+        modelMethod: 'aggregate',
       });
     });
   });
@@ -1087,10 +1033,10 @@ describe('Offer Controller', () => {
     const enquiryId = mongoose.Types.ObjectId();
     const enquiry = EnquiryFactory.build({
       _id: enquiryId,
-      userId: adminId,
+      userId,
       propertyId: propertyId1,
     });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
+    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId });
 
     beforeEach(async () => {
       await addEnquiry(enquiry);
@@ -1175,8 +1121,12 @@ describe('Offer Controller', () => {
 
   describe('Get all offers of a user', () => {
     const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
-    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId });
+    const enquiry1 = EnquiryFactory.build({
+      _id: enquiryId1,
+      userId: adminId,
+      propertyId: propertyId1,
+    });
+    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId });
 
     const enquiryId2 = mongoose.Types.ObjectId();
     const enquiry2 = EnquiryFactory.build({
@@ -1184,15 +1134,15 @@ describe('Offer Controller', () => {
       userId: adminId,
       propertyId: propertyId2,
     });
-    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: adminId });
+    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId });
 
     const enquiryId3 = mongoose.Types.ObjectId();
     const enquiry3 = EnquiryFactory.build({
       _id: enquiryId3,
-      userId: adminId,
+      userId,
       propertyId: propertyId3,
     });
-    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId });
+    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId });
 
     context('when no offer is found', () => {
       it('returns empty array of offers', (done) => {
@@ -1229,9 +1179,9 @@ describe('Offer Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('offers');
               expect(res.body.offers.length).to.be.eql(1);
-              expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
-              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
+              expect(res.body.offers[0].vendorInfo._id).to.be.eql(vendorId.toString());
+              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId3.toString());
+              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId3.toString());
               done();
             });
         });
@@ -1275,7 +1225,7 @@ describe('Offer Controller', () => {
     });
     const offer1 = OfferFactory.build({
       enquiryId: enquiryId1,
-      vendorId: adminId,
+      vendorId,
       status: OFFER_STATUS.GENERATED,
     });
 
@@ -1287,7 +1237,7 @@ describe('Offer Controller', () => {
     });
     const offer2 = OfferFactory.build({
       enquiryId: enquiryId2,
-      vendorId: adminId,
+      vendorId,
       expires: '2005-11-12T00:00:00.000Z',
       status: OFFER_STATUS.INTERESTED,
     });
@@ -1300,7 +1250,7 @@ describe('Offer Controller', () => {
     });
     const offer3 = OfferFactory.build({
       enquiryId: enquiryId3,
-      vendorId: adminId,
+      vendorId,
       status: OFFER_STATUS.NEGLECTED,
     });
 
@@ -1314,7 +1264,7 @@ describe('Offer Controller', () => {
     const offer4 = OfferFactory.build({
       _id: offerId4,
       enquiryId: enquiryId4,
-      vendorId: adminId,
+      vendorId,
       expires: '2030-02-12T00:00:00.000Z',
       status: OFFER_STATUS.INTERESTED,
     });
@@ -1329,7 +1279,7 @@ describe('Offer Controller', () => {
     const offer5 = OfferFactory.build({
       _id: offerId5,
       enquiryId: enquiryId5,
-      vendorId: adminId,
+      vendorId,
       expires: '2030-11-21T00:00:00.000Z',
       status: OFFER_STATUS.ASSIGNED,
     });
@@ -1344,7 +1294,7 @@ describe('Offer Controller', () => {
     const offer6 = OfferFactory.build({
       _id: offerId6,
       enquiryId: enquiryId6,
-      vendorId: adminId,
+      vendorId,
       expires: '2030-05-02T00:00:00.000Z',
       status: OFFER_STATUS.ALLOCATED,
     });
@@ -1391,7 +1341,7 @@ describe('Offer Controller', () => {
               expect(res.body).to.have.property('offers');
               expect(res.body.offers.length).to.be.eql(1);
               expect(res.body.offers[0].concern.length).to.be.eql(0);
-              expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
+              expect(res.body.offers[0].vendorInfo._id).to.be.eql(vendorId.toString());
               expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
               expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
               done();
@@ -1457,7 +1407,7 @@ describe('Offer Controller', () => {
     const offer = OfferFactory.build({
       _id: offerId,
       enquiryId,
-      vendorId: adminId,
+      vendorId,
     });
     const concern = {
       offerId,
@@ -1596,7 +1546,7 @@ describe('Offer Controller', () => {
     const offer = OfferFactory.build({
       _id: offerId,
       enquiryId,
-      vendorId: adminId,
+      vendorId,
       concern: [
         {
           _id: concernId,
@@ -1622,7 +1572,7 @@ describe('Offer Controller', () => {
         it('resolves the right concern', (done) => {
           request()
             .put('/api/v1/offer/resolve-concern')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(concern)
             .end((err, res) => {
               expect(res).to.have.status(200);
@@ -1644,7 +1594,7 @@ describe('Offer Controller', () => {
           it('returns an error', (done) => {
             request()
               .put('/api/v1/offer/resolve-concern')
-              .set('authorization', adminToken)
+              .set('authorization', vendorToken)
               .send({ offerId: '', concernId, question: 'Are all rooms ensuite' })
               .end((err, res) => {
                 expect(res).to.have.status(412);
@@ -1661,7 +1611,7 @@ describe('Offer Controller', () => {
           it('returns an error', (done) => {
             request()
               .put('/api/v1/offer/resolve-concern')
-              .set('authorization', adminToken)
+              .set('authorization', vendorToken)
               .send({ concernId: '', offerId, question: 'Are all rooms ensuite' })
               .end((err, res) => {
                 expect(res).to.have.status(412);
@@ -1678,7 +1628,7 @@ describe('Offer Controller', () => {
           it('returns an error', (done) => {
             request()
               .put('/api/v1/offer/resolve-concern')
-              .set('authorization', adminToken)
+              .set('authorization', vendorToken)
               .send({ offerId, concernId, response: '' })
               .end((err, res) => {
                 expect(res).to.have.status(412);
@@ -1728,7 +1678,7 @@ describe('Offer Controller', () => {
           sinon.stub(Offer, 'findOneAndUpdate').throws(new Error('Type Error'));
           request()
             .put('/api/v1/offer/resolve-concern')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(concern)
             .end((err, res) => {
               expect(res).to.have.status(400);

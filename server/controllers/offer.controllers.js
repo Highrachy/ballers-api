@@ -4,8 +4,7 @@ import {
   assignOffer,
   cancelOffer,
   getOffer,
-  getAllOffersUser,
-  getAllOffersAdmin,
+  getAllOffers,
   getActiveOffers,
   raiseConcern,
   resolveConcern,
@@ -92,18 +91,9 @@ const OfferController = {
       .catch((error) => next(error));
   },
 
-  getAllUserOffers(req, res, next) {
+  getAllOffers(req, res, next) {
     const userId = req.user._id;
-    getAllOffersUser(userId)
-      .then((offers) => {
-        res.status(httpStatus.OK).json({ success: true, offers });
-      })
-      .catch((error) => next(error));
-  },
-
-  getAllAdminOffers(req, res, next) {
-    const adminId = req.user._id;
-    getAllOffersAdmin(adminId)
+    getAllOffers(userId)
       .then((offers) => {
         res.status(httpStatus.OK).json({ success: true, offers });
       })
@@ -112,7 +102,7 @@ const OfferController = {
 
   getAllUserOffersAdmin(req, res, next) {
     const userId = req.params.id;
-    getAllOffersUser(userId)
+    getAllOffers(userId)
       .then((offers) => {
         res.status(httpStatus.OK).json({ success: true, offers });
       })

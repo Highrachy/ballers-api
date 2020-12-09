@@ -3,7 +3,7 @@ import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { OFFER_STATUS, CONCERN_STATUS } from '../helpers/constants';
+import { OFFER_STATUS, CONCERN_STATUS, USER_ROLE } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, assignPropertyToUser } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
@@ -36,15 +36,34 @@ export const generateReferenceCode = async (propertyId) => {
   return referenceCode;
 };
 
-export const getAllOffersUser = async (userId) =>
-  Offer.aggregate([
-    { $match: { userId: ObjectId(userId) } },
+export const getAllOffers = async (accountId) => {
+  let accountType;
+  const user = await getUserById(accountId);
+
+  if (user.role === USER_ROLE.VENDOR) {
+    accountType = {
+      matchKey: 'vendorId',
+      localField: 'userId',
+      as: 'userInfo',
+      unwind: '$userInfo',
+    };
+  } else if (user.role === USER_ROLE.USER) {
+    accountType = {
+      matchKey: 'userId',
+      localField: 'vendorId',
+      as: 'vendorInfo',
+      unwind: '$vendorInfo',
+    };
+  }
+
+  const offers = await Offer.aggregate([
+    { $match: { [accountType.matchKey]: ObjectId(accountId) } },
     {
       $lookup: {
         from: 'users',
-        localField: 'vendorId',
+        localField: accountType.localField,
         foreignField: '_id',
-        as: 'vendorInfo',
+        as: accountType.as,
       },
     },
     {
@@ -64,7 +83,7 @@ export const getAllOffersUser = async (userId) =>
       },
     },
     {
-      $unwind: '$vendorInfo',
+      $unwind: accountType.unwind,
     },
     {
       $unwind: '$enquiryInfo',
@@ -75,58 +94,15 @@ export const getAllOffersUser = async (userId) =>
     {
       $project: {
         'propertyInfo.assignedTo': 0,
-        'vendorInfo.assignedProperties': 0,
-        'vendorInfo.password': 0,
-        'vendorInfo.referralCode': 0,
+        [`${accountType.as}.assignedProperties`]: 0,
+        [`${accountType.as}.password`]: 0,
+        [`${accountType.as}.referralCode`]: 0,
       },
     },
   ]);
 
-export const getAllOffersAdmin = async (adminid) =>
-  Offer.aggregate([
-    { $match: { vendorId: ObjectId(adminid) } },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'userId',
-        foreignField: '_id',
-        as: 'userInfo',
-      },
-    },
-    {
-      $lookup: {
-        from: 'enquiries',
-        localField: 'enquiryId',
-        foreignField: '_id',
-        as: 'enquiryInfo',
-      },
-    },
-    {
-      $lookup: {
-        from: 'properties',
-        localField: 'propertyId',
-        foreignField: '_id',
-        as: 'propertyInfo',
-      },
-    },
-    {
-      $unwind: '$userInfo',
-    },
-    {
-      $unwind: '$enquiryInfo',
-    },
-    {
-      $unwind: '$propertyInfo',
-    },
-    {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-        'userInfo.assignedProperties': 0,
-        'userInfo.password': 0,
-        'userInfo.referralCode': 0,
-      },
-    },
-  ]);
+  return offers;
+};
 
 export const getActiveOffers = async (userId) =>
   Offer.aggregate([
