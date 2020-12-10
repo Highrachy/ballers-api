@@ -32,7 +32,7 @@ describe('Visitation Service', () => {
         const schedule = await scheduleVisitation(validBooking);
         const currentcountedVisitations = await Visitation.countDocuments({});
         expect(schedule.schedule.propertyId).to.eql(validBooking.propertyId);
-        expect(schedule.vendorEmail).to.eql(email);
+        expect(schedule.vendor.email).to.eql(email);
         expect(currentcountedVisitations).to.eql(countedVisitations + 1);
       });
     });
@@ -154,7 +154,7 @@ describe('Visitation Service', () => {
 
     context('when schedule added is valid', () => {
       it('returns 2 schedules', async () => {
-        const schedule = await getAllVisitations(vendorId);
+        const schedule = await getAllVisitations(vendor);
         expect(schedule).to.be.an('array');
         expect(schedule.length).to.be.eql(2);
       });
@@ -164,7 +164,7 @@ describe('Visitation Service', () => {
         await scheduleVisitation(validBooking);
       });
       it('returns 3 schedules', async () => {
-        const schedule = await getAllVisitations(vendorId);
+        const schedule = await getAllVisitations(vendor);
         expect(schedule).to.be.an('array');
         expect(schedule.length).to.be.eql(3);
       });

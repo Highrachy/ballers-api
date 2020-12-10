@@ -20,7 +20,7 @@ export const scheduleVisitation = async (schedule) => {
 
     try {
       const newSchedule = await new Visitation({ ...schedule, vendorId: property.addedBy }).save();
-      return { schedule: newSchedule, vendorEmail: vendor.email };
+      return { schedule: newSchedule, vendor };
     } catch (error) {
       throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error scheduling visit', error);
     }
@@ -29,16 +29,12 @@ export const scheduleVisitation = async (schedule) => {
   }
 };
 
-export const getAllVisitations = async (userId) => {
+export const getAllVisitations = async (user) => {
   let schedules;
-
-  const user = await getUserById(userId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
 
   if (user.role === USER_ROLE.VENDOR) {
     schedules = await Visitation.aggregate([
-      { $match: { vendorId: ObjectId(userId) } },
+      { $match: { vendorId: ObjectId(user._id) } },
       {
         $lookup: {
           from: 'properties',
