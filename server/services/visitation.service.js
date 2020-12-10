@@ -5,6 +5,7 @@ import httpStatus from '../helpers/httpStatus';
 import { getPropertyById } from './property.service';
 import { getUserById } from './user.service';
 import { USER_ROLE } from '../helpers/constants';
+import { generatePagination, generateFacetData } from '../helpers/pagination';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -29,34 +30,32 @@ export const scheduleVisitation = async (schedule) => {
   }
 };
 
-export const getAllVisitations = async (user) => {
-  let schedules;
+export const getAllVisitations = async (user, page = 1, limit = 10) => {
+  const scheduleOptions = [
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+  ];
 
   if (user.role === USER_ROLE.VENDOR) {
-    schedules = await Visitation.aggregate([
-      { $match: { vendorId: ObjectId(user._id) } },
-      {
-        $lookup: {
-          from: 'properties',
-          localField: 'propertyId',
-          foreignField: '_id',
-          as: 'propertyInfo',
-        },
-      },
-    ]);
-  }
-  if (user.role === USER_ROLE.ADMIN) {
-    schedules = await Visitation.aggregate([
-      {
-        $lookup: {
-          from: 'properties',
-          localField: 'propertyId',
-          foreignField: '_id',
-          as: 'propertyInfo',
-        },
-      },
-    ]);
+    scheduleOptions.splice(0, 0, { $match: { vendorId: ObjectId(user._id) } });
   }
 
-  return schedules;
+  const schedules = await Visitation.aggregate(scheduleOptions);
+
+  const { total } = schedules[0].metadata[0];
+  const pagination = generatePagination(page, limit, total);
+  const result = schedules[0].data;
+  return { schedules, pagination, result };
 };

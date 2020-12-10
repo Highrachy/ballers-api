@@ -25,16 +25,11 @@ const VisitationController = {
   },
 
   getAll(req, res, next) {
+    const { page, limit } = req.query;
     const { user } = req;
-    getAllVisitations(user)
-      .then((schedules) => {
-        if (schedules.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, schedules });
-        } else {
-          res
-            .status(httpStatus.NOT_FOUND)
-            .json({ success: false, message: 'No schedules available', schedules });
-        }
+    getAllVisitations(user, page, limit)
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },
