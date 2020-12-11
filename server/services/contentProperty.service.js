@@ -4,7 +4,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getAreaById, getAreaByAreaAndStateName } from './area.service';
-import { generatePagination, generateFacetData } from '../helpers/pagination';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -141,7 +141,7 @@ export const getAllContentProperties = async (page = 1, limit = 10) => {
     },
   ]);
 
-  const { total } = properties[0].metadata[0];
+  const total = getPaginationTotal(properties);
   const pagination = generatePagination(page, limit, total);
   return { pagination, result: properties[0].data };
 };

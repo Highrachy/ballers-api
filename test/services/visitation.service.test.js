@@ -155,8 +155,8 @@ describe('Visitation Service', () => {
     context('when schedule added is valid', () => {
       it('returns 2 schedules', async () => {
         const schedule = await getAllVisitations(vendor);
-        expect(schedule).to.be.an('array');
-        expect(schedule.length).to.be.eql(2);
+        expect(schedule.result).to.be.an('array');
+        expect(schedule.result.length).to.be.eql(2);
       });
     });
     context('when new schedule is added', () => {
@@ -165,8 +165,8 @@ describe('Visitation Service', () => {
       });
       it('returns 3 schedules', async () => {
         const schedule = await getAllVisitations(vendor);
-        expect(schedule).to.be.an('array');
-        expect(schedule.length).to.be.eql(3);
+        expect(schedule.result).to.be.an('array');
+        expect(schedule.result.length).to.be.eql(3);
       });
     });
   });

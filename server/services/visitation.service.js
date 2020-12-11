@@ -5,7 +5,7 @@ import httpStatus from '../helpers/httpStatus';
 import { getPropertyById } from './property.service';
 import { getUserById } from './user.service';
 import { USER_ROLE } from '../helpers/constants';
-import { generatePagination, generateFacetData } from '../helpers/pagination';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -54,8 +54,8 @@ export const getAllVisitations = async (user, page = 1, limit = 10) => {
 
   const schedules = await Visitation.aggregate(scheduleOptions);
 
-  const { total } = schedules[0].metadata[0];
+  const total = getPaginationTotal(schedules);
   const pagination = generatePagination(page, limit, total);
   const result = schedules[0].data;
-  return { schedules, pagination, result };
+  return { pagination, result };
 };

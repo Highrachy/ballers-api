@@ -10,7 +10,7 @@ const VisitationController = {
     scheduleVisitation({ ...booking, userId: user._id })
       .then(({ schedule, vendor }) => {
         const contentBottom = `
-          <strong> Name: </strong>: ${schedule.visitorName}<br /> 
+          <strong> Name: </strong>: ${schedule.visitorName}<br />
           <strong> Phone: </strong> ${schedule.visitorPhone}<br />
           <strong> Email: </strong> ${
             schedule.visitorEmail ? schedule.visitorEmail : 'No email provided'

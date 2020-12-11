@@ -1,5 +1,6 @@
 import { addUser } from '../server/services/user.service';
 import { expect, request, sinon } from './config';
+import User from '../server/models/user.model';
 
 export const expectsPaginationToReturnTheRightValues = (
   res,
@@ -22,6 +23,42 @@ export const defaultPaginationResult = {
   result: 10,
   total: 18,
   totalPage: 2,
+};
+
+export const emptyPaginationResult = {
+  currentPage: 1,
+  limit: 10,
+  offset: 0,
+  total: 0,
+  totalPage: 0,
+};
+
+export const itReturnsEmptyValuesWhenNoItemExistInDatabase = ({
+  endpoint,
+  method,
+  user,
+  data = {},
+}) => {
+  let token;
+
+  context('when no item exist', () => {
+    beforeEach(async () => {
+      token = await addUser(user);
+    });
+    it('returns not found', (done) => {
+      request()
+        [method](endpoint)
+        .set('authorization', token)
+        .send(data)
+        .end((err, res) => {
+          expect(res).to.have.status(200);
+          expect(res.body.success).to.be.eql(true);
+          expect(res.body.result.length).to.be.eql(0);
+          expect(res.body.pagination).to.be.eql(emptyPaginationResult);
+          done();
+        });
+    });
+  });
 };
 
 export const itReturnsTheRightPaginationValue = ({ endpoint, method, user, data = {} }) => {
@@ -171,14 +208,7 @@ export const itReturnsAnErrorWhenServiceFails = ({
   });
 };
 
-export const itReturnsAnErrorForInvalidToken = ({
-  endpoint,
-  method,
-  user,
-  model,
-  userId,
-  data = {},
-}) => {
+export const itReturnsAnErrorForInvalidToken = ({ endpoint, method, user, userId, data = {} }) => {
   let token;
   context('Invalid Token', () => {
     beforeEach(async () => {
@@ -187,7 +217,7 @@ export const itReturnsAnErrorForInvalidToken = ({
 
     context('with unavailable token', () => {
       beforeEach(async () => {
-        await model.findByIdAndDelete(user.id || userId);
+        await User.findByIdAndDelete(user._id || userId);
       });
 
       it('returns token error', (done) => {

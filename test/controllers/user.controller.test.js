@@ -1388,7 +1388,6 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: invalidUser,
-        model: User,
         userId: invalidUserId,
         data,
       });
@@ -1483,7 +1482,6 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: invalidUser,
-        model: User,
         userId: invalidUserId,
         data: {
           ...data,
@@ -1604,7 +1602,6 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: invalidUser,
-        model: User,
         userId: invalidUserId,
         data: {
           ...data,
@@ -1770,7 +1767,6 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: invalidUser,
-        model: User,
         userId: invalidUserId,
         data,
       });
@@ -1817,7 +1813,6 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: adminUser,
-        model: User,
         userId: adminId,
       });
     });
@@ -1850,7 +1845,6 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: adminUser,
-        model: User,
         userId: adminId,
       });
     });

@@ -2,24 +2,22 @@ import mongoose from 'mongoose';
 import { expect, request, useDatabase, sinon } from '../config';
 import User from '../../server/models/user.model';
 import Visitation from '../../server/models/visitation.model';
-// import Property from '../../server/models/property.model';
+import Property from '../../server/models/property.model';
 import VisitationFactory from '../factories/visitation.factory';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
-// import { scheduleVisitation } from '../../server/services/visitation.service';
 import { USER_ROLE } from '../../server/helpers/constants';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import {
-  expectsPaginationToReturnTheRightValues,
-  defaultPaginationResult,
   itReturnsTheRightPaginationValue,
   itReturnsForbiddenForInvalidToken,
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
   itReturnsAnErrorForInvalidToken,
+  itReturnsEmptyValuesWhenNoItemExistInDatabase,
 } from '../helpers';
 
 useDatabase();
@@ -38,14 +36,7 @@ const vendor = UserFactory.build(
   {
     role: USER_ROLE.VENDOR,
     activated: true,
-    email: 'vendor@mail.com',
-  },
-  { generateId: true },
-);
-const demoProperty = PropertyFactory.build(
-  {
-    addedBy: vendor._id,
-    updatedBy: vendor._id,
+    email: 'vendor1@mail.com',
   },
   { generateId: true },
 );
@@ -53,6 +44,15 @@ const vendor2 = UserFactory.build(
   {
     role: USER_ROLE.VENDOR,
     activated: true,
+    email: 'vendor2@mail.com',
+  },
+  { generateId: true },
+);
+
+const demoProperty = PropertyFactory.build(
+  {
+    addedBy: vendor._id,
+    updatedBy: vendor._id,
   },
   { generateId: true },
 );
@@ -299,177 +299,115 @@ describe('Visitation Controller', () => {
     });
   });
 
-  describe.only('Get all visitations', () => {
+  describe('Get all visitations', () => {
     const endpoint = '/api/v1/visitation/all';
     const method = 'get';
-    // const size18Array = new Array(18);
 
-    // const dummyProperties = size18Array.map(() =>
-    //   PropertyFactory.build(
-    //     {
-    //       addedBy: vendor._id,
-    //       updatedBy: vendor._id,
-    //     },
-    //     { generateId: true },
-    //   ),
-    // );
-
-    // const dummyVisitations = size18Array.map((_, index) =>
-    //   VisitationFactory.build(
-    //     {
-    //       propertyId: dummyProperties[index]._id,
-    //       userId: user._id,
-    //     },
-    //     { generateId: true },
-    //   ),
-    // );
-
-    // beforeEach(async () => {
-    //   await Property.insertMany(dummyProperties);
-    //   await Visitation.insertMany(dummyVisitations);
-    // });
-
-    const regularUser = UserFactory.build({ role: USER_ROLE.USER, activated: true });
     const adminUser = UserFactory.build(
       { role: USER_ROLE.ADMIN, activated: true },
       { generateId: true },
     );
 
-    itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-    itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
-    itReturnsForbiddenForNoToken({ endpoint, method });
-    itReturnsAnErrorWhenServiceFails({
-      endpoint,
-      method,
-      user: adminUser,
-      model: Visitation,
-      modelMethod: 'aggregate',
-    });
-    itReturnsAnErrorForInvalidToken({
-      endpoint,
-      method,
-      user: adminUser,
-      model: Visitation,
-      userId: adminUser._id,
-    });
+    const regularUser = UserFactory.build({ role: USER_ROLE.USER, activated: true });
 
-    describe('when properties exist in db', () => {
-      context('when no parameters are passed', () => {
-        it('returns the default values', (done) => {
+    const vendorProperties = PropertyFactory.buildList(
+      13,
+      {
+        addedBy: vendor._id,
+        updatedBy: vendor._id,
+      },
+      { generateId: true },
+    );
+
+    const vendor2Properties = PropertyFactory.buildList(
+      5,
+      {
+        addedBy: vendor2._id,
+        updatedBy: vendor2._id,
+      },
+      { generateId: true },
+    );
+
+    const dummyProperties = [...vendorProperties, ...vendor2Properties];
+
+    const dummyVisitations = dummyProperties.map((property) =>
+      VisitationFactory.build(
+        {
+          propertyId: property._id,
+          userId: user._id,
+          vendorId: property.addedBy,
+        },
+        { generateId: true },
+      ),
+    );
+
+    itReturnsEmptyValuesWhenNoItemExistInDatabase({ endpoint, method, user: adminUser });
+
+    describe('when schedules exist in the db', () => {
+      beforeEach(async () => {
+        await Property.insertMany(dummyProperties);
+        await Visitation.insertMany(dummyVisitations);
+      });
+
+      context('when an admin token is used', () => {
+        it('returns all visitations', (done) => {
           request()
-            [method](endpoint)
+            .get('/api/v1/visitation/all?limit=100')
             .set('authorization', adminToken)
             .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.result.length).to.be.eql(18);
               done();
             });
         });
       });
 
-      context('when parameters page and limit are passed', () => {
-        it('returns the given page and limit', (done) => {
+      context('when an vendor 1 token is used', () => {
+        it('returns all visitations', (done) => {
           request()
-            [method](`${endpoint}?page=2&limit=5`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                currentPage: 2,
-                limit: 5,
-                offset: 5,
-                result: 5,
-                totalPage: 4,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when admin token is used', () => {
-        it('returns the given page and limit', (done) => {
-          request()
-            [method](endpoint)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
-              done();
-            });
-        });
-      });
-
-      context('when page is set to 2', () => {
-        it('returns the second page', (done) => {
-          request()
-            [method](`${endpoint}?page=2`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                result: 8,
-                offset: 10,
-                currentPage: 2,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when limit is set to 4', () => {
-        it('returns 4 properties', (done) => {
-          request()
-            [method](`${endpoint}?limit=4`)
-            .set('authorization', vendor2Token)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                limit: 4,
-                result: 4,
-                totalPage: 5,
-              });
-              done();
-            });
-        });
-      });
-
-      context('with a user access token', () => {
-        it('returns successful payload', (done) => {
-          request()
-            [method](endpoint)
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            [method](endpoint)
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when getAllVisitations service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Visitation, 'aggregate').throws(new Error('Type Error'));
-          request()
-            [method](endpoint)
+            .get('/api/v1/visitation/all?limit=100')
             .set('authorization', vendorToken)
             .end((err, res) => {
-              expect(res).to.have.status(500);
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.result.length).to.be.eql(vendorProperties.length);
+
               done();
-              Visitation.aggregate.restore();
             });
         });
+      });
+
+      context('when an vendor 2 token is used', () => {
+        it('returns all visitations', (done) => {
+          request()
+            .get('/api/v1/visitation/all?limit=100')
+            .set('authorization', vendor2Token)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.result.length).to.be.eql(vendor2Properties.length);
+              done();
+            });
+        });
+      });
+
+      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
+      itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
+      itReturnsForbiddenForNoToken({ endpoint, method });
+      itReturnsAnErrorWhenServiceFails({
+        endpoint,
+        method,
+        user: adminUser,
+        model: Visitation,
+        modelMethod: 'aggregate',
+      });
+
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        userId: adminUser._id,
       });
     });
   });
