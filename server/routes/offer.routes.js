@@ -5,6 +5,7 @@ import {
   isVendor,
   isAdmin,
   hasValidObjectId,
+  isAdminOrUserOrVendor,
 } from '../helpers/middleware';
 import {
   createOfferSchema,
@@ -217,7 +218,7 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, OfferController.getAllOffers);
+router.get('/all', authenticate, isAdminOrUserOrVendor, OfferController.getAllOffers);
 
 /**
  * @swagger

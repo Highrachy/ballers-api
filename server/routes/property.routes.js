@@ -1,5 +1,12 @@
 import express from 'express';
-import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
+import {
+  authenticate,
+  schemaValidation,
+  isAdmin,
+  isVendor,
+  isVendorOrAdmin,
+  hasValidObjectId,
+} from '../helpers/middleware';
 import {
   addPropertySchema,
   updatePropertySchema,
@@ -37,7 +44,7 @@ const router = express.Router();
 router.post(
   '/add',
   authenticate,
-  isAdmin,
+  isVendor,
   schemaValidation(addPropertySchema),
   PropertyController.add,
 );
@@ -68,7 +75,7 @@ router.post(
 router.put(
   '/update',
   authenticate,
-  isAdmin,
+  isVendor,
   schemaValidation(updatePropertySchema),
   PropertyController.update,
 );
@@ -94,7 +101,13 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.delete('/delete/:id', authenticate, hasValidObjectId, isAdmin, PropertyController.delete);
+router.delete(
+  '/delete/:id',
+  authenticate,
+  hasValidObjectId,
+  isVendorOrAdmin,
+  PropertyController.delete,
+);
 
 /**
  * @swagger
@@ -120,7 +133,7 @@ router.get(
   authenticate,
   hasValidObjectId,
   isAdmin,
-  PropertyController.getAllPropertiesAddedByAnAdmin,
+  PropertyController.getAllPropertiesAddedByVendor,
 );
 
 /**
@@ -144,7 +157,7 @@ router.get(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, PropertyController.getAllProperties);
+router.get('/all', authenticate, isVendorOrAdmin, PropertyController.getAllProperties);
 
 /**
  * @swagger

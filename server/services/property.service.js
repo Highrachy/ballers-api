@@ -5,7 +5,7 @@ import httpStatus from '../helpers/httpStatus';
 import Transaction from '../models/transaction.model';
 // eslint-disable-next-line import/no-cycle
 import { getOffer } from './offer.service';
-import { OFFER_STATUS } from '../helpers/constants';
+import { OFFER_STATUS, USER_ROLE } from '../helpers/constants';
 import Offer from '../models/offer.model';
 
 const { ObjectId } = mongoose.Types.ObjectId;
@@ -26,17 +26,29 @@ export const updateProperty = async (updatedProperty) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
   try {
+    if (
+      updatedProperty.vendor.role === USER_ROLE.VENDOR &&
+      updatedProperty.vendor._id.toString() !== property.addedBy.toString()
+    ) {
+      throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+    }
+
     return Property.findByIdAndUpdate(property.id, updatedProperty, { new: true });
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating property', error);
   }
 };
 
-export const deleteProperty = async (id) => {
-  const property = await getPropertyById(id).catch((error) => {
+export const deleteProperty = async ({ propertyId, user }) => {
+  const property = await getPropertyById(propertyId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
   try {
+    if (user.role === USER_ROLE.VENDOR && user._id.toString() !== property.addedBy.toString()) {
+      throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+    }
+
     return Property.findByIdAndDelete(property.id);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting property', error);
@@ -44,7 +56,7 @@ export const deleteProperty = async (id) => {
 };
 
 // get properties added by a specific admin with the info of assigned users attached
-export const getAllPropertiesAddedByAnAdmin = async (adminId) =>
+export const getAllPropertiesAddedByVendor = async (adminId) =>
   Property.aggregate([
     { $match: { addedBy: ObjectId(adminId) } },
     {
@@ -89,8 +101,8 @@ export const getAllPropertiesAddedByAnAdmin = async (adminId) =>
   ]);
 
 // get all properties in the database with the assigned user and admin details
-export const getAllProperties = async () =>
-  Property.aggregate([
+export const getAllProperties = async (user) => {
+  const propertiesOptions = [
     {
       $lookup: {
         from: 'users',
@@ -104,7 +116,7 @@ export const getAllProperties = async () =>
         from: 'users',
         localField: 'addedBy',
         foreignField: '_id',
-        as: 'adminInfo',
+        as: 'vendorInfo',
       },
     },
     {
@@ -116,7 +128,7 @@ export const getAllProperties = async () =>
       },
     },
     {
-      $unwind: '$adminInfo',
+      $unwind: '$vendorInfo',
     },
     {
       $project: {
@@ -139,13 +151,22 @@ export const getAllProperties = async () =>
         'assignedUsers.firstName': 1,
         'assignedUsers.lastName': 1,
         'assignedUsers.email': 1,
-        'adminInfo._id': 1,
-        'adminInfo.firstName': 1,
-        'adminInfo.lastName': 1,
-        'adminInfo.email': 1,
+        'vendorInfo._id': 1,
+        'vendorInfo.firstName': 1,
+        'vendorInfo.lastName': 1,
+        'vendorInfo.email': 1,
       },
     },
-  ]);
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    propertiesOptions.splice(0, 0, { $match: { addedBy: ObjectId(user._id) } });
+  }
+
+  const properties = await Property.aggregate(propertiesOptions);
+
+  return properties;
+};
 
 // get a property by its id and admin details
 export const getOneProperty = async (propertyId) =>

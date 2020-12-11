@@ -2,7 +2,7 @@ import {
   addProperty,
   updateProperty,
   deleteProperty,
-  getAllPropertiesAddedByAnAdmin,
+  getAllPropertiesAddedByVendor,
   getAllProperties,
   searchThroughProperties,
   getOneProperty,
@@ -26,7 +26,7 @@ const PropertyController = {
   update(req, res, next) {
     const updatedproperty = req.locals;
     const { user } = req;
-    updateProperty({ ...updatedproperty, updatedBy: user._id })
+    updateProperty({ ...updatedproperty, vendor: user })
       .then((property) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Property updated', property });
       })
@@ -34,17 +34,18 @@ const PropertyController = {
   },
 
   delete(req, res, next) {
-    const { id } = req.params;
-    deleteProperty(id)
+    const propertyId = req.params.id;
+    const { user } = req;
+    deleteProperty({ propertyId, user })
       .then(() => {
         res.status(httpStatus.OK).json({ success: true, message: 'Property deleted' });
       })
       .catch((error) => next(error));
   },
 
-  getAllPropertiesAddedByAnAdmin(req, res, next) {
+  getAllPropertiesAddedByVendor(req, res, next) {
     const adminId = req.params.id;
-    getAllPropertiesAddedByAnAdmin(adminId)
+    getAllPropertiesAddedByVendor(adminId)
       .then((properties) => {
         res.status(httpStatus.OK).json({ success: true, properties });
       })
@@ -52,7 +53,8 @@ const PropertyController = {
   },
 
   getAllProperties(req, res, next) {
-    getAllProperties()
+    const { user } = req;
+    getAllProperties(user)
       .then((properties) => {
         res.status(httpStatus.OK).json({ success: true, properties });
       })

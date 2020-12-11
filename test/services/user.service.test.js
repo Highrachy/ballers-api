@@ -38,6 +38,7 @@ import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import { addReferral } from '../../server/services/referral.service';
 import Referral from '../../server/models/referral.model';
+import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
 
@@ -597,16 +598,25 @@ describe('User Service', () => {
     });
   });
 
-  describe('#assignPropertyToUser', () => {
+  describe.only('#assignPropertyToUser', () => {
     const _id = mongoose.Types.ObjectId();
     const propertyId = mongoose.Types.ObjectId();
+    const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: vendor._id,
+      updatedBy: vendor._id,
+    });
+
     const toBeAssigned = {
       propertyId,
       userId: _id,
+      vendor,
     };
 
     describe('when property units is less than one', () => {
       beforeEach(async () => {
+        await addProperty(property);
         await updateProperty({ id: propertyId, units: 0 });
       });
       context('when units are less than one', () => {

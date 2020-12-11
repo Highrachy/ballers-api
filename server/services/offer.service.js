@@ -56,8 +56,7 @@ export const getAllOffers = async (accountId) => {
     };
   }
 
-  const offers = await Offer.aggregate([
-    { $match: { [accountType.matchKey]: ObjectId(accountId) } },
+  const offerOptions = [
     {
       $lookup: {
         from: 'users',
@@ -99,7 +98,15 @@ export const getAllOffers = async (accountId) => {
         [`${accountType.as}.referralCode`]: 0,
       },
     },
-  ]);
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    offerOptions.splice(0, 0, { $match: { vendorId: ObjectId(accountId) } });
+  } else if (user.role === USER_ROLE.USER) {
+    offerOptions.splice(0, 0, { $match: { userId: ObjectId(accountId) } });
+  }
+
+  const offers = await Offer.aggregate(offerOptions);
 
   return offers;
 };
@@ -304,8 +311,14 @@ export const acceptOffer = async (offerToAccept) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
   }
 
+  const vendor = await getUserById(offer[0].vendorId);
+
   try {
-    await assignPropertyToUser({ propertyId: offer[0].propertyId, userId: offer[0].userId });
+    await assignPropertyToUser({
+      propertyId: offer[0].propertyId,
+      userId: offer[0].userId,
+      vendor,
+    });
     await Offer.findByIdAndUpdate(
       offer[0]._id,
       {
