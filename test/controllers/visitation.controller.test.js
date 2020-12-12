@@ -363,7 +363,7 @@ describe('Visitation Controller', () => {
         });
       });
 
-      context('when an vendor 1 token is used', () => {
+      context('when vendor 1 token is used', () => {
         it('returns all visitations', (done) => {
           request()
             .get('/api/v1/visitation/all?limit=100')
@@ -378,7 +378,7 @@ describe('Visitation Controller', () => {
         });
       });
 
-      context('when an vendor 2 token is used', () => {
+      context('when vendor 2 token is used', () => {
         it('returns all visitations', (done) => {
           request()
             .get('/api/v1/visitation/all?limit=100')

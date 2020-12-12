@@ -49,7 +49,7 @@ export const getAllVisitations = async (user, page = 1, limit = 10) => {
   ];
 
   if (user.role === USER_ROLE.VENDOR) {
-    scheduleOptions.splice(0, 0, { $match: { vendorId: ObjectId(user._id) } });
+    scheduleOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
   }
 
   const schedules = await Visitation.aggregate(scheduleOptions);
