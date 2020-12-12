@@ -2,15 +2,23 @@ import mongoose from 'mongoose';
 import { expect, request, useDatabase, sinon } from '../config';
 import User from '../../server/models/user.model';
 import Visitation from '../../server/models/visitation.model';
+import Property from '../../server/models/property.model';
 import VisitationFactory from '../factories/visitation.factory';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
-import { scheduleVisitation } from '../../server/services/visitation.service';
 import { USER_ROLE } from '../../server/helpers/constants';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import {
+  itReturnsTheRightPaginationValue,
+  itReturnsForbiddenForInvalidToken,
+  itReturnsForbiddenForNoToken,
+  itReturnsAnErrorWhenServiceFails,
+  itReturnsAnErrorForInvalidToken,
+  itReturnsEmptyValuesWhenNoItemExistInDatabase,
+} from '../helpers';
 
 useDatabase();
 
@@ -19,31 +27,54 @@ const sandbox = sinon.createSandbox();
 
 let userToken;
 let adminToken;
+let vendorToken;
+let vendor2Token;
 
-const user = UserFactory.build({ role: USER_ROLE.USER, activated: true });
-const adminId = mongoose.Types.ObjectId();
-const admin = UserFactory.build({ _id: adminId, role: USER_ROLE.ADMIN, activated: true });
-const propId = mongoose.Types.ObjectId();
-const demoProperty = PropertyFactory.build({ _id: propId, addedBy: adminId, updatedBy: adminId });
+const user = UserFactory.build({ role: USER_ROLE.USER, activated: true }, { generateId: true });
+const admin = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true }, { generateId: true });
+const vendor = UserFactory.build(
+  {
+    role: USER_ROLE.VENDOR,
+    activated: true,
+    email: 'vendor1@mail.com',
+  },
+  { generateId: true },
+);
+const vendor2 = UserFactory.build(
+  {
+    role: USER_ROLE.VENDOR,
+    activated: true,
+    email: 'vendor2@mail.com',
+  },
+  { generateId: true },
+);
+
+const demoProperty = PropertyFactory.build(
+  {
+    addedBy: vendor._id,
+    updatedBy: vendor._id,
+  },
+  { generateId: true },
+);
 
 describe('Visitation Controller', () => {
   beforeEach(async () => {
     userToken = await addUser(user);
     adminToken = await addUser(admin);
+    vendorToken = await addUser(vendor);
+    vendor2Token = await addUser(vendor2);
+    await addProperty(demoProperty);
     sendMailStub = sandbox.stub(MailService, 'sendMail');
   });
+
   afterEach(() => {
     sandbox.restore();
   });
 
   describe('Schedule Visit Route', () => {
-    beforeEach(async () => {
-      await addProperty(demoProperty);
-    });
-
     context('with valid data', () => {
       it('returns successful property', (done) => {
-        const booking = VisitationFactory.build({ propertyId: propId });
+        const booking = VisitationFactory.build({ propertyId: demoProperty._id });
         request()
           .post('/api/v1/visitation/schedule')
           .set('authorization', userToken)
@@ -53,7 +84,7 @@ describe('Visitation Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Visit scheduled successfully');
             expect(res.body).to.have.property('schedule');
-            expect(propId.equals(res.body.schedule.propertyId)).to.be.eql(true);
+            expect(res.body.schedule.propertyId).to.be.eql(demoProperty._id.toString());
             expect(sendMailStub.callCount).to.eq(1);
             expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.SCHEDULE_VISIT);
             done();
@@ -76,7 +107,7 @@ describe('Visitation Controller', () => {
       });
 
       it('returns token error', (done) => {
-        const booking = VisitationFactory.build({ propertyId: propId });
+        const booking = VisitationFactory.build({ propertyId: demoProperty._id });
         request()
           .post('/api/v1/visitation/schedule')
           .set('authorization', invalidUserToken)
@@ -269,112 +300,114 @@ describe('Visitation Controller', () => {
   });
 
   describe('Get all visitations', () => {
-    const booking = VisitationFactory.build({ propertyId: propId, userId: adminId });
+    const endpoint = '/api/v1/visitation/all';
+    const method = 'get';
 
-    context('when no schedule exists', () => {
-      it('returns not found', (done) => {
-        request()
-          .get('/api/v1/visitation/all')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('schedules');
-            expect(res.body.schedules.length).to.be.eql(0);
-            done();
-          });
-      });
-    });
+    const adminUser = UserFactory.build(
+      { role: USER_ROLE.ADMIN, activated: true },
+      { generateId: true },
+    );
 
-    describe('when scheduled visits exist in db', () => {
+    const regularUser = UserFactory.build({ role: USER_ROLE.USER, activated: true });
+
+    const vendorProperties = PropertyFactory.buildList(
+      13,
+      {
+        addedBy: vendor._id,
+        updatedBy: vendor._id,
+      },
+      { generateId: true },
+    );
+
+    const vendor2Properties = PropertyFactory.buildList(
+      5,
+      {
+        addedBy: vendor2._id,
+        updatedBy: vendor2._id,
+      },
+      { generateId: true },
+    );
+
+    const dummyProperties = [...vendorProperties, ...vendor2Properties];
+
+    const dummyVisitations = dummyProperties.map((property) =>
+      VisitationFactory.build(
+        {
+          propertyId: property._id,
+          userId: user._id,
+          vendorId: property.addedBy,
+        },
+        { generateId: true },
+      ),
+    );
+
+    itReturnsEmptyValuesWhenNoItemExistInDatabase({ endpoint, method, user: adminUser });
+
+    describe('when schedules exist in the db', () => {
       beforeEach(async () => {
-        await addProperty(demoProperty);
+        await Property.insertMany(dummyProperties);
+        await Visitation.insertMany(dummyVisitations);
       });
 
-      context('with a valid token & id', () => {
-        beforeEach(async () => {
-          await scheduleVisitation(booking);
-        });
-        it('returns successful payload', (done) => {
+      context('when an admin token is used', () => {
+        it('returns all visitations', (done) => {
           request()
-            .get('/api/v1/visitation/all')
+            .get('/api/v1/visitation/all?limit=100')
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('schedules');
-              expect(propId.equals(res.body.schedules[0].propertyId)).to.be.eql(true);
-              expect(adminId.equals(res.body.schedules[0].userId)).to.be.eql(true);
-              expect(res.body.schedules[0].visitorName).to.be.eql(booking.visitorName);
-              expect(res.body.schedules[0].visitorEmail).to.be.eql(booking.visitorEmail);
-              expect(res.body.schedules[0].visitorPhone).to.be.eql(booking.visitorPhone);
-              expect(propId.equals(res.body.schedules[0].propertyInfo[0]._id)).to.be.eql(true);
-              expect(res.body.schedules[0].propertyInfo[0].name).to.be.eql(demoProperty.name);
-              expect(res.body.schedules[0].propertyInfo[0].price).to.be.eql(demoProperty.price);
-              expect(res.body.schedules[0].propertyInfo[0].description).to.be.eql(
-                demoProperty.description,
-              );
+              expect(res.body.result.length).to.be.eql(18);
               done();
             });
         });
       });
 
-      context('without token', () => {
-        it('returns error', (done) => {
+      context('when vendor 1 token is used', () => {
+        it('returns all visitations', (done) => {
           request()
-            .get('/api/v1/visitation/all')
+            .get('/api/v1/visitation/all?limit=100')
+            .set('authorization', vendorToken)
             .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.result.length).to.be.eql(vendorProperties.length);
+
               done();
             });
         });
       });
 
-      context('when admin token is not available', () => {
-        beforeEach(async () => {
-          await User.findByIdAndDelete(adminId);
-        });
-        it('returns token error', (done) => {
+      context('when vendor 2 token is used', () => {
+        it('returns all visitations', (done) => {
           request()
-            .get('/api/v1/visitation/all')
-            .set('authorization', adminToken)
+            .get('/api/v1/visitation/all?limit=100')
+            .set('authorization', vendor2Token)
             .end((err, res) => {
-              expect(res).to.have.status(404);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Invalid token');
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.result.length).to.be.eql(vendor2Properties.length);
               done();
             });
         });
       });
 
-      context('when user token is is used', () => {
-        it('returns forbidden', (done) => {
-          request()
-            .get('/api/v1/visitation/all')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-              done();
-            });
-        });
+      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
+      itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
+      itReturnsForbiddenForNoToken({ endpoint, method });
+      itReturnsAnErrorWhenServiceFails({
+        endpoint,
+        method,
+        user: adminUser,
+        model: Visitation,
+        modelMethod: 'aggregate',
       });
 
-      context('when getAllVisitations service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Visitation, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/visitation/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Visitation.aggregate.restore();
-            });
-        });
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        userId: adminUser._id,
       });
     });
   });

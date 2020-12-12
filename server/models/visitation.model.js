@@ -42,6 +42,10 @@ const VisitationSchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
+    vendorId: {
+      type: ObjectId,
+      required: true,
+    },
     visitorName: {
       type: String,
       required: true,
