@@ -598,26 +598,35 @@ describe('User Service', () => {
     });
   });
 
-  describe.only('#assignPropertyToUser', () => {
-    const _id = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
-    const property = PropertyFactory.build({
-      _id: propertyId,
-      addedBy: vendor._id,
-      updatedBy: vendor._id,
-    });
+  describe('#assignPropertyToUser', () => {
+    const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
+    const vendor = UserFactory.build(
+      { role: USER_ROLE.VENDOR, email: 'vendor@mail.com' },
+      { generateId: true },
+    );
+    const property = PropertyFactory.build(
+      {
+        addedBy: vendor._id,
+        updatedBy: vendor._id,
+      },
+      { generateId: true },
+    );
 
     const toBeAssigned = {
-      propertyId,
-      userId: _id,
+      propertyId: property._id,
+      userId: user._id,
       vendor,
     };
 
+    beforeEach(async () => {
+      await addUser(user);
+      await addUser(vendor);
+      await addProperty(property);
+    });
+
     describe('when property units is less than one', () => {
       beforeEach(async () => {
-        await addProperty(property);
-        await updateProperty({ id: propertyId, units: 0 });
+        await updateProperty({ id: property._id, units: 0, vendor });
       });
       context('when units are less than one', () => {
         it('returns no units available', async () => {
@@ -629,13 +638,6 @@ describe('User Service', () => {
           }
         });
       });
-    });
-
-    beforeEach(async () => {
-      await User.create(UserFactory.build({ _id }));
-      await Property.create(
-        PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id }),
-      );
     });
 
     context('when getPropertyById fails', () => {
