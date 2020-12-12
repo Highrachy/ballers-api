@@ -13,27 +13,42 @@ import PropertyFactory from '../factories/property.factory';
 import Enquiry from '../../server/models/enquiry.model';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
+import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
 
 describe('Enquiry Service', () => {
+  const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
+  const admin = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
+  const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
+  const property = PropertyFactory.build(
+    { addedBy: vendor._id, updatedBy: vendor._id },
+    { generateId: true },
+  );
+
+  beforeEach(async () => {
+    await addUser(vendor);
+    await addUser(admin);
+    await addUser(user);
+    await addProperty(property);
+  });
+
   describe('#getEnquiryById', () => {
-    const id = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({ userId: user._id }, { generateId: true });
 
     before(async () => {
-      await Enquiry.create(EnquiryFactory.build({ _id: id, userId: id }));
+      await Enquiry.create(enquiry);
     });
 
     it('returns a valid enquiry by Id', async () => {
-      const enquiry = await getEnquiryById(id);
-      expect(id.equals(enquiry.id)).to.be.eql(true);
+      const enq = await getEnquiryById(enquiry._id);
+      expect(enq._id).to.be.eql(enquiry._id);
     });
   });
 
   describe('#addEnquiry', () => {
     let countedEnquiries;
-    const id = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({ userId: id });
+    const enquiry = EnquiryFactory.build({ userId: user._id }, { generateId: true });
 
     beforeEach(async () => {
       countedEnquiries = await Enquiry.countDocuments({});
@@ -67,22 +82,22 @@ describe('Enquiry Service', () => {
   });
 
   describe('#approveEnquiry', () => {
-    const id = mongoose.Types.ObjectId();
+    const enquiry = EnquiryFactory.build({ userId: user._id }, { generateId: true });
     const updatedEnquiry = {
-      enquiryId: id,
-      adminId: id,
+      enquiryId: enquiry._id,
+      adminId: admin._id,
     };
     beforeEach(async () => {
-      await addEnquiry(EnquiryFactory.build({ _id: id, userId: id, approved: false }));
+      await addEnquiry(enquiry);
     });
 
     context('when enquiry is approved', () => {
       it('returns a valid approved enquiry', async () => {
         const approvedEnquiry = await approveEnquiry(updatedEnquiry);
-        const enquiry = await getEnquiryById(id);
-        expect(enquiry.id).to.eql(approvedEnquiry.id);
-        expect(updatedEnquiry.adminId.equals(enquiry.approvedBy)).to.eql(true);
-        expect(enquiry.approved).to.eql(true);
+        const validEnquiry = await getEnquiryById(enquiry._id);
+        expect(validEnquiry._id).to.eql(approvedEnquiry._id);
+        expect(validEnquiry.approvedBy).to.eql(updatedEnquiry.adminId);
+        expect(validEnquiry.approved).to.eql(true);
       });
     });
 
@@ -116,24 +131,20 @@ describe('Enquiry Service', () => {
   });
 
   describe('#getEnquiry', () => {
-    const userId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
+    const enquiry = EnquiryFactory.build(
+      { userId: user._id, propertyId: property._id },
+      { generateId: true },
+    );
 
     beforeEach(async () => {
-      await addUser(user);
-      await addProperty(property);
       await addEnquiry(enquiry);
     });
 
     context('when enquiry exists', () => {
       it('returns a valid enquiry', async () => {
-        const gottenEnquiry = await getEnquiry(enquiryId);
-        expect(gottenEnquiry[0]._id).to.eql(enquiryId);
-        expect(gottenEnquiry[0].propertyId).to.eql(propertyId);
+        const gottenEnquiry = await getEnquiry(enquiry._id);
+        expect(gottenEnquiry[0]._id).to.eql(enquiry._id);
+        expect(gottenEnquiry[0].propertyId).to.eql(property._id);
       });
     });
 
@@ -147,31 +158,30 @@ describe('Enquiry Service', () => {
   });
 
   describe('#getAllEnquiries', () => {
-    const id = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const enquiryToAdd = EnquiryFactory.build({ userId: id, propertyId });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: id, updatedBy: id });
+    const multipleEnquiries = EnquiryFactory.buildList(18, {
+      userId: user._id,
+      propertyId: property._id,
+    });
+    const enquiryToAdd = EnquiryFactory.build({ userId: user._id, propertyId: property._id });
 
     beforeEach(async () => {
-      await addProperty(property);
-      await Enquiry.create(enquiryToAdd);
-      await Enquiry.create(enquiryToAdd);
+      await Enquiry.insertMany(multipleEnquiries);
     });
     context('when enquiry added is valid', () => {
-      it('returns 2 enquiries', async () => {
-        const enquiry = await getAllEnquiries();
-        expect(enquiry).to.be.an('array');
-        expect(enquiry.length).to.be.eql(2);
+      it('returns 18 enquiries', async () => {
+        const enquiries = await getAllEnquiries();
+        expect(enquiries).to.be.an('array');
+        expect(enquiries.length).to.be.eql(18);
       });
     });
     context('when new enquiry is added', () => {
       before(async () => {
         await Enquiry.create(enquiryToAdd);
       });
-      it('returns 3 enquiries', async () => {
-        const enquiry = await getAllEnquiries();
-        expect(enquiry).to.be.an('array');
-        expect(enquiry.length).to.be.eql(3);
+      it('returns 19 enquiries', async () => {
+        const enquiries = await getAllEnquiries();
+        expect(enquiries).to.be.an('array');
+        expect(enquiries.length).to.be.eql(19);
       });
     });
   });

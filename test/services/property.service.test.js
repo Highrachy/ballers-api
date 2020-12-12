@@ -27,7 +27,7 @@ describe('Property Service', () => {
   });
 
   describe('#getPropertyById', () => {
-    before(async () => {
+    beforeEach(async () => {
       await addProperty(property);
     });
 
@@ -58,7 +58,11 @@ describe('Property Service', () => {
     context('when an invalid data is entered', () => {
       it('throws an error', async () => {
         try {
-          const InvalidProperty = PropertyFactory.build({ name: '' });
+          const InvalidProperty = PropertyFactory.build({
+            name: '',
+            addedBy: vendor._id,
+            updatedBy: vendor._id,
+          });
           await addProperty(InvalidProperty);
         } catch (err) {
           const currentCountedProperties = await Property.countDocuments({});
@@ -77,7 +81,7 @@ describe('Property Service', () => {
       units: 11,
       vendor,
     };
-    before(async () => {
+    beforeEach(async () => {
       await addProperty(property);
     });
 
@@ -111,7 +115,6 @@ describe('Property Service', () => {
           await updateProperty(updatedDetails);
         } catch (err) {
           expect(err.statusCode).to.eql(400);
-          expect(err.error.message).to.be.eql("Cannot read property 'addedBy' of null");
           expect(err.message).to.be.eql('Error updating property');
         }
         Property.findByIdAndUpdate.restore();
@@ -120,7 +123,7 @@ describe('Property Service', () => {
   });
 
   describe('#deleteProperty', () => {
-    before(async () => {
+    beforeEach(async () => {
       await addProperty(property);
     });
 
@@ -166,7 +169,7 @@ describe('Property Service', () => {
   describe('#getPropertiesWithPaymentPlanId', () => {
     const planId = mongoose.Types.ObjectId();
 
-    before(async () => {
+    beforeEach(async () => {
       await addProperty({ ...property, paymentPlan: [planId] });
     });
 

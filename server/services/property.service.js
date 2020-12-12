@@ -7,12 +7,21 @@ import Transaction from '../models/transaction.model';
 import { getOffer } from './offer.service';
 import { OFFER_STATUS, USER_ROLE } from '../helpers/constants';
 import Offer from '../models/offer.model';
+// eslint-disable-next-line import/no-cycle
+import { getUserById } from './user.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getPropertyById = async (id) => Property.findById(id).select();
 
 export const addProperty = async (property) => {
+  const vendor = await getUserById(property.addedBy);
+  if (vendor.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Property can only be added by a vendor',
+    );
+  }
   try {
     const addedProperty = await new Property(property).save();
     return addedProperty;
