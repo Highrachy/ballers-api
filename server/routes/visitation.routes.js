@@ -1,6 +1,6 @@
 import express from 'express';
 import propertyVisitationSchema from '../schemas/visitation.schema';
-import { schemaValidation, authenticate, isAdmin } from '../helpers/middleware';
+import { schemaValidation, authenticate, isVendorOrAdmin } from '../helpers/middleware';
 import VisitationController from '../controllers/visitation.controllers';
 
 const router = express.Router();
@@ -55,6 +55,6 @@ router.post(
  *        '500':
  *          description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, VisitationController.getAll);
+router.get('/all', authenticate, isVendorOrAdmin, VisitationController.getAll);
 
 module.exports = router;

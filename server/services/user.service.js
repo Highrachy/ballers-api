@@ -10,7 +10,7 @@ import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
 import { REFERRAL_STATUS, USER_ROLE, VENDOR_INFO_STATUS, VENDOR_STEPS } from '../helpers/constants';
-import { generatePagination, generateFacetData } from '../helpers/pagination';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getTodaysDateStandard } from '../helpers/dates';
 
 export const getUserByEmail = async (email, fields = null) =>
@@ -270,7 +270,7 @@ export const getAllRegisteredUsers = async (page = 1, limit = 10) => {
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },
   ]);
-  const { total } = users[0].metadata[0];
+  const total = getPaginationTotal(users);
   const pagination = generatePagination(page, limit, total);
   const result = users[0].data;
   return { pagination, result };
@@ -366,7 +366,7 @@ export const getAllVendors = async (page = 1, limit = 10) => {
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },
   ]);
-  const { total } = vendors[0].metadata[0];
+  const total = getPaginationTotal(vendors);
   const pagination = generatePagination(page, limit, total);
   const result = vendors[0].data;
   return { pagination, result };
