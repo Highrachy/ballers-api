@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
@@ -16,28 +15,49 @@ import { addProperty } from '../../server/services/property.service';
 import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addReferral } from '../../server/services/referral.service';
-import { OFFER_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
+import { OFFER_STATUS, REWARD_STATUS, USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
 
 let adminToken;
 let userToken;
-const userId = mongoose.Types.ObjectId();
-const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true, vendorCode: 'HIG' });
-const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
+const adminUser = UserFactory.build(
+  { role: USER_ROLE.ADMIN, activated: true },
+  { generateId: true },
+);
+const vendorUser = UserFactory.build(
+  { role: USER_ROLE.VENDOR, activated: true },
+  { generateId: true },
+);
+const regularUser = UserFactory.build(
+  { role: USER_ROLE.USER, activated: true },
+  { generateId: true },
+);
 
-const propertyId1 = mongoose.Types.ObjectId();
-const propertyId2 = mongoose.Types.ObjectId();
-const propertyId3 = mongoose.Types.ObjectId();
-const property1 = PropertyFactory.build({ _id: propertyId1, addedBy: adminId, updatedBy: adminId });
-const property2 = PropertyFactory.build({ _id: propertyId2, addedBy: adminId, updatedBy: adminId });
-const property3 = PropertyFactory.build({ _id: propertyId3, addedBy: adminId, updatedBy: adminId });
+const property = PropertyFactory.build(
+  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+  { generateId: true },
+);
+
+const property1 = PropertyFactory.build(
+  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+  { generateId: true },
+);
+const property2 = PropertyFactory.build(
+  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+  { generateId: true },
+);
+const property3 = PropertyFactory.build(
+  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+  { generateId: true },
+);
 
 describe('Transaction Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
+    await addUser(vendorUser);
+    await addProperty(property);
   });
 
   describe('Add Transaction Route', () => {
@@ -60,7 +80,7 @@ describe('Transaction Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(adminId);
+        await User.findByIdAndDelete(adminUser._id);
       });
       it('returns token error', (done) => {
         const transaction = TransactionFactory.build();
@@ -164,19 +184,14 @@ describe('Transaction Controller', () => {
   });
 
   describe('Get all transactions', () => {
-    const propertyId = mongoose.Types.ObjectId();
-    const transactionId = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({
-      _id: propertyId,
-      addedBy: adminId,
-      updatedBy: adminId,
-    });
-    const transaction = TransactionFactory.build({
-      _id: transactionId,
-      propertyId,
-      userId: adminId,
-      adminId,
-    });
+    const transaction = TransactionFactory.build(
+      {
+        propertyId: property._id,
+        userId: adminUser._id,
+        adminId: adminUser._id,
+      },
+      { generateId: true },
+    );
 
     context('when no transaction is found', () => {
       it('returns empty array of transactions', (done) => {
@@ -195,7 +210,6 @@ describe('Transaction Controller', () => {
 
     describe('when transactions exist in db', () => {
       before(async () => {
-        await addProperty(property);
         await addTransaction(transaction);
         await addTransaction(TransactionFactory.build());
       });
@@ -209,9 +223,9 @@ describe('Transaction Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('transactions');
-              expect(res.body.transactions[0]._id).to.be.eql(transactionId.toString());
-              expect(res.body.transactions[0].userInfo._id).to.be.eql(adminId.toString());
-              expect(res.body.transactions[0].propertyInfo._id).to.be.eql(propertyId.toString());
+              expect(res.body.transactions[0]._id).to.be.eql(transaction._id.toString());
+              expect(res.body.transactions[0].userInfo._id).to.be.eql(adminUser._id.toString());
+              expect(res.body.transactions[0].propertyInfo._id).to.be.eql(property._id.toString());
               done();
             });
         });
@@ -261,15 +275,17 @@ describe('Transaction Controller', () => {
   });
 
   describe('Update Transaction route', () => {
-    const transactionId = mongoose.Types.ObjectId();
-    const transaction = TransactionFactory.build({ _id: transactionId, userId, adminId });
+    const transaction = TransactionFactory.build(
+      { userId: regularUser._id, adminId: adminUser._id },
+      { generateId: true },
+    );
 
     beforeEach(async () => {
       await addTransaction(transaction);
     });
 
     const updatedTransaction = {
-      transactionId,
+      transactionId: transaction._id,
       paidOn: '2020-05-05',
     };
 
@@ -356,7 +372,7 @@ describe('Transaction Controller', () => {
       });
       context('when paid on is empty', () => {
         it('returns an error', (done) => {
-          const invalidTransaction = { transactionId, paidOn: '' };
+          const invalidTransaction = { transactionId: transaction._id, paidOn: '' };
           request()
             .put('/api/v1/transaction/update')
             .set('authorization', adminToken)
@@ -374,19 +390,14 @@ describe('Transaction Controller', () => {
   });
 
   describe('Get all transactions made by a user route', () => {
-    const propertyId = mongoose.Types.ObjectId();
-    const transactionId = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({
-      _id: propertyId,
-      addedBy: adminId,
-      updatedBy: adminId,
-    });
-    const transaction = TransactionFactory.build({
-      _id: transactionId,
-      propertyId,
-      userId: adminId,
-      adminId,
-    });
+    const transaction = TransactionFactory.build(
+      {
+        propertyId: property._id,
+        userId: adminUser._id,
+        adminId: adminUser._id,
+      },
+      { generateId: true },
+    );
 
     context('when no transaction is found', () => {
       it('returns empty array of transactions', (done) => {
@@ -405,7 +416,6 @@ describe('Transaction Controller', () => {
 
     describe('when transactions exist in db', () => {
       before(async () => {
-        await addProperty(property);
         await addTransaction(transaction);
       });
 
@@ -423,8 +433,8 @@ describe('Transaction Controller', () => {
               expect(res.body.transactions[0]).to.have.property('paymentSource');
               expect(res.body.transactions[0]).to.have.property('amount');
               expect(res.body.transactions[0]).to.have.property('adminId');
-              expect(res.body.transactions[0]._id).to.be.eql(transactionId.toString());
-              expect(res.body.transactions[0].propertyInfo._id).to.be.eql(propertyId.toString());
+              expect(res.body.transactions[0]._id).to.be.eql(transaction._id.toString());
+              expect(res.body.transactions[0].propertyInfo._id).to.be.eql(property._id.toString());
               expect(res.body.transactions[0].propertyInfo).to.have.property('name');
               expect(res.body.transactions[0].propertyInfo).to.have.property('mainImage');
               done();
@@ -475,37 +485,31 @@ describe('Transaction Controller', () => {
   });
 
   describe('Get User Transactions By Property route', () => {
-    const propertyId = mongoose.Types.ObjectId();
-    const transactionId = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({
-      _id: propertyId,
-      addedBy: adminId,
-      updatedBy: adminId,
-    });
-    const transaction = TransactionFactory.build({
-      _id: transactionId,
-      propertyId,
-      userId: adminId,
-      adminId,
-    });
+    const transaction = TransactionFactory.build(
+      {
+        propertyId: property._id,
+        userId: adminUser._id,
+        adminId: adminUser._id,
+      },
+      { generateId: true },
+    );
 
     beforeEach(async () => {
-      await addProperty(property);
       await addTransaction(transaction);
     });
 
     context('with valid token', () => {
       it('returns an updated transaction', (done) => {
         request()
-          .get(`/api/v1/transaction/property/${propertyId}`)
+          .get(`/api/v1/transaction/property/${property._id}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('transactions');
-            expect(res.body.transactions[0]._id).to.be.eql(transactionId.toString());
-            expect(res.body.transactions[0].propertyInfo._id).to.be.eql(propertyId.toString());
-            expect(res.body.transactions[0].userInfo._id).to.be.eql(adminId.toString());
+            expect(res.body.transactions[0]._id).to.be.eql(transaction._id.toString());
+            expect(res.body.transactions[0].propertyInfo._id).to.be.eql(property._id.toString());
+            expect(res.body.transactions[0].userInfo._id).to.be.eql(adminUser._id.toString());
             done();
           });
       });
@@ -514,7 +518,7 @@ describe('Transaction Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(`/api/v1/transaction/property/${propertyId}`)
+          .get(`/api/v1/transaction/property/${property._id}`)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -527,7 +531,7 @@ describe('Transaction Controller', () => {
     context('with invalid property id ', () => {
       it('returns validation error', (done) => {
         request()
-          .get(`/api/v1/transaction/property/${propertyId}s`)
+          .get(`/api/v1/transaction/property/${property._id}s`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -542,7 +546,7 @@ describe('Transaction Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/transaction/property/${propertyId}`)
+          .get(`/api/v1/transaction/property/${property._id}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
@@ -554,49 +558,55 @@ describe('Transaction Controller', () => {
   });
 
   describe('Get User Contribution Rewards', () => {
-    const allocatedEnquiryId = mongoose.Types.ObjectId();
-    const allocatedEnquiry = EnquiryFactory.build({
-      _id: allocatedEnquiryId,
-      userId,
-      propertyId: propertyId1,
-    });
-    const allocatedOfferId = mongoose.Types.ObjectId();
-    const allocatedOffer = OfferFactory.build({
-      _id: allocatedOfferId,
-      enquiryId: allocatedEnquiryId,
-      vendorId: adminId,
-      status: OFFER_STATUS.ALLOCATED,
-      contributionReward: 50000,
-    });
+    const allocatedEnquiry = EnquiryFactory.build(
+      {
+        userId: regularUser._id,
+        propertyId: property1._id,
+      },
+      { generateId: true },
+    );
+    const allocatedOffer = OfferFactory.build(
+      {
+        enquiryId: allocatedEnquiry._id,
+        vendorId: adminUser._id,
+        status: OFFER_STATUS.ALLOCATED,
+        contributionReward: 50000,
+      },
+      { generateId: true },
+    );
 
-    const neglectedEnquiryId = mongoose.Types.ObjectId();
-    const neglectedEnquiry = EnquiryFactory.build({
-      _id: neglectedEnquiryId,
-      userId,
-      propertyId: propertyId2,
-    });
-    const neglectedOfferId = mongoose.Types.ObjectId();
-    const neglectedOffer = OfferFactory.build({
-      _id: neglectedOfferId,
-      enquiryId: neglectedEnquiryId,
-      vendorId: adminId,
-      status: OFFER_STATUS.NEGLECTED,
-    });
+    const neglectedEnquiry = EnquiryFactory.build(
+      {
+        userId: regularUser._id,
+        propertyId: property2._id,
+      },
+      { generateId: true },
+    );
+    const neglectedOffer = OfferFactory.build(
+      {
+        enquiryId: neglectedEnquiry._id,
+        vendorId: adminUser._id,
+        status: OFFER_STATUS.NEGLECTED,
+      },
+      { generateId: true },
+    );
 
-    const assignedEnquiryId = mongoose.Types.ObjectId();
-    const assignedEnquiry = EnquiryFactory.build({
-      _id: assignedEnquiryId,
-      userId,
-      propertyId: propertyId3,
-    });
-    const assignedOfferId = mongoose.Types.ObjectId();
-    const assignedOffer = OfferFactory.build({
-      _id: assignedOfferId,
-      enquiryId: assignedEnquiryId,
-      vendorId: adminId,
-      status: OFFER_STATUS.ASSIGNED,
-      contributionReward: 70000,
-    });
+    const assignedEnquiry = EnquiryFactory.build(
+      {
+        userId: regularUser._id,
+        propertyId: property3._id,
+      },
+      { generateId: true },
+    );
+    const assignedOffer = OfferFactory.build(
+      {
+        enquiryId: assignedEnquiry._id,
+        vendorId: adminUser._id,
+        status: OFFER_STATUS.ASSIGNED,
+        contributionReward: 70000,
+      },
+      { generateId: true },
+    );
 
     context('when no contribution reward is found', () => {
       it('returns empty array of contribution reward', (done) => {
@@ -636,8 +646,8 @@ describe('Transaction Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('contributionRewards');
               expect(res.body.contributionRewards.length).to.be.eql(2);
-              expect(res.body.contributionRewards[0]._id).to.be.eql(allocatedOfferId.toString());
-              expect(res.body.contributionRewards[1]._id).to.be.eql(assignedOfferId.toString());
+              expect(res.body.contributionRewards[0]._id).to.be.eql(allocatedOffer._id.toString());
+              expect(res.body.contributionRewards[1]._id).to.be.eql(assignedOffer._id.toString());
               done();
             });
         });
@@ -674,7 +684,7 @@ describe('Transaction Controller', () => {
 
   describe('Get User Referal Rewards', () => {
     const paidReferral = ReferralFactory.build({
-      referrerId: userId,
+      referrerId: regularUser._id,
       email: 'demo1@mail.com',
       reward: {
         amount: 10000,
@@ -682,14 +692,14 @@ describe('Transaction Controller', () => {
       },
     });
     const pendingReferral = ReferralFactory.build({
-      referrerId: adminId,
+      referrerId: adminUser._id,
       email: 'demo1@mail.com',
       reward: {
         status: REWARD_STATUS.PENDING,
       },
     });
     const paidReferral2 = ReferralFactory.build({
-      referrerId: userId,
+      referrerId: regularUser._id,
       email: 'demo2@mail.com',
       reward: {
         amount: 20000,
@@ -729,14 +739,14 @@ describe('Transaction Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('referralRewards');
               expect(res.body.referralRewards.length).to.be.eql(2);
-              expect(res.body.referralRewards[0].referrerId).to.be.eql(userId.toString());
+              expect(res.body.referralRewards[0].referrerId).to.be.eql(regularUser._id.toString());
               expect(res.body.referralRewards[0].reward.status).to.be.eql(
                 paidReferral.reward.status,
               );
               expect(res.body.referralRewards[0].reward.amount).to.be.eql(
                 paidReferral.reward.amount,
               );
-              expect(res.body.referralRewards[1].referrerId).to.be.eql(userId.toString());
+              expect(res.body.referralRewards[1].referrerId).to.be.eql(regularUser._id.toString());
               expect(res.body.referralRewards[1].reward.status).to.be.eql(
                 paidReferral2.reward.status,
               );

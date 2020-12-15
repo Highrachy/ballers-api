@@ -15,7 +15,10 @@ const { ObjectId } = mongoose.Types.ObjectId;
 export const getPropertyById = async (id) => Property.findById(id).select();
 
 export const addProperty = async (property) => {
-  const vendor = await getUserById(property.addedBy);
+  const vendor = await getUserById(property.addedBy).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
   if (vendor.role !== USER_ROLE.VENDOR) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,

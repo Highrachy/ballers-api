@@ -13,7 +13,10 @@ import { USER_ROLE } from '../../server/helpers/constants';
 useDatabase();
 
 describe('Visitation Service', () => {
-  const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
+  const vendor = UserFactory.build(
+    { email: 'vendoremail@mail.com', role: USER_ROLE.VENDOR },
+    { generateId: true },
+  );
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
   const property = PropertyFactory.build(
     { addedBy: vendor._id, updatedBy: vendor._id },
@@ -28,16 +31,9 @@ describe('Visitation Service', () => {
 
   describe('#scheduleVisitation', () => {
     let countedVisitations;
-    const email = 'vendoremail@mail.com';
-    const id = mongoose.Types.ObjectId();
-    const vendorId = mongoose.Types.ObjectId();
-    const vendor = UserFactory.build({ _id: vendorId, email });
-    const property = PropertyFactory.build({ _id: id, addedBy: vendorId, updatedBy: vendorId });
 
     beforeEach(async () => {
       countedVisitations = await Visitation.countDocuments({});
-      await Property.create(property);
-      await addUser(vendor);
     });
 
     context('when a valid schedule is entered', () => {
@@ -49,7 +45,7 @@ describe('Visitation Service', () => {
         const schedule = await scheduleVisitation(validBooking);
         const currentcountedVisitations = await Visitation.countDocuments({});
         expect(schedule.schedule.propertyId).to.eql(validBooking.propertyId);
-        expect(schedule.vendor.email).to.eql(email);
+        expect(schedule.vendor.email).to.eql(vendor.email);
         expect(currentcountedVisitations).to.eql(countedVisitations + 1);
       });
     });
@@ -158,36 +154,29 @@ describe('Visitation Service', () => {
   });
 
   describe('#getAllVisitations', () => {
-    const validBookings = VisitationFactory.buildList(18, {
-        propertyId: property._id,
-        userId: user._id,
-      });
-      const validBooking = VisitationFactory.build({
-        propertyId: property._id,
-        userId: user._id,
-      });
-    
-      beforeEach(async () => {
-        await Visitation.insertMany(validBookings);
-      });
+    const validBooking = VisitationFactory.build({ propertyId: property._id, userId: user._id });
+
+    beforeEach(async () => {
+      await scheduleVisitation(validBooking);
+      await scheduleVisitation(validBooking);
+    });
 
     context('when schedule added is valid', () => {
-        it('returns 18 schedules', async () => {
-            const schedule = await getAllVisitations(vendor);
-          expect(schedule).to.be.an('array');
-          expect(schedule.length).to.be.eql(18);
-        });
+      it('returns 2 schedules', async () => {
+        const schedule = await getAllVisitations(vendor);
+        expect(schedule.result).to.be.an('array');
+        expect(schedule.result.length).to.be.eql(2);
       });
-
-      context('when new schedule is added', () => {
-        beforeEach(async () => {
-          await scheduleVisitation(validBooking);
-        });
-        it('returns 19 schedules', async () => {
-            const schedule = await getAllVisitations(vendor);
-          expect(schedule).to.be.an('array');
-          expect(schedule.length).to.be.eql(19);
-        });
+    });
+    context('when new schedule is added', () => {
+      beforeEach(async () => {
+        await scheduleVisitation(validBooking);
       });
+      it('returns 3 schedules', async () => {
+        const schedule = await getAllVisitations(vendor);
+        expect(schedule.result).to.be.an('array');
+        expect(schedule.result.length).to.be.eql(3);
+      });
+    });
   });
 });

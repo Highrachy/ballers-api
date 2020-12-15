@@ -8,18 +8,24 @@ import PropertyFactory from '../factories/property.factory';
 import { addUser } from '../../server/services/user.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addProperty } from '../../server/services/property.service';
+import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
 
 let adminToken;
 let userToken;
 const _id = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ role: 0, activated: true });
-const regularUser = UserFactory.build({ _id, role: 1, activated: true });
+const adminUser = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
+const vendorUser = UserFactory.build(
+  { role: USER_ROLE.VENDOR, activated: true },
+  { generateId: true },
+);
+const regularUser = UserFactory.build({ _id, role: USER_ROLE.USER, activated: true });
 
 describe('Enquiry Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
+    await addUser(vendorUser);
     userToken = await addUser(regularUser);
   });
 
@@ -567,7 +573,11 @@ describe('Enquiry Controller', () => {
       addedBy: _id,
       updatedBy: _id,
     });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: vendorUser._id,
+      updatedBy: vendorUser._id,
+    });
 
     beforeEach(async () => {
       await addProperty(property);
@@ -642,7 +652,11 @@ describe('Enquiry Controller', () => {
       addedBy: _id,
       updatedBy: _id,
     });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+    const property = PropertyFactory.build({
+      _id: propertyId,
+      addedBy: vendorUser._id,
+      updatedBy: vendorUser._id,
+    });
 
     context('when no enquiry is found', () => {
       it('returns empty array of enquiries', (done) => {
