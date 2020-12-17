@@ -170,11 +170,30 @@ const UserSchema = new mongoose.Schema(
       default: USER_ROLE.USER,
     },
     vendor: {
-      accountNumber: {
-        type: String,
+      bankInfo: {
+        accountName: {
+          type: String,
+        },
+        accountNumber: {
+          type: String,
+        },
+        bankName: {
+          type: String,
+        },
       },
       companyAddress: {
-        type: String,
+        city: {
+          type: String,
+        },
+        country: {
+          type: String,
+        },
+        state: {
+          type: String,
+        },
+        street: {
+          type: String,
+        },
       },
       companyLogo: {
         type: String,
@@ -198,9 +217,16 @@ const UserSchema = new mongoose.Schema(
           },
         },
       ],
-      identification: {
-        type: String,
-      },
+      identification: [
+        {
+          url: {
+            type: String,
+          },
+          type: {
+            type: String,
+          },
+        },
+      ],
       redanNumber: {
         type: String,
       },
@@ -233,6 +259,7 @@ const UserSchema = new mongoose.Schema(
       verification: {
         companyInfo: vendorInfoSchema,
         bankDetails: vendorInfoSchema,
+        documentUpload: vendorInfoSchema,
         directorInfo: vendorInfoSchema,
       },
     },

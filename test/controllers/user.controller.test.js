@@ -1312,6 +1312,9 @@ describe('User Controller', () => {
             directorInfo: {
               status: VENDOR_INFO_STATUS.VERIFIED,
             },
+            documentUpload: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
           },
         },
       });
@@ -1358,6 +1361,9 @@ describe('User Controller', () => {
                 status: VENDOR_INFO_STATUS.VERIFIED,
               },
               directorInfo: {
+                status: VENDOR_INFO_STATUS.VERIFIED,
+              },
+              documentUpload: {
                 status: VENDOR_INFO_STATUS.VERIFIED,
               },
             },
@@ -1442,7 +1448,7 @@ describe('User Controller', () => {
       });
 
       context('when a valid token is used', () => {
-        [...new Array(3)].map((_, index) =>
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
           it('returns verified step', (done) => {
             request()
               [method](endpoint)
@@ -1490,7 +1496,7 @@ describe('User Controller', () => {
       });
 
       context('when findByIdAndUpdate returns an error', () => {
-        [...new Array(3)].map((_, index) =>
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
           it('returns the error', (done) => {
             sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
             request()
@@ -1525,7 +1531,7 @@ describe('User Controller', () => {
         });
 
         context('when vendor id is empty', () => {
-          [...new Array(3)].map((_, index) =>
+          [...new Array(VENDOR_STEPS.length)].map((_, index) =>
             it('returns an error', (done) => {
               request()
                 [method](endpoint)
@@ -1559,7 +1565,7 @@ describe('User Controller', () => {
       });
 
       context('when a valid token is used', () => {
-        [...new Array(3)].map((_, index) =>
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
           it('returns verified step', (done) => {
             request()
               [method](endpoint)
@@ -1610,7 +1616,7 @@ describe('User Controller', () => {
       });
 
       context('when findByIdAndUpdate returns an error', () => {
-        [...new Array(3)].map((_, index) =>
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
           it('returns the error', (done) => {
             sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
             request()
@@ -1645,7 +1651,7 @@ describe('User Controller', () => {
         });
 
         context('when vendor id is empty', () => {
-          [...new Array(3)].map((_, index) =>
+          [...new Array(VENDOR_STEPS.length)].map((_, index) =>
             it('returns an error', (done) => {
               request()
                 [method](endpoint)
@@ -1681,8 +1687,17 @@ describe('User Controller', () => {
       const method = 'put';
 
       const data = {
-        accountNumber: '1234567890',
-        companyAddress: '123 sesame street',
+        bankInfo: {
+          accountNumber: '1234567890',
+          accountName: 'Highrachy Investment Limited',
+          bankName: 'ABC Bank',
+        },
+        companyAddress: {
+          city: 'Lekki Phase 1',
+          country: 'Nigeria',
+          state: 'Lagos',
+          street: 'Highrachy street',
+        },
         companyLogo: 'https://ballers.ng/logo.png',
         directors: [
           {
@@ -1691,7 +1706,12 @@ describe('User Controller', () => {
             phone: '08012345678',
           },
         ],
-        identification: 'https://ballers.ng/cac-certificate.png',
+        identification: [
+          {
+            url: 'https://ballers.ng/cac-certificate.png',
+            type: 'CAC Certificate',
+          },
+        ],
         redanNumber: '1234567890',
         socialMedia: [
           {
