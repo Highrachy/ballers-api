@@ -7,24 +7,12 @@ import Transaction from '../models/transaction.model';
 import { getOffer } from './offer.service';
 import { OFFER_STATUS, USER_ROLE } from '../helpers/constants';
 import Offer from '../models/offer.model';
-// eslint-disable-next-line import/no-cycle
-import { getUserById } from './user.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getPropertyById = async (id) => Property.findById(id).select();
 
 export const addProperty = async (property) => {
-  const vendor = await getUserById(property.addedBy).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (vendor.role !== USER_ROLE.VENDOR) {
-    throw new ErrorHandler(
-      httpStatus.PRECONDITION_FAILED,
-      'Property can only be added by a vendor',
-    );
-  }
   try {
     const addedProperty = await new Property(property).save();
     return addedProperty;
@@ -37,11 +25,9 @@ export const updateProperty = async (updatedProperty) => {
   const property = await getPropertyById(updatedProperty.id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
   try {
-    if (
-      updatedProperty.vendor.role === USER_ROLE.VENDOR &&
-      updatedProperty.vendor._id.toString() !== property.addedBy.toString()
-    ) {
+    if (updatedProperty.vendor._id.toString() !== property.addedBy.toString()) {
       throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
     }
 
@@ -67,10 +53,9 @@ export const deleteProperty = async ({ propertyId, user }) => {
   }
 };
 
-// get properties added by a specific admin with the info of assigned users attached
-export const getAllPropertiesAddedByVendor = async (adminId) =>
+export const getAllPropertiesAddedByVendor = async (vendorId) =>
   Property.aggregate([
-    { $match: { addedBy: ObjectId(adminId) } },
+    { $match: { addedBy: ObjectId(vendorId) } },
     {
       $lookup: {
         from: 'users',
@@ -112,7 +97,6 @@ export const getAllPropertiesAddedByVendor = async (adminId) =>
     },
   ]);
 
-// get all properties in the database with the assigned user and admin details
 export const getAllProperties = async (user) => {
   const propertiesOptions = [
     {
@@ -172,7 +156,7 @@ export const getAllProperties = async (user) => {
   ];
 
   if (user.role === USER_ROLE.VENDOR) {
-    propertiesOptions.splice(0, 0, { $match: { addedBy: ObjectId(user._id) } });
+    propertiesOptions.unshift({ $match: { addedBy: ObjectId(user._id) } });
   }
 
   const properties = await Property.aggregate(propertiesOptions);
@@ -180,7 +164,6 @@ export const getAllProperties = async (user) => {
   return properties;
 };
 
-// get a property by its id and admin details
 export const getOneProperty = async (propertyId) =>
   Property.aggregate([
     { $match: { _id: ObjectId(propertyId) } },

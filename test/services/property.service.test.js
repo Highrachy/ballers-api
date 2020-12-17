@@ -128,7 +128,7 @@ describe('Property Service', () => {
     });
 
     context('when property is deleted', () => {
-      it('returns a valid updated user', async () => {
+      it('deletes property', async () => {
         // eslint-disable-next-line no-unused-vars
         const deletedProperty = deleteProperty(property._id);
         const prop = getPropertyById(property._id);

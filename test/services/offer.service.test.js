@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { expect, sinon, useDatabase } from '../config';
 import Offer from '../../server/models/offer.model';
+import Enquiry from '../../server/models/enquiry.model';
+import Property from '../../server/models/property.model';
 import {
   getOfferById,
   generateReferenceCode,
@@ -359,7 +361,7 @@ describe('Offer Service', () => {
     const offer1 = OfferFactory.build(
       {
         enquiryId: enquiry1._id,
-        vendorId: user1._id,
+        vendorId: vendor._id,
         totalAmountPayable: 18000000,
       },
       { generateId: true },
@@ -367,7 +369,7 @@ describe('Offer Service', () => {
     const offer2 = OfferFactory.build(
       {
         enquiryId: enquiry2._id,
-        vendorId: user2._id,
+        vendorId: vendor._id,
         totalAmountPayable: 28000000,
       },
       { generateId: true },
@@ -501,122 +503,62 @@ describe('Offer Service', () => {
   });
 
   describe('#getActiveOffers', () => {
-    const property1 = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
-    const property2 = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
-    const property3 = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
-    const property4 = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
-    const property5 = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
+    const allOfferStatus = Object.keys(OFFER_STATUS);
+    const properties = allOfferStatus.map(() =>
+      PropertyFactory.build(
+        {
+          addedBy: vendor._id,
+          updatedBy: vendor._id,
+        },
+        { generateId: true },
+      ),
     );
 
-    const enquiry1 = EnquiryFactory.build(
-      { userId: user._id, propertyId: property1._id },
-      { generateId: true },
-    );
-    const offer1 = OfferFactory.build(
-      {
-        enquiryId: enquiry1._id,
-        vendorId: vendor._id,
-        status: OFFER_STATUS.ASSIGNED,
-      },
-      { generateId: true },
+    const enquiries = allOfferStatus.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: properties[index]._id,
+          userId: user._id,
+        },
+        { generateId: true },
+      ),
     );
 
-    const enquiry2 = EnquiryFactory.build(
-      { userId: user._id, propertyId: property2._id },
-      { generateId: true },
-    );
-    const offer2 = OfferFactory.build(
-      {
-        enquiryId: enquiry2._id,
-        vendorId: vendor._id,
-        status: OFFER_STATUS.ALLOCATED,
-      },
-      { generateId: true },
-    );
-
-    const enquiry3 = EnquiryFactory.build(
-      { userId: user._id, propertyId: property3._id },
-      { generateId: true },
-    );
-    const offer3 = OfferFactory.build(
-      {
-        enquiryId: enquiry3._id,
-        vendorId: vendor._id,
-        status: OFFER_STATUS.REJECTED,
-      },
-      { generateId: true },
-    );
-
-    const enquiry4 = EnquiryFactory.build(
-      { userId: user._id, propertyId: property4._id },
-      { generateId: true },
-    );
-    const offer4 = OfferFactory.build(
-      {
-        enquiryId: enquiry4._id,
-        vendorId: vendor._id,
-        status: OFFER_STATUS.INTERESTED,
-      },
-      { generateId: true },
-    );
-
-    const enquiry5 = EnquiryFactory.build(
-      { userId: user._id, propertyId: property5._id },
-      { generateId: true },
-    );
-    const offer5 = OfferFactory.build(
-      {
-        enquiryId: enquiry5._id,
-        vendorId: vendor._id,
-        status: OFFER_STATUS.NEGLECTED,
-      },
-      { generateId: true },
+    const offers = allOfferStatus.map((_, index) =>
+      OfferFactory.build(
+        {
+          // userId: user._id,
+          // propertyId: properties[index]._id,
+          enquiryId: enquiries[index]._id,
+          vendorId: vendor._id,
+          status: OFFER_STATUS[allOfferStatus[index]],
+        },
+        { generateId: true },
+      ),
     );
 
     beforeEach(async () => {
-      await addProperty(property1);
-      await addProperty(property2);
-      await addProperty(property3);
-      await addProperty(property4);
-      await addProperty(property5);
-      await addEnquiry(enquiry1);
-      await addEnquiry(enquiry2);
-      await addEnquiry(enquiry3);
-      await addEnquiry(enquiry4);
-      await addEnquiry(enquiry5);
-      await createOffer(offer1);
-      await createOffer(offer2);
-      await createOffer(offer3);
+      await Property.insertMany(properties);
+      await Enquiry.insertMany(enquiries);
+      await createOffer(offers[2]);
+      await createOffer(offers[3]);
+      await createOffer(offers[4]);
     });
 
     context('when offers added are valid', () => {
       it('returns 2 offers', async () => {
-        const offers = await getActiveOffers(user._id);
-        expect(offers).to.be.an('array');
-        expect(offers.length).to.be.eql(2);
+        const validOffers = await getActiveOffers(user._id);
+        expect(validOffers).to.be.an('array');
+        expect(validOffers.length).to.be.eql(2);
       });
     });
     context('when new enquiry is added', () => {
       it('returns 3 enquiries', async () => {
-        await createOffer(offer4);
-        await createOffer(offer5);
-        const offers = await getActiveOffers(user._id);
-        expect(offers).to.be.an('array');
-        expect(offers.length).to.be.eql(3);
+        await createOffer(offers[1]);
+        await createOffer(offers[5]);
+        const validOffers = await getActiveOffers(user._id);
+        expect(validOffers).to.be.an('array');
+        expect(validOffers.length).to.be.eql(3);
       });
     });
   });

@@ -117,9 +117,9 @@ export const isAdminOrUserOrVendor = async (req, res, next) => {
   const { user } = req;
   if (
     user &&
-    (user.role === USER_ROLE.VENDOR ||
-      user.role === USER_ROLE.ADMIN ||
-      user.role === USER_ROLE.USER)
+    (user.role === USER_ROLE.ADMIN ||
+      user.role === USER_ROLE.USER ||
+      user.role === USER_ROLE.VENDOR)
   ) {
     next();
   } else {

@@ -235,3 +235,30 @@ export const itReturnsAnErrorForInvalidToken = ({ endpoint, method, user, userId
     });
   });
 };
+
+export const itReturnsErrorForEmptyFields = ({ endpoint, method, user, data, factory }) => {
+  let token;
+
+  beforeEach(async () => {
+    token = await addUser(user);
+  });
+
+  Object.keys(data).map((field) =>
+    context(`when ${field} is empty`, () => {
+      it('returns an error', (done) => {
+        const body = factory.build({ [field]: '' });
+        request()
+          [method](endpoint)
+          .set('authorization', token)
+          .send(body)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Validation Error');
+            expect(res.body.error).to.be.eql(data[field]);
+            done();
+          });
+      });
+    }),
+  );
+};

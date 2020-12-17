@@ -24,9 +24,9 @@ const PropertyController = {
   },
 
   update(req, res, next) {
-    const updatedproperty = req.locals;
+    const updatedProperty = req.locals;
     const { user } = req;
-    updateProperty({ ...updatedproperty, vendor: user })
+    updateProperty({ ...updatedProperty, vendor: user })
       .then((property) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Property updated', property });
       })

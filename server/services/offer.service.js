@@ -10,6 +10,7 @@ import { getEnquiryById, approveEnquiry } from './enquiry.service';
 // eslint-disable-next-line import/no-cycle
 import { getOneProperty } from './property.service';
 import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -36,7 +37,7 @@ export const generateReferenceCode = async (propertyId) => {
   return referenceCode;
 };
 
-export const getAllOffers = async (accountId) => {
+export const getAllOffers = async (accountId, page = 1, limit = 10) => {
   let accountType;
   const user = await getUserById(accountId);
 
@@ -98,17 +99,26 @@ export const getAllOffers = async (accountId) => {
         [`${accountType.as}.referralCode`]: 0,
       },
     },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
   ];
 
   if (user.role === USER_ROLE.VENDOR) {
-    offerOptions.splice(0, 0, { $match: { vendorId: ObjectId(accountId) } });
+    offerOptions.unshift({ $match: { vendorId: ObjectId(accountId) } });
   } else if (user.role === USER_ROLE.USER) {
-    offerOptions.splice(0, 0, { $match: { userId: ObjectId(accountId) } });
+    offerOptions.unshift({ $match: { userId: ObjectId(accountId) } });
   }
 
   const offers = await Offer.aggregate(offerOptions);
 
-  return offers;
+  const total = getPaginationTotal(offers);
+  const pagination = generatePagination(page, limit, total);
+  const result = offers[0].data;
+  return { pagination, result };
 };
 
 export const getActiveOffers = async (userId) =>
