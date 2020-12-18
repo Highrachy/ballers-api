@@ -1679,6 +1679,25 @@ describe('User Controller', () => {
         activated: true,
         vendor: {
           companyName: 'Highrachy Investment Limited',
+          directors: [
+            {
+              name: 'Jane Doe',
+              isSignatory: false,
+              phone: '08012345678',
+            },
+          ],
+          identification: [
+            {
+              url: 'https://ballers.ng/tax-filing.png',
+              type: 'Tax filing',
+            },
+          ],
+          socialMedia: [
+            {
+              name: 'Instagram',
+              url: 'https://instagram.com/highrachy',
+            },
+          ],
         },
       });
       const invalidUserId = mongoose.Types.ObjectId();
@@ -1696,7 +1715,7 @@ describe('User Controller', () => {
           city: 'Lekki Phase 1',
           country: 'Nigeria',
           state: 'Lagos',
-          street: 'Highrachy street',
+          street1: 'Highrachy street',
         },
         companyLogo: 'https://ballers.ng/logo.png',
         directors: [
@@ -1714,10 +1733,6 @@ describe('User Controller', () => {
         ],
         redanNumber: '1234567890',
         socialMedia: [
-          {
-            name: 'Instagram',
-            url: 'https://instagram.com/highrachy',
-          },
           {
             name: 'Facebook',
             url: 'https://facebook.com/highrachy',
@@ -1742,10 +1757,12 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Vendor information updated');
               expect(res.body.user._id).to.be.eql(vendorId.toString());
               expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
-              expect(res.body.user.vendor.accountNumber).to.be.eql(data.accountNumber);
-              expect(res.body.user.vendor.companyAddress).to.be.eql(data.companyAddress);
-              expect(res.body.user.vendor.socialMedia.length).to.be.eql(data.socialMedia.length);
-              expect(res.body.user.vendor.directors.length).to.be.eql(data.directors.length);
+              expect(res.body.user.vendor.bankInfo.accountNumber).to.be.eql(
+                data.bankInfo.accountNumber,
+              );
+              expect(res.body.user.vendor.companyAddress.city).to.be.eql(data.companyAddress.city);
+              expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
+              expect(res.body.user.vendor.directors.length).to.be.eql(2);
               done();
             });
         });

@@ -480,10 +480,22 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
   if (!vendor) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Vendor not found');
   }
+  if (updatedVendor.directors && updatedVendor.directors.length > 0) {
+    Array.prototype.push.apply(updatedVendor.directors, vendor.vendor.directors);
+  }
+  if (updatedVendor.identification && updatedVendor.identification.length > 0) {
+    Array.prototype.push.apply(updatedVendor.identification, vendor.vendor.identification);
+  }
+  if (updatedVendor.socialMedia && updatedVendor.socialMedia.length > 0) {
+    Array.prototype.push.apply(updatedVendor.socialMedia, vendor.vendor.socialMedia);
+  }
+
+  const vendorData = { ...vendor.vendor, ...updatedVendor };
+
   try {
     return User.findByIdAndUpdate(
       vendor._id,
-      { $set: { vendor: { ...vendor.vendor, ...updatedVendor } } },
+      { $set: { vendor: vendorData } },
       { new: true, fields: '-password' },
     );
   } catch (error) {

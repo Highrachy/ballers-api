@@ -34,13 +34,6 @@ const bankInfo = Joi.object().keys({
   bankName: optionalString('Bank Name'),
 });
 
-const companyAddress = Joi.object().keys({
-  city: optionalString('City'),
-  country: optionalString('Country'),
-  state: optionalString('State'),
-  street: optionalString('Street'),
-});
-
 const identification = Joi.array().items(
   Joi.object().keys({
     url: optionalString('URL'),
@@ -132,7 +125,7 @@ export const addCommentVendorSchema = Joi.object({
 
 export const updateVendorSchema = Joi.object({
   bankInfo,
-  companyAddress,
+  companyAddress: address,
   companyLogo: optionalString('Company Logo'),
   companyName: optionalString('Company Name'),
   directors,

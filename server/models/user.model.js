@@ -76,6 +76,24 @@ const vendorInfoSchema = {
     type: Date,
   },
 };
+const addressSchema = {
+  city: {
+    type: String,
+  },
+  country: {
+    type: String,
+  },
+  state: {
+    type: String,
+  },
+  street1: {
+    type: String,
+  },
+  street2: {
+    type: String,
+  },
+};
+
 const UserSchema = new mongoose.Schema(
   {
     activated: {
@@ -83,23 +101,7 @@ const UserSchema = new mongoose.Schema(
       default: false,
     },
     activationDate: Date,
-    address: {
-      city: {
-        type: String,
-      },
-      country: {
-        type: String,
-      },
-      state: {
-        type: String,
-      },
-      street1: {
-        type: String,
-      },
-      street2: {
-        type: String,
-      },
-    },
+    address: addressSchema,
     email: {
       type: String,
       unique: true,
@@ -181,20 +183,7 @@ const UserSchema = new mongoose.Schema(
           type: String,
         },
       },
-      companyAddress: {
-        city: {
-          type: String,
-        },
-        country: {
-          type: String,
-        },
-        state: {
-          type: String,
-        },
-        street: {
-          type: String,
-        },
-      },
+      companyAddress: addressSchema,
       companyLogo: {
         type: String,
       },
