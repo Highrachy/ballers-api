@@ -38,4 +38,22 @@ export const VENDOR_INFO_STATUS = {
   IN_REVIEW: 'In Review',
 };
 
-export const VENDOR_STEPS = ['companyInfo', 'bankDetails', 'directorInfo'];
+export const VENDOR_STEPS = ['companyInfo', 'bankDetails', 'directorInfo', 'documentUpload'];
+
+export const addressSchema = {
+  city: {
+    type: String,
+  },
+  country: {
+    type: String,
+  },
+  state: {
+    type: String,
+  },
+  street1: {
+    type: String,
+  },
+  street2: {
+    type: String,
+  },
+};

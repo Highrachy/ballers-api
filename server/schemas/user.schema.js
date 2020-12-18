@@ -28,6 +28,19 @@ const socialMedia = Joi.array().items(
   }),
 );
 
+const bankInfo = Joi.object().keys({
+  accountName: optionalString('Account Name'),
+  accountNumber: optionalString('Account Number'),
+  bankName: optionalString('Bank Name'),
+});
+
+const identification = Joi.array().items(
+  Joi.object().keys({
+    url: optionalString('URL'),
+    type: optionalString('type'),
+  }),
+);
+
 const vendor = Joi.object().keys({
   companyName: optionalString('Company Name'),
 });
@@ -111,12 +124,12 @@ export const addCommentVendorSchema = Joi.object({
 });
 
 export const updateVendorSchema = Joi.object({
-  accountNumber: optionalString('Account Number'),
-  companyAddress: optionalString('Company Address'),
+  bankInfo,
+  companyAddress: address,
   companyLogo: optionalString('Company Logo'),
   companyName: optionalString('Company Name'),
   directors,
-  identification: optionalString('Identification'),
+  identification,
   redanNumber: optionalString('Redan Number'),
   socialMedia,
   website: optionalString('Website'),

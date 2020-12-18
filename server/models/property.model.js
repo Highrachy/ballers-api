@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { addressSchema } from '../helpers/constants';
 
 /**
  * @swagger
@@ -79,23 +80,7 @@ const PropertySchema = new mongoose.Schema(
     titleDocument: {
       type: String,
     },
-    address: {
-      street1: {
-        type: String,
-      },
-      street2: {
-        type: String,
-      },
-      city: {
-        type: String,
-      },
-      state: {
-        type: String,
-      },
-      country: {
-        type: String,
-      },
-    },
+    address: addressSchema,
     price: {
       type: Number,
       required: true,

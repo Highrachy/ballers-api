@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { USER_ROLE, VENDOR_INFO_STATUS } from '../helpers/constants';
+import { USER_ROLE, VENDOR_INFO_STATUS, addressSchema } from '../helpers/constants';
 
 /**
  * @swagger
@@ -76,6 +76,7 @@ const vendorInfoSchema = {
     type: Date,
   },
 };
+
 const UserSchema = new mongoose.Schema(
   {
     activated: {
@@ -83,23 +84,7 @@ const UserSchema = new mongoose.Schema(
       default: false,
     },
     activationDate: Date,
-    address: {
-      city: {
-        type: String,
-      },
-      country: {
-        type: String,
-      },
-      state: {
-        type: String,
-      },
-      street1: {
-        type: String,
-      },
-      street2: {
-        type: String,
-      },
-    },
+    address: addressSchema,
     email: {
       type: String,
       unique: true,
@@ -170,12 +155,18 @@ const UserSchema = new mongoose.Schema(
       default: USER_ROLE.USER,
     },
     vendor: {
-      accountNumber: {
-        type: String,
+      bankInfo: {
+        accountName: {
+          type: String,
+        },
+        accountNumber: {
+          type: String,
+        },
+        bankName: {
+          type: String,
+        },
       },
-      companyAddress: {
-        type: String,
-      },
+      companyAddress: addressSchema,
       companyLogo: {
         type: String,
       },
@@ -198,9 +189,16 @@ const UserSchema = new mongoose.Schema(
           },
         },
       ],
-      identification: {
-        type: String,
-      },
+      identification: [
+        {
+          url: {
+            type: String,
+          },
+          type: {
+            type: String,
+          },
+        },
+      ],
       redanNumber: {
         type: String,
       },
@@ -233,6 +231,7 @@ const UserSchema = new mongoose.Schema(
       verification: {
         companyInfo: vendorInfoSchema,
         bankDetails: vendorInfoSchema,
+        documentUpload: vendorInfoSchema,
         directorInfo: vendorInfoSchema,
       },
     },

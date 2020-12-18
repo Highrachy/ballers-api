@@ -25,6 +25,7 @@ import {
   itReturnsAnErrorForInvalidToken,
 } from '../helpers';
 import { USER_ROLE, VENDOR_STEPS, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
+import AddressFactory from '../factories/address.factory';
 
 useDatabase();
 
@@ -1312,6 +1313,9 @@ describe('User Controller', () => {
             directorInfo: {
               status: VENDOR_INFO_STATUS.VERIFIED,
             },
+            documentUpload: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
           },
         },
       });
@@ -1358,6 +1362,9 @@ describe('User Controller', () => {
                 status: VENDOR_INFO_STATUS.VERIFIED,
               },
               directorInfo: {
+                status: VENDOR_INFO_STATUS.VERIFIED,
+              },
+              documentUpload: {
                 status: VENDOR_INFO_STATUS.VERIFIED,
               },
             },
@@ -1442,7 +1449,7 @@ describe('User Controller', () => {
       });
 
       context('when a valid token is used', () => {
-        [...new Array(3)].map((_, index) =>
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
           it('returns verified step', (done) => {
             request()
               [method](endpoint)
@@ -1490,7 +1497,7 @@ describe('User Controller', () => {
       });
 
       context('when findByIdAndUpdate returns an error', () => {
-        [...new Array(3)].map((_, index) =>
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
           it('returns the error', (done) => {
             sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
             request()
@@ -1525,7 +1532,7 @@ describe('User Controller', () => {
         });
 
         context('when vendor id is empty', () => {
-          [...new Array(3)].map((_, index) =>
+          [...new Array(VENDOR_STEPS.length)].map((_, index) =>
             it('returns an error', (done) => {
               request()
                 [method](endpoint)
@@ -1559,7 +1566,7 @@ describe('User Controller', () => {
       });
 
       context('when a valid token is used', () => {
-        [...new Array(3)].map((_, index) =>
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
           it('returns verified step', (done) => {
             request()
               [method](endpoint)
@@ -1610,7 +1617,7 @@ describe('User Controller', () => {
       });
 
       context('when findByIdAndUpdate returns an error', () => {
-        [...new Array(3)].map((_, index) =>
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
           it('returns the error', (done) => {
             sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
             request()
@@ -1645,7 +1652,7 @@ describe('User Controller', () => {
         });
 
         context('when vendor id is empty', () => {
-          [...new Array(3)].map((_, index) =>
+          [...new Array(VENDOR_STEPS.length)].map((_, index) =>
             it('returns an error', (done) => {
               request()
                 [method](endpoint)
@@ -1673,6 +1680,25 @@ describe('User Controller', () => {
         activated: true,
         vendor: {
           companyName: 'Highrachy Investment Limited',
+          directors: [
+            {
+              name: 'Jane Doe',
+              isSignatory: false,
+              phone: '08012345678',
+            },
+          ],
+          identification: [
+            {
+              url: 'https://ballers.ng/tax-filing.png',
+              type: 'Tax filing',
+            },
+          ],
+          socialMedia: [
+            {
+              name: 'Instagram',
+              url: 'https://instagram.com/highrachy',
+            },
+          ],
         },
       });
       const invalidUserId = mongoose.Types.ObjectId();
@@ -1681,8 +1707,12 @@ describe('User Controller', () => {
       const method = 'put';
 
       const data = {
-        accountNumber: '1234567890',
-        companyAddress: '123 sesame street',
+        bankInfo: {
+          accountNumber: '1234567890',
+          accountName: 'Highrachy Investment Limited',
+          bankName: 'ABC Bank',
+        },
+        companyAddress: AddressFactory.build(),
         companyLogo: 'https://ballers.ng/logo.png',
         directors: [
           {
@@ -1691,13 +1721,14 @@ describe('User Controller', () => {
             phone: '08012345678',
           },
         ],
-        identification: 'https://ballers.ng/cac-certificate.png',
+        identification: [
+          {
+            url: 'https://ballers.ng/cac-certificate.png',
+            type: 'CAC Certificate',
+          },
+        ],
         redanNumber: '1234567890',
         socialMedia: [
-          {
-            name: 'Instagram',
-            url: 'https://instagram.com/highrachy',
-          },
           {
             name: 'Facebook',
             url: 'https://facebook.com/highrachy',
@@ -1722,10 +1753,10 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Vendor information updated');
               expect(res.body.user._id).to.be.eql(vendorId.toString());
               expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
-              expect(res.body.user.vendor.accountNumber).to.be.eql(data.accountNumber);
+              expect(res.body.user.vendor.bankInfo).to.be.eql(data.bankInfo);
               expect(res.body.user.vendor.companyAddress).to.be.eql(data.companyAddress);
-              expect(res.body.user.vendor.socialMedia.length).to.be.eql(data.socialMedia.length);
-              expect(res.body.user.vendor.directors.length).to.be.eql(data.directors.length);
+              expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
+              expect(res.body.user.vendor.directors.length).to.be.eql(2);
               done();
             });
         });
