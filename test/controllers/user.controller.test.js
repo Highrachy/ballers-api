@@ -25,6 +25,7 @@ import {
   itReturnsAnErrorForInvalidToken,
 } from '../helpers';
 import { USER_ROLE, VENDOR_STEPS, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
+import AddressFactory from '../factories/address.factory';
 
 useDatabase();
 
@@ -1711,12 +1712,7 @@ describe('User Controller', () => {
           accountName: 'Highrachy Investment Limited',
           bankName: 'ABC Bank',
         },
-        companyAddress: {
-          city: 'Lekki Phase 1',
-          country: 'Nigeria',
-          state: 'Lagos',
-          street1: 'Highrachy street',
-        },
+        companyAddress: AddressFactory.build(),
         companyLogo: 'https://ballers.ng/logo.png',
         directors: [
           {
@@ -1757,10 +1753,8 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Vendor information updated');
               expect(res.body.user._id).to.be.eql(vendorId.toString());
               expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
-              expect(res.body.user.vendor.bankInfo.accountNumber).to.be.eql(
-                data.bankInfo.accountNumber,
-              );
-              expect(res.body.user.vendor.companyAddress.city).to.be.eql(data.companyAddress.city);
+              expect(res.body.user.vendor.bankInfo).to.be.eql(data.bankInfo);
+              expect(res.body.user.vendor.companyAddress).to.be.eql(data.companyAddress);
               expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
               done();

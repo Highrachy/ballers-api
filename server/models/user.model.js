@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { USER_ROLE, VENDOR_INFO_STATUS } from '../helpers/constants';
+import { USER_ROLE, VENDOR_INFO_STATUS, addressSchema } from '../helpers/constants';
 
 /**
  * @swagger
@@ -74,23 +74,6 @@ const vendorInfoSchema = {
   },
   verifiedOn: {
     type: Date,
-  },
-};
-const addressSchema = {
-  city: {
-    type: String,
-  },
-  country: {
-    type: String,
-  },
-  state: {
-    type: String,
-  },
-  street1: {
-    type: String,
-  },
-  street2: {
-    type: String,
   },
 };
 

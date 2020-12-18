@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { addressSchema } from '../helpers/constants';
 
 /**
  * @swagger
@@ -96,27 +97,7 @@ const EnquirySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    address: {
-      street1: {
-        type: String,
-        required: true,
-      },
-      street2: {
-        type: String,
-      },
-      city: {
-        type: String,
-        required: true,
-      },
-      state: {
-        type: String,
-        required: true,
-      },
-      country: {
-        type: String,
-        required: true,
-      },
-    },
+    address: addressSchema,
     occupation: {
       type: String,
       required: true,
