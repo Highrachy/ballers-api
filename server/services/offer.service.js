@@ -6,6 +6,7 @@ import httpStatus from '../helpers/httpStatus';
 import { OFFER_STATUS, CONCERN_STATUS, USER_ROLE } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, assignPropertyToUser } from './user.service';
+// eslint-disable-next-line import/no-cycle
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
 // eslint-disable-next-line import/no-cycle
 import { getOneProperty } from './property.service';

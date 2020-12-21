@@ -14,25 +14,34 @@ useDatabase();
 
 let adminToken;
 let userToken;
-const _id = mongoose.Types.ObjectId();
 const adminUser = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
 const vendorUser = UserFactory.build(
   { role: USER_ROLE.VENDOR, activated: true },
   { generateId: true },
 );
-const regularUser = UserFactory.build({ _id, role: USER_ROLE.USER, activated: true });
+const regularUser = UserFactory.build(
+  { role: USER_ROLE.USER, activated: true },
+  { generateId: true },
+);
+const property = PropertyFactory.build(
+  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+  { generateId: true },
+);
 
 describe('Enquiry Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     await addUser(vendorUser);
     userToken = await addUser(regularUser);
+    await addProperty(property);
   });
 
   describe('Add Enquiry Route', () => {
     context('with valid data', () => {
       it('returns successful enquiry', (done) => {
-        const enquiry = EnquiryFactory.build();
+        const enquiry = EnquiryFactory.build({
+          propertyId: property._id,
+        });
         request()
           .post('/api/v1/enquiry/add')
           .set('authorization', userToken)
@@ -48,17 +57,16 @@ describe('Enquiry Controller', () => {
     });
 
     context('when an enquiry by the user for the property exists', () => {
-      const propertyId = mongoose.Types.ObjectId();
       const enquiry = EnquiryFactory.build({
-        propertyId,
+        propertyId: property._id,
       });
       beforeEach(async () => {
         await addEnquiry(
           EnquiryFactory.build({
-            propertyId,
-            userId: _id,
-            addedBy: _id,
-            updatedBy: _id,
+            propertyId: property._id,
+            userId: regularUser._id,
+            addedBy: regularUser._id,
+            updatedBy: regularUser._id,
           }),
         );
       });
@@ -78,7 +86,7 @@ describe('Enquiry Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(_id);
+        await User.findByIdAndDelete(regularUser._id);
       });
       it('returns token error', (done) => {
         const enquiry = EnquiryFactory.build();
@@ -259,6 +267,7 @@ describe('Enquiry Controller', () => {
       context('when street 2 is not sent', () => {
         it('returns enquiry', (done) => {
           const enquiry = EnquiryFactory.build({
+            propertyId: property._id,
             address: {
               street1: 'opebi street',
               city: 'Ikeja',
@@ -485,10 +494,17 @@ describe('Enquiry Controller', () => {
   });
 
   describe('Approve Enquiry', () => {
-    const id = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({ _id: id, userId: id, addedBy: _id, updatedBy: _id });
+    const enquiry = EnquiryFactory.build(
+      {
+        userId: regularUser._id,
+        propertyId: property._id,
+        addedBy: regularUser._id,
+        updatedBy: regularUser._id,
+      },
+      { generateId: true },
+    );
     const approvedEnquiry = {
-      enquiryId: id,
+      enquiryId: enquiry._id,
     };
 
     beforeEach(async () => {
@@ -506,7 +522,7 @@ describe('Enquiry Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Enquiry approved');
             expect(res.body).to.have.property('enquiry');
-            expect(approvedEnquiry.enquiryId.equals(res.body.enquiry._id)).to.be.eql(true);
+            expect(res.body.enquiry._id).to.be.eql(approvedEnquiry.enquiryId.toString());
             expect(res.body.enquiry.approved).to.be.eql(true);
             done();
           });
@@ -564,36 +580,30 @@ describe('Enquiry Controller', () => {
   });
 
   describe('Get one enquiry', () => {
-    const enquiryId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({
-      _id: enquiryId,
-      propertyId,
-      userId: _id,
-      addedBy: _id,
-      updatedBy: _id,
-    });
-    const property = PropertyFactory.build({
-      _id: propertyId,
-      addedBy: vendorUser._id,
-      updatedBy: vendorUser._id,
-    });
+    const enquiry = EnquiryFactory.build(
+      {
+        propertyId: property._id,
+        userId: regularUser._id,
+        addedBy: regularUser._id,
+        updatedBy: regularUser._id,
+      },
+      { generateId: true },
+    );
 
     beforeEach(async () => {
-      await addProperty(property);
       await addEnquiry(enquiry);
     });
 
     context('with a valid token & id', () => {
       it('returns successful payload', (done) => {
         request()
-          .get(`/api/v1/enquiry/${enquiryId}`)
+          .get(`/api/v1/enquiry/${enquiry._id}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body).to.have.property('enquiry');
-            expect(res.body.enquiry._id).to.be.eql(enquiryId.toString());
+            expect(res.body.enquiry._id).to.be.eql(enquiry._id.toString());
             done();
           });
       });
@@ -617,7 +627,7 @@ describe('Enquiry Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(`/api/v1/enquiry/${enquiryId}`)
+          .get(`/api/v1/enquiry/${enquiry._id}`)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -631,7 +641,7 @@ describe('Enquiry Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Enquiry, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/enquiry/${enquiryId}`)
+          .get(`/api/v1/enquiry/${enquiry._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
@@ -643,20 +653,15 @@ describe('Enquiry Controller', () => {
   });
 
   describe('Get all enquiries', () => {
-    const id = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({
-      _id: id,
-      propertyId,
-      userId: _id,
-      addedBy: _id,
-      updatedBy: _id,
-    });
-    const property = PropertyFactory.build({
-      _id: propertyId,
-      addedBy: vendorUser._id,
-      updatedBy: vendorUser._id,
-    });
+    const enquiry = EnquiryFactory.build(
+      {
+        propertyId: property._id,
+        userId: regularUser._id,
+        addedBy: regularUser._id,
+        updatedBy: regularUser._id,
+      },
+      { generateId: true },
+    );
 
     context('when no enquiry is found', () => {
       it('returns empty array of enquiries', (done) => {
@@ -675,7 +680,6 @@ describe('Enquiry Controller', () => {
     describe('when enquiries exist in db', () => {
       beforeEach(async () => {
         await addEnquiry(enquiry);
-        await addProperty(property);
       });
 
       context('with a valid token & id', async () => {
@@ -687,8 +691,8 @@ describe('Enquiry Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('enquiries');
-              expect(id.equals(res.body.enquiries[0]._id)).to.be.eql(true);
-              expect(_id.equals(res.body.enquiries[0].userId)).to.be.eql(true);
+              expect(res.body.enquiries[0]._id).to.be.eql(enquiry._id.toString());
+              expect(res.body.enquiries[0].userId).to.be.eql(regularUser._id.toString());
               expect(res.body.enquiries[0].propertyId).to.be.eql(
                 res.body.enquiries[0].propertyInfo[0]._id,
               );
@@ -700,10 +704,10 @@ describe('Enquiry Controller', () => {
               expect(res.body.enquiries[0].initialInvestmentAmount).to.be.eql(
                 enquiry.initialInvestmentAmount,
               );
-              expect(propertyId.equals(res.body.enquiries[0].propertyInfo[0]._id)).to.be.eql(true);
-              expect(
-                property.addedBy.equals(res.body.enquiries[0].propertyInfo[0].addedBy),
-              ).to.be.eql(true);
+              expect(res.body.enquiries[0].propertyInfo[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.enquiries[0].propertyInfo[0].addedBy).to.be.eql(
+                property.addedBy.toString(),
+              );
               expect(res.body.enquiries[0].propertyInfo[0].name).to.be.eql(property.name);
               done();
             });

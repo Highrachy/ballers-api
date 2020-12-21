@@ -261,13 +261,11 @@ describe('Offer Service', () => {
     context('when offers added are valid', () => {
       it('returns 1 offer for user token', async () => {
         const userOffers = await getAllOffers(user._id);
-        expect(userOffers).to.be.an('array');
         expect(userOffers.length).to.be.eql(1);
         expect(userOffers[0].userId).to.be.eql(user._id);
       });
       it('returns 2 offers for vendor token', async () => {
         const vendorOffers = await getAllOffers(vendor._id);
-        expect(vendorOffers).to.be.an('array');
         expect(vendorOffers.length).to.be.eql(2);
         expect(vendorOffers[1].userId).to.be.eql(admin._id);
       });

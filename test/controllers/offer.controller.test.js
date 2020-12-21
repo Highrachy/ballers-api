@@ -1413,7 +1413,7 @@ describe('Offer Controller', () => {
     });
   });
 
-  describe.only('Get all owned offers', () => {
+  describe('Get all owned offers', () => {
     const endpoint = '/api/v1/offer/all';
     const method = 'get';
 

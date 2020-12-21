@@ -34,7 +34,15 @@ describe('Enquiry Service', () => {
   });
 
   describe('#getEnquiryById', () => {
-    const enquiry = EnquiryFactory.build({ userId: user._id }, { generateId: true });
+    const enquiry = EnquiryFactory.build(
+      {
+        userId: user._id,
+        propertyId: property._id,
+        addedBy: user._id,
+        updatedBy: user._id,
+      },
+      { generateId: true },
+    );
 
     before(async () => {
       await Enquiry.create(enquiry);
@@ -48,7 +56,10 @@ describe('Enquiry Service', () => {
 
   describe('#addEnquiry', () => {
     let countedEnquiries;
-    const enquiry = EnquiryFactory.build({ userId: user._id }, { generateId: true });
+    const enquiry = EnquiryFactory.build(
+      { userId: user._id, propertyId: property._id, addedBy: user._id, updatedBy: user._id },
+      { generateId: true },
+    );
 
     beforeEach(async () => {
       countedEnquiries = await Enquiry.countDocuments({});
@@ -72,9 +83,8 @@ describe('Enquiry Service', () => {
           await addEnquiry(InvalidEnquiry);
         } catch (err) {
           const currentCountedEnquiries = await Enquiry.countDocuments({});
-          expect(err.statusCode).to.eql(400);
-          expect(err.error.name).to.be.eql('ValidationError');
-          expect(err.message).to.be.eql('Error adding enquiry');
+          expect(err.statusCode).to.eql(412);
+          expect(err.message).to.be.eql('Invalid property');
           expect(currentCountedEnquiries).to.eql(countedEnquiries);
         }
       });
@@ -82,7 +92,10 @@ describe('Enquiry Service', () => {
   });
 
   describe('#approveEnquiry', () => {
-    const enquiry = EnquiryFactory.build({ userId: user._id }, { generateId: true });
+    const enquiry = EnquiryFactory.build(
+      { userId: user._id, propertyId: property._id, addedBy: user._id, updatedBy: user._id },
+      { generateId: true },
+    );
     const updatedEnquiry = {
       enquiryId: enquiry._id,
       adminId: admin._id,
