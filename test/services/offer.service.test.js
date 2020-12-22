@@ -191,102 +191,105 @@ describe('Offer Service', () => {
   });
 
   describe('#getAllOffers', () => {
-    const property1 = PropertyFactory.build(
-      {
-        addedBy: vendor._id,
-        updatedBy: vendor._id,
-      },
-      { generateId: true },
-    );
-    const property2 = PropertyFactory.build(
-      {
-        addedBy: vendor._id,
-        updatedBy: vendor._id,
-      },
-      { generateId: true },
-    );
-    const property3 = PropertyFactory.build(
-      {
-        addedBy: vendor._id,
-        updatedBy: vendor._id,
-      },
+    const userProperties = PropertyFactory.buildList(
+      10,
+      { addedBy: vendor._id, updatedBy: vendor._id },
       { generateId: true },
     );
 
-    const enquiry1 = EnquiryFactory.build(
-      { userId: user._id, propertyId: property1._id },
-      { generateId: true },
-    );
-    const offer1 = OfferFactory.build(
-      { enquiryId: enquiry1._id, vendorId: vendor._id, userId: user._id },
+    const user2Properties = PropertyFactory.buildList(
+      8,
+      { addedBy: vendor._id, updatedBy: vendor._id },
       { generateId: true },
     );
 
-    const enquiry2 = EnquiryFactory.build(
-      {
-        userId: admin._id,
-        propertyId: property2._id,
-      },
-      { generateId: true },
-    );
-    const offer2 = OfferFactory.build(
-      {
-        enquiryId: enquiry2._id,
-        vendorId: vendor._id,
-        userId: admin._id,
-      },
-      { generateId: true },
+    const userEnquiries = userProperties.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: userProperties[index]._id,
+          userId: user._id,
+        },
+        { generateId: true },
+      ),
     );
 
-    const enquiry3 = EnquiryFactory.build(
-      { userId: user._id, propertyId: property3._id },
-      { generateId: true },
+    const user2Enquiries = user2Properties.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: user2Properties[index]._id,
+          userId: admin._id,
+        },
+        { generateId: true },
+      ),
     );
-    const offer3 = OfferFactory.build(
-      { enquiryId: enquiry3._id, vendorId: vendor._id, userId: user._id },
-      { generateId: true },
+
+    const userOffers = userProperties.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: userProperties[index]._id,
+          enquiryId: userEnquiries[index]._id,
+          userId: user._id,
+          vendorId: vendor._id,
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
+    );
+
+    const user2Offers = user2Properties.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: user2Properties[index]._id,
+          enquiryId: user2Enquiries[index]._id,
+          userId: admin._id,
+          vendorId: vendor._id,
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
     );
 
     beforeEach(async () => {
-      await addProperty(property1);
-      await addProperty(property2);
-      await addProperty(property3);
-      await addEnquiry(enquiry1);
-      await addEnquiry(enquiry2);
-      await addEnquiry(enquiry3);
-      await createOffer(offer1);
-      await createOffer(offer2);
+      await Property.insertMany(userProperties);
+      await Property.insertMany(user2Properties);
+      await Enquiry.insertMany(userEnquiries);
+      await Enquiry.insertMany(user2Enquiries);
+      await Offer.insertMany(userOffers);
     });
 
     context('when offers added are valid', () => {
-      it('returns 1 offer for user token', async () => {
-        const userOffers = await getAllOffers(user._id);
-        expect(userOffers.length).to.be.eql(1);
-        expect(userOffers[0].userId).to.be.eql(user._id);
+      it('returns 10 offers for user token', async () => {
+        const offers = await getAllOffers(user._id);
+        expect(offers.pagination.currentPage).to.be.eql(1);
+        expect(offers.pagination.total).to.be.eql(10);
+        expect(offers.result.length).to.be.eql(10);
+        expect(offers.result[0].userId).to.be.eql(user._id);
       });
-      it('returns 2 offers for vendor token', async () => {
+      it('returns 10 offers for vendor token', async () => {
         const vendorOffers = await getAllOffers(vendor._id);
-        expect(vendorOffers.length).to.be.eql(2);
-        expect(vendorOffers[1].userId).to.be.eql(admin._id);
+        expect(vendorOffers.pagination.currentPage).to.be.eql(1);
+        expect(vendorOffers.pagination.total).to.be.eql(10);
+        expect(vendorOffers.result.length).to.be.eql(10);
+        expect(vendorOffers.result[1].userId).to.be.eql(user._id);
       });
     });
     context('when new offer is added', () => {
       beforeEach(async () => {
-        await createOffer(offer3);
+        await Offer.insertMany(user2Offers);
       });
-      it('returns 2 offers for user token', async () => {
-        const userOffers = await getAllOffers(user._id);
-        expect(userOffers).to.be.an('array');
-        expect(userOffers.length).to.be.eql(2);
-        expect(userOffers[0].userId).to.be.eql(user._id);
+      it('returns 10 offers for user token', async () => {
+        const offers = await getAllOffers(user._id);
+        expect(offers.pagination.currentPage).to.be.eql(1);
+        expect(offers.pagination.total).to.be.eql(10);
+        expect(offers.result.length).to.be.eql(10);
+        expect(offers.result[0].userId).to.be.eql(user._id);
       });
-      it('returns 2 offers for vendor token', async () => {
+      it('returns 18 offers for vendor token', async () => {
         const vendorOffers = await getAllOffers(vendor._id);
-        expect(vendorOffers).to.be.an('array');
-        expect(vendorOffers.length).to.be.eql(3);
-        expect(vendorOffers[0].userId).to.be.eql(user._id);
-        expect(vendorOffers[1].userId).to.be.eql(admin._id);
-        expect(vendorOffers[2].userId).to.be.eql(user._id);
+        expect(vendorOffers.pagination.currentPage).to.be.eql(1);
+        expect(vendorOffers.pagination.total).to.be.eql(18);
+        expect(vendorOffers.result.length).to.be.eql(10);
+        expect(vendorOffers.result[1].userId).to.be.eql(user._id);
       });
     });
   });

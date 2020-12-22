@@ -20,10 +20,11 @@ import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import {
   itReturnsForbiddenForNoToken,
-  itReturnsAnErrorWhenServiceFails,
   itReturnsForbiddenForInvalidToken,
   itReturnsAnErrorForInvalidToken,
   itReturnsErrorForEmptyFields,
+  expectsPaginationToReturnTheRightValues,
+  defaultPaginationResult,
   itReturnsTheRightPaginationValue,
 } from '../helpers';
 import Property from '../../server/models/property.model';
@@ -838,107 +839,6 @@ describe('Offer Controller', () => {
       });
     });
 
-    describe('Get all offers of a user', () => {
-      const method = 'get';
-      const endpoint = `/api/v1/offer/user/${regularUser._id}`;
-
-      const enquiry1 = EnquiryFactory.build(
-        {
-          userId: adminUser._id,
-          propertyId: properties[0]._id,
-        },
-        { generateId: true },
-      );
-      const offer1 = OfferFactory.build(
-        { enquiryId: enquiry1._id, vendorId: vendorUser._id },
-        { generateId: true },
-      );
-
-      const enquiry2 = EnquiryFactory.build(
-        {
-          userId: adminUser._id,
-          propertyId: properties[1]._id,
-        },
-        { generateId: true },
-      );
-      const offer2 = OfferFactory.build(
-        { enquiryId: enquiry2._id, vendorId: vendorUser._id },
-        { generateId: true },
-      );
-
-      const enquiry3 = EnquiryFactory.build(
-        {
-          userId: regularUser._id,
-          propertyId: properties[2]._id,
-        },
-        { generateId: true },
-      );
-      const offer3 = OfferFactory.build(
-        { enquiryId: enquiry3._id, vendorId: vendorUser._id },
-        { generateId: true },
-      );
-
-      context('when no offer is found', () => {
-        it('returns empty array of offers', (done) => {
-          request()
-            .get(`/api/v1/offer/user/${regularUser._id}`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offers');
-              expect(res.body.offers.length).to.be.eql(0);
-              done();
-            });
-        });
-      });
-
-      describe('when offers exist in db', () => {
-        beforeEach(async () => {
-          await addEnquiry(enquiry1);
-          await createOffer(offer1);
-          await addEnquiry(enquiry2);
-          await createOffer(offer2);
-          await addEnquiry(enquiry3);
-          await createOffer(offer3);
-        });
-
-        context('with a valid token & id', async () => {
-          it('returns successful payload', (done) => {
-            request()
-              .get(`/api/v1/offer/user/${regularUser._id}`)
-              .set('authorization', adminToken)
-              .end((err, res) => {
-                expect(res).to.have.status(200);
-                expect(res.body.success).to.be.eql(true);
-                expect(res.body).to.have.property('offers');
-                expect(res.body.offers.length).to.be.eql(1);
-                expect(res.body.offers[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
-                expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiry3._id.toString());
-                expect(res.body.offers[0].propertyInfo._id).to.be.eql(properties[2]._id.toString());
-                done();
-              });
-          });
-        });
-
-        itReturnsForbiddenForNoToken({ endpoint, method });
-
-        context('when getAllOffers service fails', () => {
-          it('returns the error', (done) => {
-            sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
-            request()
-              .get(`/api/v1/offer/user/${regularUser._id}`)
-              .set('authorization', adminToken)
-              .end((err, res) => {
-                expect(res).to.have.status(500);
-                done();
-                Offer.aggregate.restore();
-              });
-          });
-        });
-      });
-    });
-
     describe('Get all active offers', () => {
       const endpoint = '/api/v1/offer/active';
       const method = 'get';
@@ -1416,24 +1316,52 @@ describe('Offer Controller', () => {
   describe('Get all owned offers', () => {
     const endpoint = '/api/v1/offer/all';
     const method = 'get';
+    let user2Token;
 
-    const demoVendorUser = UserFactory.build({ role: USER_ROLE.VENDOR, activated: true });
+    const user2 = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
 
-    const enquiries = properties.map((_, index) =>
+    const editorUser = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
+
+    const userProperties = PropertyFactory.buildList(
+      10,
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { generateId: true },
+    );
+
+    const user2Properties = PropertyFactory.buildList(
+      8,
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { generateId: true },
+    );
+
+    const userEnquiries = userProperties.map((_, index) =>
       EnquiryFactory.build(
         {
-          propertyId: properties[index]._id,
+          propertyId: userProperties[index]._id,
           userId: regularUser._id,
         },
         { generateId: true },
       ),
     );
 
-    const offers = properties.map((_, index) =>
+    const user2Enquiries = user2Properties.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: user2Properties[index]._id,
+          userId: user2._id,
+        },
+        { generateId: true },
+      ),
+    );
+
+    const userOffers = userProperties.map((_, index) =>
       OfferFactory.build(
         {
-          propertyId: properties[index]._id,
-          enquiryId: enquiries[index]._id,
+          propertyId: userProperties[index]._id,
+          enquiryId: userEnquiries[index]._id,
           userId: regularUser._id,
           vendorId: vendorUser._id,
           referenceCode: '123456XXX',
@@ -1442,24 +1370,345 @@ describe('Offer Controller', () => {
       ),
     );
 
+    const user2Offers = user2Properties.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: user2Properties[index]._id,
+          enquiryId: user2Enquiries[index]._id,
+          userId: user2._id,
+          vendorId: vendorUser._id,
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
+    );
+
+    beforeEach(async () => {
+      userToken = await addUser(regularUser);
+      vendorToken = await addUser(vendorUser);
+      user2Token = await addUser(user2);
+    });
+
+    context('when no offer is found', () => {
+      it('returns empty array of offers', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.pagination.currentPage).to.be.eql(1);
+            expect(res.body.pagination.limit).to.be.eql(10);
+            expect(res.body.pagination.total).to.be.eql(0);
+            expect(res.body.pagination.offset).to.be.eql(0);
+            expect(res.body.result.length).to.be.eql(0);
+            done();
+          });
+      });
+    });
+
     describe('when offers exist in db', () => {
       beforeEach(async () => {
-        await Property.insertMany(properties);
-        await Enquiry.insertMany(enquiries);
-        await Offer.insertMany(offers);
+        await Property.insertMany(userProperties);
+        await Property.insertMany(user2Properties);
+        await Enquiry.insertMany(userEnquiries);
+        await Enquiry.insertMany(user2Enquiries);
+        await Offer.insertMany(userOffers);
+        await Offer.insertMany(user2Offers);
       });
 
-      itReturnsTheRightPaginationValue({ endpoint, method, user: regularUser });
+      context('when request is sent by vendor', () => {
+        it('returns 18 offers', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(18);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(10);
+              done();
+            });
+        });
+      });
+
+      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
+
+      itReturnsForbiddenForInvalidToken({ endpoint, method, user: editorUser });
 
       itReturnsForbiddenForNoToken({ endpoint, method });
 
-      itReturnsAnErrorWhenServiceFails({
-        endpoint,
-        method,
-        user: demoVendorUser,
-        model: Offer,
-        modelMethod: 'aggregate',
+      context('when both page and limit parameters are set', () => {
+        it('returns the given page and limit', (done) => {
+          request()
+            [method](`${endpoint}?page=2&limit=5`)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                currentPage: 2,
+                limit: 5,
+                offset: 5,
+                result: 5,
+                totalPage: 4,
+              });
+              done();
+            });
+        });
       });
+
+      context('when page is set to 2', () => {
+        it('returns the second page', (done) => {
+          request()
+            [method](`${endpoint}?page=2`)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                result: 8,
+                offset: 10,
+                currentPage: 2,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when limit is set to 4', () => {
+        it('returns 4 items', (done) => {
+          request()
+            [method](`${endpoint}?limit=4`)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                limit: 4,
+                result: 4,
+                totalPage: 5,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when request is sent by user', () => {
+        it('returns returns 10 offers', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(10);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(10);
+              done();
+            });
+        });
+      });
+
+      context('when request is sent by user 2', () => {
+        it('returns not found', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', user2Token)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(8);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(8);
+              done();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Get all offers of a user', () => {
+    const method = 'get';
+    const endpoint = `/api/v1/offer/user/${regularUser._id}`;
+
+    const user2 = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
+
+    const userProperties = PropertyFactory.buildList(
+      10,
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { generateId: true },
+    );
+
+    const user2Properties = PropertyFactory.buildList(
+      8,
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { generateId: true },
+    );
+    const userEnquiries = userProperties.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: userProperties[index]._id,
+          userId: regularUser._id,
+        },
+        { generateId: true },
+      ),
+    );
+
+    const user2Enquiries = user2Properties.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: user2Properties[index]._id,
+          userId: user2._id,
+        },
+        { generateId: true },
+      ),
+    );
+
+    const userOffers = userProperties.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: userProperties[index]._id,
+          enquiryId: userEnquiries[index]._id,
+          userId: regularUser._id,
+          vendorId: vendorUser._id,
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
+    );
+
+    const user2Offers = user2Properties.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: user2Properties[index]._id,
+          enquiryId: user2Enquiries[index]._id,
+          userId: user2._id,
+          vendorId: vendorUser._id,
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
+    );
+
+    beforeEach(async () => {
+      adminToken = await addUser(adminUser);
+      userToken = await addUser(regularUser);
+      vendorToken = await addUser(vendorUser);
+      await addUser(user2);
+    });
+
+    context('when no offer is found', () => {
+      it('returns empty array of offers', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.pagination.currentPage).to.be.eql(1);
+            expect(res.body.pagination.limit).to.be.eql(10);
+            expect(res.body.pagination.total).to.be.eql(0);
+            expect(res.body.pagination.offset).to.be.eql(0);
+            expect(res.body.result.length).to.be.eql(0);
+            done();
+          });
+      });
+    });
+
+    describe('when offers exist in db', () => {
+      beforeEach(async () => {
+        await Property.insertMany(userProperties);
+        await Property.insertMany(user2Properties);
+        await Enquiry.insertMany(userEnquiries);
+        await Enquiry.insertMany(user2Enquiries);
+        await Offer.insertMany(userOffers);
+        await Offer.insertMany(user2Offers);
+      });
+
+      context('with a valid token & id', async () => {
+        it('returns successful payload', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(10);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(10);
+              done();
+            });
+        });
+      });
+
+      context('when both page and limit parameters are set', () => {
+        it('returns the given page and limit', (done) => {
+          request()
+            [method](`${endpoint}?page=2&limit=5`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                currentPage: 2,
+                limit: 5,
+                offset: 5,
+                result: 5,
+                total: 10,
+                totalPage: 2,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when page is set to 2', () => {
+        it('returns the second page', (done) => {
+          request()
+            [method](`${endpoint}?page=2`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                result: 0,
+                offset: 10,
+                total: 10,
+                currentPage: 2,
+                totalPage: 1,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when limit is set to 4', () => {
+        it('returns 4 items', (done) => {
+          request()
+            [method](`${endpoint}?limit=4`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                limit: 4,
+                result: 4,
+                total: 10,
+                totalPage: 3,
+              });
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
     });
   });
 });

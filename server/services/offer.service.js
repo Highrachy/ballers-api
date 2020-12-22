@@ -38,11 +38,11 @@ export const generateReferenceCode = async (propertyId) => {
   return referenceCode;
 };
 
-export const getAllOffers = async (accountId, page = 1, limit = 10) => {
+export const getAllOffers = async (accounId, page = 1, limit = 10) => {
   let accountType;
-  const user = await getUserById(accountId);
+  const user = await getUserById(accounId);
 
-  if (user.role === USER_ROLE.VENDOR) {
+  if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.ADMIN) {
     accountType = {
       matchKey: 'vendorId',
       localField: 'userId',
@@ -93,25 +93,25 @@ export const getAllOffers = async (accountId, page = 1, limit = 10) => {
       $unwind: '$propertyInfo',
     },
     {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-        [`${accountType.as}.assignedProperties`]: 0,
-        [`${accountType.as}.password`]: 0,
-        [`${accountType.as}.referralCode`]: 0,
-      },
-    },
-    {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
         data: generateFacetData(page, limit),
       },
     },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+        'userInfo.assignedProperties': 0,
+        'userInfo.password': 0,
+        'userInfo.referralCode': 0,
+      },
+    },
   ];
 
   if (user.role === USER_ROLE.VENDOR) {
-    offerOptions.unshift({ $match: { vendorId: ObjectId(accountId) } });
+    offerOptions.unshift({ $match: { [accountType.matchKey]: ObjectId(user._id) } });
   } else if (user.role === USER_ROLE.USER) {
-    offerOptions.unshift({ $match: { userId: ObjectId(accountId) } });
+    offerOptions.unshift({ $match: { [accountType.matchKey]: ObjectId(user._id) } });
   }
 
   const offers = await Offer.aggregate(offerOptions);

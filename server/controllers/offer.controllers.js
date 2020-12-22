@@ -107,9 +107,14 @@ const OfferController = {
 
   getAllUserOffersAdmin(req, res, next) {
     const userId = req.params.id;
-    getAllOffers(userId)
-      .then((offers) => {
-        res.status(httpStatus.OK).json({ success: true, offers });
+    const { page, limit } = req.query;
+    getAllOffers(userId, page, limit)
+      .then(({ pagination, result }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          pagination,
+          result,
+        });
       })
       .catch((error) => next(error));
   },
