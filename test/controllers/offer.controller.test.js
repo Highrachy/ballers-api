@@ -23,9 +23,8 @@ import {
   itReturnsForbiddenForInvalidToken,
   itReturnsAnErrorForInvalidToken,
   itReturnsErrorForEmptyFields,
-  expectsPaginationToReturnTheRightValues,
-  defaultPaginationResult,
   itReturnsTheRightPaginationValue,
+  itReturnsEmptyValuesWhenNoItemExistInDatabase,
 } from '../helpers';
 import Property from '../../server/models/property.model';
 
@@ -1313,27 +1312,33 @@ describe('Offer Controller', () => {
     });
   });
 
-  describe('Get all owned offers', () => {
+  describe('Get all offers', () => {
     const endpoint = '/api/v1/offer/all';
     const method = 'get';
     let user2Token;
+    let vendor2Token;
 
     const user2 = UserFactory.build(
       { role: USER_ROLE.USER, activated: true },
       { generateId: true },
     );
 
+    const vendor2 = UserFactory.build(
+      { role: USER_ROLE.VENDOR, activated: true },
+      { generateId: true },
+    );
+
     const editorUser = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
 
     const userProperties = PropertyFactory.buildList(
-      10,
+      18,
       { addedBy: vendorUser._id, updatedBy: vendorUser._id },
       { generateId: true },
     );
 
     const user2Properties = PropertyFactory.buildList(
       8,
-      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { addedBy: vendor2._id, updatedBy: vendor2._id },
       { generateId: true },
     );
 
@@ -1376,7 +1381,7 @@ describe('Offer Controller', () => {
           propertyId: user2Properties[index]._id,
           enquiryId: user2Enquiries[index]._id,
           userId: user2._id,
-          vendorId: vendorUser._id,
+          vendorId: vendor2._id,
           referenceCode: '123456XXX',
         },
         { generateId: true },
@@ -1384,136 +1389,90 @@ describe('Offer Controller', () => {
     );
 
     beforeEach(async () => {
+      adminToken = await addUser(adminUser);
       userToken = await addUser(regularUser);
       vendorToken = await addUser(vendorUser);
       user2Token = await addUser(user2);
+      vendor2Token = await addUser(vendor2);
     });
 
-    context('when no offer is found', () => {
-      it('returns empty array of offers', (done) => {
-        request()
-          [method](endpoint)
-          .set('authorization', vendorToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.pagination.currentPage).to.be.eql(1);
-            expect(res.body.pagination.limit).to.be.eql(10);
-            expect(res.body.pagination.total).to.be.eql(0);
-            expect(res.body.pagination.offset).to.be.eql(0);
-            expect(res.body.result.length).to.be.eql(0);
-            done();
-          });
-      });
+    itReturnsEmptyValuesWhenNoItemExistInDatabase({
+      endpoint,
+      method,
+      user: regularUser,
+      useExistingUser: true,
+    });
+
+    itReturnsEmptyValuesWhenNoItemExistInDatabase({
+      endpoint,
+      method,
+      user: adminUser,
+      useExistingUser: true,
+    });
+
+    itReturnsEmptyValuesWhenNoItemExistInDatabase({
+      endpoint,
+      method,
+      user: vendorUser,
+      useExistingUser: true,
     });
 
     describe('when offers exist in db', () => {
       beforeEach(async () => {
-        await Property.insertMany(userProperties);
-        await Property.insertMany(user2Properties);
-        await Enquiry.insertMany(userEnquiries);
-        await Enquiry.insertMany(user2Enquiries);
-        await Offer.insertMany(userOffers);
-        await Offer.insertMany(user2Offers);
+        await Property.insertMany([...userProperties, ...user2Properties]);
+        await Enquiry.insertMany([...userEnquiries, ...user2Enquiries]);
+        await Offer.insertMany([...userOffers, ...user2Offers]);
       });
 
-      context('when request is sent by vendor', () => {
-        it('returns 18 offers', (done) => {
-          request()
-            [method](endpoint)
-            .set('authorization', vendorToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.pagination.currentPage).to.be.eql(1);
-              expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(18);
-              expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.result.length).to.be.eql(10);
-              done();
-            });
-        });
+      itReturnsTheRightPaginationValue({
+        endpoint,
+        method,
+        user: regularUser,
+        useExistingUser: true,
       });
-
-      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
 
       itReturnsForbiddenForInvalidToken({ endpoint, method, user: editorUser });
 
       itReturnsForbiddenForNoToken({ endpoint, method });
 
-      context('when both page and limit parameters are set', () => {
-        it('returns the given page and limit', (done) => {
-          request()
-            [method](`${endpoint}?page=2&limit=5`)
-            .set('authorization', vendorToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                currentPage: 2,
-                limit: 5,
-                offset: 5,
-                result: 5,
-                totalPage: 4,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when page is set to 2', () => {
-        it('returns the second page', (done) => {
-          request()
-            [method](`${endpoint}?page=2`)
-            .set('authorization', vendorToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                result: 8,
-                offset: 10,
-                currentPage: 2,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when limit is set to 4', () => {
-        it('returns 4 items', (done) => {
-          request()
-            [method](`${endpoint}?limit=4`)
-            .set('authorization', vendorToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                limit: 4,
-                result: 4,
-                totalPage: 5,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when request is sent by user', () => {
-        it('returns returns 10 offers', (done) => {
+      context('when request is sent by admin token', () => {
+        it('returns 26 offers', (done) => {
           request()
             [method](endpoint)
-            .set('authorization', userToken)
+            .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.pagination.currentPage).to.be.eql(1);
               expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(26);
               expect(res.body.pagination.offset).to.be.eql(0);
               expect(res.body.result.length).to.be.eql(10);
+              done();
+            });
+        });
+      });
+
+      context('when request is sent by vendor2 token', () => {
+        it('returns 8 offers', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendor2Token)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(8);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(8);
               done();
             });
         });
       });
 
       context('when request is sent by user 2', () => {
-        it('returns not found', (done) => {
+        it('returns 8 offers', (done) => {
           request()
             [method](endpoint)
             .set('authorization', user2Token)
@@ -1542,7 +1501,7 @@ describe('Offer Controller', () => {
     );
 
     const userProperties = PropertyFactory.buildList(
-      10,
+      18,
       { addedBy: vendorUser._id, updatedBy: vendorUser._id },
       { generateId: true },
     );
@@ -1605,110 +1564,74 @@ describe('Offer Controller', () => {
       await addUser(user2);
     });
 
-    context('when no offer is found', () => {
-      it('returns empty array of offers', (done) => {
-        request()
-          [method](endpoint)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.pagination.currentPage).to.be.eql(1);
-            expect(res.body.pagination.limit).to.be.eql(10);
-            expect(res.body.pagination.total).to.be.eql(0);
-            expect(res.body.pagination.offset).to.be.eql(0);
-            expect(res.body.result.length).to.be.eql(0);
-            done();
-          });
-      });
+    itReturnsEmptyValuesWhenNoItemExistInDatabase({
+      endpoint,
+      method,
+      user: adminUser,
+      useExistingUser: true,
     });
 
     describe('when offers exist in db', () => {
       beforeEach(async () => {
-        await Property.insertMany(userProperties);
-        await Property.insertMany(user2Properties);
-        await Enquiry.insertMany(userEnquiries);
-        await Enquiry.insertMany(user2Enquiries);
-        await Offer.insertMany(userOffers);
-        await Offer.insertMany(user2Offers);
+        await Property.insertMany([...userProperties, ...user2Properties]);
+        await Enquiry.insertMany([...userEnquiries, ...user2Enquiries]);
+        await Offer.insertMany([...userOffers, ...user2Offers]);
       });
 
-      context('with a valid token & id', async () => {
-        it('returns successful payload', (done) => {
+      itReturnsTheRightPaginationValue({
+        endpoint,
+        method,
+        user: adminUser,
+        useExistingUser: true,
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      itReturnsForbiddenForInvalidToken({
+        endpoint,
+        method,
+        user: regularUser,
+        useExistingUser: true,
+      });
+
+      itReturnsForbiddenForInvalidToken({
+        endpoint,
+        method,
+        user: vendorUser,
+        useExistingUser: true,
+      });
+
+      context('when invalid user2 id is sent', () => {
+        it('returns 8 offers', (done) => {
           request()
-            [method](endpoint)
+            [method](`/api/v1/offer/user/${user2._id}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.pagination.currentPage).to.be.eql(1);
               expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(8);
               expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.result.length).to.be.eql(10);
+              expect(res.body.result.length).to.be.eql(8);
               done();
             });
         });
       });
 
-      context('when both page and limit parameters are set', () => {
-        it('returns the given page and limit', (done) => {
+      context('when invalid user id is sent', () => {
+        const invalidId = mongoose.Types.ObjectId();
+        it('returns not found', (done) => {
           request()
-            [method](`${endpoint}?page=2&limit=5`)
+            [method](`/api/v1/offer/user/${invalidId}`)
             .set('authorization', adminToken)
             .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                currentPage: 2,
-                limit: 5,
-                offset: 5,
-                result: 5,
-                total: 10,
-                totalPage: 2,
-              });
+              expect(res).to.have.status(500);
+              expect(res.body.success).to.be.eql(false);
               done();
             });
         });
       });
-
-      context('when page is set to 2', () => {
-        it('returns the second page', (done) => {
-          request()
-            [method](`${endpoint}?page=2`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                result: 0,
-                offset: 10,
-                total: 10,
-                currentPage: 2,
-                totalPage: 1,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when limit is set to 4', () => {
-        it('returns 4 items', (done) => {
-          request()
-            [method](`${endpoint}?limit=4`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                limit: 4,
-                result: 4,
-                total: 10,
-                totalPage: 3,
-              });
-              done();
-            });
-        });
-      });
-
-      itReturnsForbiddenForNoToken({ endpoint, method });
     });
   });
 });

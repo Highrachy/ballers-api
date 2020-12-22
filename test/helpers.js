@@ -1,4 +1,4 @@
-import { addUser } from '../server/services/user.service';
+import { addUser, loginUser } from '../server/services/user.service';
 import { expect, request, sinon } from './config';
 import User from '../server/models/user.model';
 
@@ -38,12 +38,18 @@ export const itReturnsEmptyValuesWhenNoItemExistInDatabase = ({
   method,
   user,
   data = {},
+  useExistingUser = false,
 }) => {
   let token;
 
   context('when no item exist', () => {
     beforeEach(async () => {
-      token = await addUser(user);
+      if (useExistingUser) {
+        const loggedInUser = await loginUser(user);
+        token = loggedInUser.token;
+      } else {
+        token = await addUser(user);
+      }
     });
     it('returns not found', (done) => {
       request()
@@ -61,12 +67,23 @@ export const itReturnsEmptyValuesWhenNoItemExistInDatabase = ({
   });
 };
 
-export const itReturnsTheRightPaginationValue = ({ endpoint, method, user, data = {} }) => {
+export const itReturnsTheRightPaginationValue = ({
+  endpoint,
+  method,
+  user,
+  data = {},
+  useExistingUser = false,
+}) => {
   let token;
 
   describe('pagination', () => {
     beforeEach(async () => {
-      token = await addUser(user);
+      if (useExistingUser) {
+        const loggedInUser = await loginUser(user);
+        token = loggedInUser.token;
+      } else {
+        token = await addUser(user);
+      }
     });
 
     context('when no pagination parameter is passed', () => {
@@ -140,12 +157,23 @@ export const itReturnsTheRightPaginationValue = ({ endpoint, method, user, data 
   });
 };
 
-export const itReturnsForbiddenForInvalidToken = ({ endpoint, method, user, data = {} }) => {
+export const itReturnsForbiddenForInvalidToken = ({
+  endpoint,
+  method,
+  user,
+  data = {},
+  useExistingUser = false,
+}) => {
   context('with a invalid access token', () => {
     let token;
 
     beforeEach(async () => {
-      token = await addUser(user);
+      if (useExistingUser) {
+        const loggedInUser = await loginUser(user);
+        token = loggedInUser.token;
+      } else {
+        token = await addUser(user);
+      }
     });
 
     it('returns forbidden', (done) => {
@@ -186,12 +214,18 @@ export const itReturnsAnErrorWhenServiceFails = ({
   model,
   modelMethod = 'aggregate',
   data = {},
+  useExistingUser = false,
 }) => {
   context('when service fails', () => {
     let token;
 
     beforeEach(async () => {
-      token = await addUser(user);
+      if (useExistingUser) {
+        const loggedInUser = await loginUser(user);
+        token = loggedInUser.token;
+      } else {
+        token = await addUser(user);
+      }
     });
     it('returns the error', (done) => {
       sinon.stub(model, modelMethod).throws(new Error('Type Error'));
@@ -208,11 +242,23 @@ export const itReturnsAnErrorWhenServiceFails = ({
   });
 };
 
-export const itReturnsAnErrorForInvalidToken = ({ endpoint, method, user, userId, data = {} }) => {
+export const itReturnsAnErrorForInvalidToken = ({
+  endpoint,
+  method,
+  user,
+  userId,
+  data = {},
+  useExistingUser = false,
+}) => {
   let token;
   context('Invalid Token', () => {
     beforeEach(async () => {
-      token = await addUser(user);
+      if (useExistingUser) {
+        const loggedInUser = await loginUser(user);
+        token = loggedInUser.token;
+      } else {
+        token = await addUser(user);
+      }
     });
 
     context('with unavailable token', () => {
@@ -236,11 +282,23 @@ export const itReturnsAnErrorForInvalidToken = ({ endpoint, method, user, userId
   });
 };
 
-export const itReturnsErrorForEmptyFields = ({ endpoint, method, user, data, factory }) => {
+export const itReturnsErrorForEmptyFields = ({
+  endpoint,
+  method,
+  user,
+  data,
+  factory,
+  useExistingUser = false,
+}) => {
   let token;
 
   beforeEach(async () => {
-    token = await addUser(user);
+    if (useExistingUser) {
+      const loggedInUser = await loginUser(user);
+      token = loggedInUser.token;
+    } else {
+      token = await addUser(user);
+    }
   });
 
   Object.keys(data).map((field) =>

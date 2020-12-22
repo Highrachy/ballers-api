@@ -108,9 +108,7 @@ export const getAllOffers = async (accounId, page = 1, limit = 10) => {
     },
   ];
 
-  if (user.role === USER_ROLE.VENDOR) {
-    offerOptions.unshift({ $match: { [accountType.matchKey]: ObjectId(user._id) } });
-  } else if (user.role === USER_ROLE.USER) {
+  if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.USER) {
     offerOptions.unshift({ $match: { [accountType.matchKey]: ObjectId(user._id) } });
   }
 

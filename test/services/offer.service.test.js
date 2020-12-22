@@ -191,6 +191,9 @@ describe('Offer Service', () => {
   });
 
   describe('#getAllOffers', () => {
+    const user2 = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
+    const vendor2 = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
+
     const userProperties = PropertyFactory.buildList(
       10,
       { addedBy: vendor._id, updatedBy: vendor._id },
@@ -199,7 +202,7 @@ describe('Offer Service', () => {
 
     const user2Properties = PropertyFactory.buildList(
       8,
-      { addedBy: vendor._id, updatedBy: vendor._id },
+      { addedBy: vendor2._id, updatedBy: vendor2._id },
       { generateId: true },
     );
 
@@ -217,7 +220,7 @@ describe('Offer Service', () => {
       EnquiryFactory.build(
         {
           propertyId: user2Properties[index]._id,
-          userId: admin._id,
+          userId: user2._id,
         },
         { generateId: true },
       ),
@@ -241,8 +244,8 @@ describe('Offer Service', () => {
         {
           propertyId: user2Properties[index]._id,
           enquiryId: user2Enquiries[index]._id,
-          userId: admin._id,
-          vendorId: vendor._id,
+          userId: user2._id,
+          vendorId: vendor2._id,
           referenceCode: '123456XXX',
         },
         { generateId: true },
@@ -250,6 +253,8 @@ describe('Offer Service', () => {
     );
 
     beforeEach(async () => {
+      await addUser(user2);
+      await addUser(vendor2);
       await Property.insertMany(userProperties);
       await Property.insertMany(user2Properties);
       await Enquiry.insertMany(userEnquiries);
@@ -257,39 +262,104 @@ describe('Offer Service', () => {
       await Offer.insertMany(userOffers);
     });
 
-    context('when offers added are valid', () => {
-      it('returns 10 offers for user token', async () => {
+    context('when user token is used', () => {
+      it('returns 10 offers', async () => {
         const offers = await getAllOffers(user._id);
         expect(offers.pagination.currentPage).to.be.eql(1);
         expect(offers.pagination.total).to.be.eql(10);
         expect(offers.result.length).to.be.eql(10);
         expect(offers.result[0].userId).to.be.eql(user._id);
       });
-      it('returns 10 offers for vendor token', async () => {
+    });
+
+    context('when user2 token is used', () => {
+      it('returns 0 offers', async () => {
+        const offers = await getAllOffers(user2._id);
+        expect(offers.pagination.currentPage).to.be.eql(1);
+        expect(offers.pagination.total).to.be.eql(0);
+        expect(offers.result.length).to.be.eql(0);
+      });
+    });
+
+    context('when vendor token is used', () => {
+      it('returns 10 offers', async () => {
         const vendorOffers = await getAllOffers(vendor._id);
         expect(vendorOffers.pagination.currentPage).to.be.eql(1);
         expect(vendorOffers.pagination.total).to.be.eql(10);
         expect(vendorOffers.result.length).to.be.eql(10);
-        expect(vendorOffers.result[1].userId).to.be.eql(user._id);
+        expect(vendorOffers.result[0].vendorId).to.be.eql(vendor._id);
       });
     });
+
+    context('when vendor2 token is used', () => {
+      it('returns 0 offers', async () => {
+        const vendorOffers = await getAllOffers(vendor2._id);
+        expect(vendorOffers.pagination.currentPage).to.be.eql(1);
+        expect(vendorOffers.pagination.total).to.be.eql(0);
+        expect(vendorOffers.result.length).to.be.eql(0);
+      });
+    });
+
+    context('when admin token is used', () => {
+      it('returns 10 offers', async () => {
+        const vendorOffers = await getAllOffers(admin._id);
+        expect(vendorOffers.pagination.currentPage).to.be.eql(1);
+        expect(vendorOffers.pagination.total).to.be.eql(10);
+        expect(vendorOffers.result.length).to.be.eql(10);
+      });
+    });
+
     context('when new offer is added', () => {
       beforeEach(async () => {
         await Offer.insertMany(user2Offers);
       });
-      it('returns 10 offers for user token', async () => {
-        const offers = await getAllOffers(user._id);
-        expect(offers.pagination.currentPage).to.be.eql(1);
-        expect(offers.pagination.total).to.be.eql(10);
-        expect(offers.result.length).to.be.eql(10);
-        expect(offers.result[0].userId).to.be.eql(user._id);
+
+      context('when user token is used', () => {
+        it('returns 10 offers', async () => {
+          const offers = await getAllOffers(user._id);
+          expect(offers.pagination.currentPage).to.be.eql(1);
+          expect(offers.pagination.total).to.be.eql(10);
+          expect(offers.result.length).to.be.eql(10);
+          expect(offers.result[0].userId).to.be.eql(user._id);
+        });
       });
-      it('returns 18 offers for vendor token', async () => {
-        const vendorOffers = await getAllOffers(vendor._id);
-        expect(vendorOffers.pagination.currentPage).to.be.eql(1);
-        expect(vendorOffers.pagination.total).to.be.eql(18);
-        expect(vendorOffers.result.length).to.be.eql(10);
-        expect(vendorOffers.result[1].userId).to.be.eql(user._id);
+
+      context('when user2 token is used', () => {
+        it('returns 0 offers', async () => {
+          const offers = await getAllOffers(user2._id);
+          expect(offers.pagination.currentPage).to.be.eql(1);
+          expect(offers.pagination.total).to.be.eql(8);
+          expect(offers.result.length).to.be.eql(8);
+        });
+      });
+
+      context('when vendor token is used', () => {
+        it('returns 10 offers', async () => {
+          const vendorOffers = await getAllOffers(vendor._id);
+          expect(vendorOffers.pagination.currentPage).to.be.eql(1);
+          expect(vendorOffers.pagination.total).to.be.eql(10);
+          expect(vendorOffers.result.length).to.be.eql(10);
+          expect(vendorOffers.result[0].vendorId).to.be.eql(vendor._id);
+        });
+      });
+
+      context('when vendor2 token is used', () => {
+        it('returns 8 offers', async () => {
+          const vendorOffers = await getAllOffers(vendor2._id);
+          expect(vendorOffers.pagination.currentPage).to.be.eql(1);
+          expect(vendorOffers.pagination.total).to.be.eql(8);
+          expect(vendorOffers.result.length).to.be.eql(8);
+          expect(vendorOffers.result[0].vendorId).to.be.eql(vendor2._id);
+        });
+      });
+
+      context('when admin token is used', () => {
+        it('returns 18 offers', async () => {
+          const vendorOffers = await getAllOffers(admin._id);
+          expect(vendorOffers.pagination.currentPage).to.be.eql(1);
+          expect(vendorOffers.pagination.total).to.be.eql(18);
+          expect(vendorOffers.result.length).to.be.eql(10);
+        });
       });
     });
   });
