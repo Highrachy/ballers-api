@@ -598,8 +598,6 @@ describe('Offer Service', () => {
     const offers = allOfferStatus.map((_, index) =>
       OfferFactory.build(
         {
-          // userId: user._id,
-          // propertyId: properties[index]._id,
           enquiryId: enquiries[index]._id,
           vendorId: vendor._id,
           status: OFFER_STATUS[allOfferStatus[index]],

@@ -101,9 +101,9 @@ export const getAllOffers = async (accounId, page = 1, limit = 10) => {
     {
       $project: {
         'propertyInfo.assignedTo': 0,
-        'userInfo.assignedProperties': 0,
-        'userInfo.password': 0,
-        'userInfo.referralCode': 0,
+        [`${accountType.as}.assignedProperties`]: 0,
+        [`${accountType.as}.password`]: 0,
+        [`${accountType.as}.referralCode`]: 0,
       },
     },
   ];
@@ -476,4 +476,68 @@ export const resolveConcern = async (concern) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving concern', error);
   }
+};
+
+export const getAllUserOffers = async (user, accounId, page = 1, limit = 10) => {
+  const offerOptions = [
+    { $match: { userId: ObjectId(accounId) } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'enquiries',
+        localField: 'enquiryId',
+        foreignField: '_id',
+        as: 'enquiryInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $unwind: '$userInfo',
+    },
+    {
+      $unwind: '$enquiryInfo',
+    },
+    {
+      $unwind: '$propertyInfo',
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+        'userInfo.assignedProperties': 0,
+        'userInfo.password': 0,
+        'userInfo.referralCode': 0,
+      },
+    },
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    offerOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  }
+
+  const offers = await Offer.aggregate(offerOptions);
+
+  const total = getPaginationTotal(offers);
+  const pagination = generatePagination(page, limit, total);
+  const result = offers[0].data;
+  return { pagination, result };
 };

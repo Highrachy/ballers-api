@@ -3,9 +3,9 @@ import {
   authenticate,
   schemaValidation,
   isVendor,
-  isAdmin,
   hasValidObjectId,
   isAdminOrUserOrVendor,
+  isVendorOrAdmin,
 } from '../helpers/middleware';
 import {
   createOfferSchema,
@@ -244,9 +244,9 @@ router.get('/all', authenticate, isAdminOrUserOrVendor, OfferController.getAllOf
 router.get(
   '/user/:id',
   authenticate,
-  isAdmin,
+  isVendorOrAdmin,
   hasValidObjectId,
-  OfferController.getAllUserOffersAdmin,
+  OfferController.getAllUserOffers,
 );
 
 /**

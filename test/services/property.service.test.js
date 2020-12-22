@@ -130,7 +130,7 @@ describe('Property Service', () => {
     context('when property is deleted', () => {
       it('deletes property', async () => {
         // eslint-disable-next-line no-unused-vars
-        const deletedProperty = deleteProperty(property._id);
+        const deletedProperty = deleteProperty({ propertyId: property._id, user: vendor });
         const prop = getPropertyById(property._id);
         // eslint-disable-next-line no-unused-expressions
         expect(prop).to.be.empty;
@@ -141,7 +141,7 @@ describe('Property Service', () => {
       it('throws an error', async () => {
         sinon.stub(Property, 'findById').throws(new Error('error msg'));
         try {
-          await deleteProperty(property._id);
+          await deleteProperty({ propertyId: property._id, user: vendor });
         } catch (err) {
           expect(err.statusCode).to.eql(500);
           expect(err.error.message).to.be.eql('error msg');
@@ -155,10 +155,9 @@ describe('Property Service', () => {
       it('throws an error', async () => {
         sinon.stub(Property, 'findByIdAndDelete').throws(new Error('error msg'));
         try {
-          await deleteProperty(property._id);
+          await deleteProperty({ propertyId: property._id, user: vendor });
         } catch (err) {
           expect(err.statusCode).to.eql(400);
-          expect(err.error.message).to.be.eql("Cannot read property 'role' of undefined");
           expect(err.message).to.be.eql('Error deleting property');
         }
         Property.findByIdAndDelete.restore();

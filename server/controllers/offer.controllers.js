@@ -8,6 +8,7 @@ import {
   getActiveOffers,
   raiseConcern,
   resolveConcern,
+  getAllUserOffers,
 } from '../services/offer.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -105,10 +106,11 @@ const OfferController = {
       .catch((error) => next(error));
   },
 
-  getAllUserOffersAdmin(req, res, next) {
+  getAllUserOffers(req, res, next) {
     const userId = req.params.id;
     const { page, limit } = req.query;
-    getAllOffers(userId, page, limit)
+    const { user } = req;
+    getAllUserOffers(user, userId, page, limit)
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,

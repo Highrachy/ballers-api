@@ -784,19 +784,23 @@ describe('Offer Controller', () => {
       });
 
       context('with a valid token & id', () => {
-        it('returns successful payload', (done) => {
-          request()
-            .get(`/api/v1/offer/${offer._id}`)
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offer');
-              expect(res.body.offer.concern.length).to.be.eql(0);
-              expect(res.body.offer._id).to.be.eql(offer._id.toString());
-              done();
-            });
-        });
+        [...new Array(3)].map((_, index) =>
+          it('returns successful payload', (done) => {
+            const property = PropertyFactory.build();
+            request()
+              .get(`/api/v1/offer/${offer._id}`)
+              .set('authorization', [userToken, adminToken, vendorToken][index])
+              .send(property)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body).to.have.property('offer');
+                expect(res.body.offer.concern.length).to.be.eql(0);
+                expect(res.body.offer._id).to.be.eql(offer._id.toString());
+                done();
+              });
+          }),
+        );
       });
 
       itReturnsAnErrorForInvalidToken({
@@ -1492,50 +1496,52 @@ describe('Offer Controller', () => {
   });
 
   describe('Get all offers of a user', () => {
+    let vendor2Token;
     const method = 'get';
     const endpoint = `/api/v1/offer/user/${regularUser._id}`;
 
-    const user2 = UserFactory.build(
-      { role: USER_ROLE.USER, activated: true },
+    const vendor2 = UserFactory.build(
+      { role: USER_ROLE.VENDOR, activated: true },
       { generateId: true },
     );
 
-    const userProperties = PropertyFactory.buildList(
-      18,
+    const vendorProperties = PropertyFactory.buildList(
+      10,
       { addedBy: vendorUser._id, updatedBy: vendorUser._id },
       { generateId: true },
     );
 
-    const user2Properties = PropertyFactory.buildList(
+    const vendor2Properties = PropertyFactory.buildList(
       8,
-      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { addedBy: vendor2._id, updatedBy: vendor2._id },
       { generateId: true },
     );
-    const userEnquiries = userProperties.map((_, index) =>
+
+    const vendorEnquiries = vendorProperties.map((_, index) =>
       EnquiryFactory.build(
         {
-          propertyId: userProperties[index]._id,
+          propertyId: vendorProperties[index]._id,
           userId: regularUser._id,
         },
         { generateId: true },
       ),
     );
 
-    const user2Enquiries = user2Properties.map((_, index) =>
+    const vendor2Enquiries = vendor2Properties.map((_, index) =>
       EnquiryFactory.build(
         {
-          propertyId: user2Properties[index]._id,
-          userId: user2._id,
+          propertyId: vendor2Properties[index]._id,
+          userId: regularUser._id,
         },
         { generateId: true },
       ),
     );
 
-    const userOffers = userProperties.map((_, index) =>
+    const vendorOffers = vendorProperties.map((_, index) =>
       OfferFactory.build(
         {
-          propertyId: userProperties[index]._id,
-          enquiryId: userEnquiries[index]._id,
+          propertyId: vendorProperties[index]._id,
+          enquiryId: vendorEnquiries[index]._id,
           userId: regularUser._id,
           vendorId: vendorUser._id,
           referenceCode: '123456XXX',
@@ -1544,13 +1550,13 @@ describe('Offer Controller', () => {
       ),
     );
 
-    const user2Offers = user2Properties.map((_, index) =>
+    const vendor2Offers = vendor2Properties.map((_, index) =>
       OfferFactory.build(
         {
-          propertyId: user2Properties[index]._id,
-          enquiryId: user2Enquiries[index]._id,
-          userId: user2._id,
-          vendorId: vendorUser._id,
+          propertyId: vendor2Properties[index]._id,
+          enquiryId: vendor2Enquiries[index]._id,
+          userId: regularUser._id,
+          vendorId: vendor2._id,
           referenceCode: '123456XXX',
         },
         { generateId: true },
@@ -1561,7 +1567,7 @@ describe('Offer Controller', () => {
       adminToken = await addUser(adminUser);
       userToken = await addUser(regularUser);
       vendorToken = await addUser(vendorUser);
-      await addUser(user2);
+      vendor2Token = await addUser(vendor2);
     });
 
     itReturnsEmptyValuesWhenNoItemExistInDatabase({
@@ -1571,11 +1577,18 @@ describe('Offer Controller', () => {
       useExistingUser: true,
     });
 
+    itReturnsEmptyValuesWhenNoItemExistInDatabase({
+      endpoint,
+      method,
+      user: vendorUser,
+      useExistingUser: true,
+    });
+
     describe('when offers exist in db', () => {
       beforeEach(async () => {
-        await Property.insertMany([...userProperties, ...user2Properties]);
-        await Enquiry.insertMany([...userEnquiries, ...user2Enquiries]);
-        await Offer.insertMany([...userOffers, ...user2Offers]);
+        await Property.insertMany([...vendorProperties, ...vendor2Properties]);
+        await Enquiry.insertMany([...vendorEnquiries, ...vendor2Enquiries]);
+        await Offer.insertMany([...vendorOffers, ...vendor2Offers]);
       });
 
       itReturnsTheRightPaginationValue({
@@ -1594,18 +1607,29 @@ describe('Offer Controller', () => {
         useExistingUser: true,
       });
 
-      itReturnsForbiddenForInvalidToken({
-        endpoint,
-        method,
-        user: vendorUser,
-        useExistingUser: true,
+      context('when vendor token is sent', () => {
+        it('returns 10 offers', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(10);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(10);
+              done();
+            });
+        });
       });
 
-      context('when invalid user2 id is sent', () => {
+      context('when vendor 2 token is sent', () => {
         it('returns 8 offers', (done) => {
           request()
-            [method](`/api/v1/offer/user/${user2._id}`)
-            .set('authorization', adminToken)
+            [method](endpoint)
+            .set('authorization', vendor2Token)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
@@ -1626,8 +1650,13 @@ describe('Offer Controller', () => {
             [method](`/api/v1/offer/user/${invalidId}`)
             .set('authorization', adminToken)
             .end((err, res) => {
-              expect(res).to.have.status(500);
-              expect(res.body.success).to.be.eql(false);
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(0);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(0);
               done();
             });
         });
