@@ -110,7 +110,7 @@ const UserController = {
   assignProperty(req, res, next) {
     const toBeAssigned = req.locals;
     const { user } = req;
-    assignPropertyToUser({ ...toBeAssigned, assignedBy: user._id })
+    assignPropertyToUser({ ...toBeAssigned, assignedBy: user._id, vendor: user })
       .then(() => {
         res.status(httpStatus.OK).json({ success: true, message: 'Property assigned' });
       })

@@ -3,13 +3,15 @@ import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { OFFER_STATUS, CONCERN_STATUS } from '../helpers/constants';
+import { OFFER_STATUS, CONCERN_STATUS, USER_ROLE } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, assignPropertyToUser } from './user.service';
+// eslint-disable-next-line import/no-cycle
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
 // eslint-disable-next-line import/no-cycle
 import { getOneProperty } from './property.service';
 import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -36,61 +38,33 @@ export const generateReferenceCode = async (propertyId) => {
   return referenceCode;
 };
 
-export const getAllOffersUser = async (userId) =>
-  Offer.aggregate([
-    { $match: { userId: ObjectId(userId) } },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'vendorId',
-        foreignField: '_id',
-        as: 'vendorInfo',
-      },
-    },
-    {
-      $lookup: {
-        from: 'enquiries',
-        localField: 'enquiryId',
-        foreignField: '_id',
-        as: 'enquiryInfo',
-      },
-    },
-    {
-      $lookup: {
-        from: 'properties',
-        localField: 'propertyId',
-        foreignField: '_id',
-        as: 'propertyInfo',
-      },
-    },
-    {
-      $unwind: '$vendorInfo',
-    },
-    {
-      $unwind: '$enquiryInfo',
-    },
-    {
-      $unwind: '$propertyInfo',
-    },
-    {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-        'vendorInfo.assignedProperties': 0,
-        'vendorInfo.password': 0,
-        'vendorInfo.referralCode': 0,
-      },
-    },
-  ]);
+export const getAllOffers = async (accounId, page = 1, limit = 10) => {
+  let accountType;
+  const user = await getUserById(accounId);
 
-export const getAllOffersAdmin = async (adminid) =>
-  Offer.aggregate([
-    { $match: { vendorId: ObjectId(adminid) } },
+  if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.ADMIN) {
+    accountType = {
+      matchKey: 'vendorId',
+      localField: 'userId',
+      as: 'userInfo',
+      unwind: '$userInfo',
+    };
+  } else if (user.role === USER_ROLE.USER) {
+    accountType = {
+      matchKey: 'userId',
+      localField: 'vendorId',
+      as: 'vendorInfo',
+      unwind: '$vendorInfo',
+    };
+  }
+
+  const offerOptions = [
     {
       $lookup: {
         from: 'users',
-        localField: 'userId',
+        localField: accountType.localField,
         foreignField: '_id',
-        as: 'userInfo',
+        as: accountType.as,
       },
     },
     {
@@ -110,7 +84,7 @@ export const getAllOffersAdmin = async (adminid) =>
       },
     },
     {
-      $unwind: '$userInfo',
+      $unwind: accountType.unwind,
     },
     {
       $unwind: '$enquiryInfo',
@@ -119,14 +93,32 @@ export const getAllOffersAdmin = async (adminid) =>
       $unwind: '$propertyInfo',
     },
     {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-        'userInfo.assignedProperties': 0,
-        'userInfo.password': 0,
-        'userInfo.referralCode': 0,
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
       },
     },
-  ]);
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+        [`${accountType.as}.assignedProperties`]: 0,
+        [`${accountType.as}.password`]: 0,
+        [`${accountType.as}.referralCode`]: 0,
+      },
+    },
+  ];
+
+  if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.USER) {
+    offerOptions.unshift({ $match: { [accountType.matchKey]: ObjectId(user._id) } });
+  }
+
+  const offers = await Offer.aggregate(offerOptions);
+
+  const total = getPaginationTotal(offers);
+  const pagination = generatePagination(page, limit, total);
+  const result = offers[0].data;
+  return { pagination, result };
+};
 
 export const getActiveOffers = async (userId) =>
   Offer.aggregate([
@@ -328,8 +320,14 @@ export const acceptOffer = async (offerToAccept) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
   }
 
+  const vendor = await getUserById(offer[0].vendorId);
+
   try {
-    await assignPropertyToUser({ propertyId: offer[0].propertyId, userId: offer[0].userId });
+    await assignPropertyToUser({
+      propertyId: offer[0].propertyId,
+      userId: offer[0].userId,
+      vendor,
+    });
     await Offer.findByIdAndUpdate(
       offer[0]._id,
       {
@@ -478,4 +476,68 @@ export const resolveConcern = async (concern) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving concern', error);
   }
+};
+
+export const getAllUserOffers = async (user, accounId, page = 1, limit = 10) => {
+  const offerOptions = [
+    { $match: { userId: ObjectId(accounId) } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'enquiries',
+        localField: 'enquiryId',
+        foreignField: '_id',
+        as: 'enquiryInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $unwind: '$userInfo',
+    },
+    {
+      $unwind: '$enquiryInfo',
+    },
+    {
+      $unwind: '$propertyInfo',
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+        'userInfo.assignedProperties': 0,
+        'userInfo.password': 0,
+        'userInfo.referralCode': 0,
+      },
+    },
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    offerOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  }
+
+  const offers = await Offer.aggregate(offerOptions);
+
+  const total = getPaginationTotal(offers);
+  const pagination = generatePagination(page, limit, total);
+  const result = offers[0].data;
+  return { pagination, result };
 };

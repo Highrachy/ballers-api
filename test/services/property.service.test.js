@@ -7,29 +7,38 @@ import {
   deleteProperty,
   getPropertiesWithPaymentPlanId,
 } from '../../server/services/property.service';
+import { addUser } from '../../server/services/user.service';
 import PropertyFactory from '../factories/property.factory';
+import UserFactory from '../factories/user.factory';
 import Property from '../../server/models/property.model';
+import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
 
 describe('Property Service', () => {
-  describe('#getPropertyById', () => {
-    const _id = mongoose.Types.ObjectId();
+  const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
+  const property = PropertyFactory.build(
+    { addedBy: vendor._id, updatedBy: vendor._id },
+    { generateId: true },
+  );
 
-    before(async () => {
-      await Property.create(PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id }));
+  beforeEach(async () => {
+    await addUser(vendor);
+  });
+
+  describe('#getPropertyById', () => {
+    beforeEach(async () => {
+      await addProperty(property);
     });
 
     it('returns a valid property by Id', async () => {
-      const property = await getPropertyById(_id);
-      expect(property._id).to.eql(_id);
+      const prop = await getPropertyById(property._id);
+      expect(prop._id).to.eql(property._id);
     });
   });
 
   describe('#addProperty', () => {
     let countedProperties;
-    const _id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id });
 
     beforeEach(async () => {
       countedProperties = await Property.countDocuments({});
@@ -49,7 +58,11 @@ describe('Property Service', () => {
     context('when an invalid data is entered', () => {
       it('throws an error', async () => {
         try {
-          const InvalidProperty = PropertyFactory.build({ name: '' });
+          const InvalidProperty = PropertyFactory.build({
+            name: '',
+            addedBy: vendor._id,
+            updatedBy: vendor._id,
+          });
           await addProperty(InvalidProperty);
         } catch (err) {
           const currentCountedProperties = await Property.countDocuments({});
@@ -63,21 +76,21 @@ describe('Property Service', () => {
   });
 
   describe('#updateProperty', () => {
-    const _id = mongoose.Types.ObjectId();
     const updatedDetails = {
-      id: _id,
+      id: property._id,
       units: 11,
+      vendor,
     };
-    before(async () => {
-      await Property.create(PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id }));
+    beforeEach(async () => {
+      await addProperty(property);
     });
 
     context('when property is updated', () => {
       it('returns a valid updated user', async () => {
         const updatedProperty = updateProperty(updatedDetails);
-        const property = getPropertyById(updatedDetails.id);
-        expect(property.units).to.eql(updatedProperty.units);
-        expect(property.description).to.eql(updatedProperty.description);
+        const prop = getPropertyById(updatedDetails.id);
+        expect(prop.units).to.eql(updatedProperty.units);
+        expect(prop.description).to.eql(updatedProperty.description);
       });
     });
 
@@ -102,7 +115,6 @@ describe('Property Service', () => {
           await updateProperty(updatedDetails);
         } catch (err) {
           expect(err.statusCode).to.eql(400);
-          expect(err.error.message).to.be.eql("Cannot read property 'id' of null");
           expect(err.message).to.be.eql('Error updating property');
         }
         Property.findByIdAndUpdate.restore();
@@ -111,18 +123,17 @@ describe('Property Service', () => {
   });
 
   describe('#deleteProperty', () => {
-    const _id = mongoose.Types.ObjectId();
-    before(async () => {
-      await Property.create(PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id }));
+    beforeEach(async () => {
+      await addProperty(property);
     });
 
     context('when property is deleted', () => {
-      it('returns a valid updated user', async () => {
+      it('deletes property', async () => {
         // eslint-disable-next-line no-unused-vars
-        const deletedProperty = deleteProperty(_id);
-        const property = getPropertyById(_id);
+        const deletedProperty = deleteProperty({ propertyId: property._id, user: vendor });
+        const prop = getPropertyById(property._id);
         // eslint-disable-next-line no-unused-expressions
-        expect(property).to.be.empty;
+        expect(prop).to.be.empty;
       });
     });
 
@@ -130,7 +141,7 @@ describe('Property Service', () => {
       it('throws an error', async () => {
         sinon.stub(Property, 'findById').throws(new Error('error msg'));
         try {
-          await deleteProperty(_id);
+          await deleteProperty({ propertyId: property._id, user: vendor });
         } catch (err) {
           expect(err.statusCode).to.eql(500);
           expect(err.error.message).to.be.eql('error msg');
@@ -144,10 +155,9 @@ describe('Property Service', () => {
       it('throws an error', async () => {
         sinon.stub(Property, 'findByIdAndDelete').throws(new Error('error msg'));
         try {
-          await deleteProperty(_id);
+          await deleteProperty({ propertyId: property._id, user: vendor });
         } catch (err) {
           expect(err.statusCode).to.eql(400);
-          expect(err.error.message).to.be.eql("Cannot read property 'id' of null");
           expect(err.message).to.be.eql('Error deleting property');
         }
         Property.findByIdAndDelete.restore();
@@ -156,18 +166,15 @@ describe('Property Service', () => {
   });
 
   describe('#getPropertiesWithPaymentPlanId', () => {
-    const _id = mongoose.Types.ObjectId();
     const planId = mongoose.Types.ObjectId();
 
-    before(async () => {
-      await Property.create(
-        PropertyFactory.build({ _id, addedBy: _id, updatedBy: _id, paymentPlan: [planId] }),
-      );
+    beforeEach(async () => {
+      await addProperty({ ...property, paymentPlan: [planId] });
     });
 
     it('returns a valid property by payment plan id', async () => {
       const properties = await getPropertiesWithPaymentPlanId(planId);
-      expect(properties[0]._id).to.eql(_id);
+      expect(properties[0]._id).to.eql(property._id);
       expect(properties[0].paymentPlan[0]).to.eql(planId);
     });
   });

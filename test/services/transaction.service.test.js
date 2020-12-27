@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { expect, useDatabase, sinon } from '../config';
 import {
   getTransactionById,
@@ -10,42 +9,66 @@ import {
 } from '../../server/services/transaction.service';
 import TransactionFactory from '../factories/transaction.factory';
 import Transaction from '../../server/models/transaction.model';
-import { addProperty } from '../../server/services/property.service';
 import PropertyFactory from '../factories/property.factory';
-import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
+import OfferFactory from '../factories/offer.factory';
+import EnquiryFactory from '../factories/enquiry.factory';
+import { addProperty } from '../../server/services/property.service';
+import { addUser } from '../../server/services/user.service';
+import { createOffer } from '../../server/services/offer.service';
+import { addEnquiry } from '../../server/services/enquiry.service';
+import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
 
 describe('Transaction Service', () => {
-  describe('#getTransactionById', () => {
-    const transactionId = mongoose.Types.ObjectId();
-    const userId = mongoose.Types.ObjectId();
-    const offerId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
+  const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
+  const admin = UserFactory.build({ role: USER_ROLE.admin }, { generateId: true });
+  const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
+  const property = PropertyFactory.build(
+    { addedBy: vendor._id, updatedBy: vendor._id },
+    { generateId: true },
+  );
+  const enquiry = EnquiryFactory.build(
+    { userId: user._id, propertyId: property._id },
+    { generateId: true },
+  );
+  const offer = OfferFactory.build(
+    { enquiryId: enquiry._id, vendorId: vendor._id },
+    { generateId: true },
+  );
+  const transaction = TransactionFactory.build(
+    {
+      adminId: admin._id,
+      offerId: offer._id,
+      propertyId: property._id,
+      userId: user._id,
+    },
+    { generateId: true },
+  );
 
+  beforeEach(async () => {
+    await addUser(vendor);
+    await addUser(admin);
+    await addUser(user);
+    await addProperty(property);
+    await addEnquiry(enquiry);
+    await createOffer(offer);
+  });
+
+  describe('#getTransactionById', () => {
     before(async () => {
-      await addTransaction(
-        TransactionFactory.build({
-          _id: transactionId,
-          adminId: userId,
-          offerId,
-          propertyId,
-          userId,
-        }),
-      );
+      await addTransaction(transaction);
     });
 
     it('returns a valid transaction by Id', async () => {
-      const transaction = await getTransactionById(transactionId);
-      expect(transaction._id).to.be.eql(transactionId);
+      const validTransaction = await getTransactionById(transaction._id);
+      expect(validTransaction._id).to.be.eql(transaction._id);
     });
   });
 
   describe('#addTransaction', () => {
     let countedTransactions;
-    const id = mongoose.Types.ObjectId();
-    const transaction = TransactionFactory.build({ adminId: id });
 
     beforeEach(async () => {
       countedTransactions = await Transaction.countDocuments({});
@@ -79,63 +102,55 @@ describe('Transaction Service', () => {
   });
 
   describe('#getAllTransactions', () => {
-    const userId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const transactionToAdd = TransactionFactory.build({ propertyId, userId, adminId: userId });
+    const transactions = TransactionFactory.buildList(18, {
+      propertyId: property._id,
+      userId: user._id,
+      adminId: admin._id,
+    });
+    const transactionToAdd = TransactionFactory.build({
+      propertyId: property._id,
+      userId: user._id,
+      adminId: admin._id,
+    });
 
     beforeEach(async () => {
-      await addUser(user);
-      await addProperty(property);
-      await addTransaction(transactionToAdd);
-      await addTransaction(transactionToAdd);
+      await Transaction.insertMany(transactions);
     });
     context('when transaction added is valid', () => {
-      it('returns 2 transactions', async () => {
-        const transaction = await getAllTransactions();
-        expect(transaction).to.be.an('array');
-        expect(transaction.length).to.be.eql(2);
+      it('returns 18 transactions', async () => {
+        const multipleTransactions = await getAllTransactions();
+        expect(multipleTransactions).to.be.an('array');
+        expect(multipleTransactions.length).to.be.eql(18);
       });
     });
     context('when new transaction is added', () => {
       before(async () => {
         await addTransaction(transactionToAdd);
       });
-      it('returns 3 transactions', async () => {
-        const transaction = await getAllTransactions();
-        expect(transaction).to.be.an('array');
-        expect(transaction.length).to.be.eql(3);
+      it('returns 19 transactions', async () => {
+        const multipleTransactions = await getAllTransactions();
+        expect(multipleTransactions).to.be.an('array');
+        expect(multipleTransactions.length).to.be.eql(19);
       });
     });
   });
 
   describe('#updateTransaction', () => {
-    const transactionId = mongoose.Types.ObjectId();
-    const userId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const transactionToAdd = TransactionFactory.build({
-      _id: transactionId,
-      propertyId,
-      userId,
-      adminId: userId,
-    });
-
     const updatedDetails = {
-      transactionId,
+      transactionId: transaction._id,
       paidOn: Date.now(),
     };
 
     beforeEach(async () => {
-      await addTransaction(transactionToAdd);
+      await addTransaction(transaction);
     });
 
     context('when transaction is updated', () => {
       it('returns a valid updated transaction', async () => {
         const updatedTransaction = updateTransaction(updatedDetails);
-        const transaction = getTransactionById(updatedDetails.id);
-        expect(transaction.amount).to.eql(updatedTransaction.amount);
-        expect(transaction.paidOn).to.eql(updatedTransaction.paidOn);
+        const validTransaction = getTransactionById(updatedDetails.id);
+        expect(validTransaction.amount).to.eql(updatedTransaction.amount);
+        expect(validTransaction.paidOn).to.eql(updatedTransaction.paidOn);
       });
     });
 
@@ -169,52 +184,28 @@ describe('Transaction Service', () => {
   });
 
   describe('#getUserTransactionsByProperty', () => {
-    const userId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const transactionToAdd = TransactionFactory.build({
-      propertyId,
-      userId,
-      adminId: userId,
-    });
-
     beforeEach(async () => {
-      await addUser(user);
-      await addProperty(property);
-      await addTransaction(transactionToAdd);
+      await addTransaction(transaction);
     });
 
     context('when transaction is updated', () => {
       it('returns a valid updated transaction', async () => {
-        const searchResult = await getUserTransactionsByProperty(propertyId);
-        expect(searchResult[0].propertyInfo._id).to.eql(propertyId);
+        const searchResult = await getUserTransactionsByProperty(property._id);
+        expect(searchResult[0].propertyInfo._id).to.eql(property._id);
       });
     });
   });
 
   describe('#getTransactionsByUser', () => {
-    const userId = mongoose.Types.ObjectId();
-    const propertyId = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId });
-    const property = PropertyFactory.build({ _id: propertyId, addedBy: userId, updatedBy: userId });
-    const transactionToAdd = TransactionFactory.build({
-      propertyId,
-      userId,
-      adminId: userId,
-    });
-
     beforeEach(async () => {
-      await addUser(user);
-      await addProperty(property);
-      await addTransaction(transactionToAdd);
+      await addTransaction(transaction);
     });
 
     context('when transaction is updated', () => {
       it('returns a valid updated transaction', async () => {
-        const searchResult = await getTransactionsByUser(userId);
-        expect(searchResult[0].propertyInfo._id).to.eql(propertyId);
-        expect(searchResult[0].userId).to.eql(userId);
+        const searchResult = await getTransactionsByUser(user._id);
+        expect(searchResult[0].propertyInfo._id).to.eql(property._id);
+        expect(searchResult[0].userId).to.eql(user._id);
       });
     });
   });

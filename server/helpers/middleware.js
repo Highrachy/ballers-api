@@ -113,6 +113,24 @@ export const isEditorOrAdmin = async (req, res, next) => {
   return null;
 };
 
+export const isAdminOrUserOrVendor = async (req, res, next) => {
+  const { user } = req;
+  if (
+    user &&
+    (user.role === USER_ROLE.ADMIN ||
+      user.role === USER_ROLE.USER ||
+      user.role === USER_ROLE.VENDOR)
+  ) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
+
 export const hasValidObjectId = async (req, res, next) => {
   const { id } = req.params;
   const { ObjectId } = mongoose.Types;

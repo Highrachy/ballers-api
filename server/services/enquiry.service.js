@@ -2,12 +2,19 @@ import mongoose from 'mongoose';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+// eslint-disable-next-line import/no-cycle
+import { getPropertyById } from './property.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getEnquiryById = async (id) => Enquiry.findById(id).select();
 
 export const addEnquiry = async (enquiry) => {
+  const property = await getPropertyById(enquiry.propertyId);
+  if (!property) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid property');
+  }
+
   const existingEnquiry = await Enquiry.find({
     propertyId: enquiry.propertyId,
     userId: enquiry.userId,

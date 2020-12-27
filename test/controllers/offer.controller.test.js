@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import Offer from '../../server/models/offer.model';
-import User from '../../server/models/user.model';
+import Enquiry from '../../server/models/enquiry.model';
 import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import UserFactory from '../factories/user.factory';
@@ -10,7 +10,7 @@ import { createOffer, raiseConcern } from '../../server/services/offer.service';
 import { addEnquiry, getEnquiryById } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
-import { OFFER_STATUS, CONCERN_STATUS } from '../../server/helpers/constants';
+import { OFFER_STATUS, CONCERN_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import {
   getTodaysDateShortCode,
   getTodaysDateStandard,
@@ -18,6 +18,15 @@ import {
 } from '../../server/helpers/dates';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import {
+  itReturnsForbiddenForNoToken,
+  itReturnsForbiddenForInvalidToken,
+  itReturnsAnErrorForInvalidToken,
+  itReturnsErrorForEmptyFields,
+  itReturnsTheRightPaginationValue,
+  itReturnsEmptyValuesWhenNoItemExistInDatabase,
+} from '../helpers';
+import Property from '../../server/models/property.model';
 
 useDatabase();
 
@@ -26,1626 +35,311 @@ const sandbox = sinon.createSandbox();
 
 let adminToken;
 let userToken;
-const userId = mongoose.Types.ObjectId();
-const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true, vendorCode: 'HIG' });
-const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
-const propertyId1 = mongoose.Types.ObjectId();
-const propertyId2 = mongoose.Types.ObjectId();
-const propertyId3 = mongoose.Types.ObjectId();
-const property1 = PropertyFactory.build({ _id: propertyId1, addedBy: adminId, updatedBy: adminId });
-const property2 = PropertyFactory.build({ _id: propertyId2, addedBy: adminId, updatedBy: adminId });
-const property3 = PropertyFactory.build({ _id: propertyId3, addedBy: adminId, updatedBy: adminId });
+let vendorToken;
+
+const regularUser = UserFactory.build(
+  { role: USER_ROLE.USER, activated: true },
+  { generateId: true },
+);
+const adminUser = UserFactory.build(
+  {
+    role: USER_ROLE.ADMIN,
+    activated: true,
+  },
+  { generateId: true },
+);
+const vendorUser = UserFactory.build(
+  {
+    role: USER_ROLE.VENDOR,
+    activated: true,
+    vendor: { companyName: 'Highrachy Investment' },
+  },
+  { generateId: true },
+);
+
+const testUser = UserFactory.build({ role: USER_ROLE.USER, activated: true }, { generateId: true });
+const testVendor = UserFactory.build(
+  { role: USER_ROLE.VENDOR, activated: true },
+  { generateId: true },
+);
+
+const properties = PropertyFactory.buildList(
+  18,
+  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+  { generateId: true },
+);
 
 describe('Offer Controller', () => {
-  beforeEach(() => {
-    sendMailStub = sandbox.stub(MailService, 'sendMail');
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-  });
-
-  beforeEach(async () => {
-    adminToken = await addUser(adminUser);
-    userToken = await addUser(regularUser);
-    await addProperty(property1);
-    await addProperty(property2);
-    await addProperty(property3);
-  });
-
-  describe('Create Offer Route', () => {
-    const enquiryId = mongoose.Types.ObjectId();
-    const createPropertyId = mongoose.Types.ObjectId();
-
-    const enquiry = EnquiryFactory.build({
-      _id: enquiryId,
-      userId: adminId,
-      propertyId: createPropertyId,
+  describe('Offer Controller', () => {
+    beforeEach(() => {
+      sendMailStub = sandbox.stub(MailService, 'sendMail');
     });
 
-    const newProperty = PropertyFactory.build({
-      _id: createPropertyId,
-      name: 'Lekki Ville Estate',
-      houseType: 'Maisonette',
-      addedBy: adminId,
-      updatedBy: adminId,
+    afterEach(() => {
+      sandbox.restore();
     });
 
     beforeEach(async () => {
-      await addProperty(newProperty);
-      await addEnquiry(enquiry);
+      adminToken = await addUser(adminUser);
+      userToken = await addUser(regularUser);
+      vendorToken = await addUser(vendorUser);
+      await addProperty(properties[0]);
+      await addProperty(properties[1]);
+      await addProperty(properties[2]);
     });
 
-    context('with valid data', () => {
-      it('returns successful offer', (done) => {
-        const offer = OfferFactory.build({ enquiryId });
-        request()
-          .post('/api/v1/offer/create')
-          .set('authorization', adminToken)
-          .send(offer)
-          .end((err, res) => {
-            expect(res).to.have.status(201);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Offer created');
-            expect(res.body.offer).to.have.property('userInfo');
-            expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
-            expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
-            expect(res.body.offer.propertyInfo._id).to.be.eql(createPropertyId.toString());
-            expect(res.body.offer.referenceCode).to.be.eql(
-              `HIG/LVE/OLM/01/${getTodaysDateShortCode()}`,
-            );
-            done();
-          });
-      });
-    });
+    describe('Create Offer Route', () => {
+      const endpoint = '/api/v1/offer/create';
+      const method = 'post';
 
-    context('when an invalid token is used', () => {
+      const newProperty = PropertyFactory.build(
+        {
+          name: 'Lekki Ville Estate',
+          houseType: 'Maisonette',
+          addedBy: vendorUser._id,
+          updatedBy: vendorUser._id,
+        },
+        { generateId: true },
+      );
+
+      const enquiry = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: newProperty._id,
+        },
+        { generateId: true },
+      );
+
       beforeEach(async () => {
-        await User.findByIdAndDelete(adminId);
+        await addProperty(newProperty);
+        await addEnquiry(enquiry);
       });
-      it('returns token error', (done) => {
-        const offer = OfferFactory.build({ enquiryId });
-        request()
-          .post('/api/v1/offer/create')
-          .set('authorization', adminToken)
-          .send(offer)
-          .end((err, res) => {
-            expect(res).to.have.status(404);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Invalid token');
-            done();
-          });
-      });
-    });
 
-    context('with unauthorized user access token', () => {
-      it('returns an error', (done) => {
-        const offer = OfferFactory.build({ enquiryId });
-        request()
-          .post('/api/v1/offer/create')
-          .set('authorization', userToken)
-          .send(offer)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-            done();
-          });
-      });
-    });
-
-    context('with invalid data', () => {
-      context('when enquiry id is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ enquiryId: '' });
+      context('with valid data', () => {
+        it('returns successful offer', (done) => {
+          const offer = OfferFactory.build({ enquiryId: enquiry._id });
           request()
             .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(offer)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Enquiry ID" is not allowed to be empty');
-              done();
-            });
-        });
-      });
-
-      context('when hand over date is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ handOverDate: '' });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Handover Date" must be a valid date');
-              done();
-            });
-        });
-      });
-
-      context('when hand over date is todays date', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ handOverDate: getTodaysDateStandard() });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                `"Handover Date" should a date later than ${getTodaysDateInWords()}`,
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Offer created');
+              expect(res.body.offer).to.have.property('userInfo');
+              expect(res.body.offer.vendorInfo._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.offer.propertyInfo._id).to.be.eql(newProperty._id.toString());
+              expect(res.body.offer.referenceCode).to.be.eql(
+                `HIG/LVE/OLM/01/${getTodaysDateShortCode()}`,
               );
               done();
             });
         });
       });
 
-      context('when delivery state is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ deliveryState: '' });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Delivery State" is not allowed to be empty');
-              done();
-            });
-        });
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: testVendor,
+        userId: testVendor._id,
+        data: OfferFactory.build({ enquiryId: enquiry._id }),
       });
 
-      context('when total amount payable is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ totalAmountPayable: '' });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Total Amount Payable" must be a number');
-              done();
-            });
-        });
-      });
+      itReturnsForbiddenForInvalidToken({ endpoint, method, user: testUser });
+      itReturnsForbiddenForNoToken({ endpoint, method });
 
-      context('when allocation in percentage is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ allocationInPercentage: '' });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Allocation In Percentage" must be a number');
-              done();
-            });
-        });
-      });
+      context('with invalid data', () => {
+        const invalidEmptyData = {
+          enquiryId: '"Enquiry ID" is not allowed to be empty',
+          handOverDate: '"Handover Date" must be a valid date',
+          deliveryState: '"Delivery State" is not allowed to be empty',
+          totalAmountPayable: '"Total Amount Payable" must be a number',
+          allocationInPercentage: '"Allocation In Percentage" must be a number',
+          title: '"Title" is not allowed to be empty',
+          expires: '"Expiry Date" must be a valid date',
+          initialPayment: '"Initial Payment" must be a number',
+          monthlyPayment: '"Monthly Payment" must be a number',
+          paymentFrequency: '"Payment Frequency" must be a number',
+        };
 
-      context('when allocation in percentage is less than 1', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ allocationInPercentage: 0 });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                '"Allocation In Percentage" must be larger than or equal to 1',
-              );
-              done();
-            });
+        itReturnsErrorForEmptyFields({
+          endpoint,
+          method,
+          user: testVendor,
+          data: invalidEmptyData,
+          factory: OfferFactory,
         });
-      });
 
-      context('when allocation in percentage is greater than 100', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ allocationInPercentage: 101 });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                '"Allocation In Percentage" must be less than or equal to 100',
-              );
-              done();
-            });
-        });
-      });
-
-      context('when title is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ title: '' });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Title" is not allowed to be empty');
-              done();
-            });
-        });
-      });
-
-      context('when expiry date is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ expires: '' });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Expiry Date" must be a valid date');
-              done();
-            });
-        });
-      });
-      context('when expiry date is todays date', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ expires: getTodaysDateStandard() });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                `"Expiry Date" should a date later than ${getTodaysDateInWords()}`,
-              );
-              done();
-            });
-        });
-      });
-      context('when initial payment is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ initialPayment: '' });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Initial Payment" must be a number');
-              done();
-            });
-        });
-      });
-      context('when monthly payment is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ monthlyPayment: '' });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Monthly Payment" must be a number');
-              done();
-            });
-        });
-      });
-      context('when payment frequency is empty', () => {
-        it('returns an error', (done) => {
-          const offer = OfferFactory.build({ paymentFrequency: '' });
-          request()
-            .post('/api/v1/offer/create')
-            .set('authorization', adminToken)
-            .send(offer)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Payment Frequency" must be a number');
-              done();
-            });
-        });
-      });
-    });
-  });
-
-  describe('Accept Offer', () => {
-    const offerId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({
-      _id: enquiryId,
-      userId,
-      propertyId: propertyId1,
-    });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
-    const acceptanceInfo = {
-      offerId,
-      signature: 'http://ballers.ng/signature.png',
-    };
-
-    beforeEach(async () => {
-      await addEnquiry(enquiry);
-      await createOffer(offer);
-    });
-
-    context('with valid data & token', () => {
-      it('returns accepted offer', (done) => {
-        request()
-          .put('/api/v1/offer/accept')
-          .set('authorization', userToken)
-          .send(acceptanceInfo)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Offer accepted');
-            expect(res.body).to.have.property('offer');
-            expect(res.body.offer._id).to.be.eql(offerId.toString());
-            expect(res.body.offer.status).to.be.eql('Interested');
-            expect(res.body.offer.signature).to.be.eql(acceptanceInfo.signature);
-            expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiryId.toString());
-            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
-            expect(sendMailStub.callCount).to.eq(2);
-            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_VENDOR);
-            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_USER);
-            done();
+        context('when hand over date is todays date', () => {
+          it('returns an error', (done) => {
+            const offer = OfferFactory.build({ handOverDate: getTodaysDateStandard() });
+            request()
+              .post('/api/v1/offer/create')
+              .set('authorization', vendorToken)
+              .send(offer)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  `"Handover Date" should a date later than ${getTodaysDateInWords()}`,
+                );
+                done();
+              });
           });
-      });
-    });
-
-    context('when offer is accepted by another user ', () => {
-      it('returns error', (done) => {
-        request()
-          .put('/api/v1/offer/accept')
-          .set('authorization', adminToken)
-          .send(acceptanceInfo)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You cannot accept offer of another user');
-            expect(sendMailStub.callCount).to.eq(0);
-            done();
-          });
-      });
-    });
-
-    context('without token', () => {
-      it('returns error', (done) => {
-        request()
-          .put('/api/v1/offer/accept')
-          .send(acceptanceInfo)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
-            expect(sendMailStub.callCount).to.eq(0);
-            done();
-          });
-      });
-    });
-
-    context('when accept service returns an error', () => {
-      it('returns the error', (done) => {
-        sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
-        request()
-          .put('/api/v1/offer/accept')
-          .set('authorization', userToken)
-          .send(acceptanceInfo)
-          .end((err, res) => {
-            expect(res).to.have.status(400);
-            expect(res.body.success).to.be.eql(false);
-            expect(sendMailStub.callCount).to.eq(0);
-            done();
-            Offer.findByIdAndUpdate.restore();
-          });
-      });
-    });
-
-    context('with invalid data', () => {
-      context('when offer id is empty', () => {
-        it('returns an error', (done) => {
-          const invalidData = { offerId: '', signature: 'http://ballers.ng/signature.png' };
-          request()
-            .put('/api/v1/offer/accept')
-            .set('authorization', userToken)
-            .send(invalidData)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
-              expect(sendMailStub.callCount).to.eq(0);
-              done();
-            });
         });
-      });
-      context('when signature is empty', () => {
-        it('returns an error', (done) => {
-          const invalidData = { offerId, signature: '' };
-          request()
-            .put('/api/v1/offer/accept')
-            .set('authorization', userToken)
-            .send(invalidData)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Signature" is not allowed to be empty');
-              expect(sendMailStub.callCount).to.eq(0);
-              done();
-            });
+
+        context('when allocation in percentage is less than 1', () => {
+          it('returns an error', (done) => {
+            const offer = OfferFactory.build({ allocationInPercentage: 0 });
+            request()
+              .post('/api/v1/offer/create')
+              .set('authorization', vendorToken)
+              .send(offer)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  '"Allocation In Percentage" must be larger than or equal to 1',
+                );
+                done();
+              });
+          });
+        });
+
+        context('when allocation in percentage is greater than 100', () => {
+          it('returns an error', (done) => {
+            const offer = OfferFactory.build({ allocationInPercentage: 101 });
+            request()
+              .post('/api/v1/offer/create')
+              .set('authorization', vendorToken)
+              .send(offer)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  '"Allocation In Percentage" must be less than or equal to 100',
+                );
+                done();
+              });
+          });
+        });
+
+        context('when expiry date is todays date', () => {
+          it('returns an error', (done) => {
+            const offer = OfferFactory.build({ expires: getTodaysDateStandard() });
+            request()
+              .post('/api/v1/offer/create')
+              .set('authorization', vendorToken)
+              .send(offer)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  `"Expiry Date" should a date later than ${getTodaysDateInWords()}`,
+                );
+                done();
+              });
+          });
         });
       });
     });
-  });
 
-  describe('Assign Offer', () => {
-    const offerId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({
-      _id: enquiryId,
-      userId: adminId,
-      propertyId: propertyId1,
-    });
-    const offer = OfferFactory.build({
-      _id: offerId,
-      enquiryId,
-      vendorId: adminId,
-      status: OFFER_STATUS.INTERESTED,
-    });
-    const toAssignDetails = {
-      offerId,
-    };
+    describe('Accept Offer', () => {
+      const endpoint = '/api/v1/offer/accept';
+      const method = 'put';
+
+      const enquiry = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[0]._id,
+        },
+        { generateId: true },
+      );
+      const offer = OfferFactory.build(
+        { enquiryId: enquiry._id, vendorId: vendorUser._id },
+        { generateId: true },
+      );
+      const acceptanceInfo = {
+        offerId: offer._id,
+        signature: 'http://ballers.ng/signature.png',
+      };
 
-    beforeEach(async () => {
-      await addEnquiry(enquiry);
-      await createOffer(offer);
-    });
-
-    context('with valid data & token', () => {
-      it('returns assigned offer', (done) => {
-        request()
-          .put('/api/v1/offer/assign')
-          .set('authorization', adminToken)
-          .send(toAssignDetails)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Offer assigned');
-            expect(res.body).to.have.property('offer');
-            expect(res.body.offer._id).to.be.eql(offerId.toString());
-            expect(res.body.offer.status).to.be.eql('Assigned');
-            expect(res.body.offer.signature).to.be.eql(toAssignDetails.signature);
-            expect(res.body.offer.vendorInfo._id).to.be.eql(adminId.toString());
-            expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiryId.toString());
-            expect(res.body.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
-            done();
-          });
-      });
-    });
-
-    context('without token', () => {
-      it('returns error', (done) => {
-        request()
-          .put('/api/v1/offer/assign')
-          .send(toAssignDetails)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
-            done();
-          });
-      });
-    });
-
-    context('with unauthorized user access token', () => {
-      it('returns error', (done) => {
-        request()
-          .put('/api/v1/offer/assign')
-          .set('authorization', userToken)
-          .send(toAssignDetails)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-            done();
-          });
-      });
-    });
-
-    context('when assign service returns an error', () => {
-      it('returns the error', (done) => {
-        sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
-        request()
-          .put('/api/v1/offer/assign')
-          .set('authorization', adminToken)
-          .send(toAssignDetails)
-          .end((err, res) => {
-            expect(res).to.have.status(400);
-            expect(res.body.success).to.be.eql(false);
-            done();
-            Offer.findByIdAndUpdate.restore();
-          });
-      });
-    });
-
-    context('with invalid data', () => {
-      context('when offer id is empty', () => {
-        it('returns an error', (done) => {
-          const invalidData = { offerId: '' };
-          request()
-            .put('/api/v1/offer/assign')
-            .set('authorization', adminToken)
-            .send(invalidData)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
-              done();
-            });
-        });
-      });
-    });
-  });
-
-  describe('Cancel Offer', () => {
-    let unauthorizedVendorToken;
-    const unauthorizedVendorId = mongoose.Types.ObjectId();
-    const unauthorizedVendor = UserFactory.build({
-      _id: unauthorizedVendorId,
-      role: 0,
-      activated: true,
-    });
-    const offerId1 = mongoose.Types.ObjectId();
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({
-      _id: enquiryId1,
-      userId: adminId,
-      propertyId: propertyId1,
-    });
-    const offer1 = OfferFactory.build({ _id: offerId1, enquiryId: enquiryId1, vendorId: adminId });
-    const toCancelDetails = {
-      offerId: offerId1,
-    };
-
-    const offerId2 = mongoose.Types.ObjectId();
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({
-      _id: enquiryId2,
-      userId: adminId,
-      propertyId: propertyId2,
-    });
-    const offer2 = OfferFactory.build({
-      _id: offerId2,
-      enquiryId: enquiryId2,
-      vendorId: adminId,
-      status: OFFER_STATUS.INTERESTED,
-    });
-
-    const offerId3 = mongoose.Types.ObjectId();
-    const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({
-      _id: enquiryId3,
-      userId: adminId,
-      propertyId: propertyId3,
-    });
-    const offer3 = OfferFactory.build({
-      _id: offerId3,
-      enquiryId: enquiryId3,
-      vendorId: adminId,
-      status: OFFER_STATUS.ASSIGNED,
-    });
-
-    const offerId4 = mongoose.Types.ObjectId();
-    const enquiryId4 = mongoose.Types.ObjectId();
-    const enquiry4 = EnquiryFactory.build({
-      _id: enquiryId4,
-      userId,
-      propertyId: propertyId3,
-    });
-    const offer4 = OfferFactory.build({
-      _id: offerId4,
-      enquiryId: enquiryId4,
-      vendorId: adminId,
-      status: OFFER_STATUS.ALLOCATED,
-    });
-
-    const offerId5 = mongoose.Types.ObjectId();
-    const enquiryId5 = mongoose.Types.ObjectId();
-    const enquiry5 = EnquiryFactory.build({
-      _id: enquiryId5,
-      userId,
-      propertyId: propertyId1,
-    });
-    const offer5 = OfferFactory.build({
-      _id: offerId5,
-      enquiryId: enquiryId5,
-      vendorId: adminId,
-      status: OFFER_STATUS.REJECTED,
-    });
-
-    const offerId6 = mongoose.Types.ObjectId();
-    const enquiryId6 = mongoose.Types.ObjectId();
-    const enquiry6 = EnquiryFactory.build({
-      _id: enquiryId6,
-      userId,
-      propertyId: propertyId2,
-    });
-    const offer6 = OfferFactory.build({
-      _id: offerId6,
-      enquiryId: enquiryId6,
-      vendorId: adminId,
-      status: OFFER_STATUS.CANCELLED,
-    });
-
-    beforeEach(async () => {
-      unauthorizedVendorToken = await addUser(unauthorizedVendor);
-      await addEnquiry(enquiry1);
-      await addEnquiry(enquiry2);
-      await addEnquiry(enquiry3);
-      await addEnquiry(enquiry4);
-      await addEnquiry(enquiry5);
-      await addEnquiry(enquiry6);
-      await createOffer(offer1);
-      await createOffer(offer2);
-      await createOffer(offer3);
-      await createOffer(offer4);
-      await createOffer(offer5);
-      await createOffer(offer6);
-    });
-
-    context('with valid data & token', () => {
-      it('returns cancelled offer', (done) => {
-        request()
-          .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
-          .send(toCancelDetails)
-          .end(async (err, res) => {
-            const enquiry = await getEnquiryById(enquiryId1);
-            expect(enquiry.approved).to.be.eql(false);
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Offer cancelled');
-            done();
-          });
-      });
-    });
-
-    context('when offer is cancelled by unauthorized vendor', () => {
-      it('returns forbidden error', (done) => {
-        request()
-          .put('/api/v1/offer/cancel')
-          .set('authorization', unauthorizedVendorToken)
-          .send(toCancelDetails)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-            done();
-          });
-      });
-    });
-
-    context('when an offer is canceled by a user', () => {
-      it('returns forbidden error', (done) => {
-        request()
-          .put('/api/v1/offer/cancel')
-          .set('authorization', userToken)
-          .send(toCancelDetails)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-            done();
-          });
-      });
-    });
-
-    context('when offer has been accepted', () => {
-      it('returns error', (done) => {
-        request()
-          .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
-          .send({ offerId: offerId2 })
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
-            done();
-          });
-      });
-    });
-
-    context('when offer has been assigned', () => {
-      it('returns error', (done) => {
-        request()
-          .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
-          .send({ offerId: offerId3 })
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
-            done();
-          });
-      });
-    });
-
-    context('when offer has been allocated', () => {
-      it('returns error', (done) => {
-        request()
-          .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
-          .send({ offerId: offerId4 })
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
-            done();
-          });
-      });
-    });
-
-    context('when an offer has been rejected', () => {
-      it('returns cancelled offer', (done) => {
-        request()
-          .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
-          .send({ offerId: offerId5 })
-          .end(async (err, res) => {
-            const enquiry = await getEnquiryById(enquiryId5);
-            expect(enquiry.approved).to.be.eql(false);
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Offer cancelled');
-            done();
-          });
-      });
-    });
-
-    context('when an offer has been cancelled', () => {
-      it('returns cancelled offer', (done) => {
-        request()
-          .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
-          .send({ offerId: offerId6 })
-          .end(async (err, res) => {
-            const enquiry = await getEnquiryById(enquiryId6);
-            expect(enquiry.approved).to.be.eql(false);
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Offer cancelled');
-            done();
-          });
-      });
-    });
-
-    context('without token', () => {
-      it('returns error', (done) => {
-        request()
-          .put('/api/v1/offer/cancel')
-          .send(toCancelDetails)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
-            done();
-          });
-      });
-    });
-
-    context('when cancel service returns an error', () => {
-      it('returns the error', (done) => {
-        sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
-        request()
-          .put('/api/v1/offer/cancel')
-          .set('authorization', adminToken)
-          .send(toCancelDetails)
-          .end((err, res) => {
-            expect(res).to.have.status(400);
-            expect(res.body.success).to.be.eql(false);
-            done();
-            Offer.findByIdAndUpdate.restore();
-          });
-      });
-    });
-
-    context('with invalid data', () => {
-      context('when offer id is empty', () => {
-        it('returns an error', (done) => {
-          const invalidData = { offerId: '' };
-          request()
-            .put('/api/v1/offer/cancel')
-            .set('authorization', adminToken)
-            .send(invalidData)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
-              done();
-            });
-        });
-      });
-    });
-  });
-
-  describe('Get all user owned offers', () => {
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
-    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId, userId });
-
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({
-      _id: enquiryId2,
-      userId: adminId,
-      propertyId: propertyId2,
-    });
-    const offer2 = OfferFactory.build({
-      enquiryId: enquiryId2,
-      vendorId: adminId,
-      userId: adminId,
-    });
-
-    const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
-    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId, userId });
-
-    context('when no offer is found', () => {
-      it('returns empty array of offers', (done) => {
-        request()
-          .get('/api/v1/offer/user/all')
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('offers');
-            expect(res.body.offers.length).to.be.eql(0);
-            done();
-          });
-      });
-    });
-
-    describe('when offers exist in db', () => {
-      beforeEach(async () => {
-        await addEnquiry(enquiry1);
-        await createOffer(offer1);
-        await addEnquiry(enquiry2);
-        await createOffer(offer2);
-        await addEnquiry(enquiry3);
-        await createOffer(offer3);
-      });
-
-      context('with a valid token & id', async () => {
-        it('returns successful payload', (done) => {
-          request()
-            .get('/api/v1/offer/user/all')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offers');
-              expect(res.body.offers[0].concern.length).to.be.eql(0);
-              expect(res.body.offers[1].concern.length).to.be.eql(0);
-              expect(res.body.offers.length).to.be.eql(2);
-              expect(res.body.offers[0].userId).to.be.eql(userId.toString());
-              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/offer/user/all')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when getAllOffers service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/offer/user/all')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Offer.aggregate.restore();
-            });
-        });
-      });
-    });
-  });
-
-  describe('Get all admin owned offers', () => {
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
-    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId, userId });
-
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({ _id: enquiryId2, userId, propertyId: propertyId2 });
-    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: userId, userId });
-
-    const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({ _id: enquiryId3, userId, propertyId: propertyId3 });
-    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId, userId });
-
-    context('when no offer is found', () => {
-      it('returns empty array of offers', (done) => {
-        request()
-          .get('/api/v1/offer/admin/all')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('offers');
-            expect(res.body.offers.length).to.be.eql(0);
-            done();
-          });
-      });
-    });
-
-    describe('when offers exist in db', () => {
-      beforeEach(async () => {
-        await addEnquiry(enquiry1);
-        await createOffer(offer1);
-        await addEnquiry(enquiry2);
-        await createOffer(offer2);
-        await addEnquiry(enquiry3);
-        await createOffer(offer3);
-      });
-
-      context('with a valid token & id', async () => {
-        it('returns successful payload', (done) => {
-          request()
-            .get('/api/v1/offer/admin/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offers');
-              expect(res.body.offers.length).to.be.eql(2);
-              expect(res.body.offers[0].vendorId).to.be.eql(adminId.toString());
-              expect(res.body.offers[0].concern.length).to.be.eql(0);
-              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/offer/admin/all')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when getAllOffers service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/offer/admin/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Offer.aggregate.restore();
-            });
-        });
-      });
-    });
-  });
-
-  describe('Get one offer', () => {
-    const offerId = mongoose.Types.ObjectId();
-    const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({
-      _id: enquiryId,
-      userId: adminId,
-      propertyId: propertyId1,
-    });
-    const offer = OfferFactory.build({ _id: offerId, enquiryId, vendorId: adminId });
-
-    beforeEach(async () => {
-      await addEnquiry(enquiry);
-      await createOffer(offer);
-    });
-
-    context('with a valid token & id', () => {
-      it('returns successful payload', (done) => {
-        request()
-          .get(`/api/v1/offer/${offerId}`)
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('offer');
-            expect(res.body.offer.concern.length).to.be.eql(0);
-            expect(res.body.offer._id).to.be.eql(offerId.toString());
-            done();
-          });
-      });
-    });
-
-    context('when user token is used', () => {
-      beforeEach(async () => {
-        await User.findByIdAndDelete(userId);
-      });
-      it('returns token error', (done) => {
-        request()
-          .get(`/api/v1/offer/${offerId}`)
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(404);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Invalid token');
-            done();
-          });
-      });
-    });
-
-    context('with an invalid offer id', () => {
-      const invalidId = mongoose.Types.ObjectId();
-      it('returns not found', (done) => {
-        request()
-          .get(`/api/v1/offer/${invalidId}`)
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(404);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Offer not found');
-            done();
-          });
-      });
-    });
-
-    context('without token', () => {
-      it('returns error', (done) => {
-        request()
-          .get(`/api/v1/offer/${offerId}`)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
-            done();
-          });
-      });
-    });
-
-    context('when getOffer service fails', () => {
-      it('returns the error', (done) => {
-        sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
-        request()
-          .get(`/api/v1/offer/${offerId}`)
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(500);
-            done();
-            Offer.aggregate.restore();
-          });
-      });
-    });
-  });
-
-  describe('Get all offers of a user', () => {
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({ _id: enquiryId1, userId, propertyId: propertyId1 });
-    const offer1 = OfferFactory.build({ enquiryId: enquiryId1, vendorId: adminId });
-
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({
-      _id: enquiryId2,
-      userId: adminId,
-      propertyId: propertyId2,
-    });
-    const offer2 = OfferFactory.build({ enquiryId: enquiryId2, vendorId: adminId });
-
-    const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({
-      _id: enquiryId3,
-      userId: adminId,
-      propertyId: propertyId3,
-    });
-    const offer3 = OfferFactory.build({ enquiryId: enquiryId3, vendorId: adminId });
-
-    context('when no offer is found', () => {
-      it('returns empty array of offers', (done) => {
-        request()
-          .get(`/api/v1/offer/user/${userId}`)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('offers');
-            expect(res.body.offers.length).to.be.eql(0);
-            done();
-          });
-      });
-    });
-
-    describe('when offers exist in db', () => {
-      beforeEach(async () => {
-        await addEnquiry(enquiry1);
-        await createOffer(offer1);
-        await addEnquiry(enquiry2);
-        await createOffer(offer2);
-        await addEnquiry(enquiry3);
-        await createOffer(offer3);
-      });
-
-      context('with a valid token & id', async () => {
-        it('returns successful payload', (done) => {
-          request()
-            .get(`/api/v1/offer/user/${userId}`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offers');
-              expect(res.body.offers.length).to.be.eql(1);
-              expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
-              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get(`/api/v1/offer/user/${userId}`)
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when getAllOffers service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get(`/api/v1/offer/user/${userId}`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Offer.aggregate.restore();
-            });
-        });
-      });
-    });
-  });
-
-  describe('Get all active offers', () => {
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({
-      _id: enquiryId1,
-      userId: adminId,
-      propertyId: propertyId1,
-    });
-    const offer1 = OfferFactory.build({
-      enquiryId: enquiryId1,
-      vendorId: adminId,
-      status: OFFER_STATUS.GENERATED,
-    });
-
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({
-      _id: enquiryId2,
-      userId: adminId,
-      propertyId: propertyId2,
-    });
-    const offer2 = OfferFactory.build({
-      enquiryId: enquiryId2,
-      vendorId: adminId,
-      expires: '2005-11-12T00:00:00.000Z',
-      status: OFFER_STATUS.INTERESTED,
-    });
-
-    const enquiryId3 = mongoose.Types.ObjectId();
-    const enquiry3 = EnquiryFactory.build({
-      _id: enquiryId3,
-      userId: adminId,
-      propertyId: propertyId3,
-    });
-    const offer3 = OfferFactory.build({
-      enquiryId: enquiryId3,
-      vendorId: adminId,
-      status: OFFER_STATUS.NEGLECTED,
-    });
-
-    const enquiryId4 = mongoose.Types.ObjectId();
-    const enquiry4 = EnquiryFactory.build({
-      _id: enquiryId4,
-      userId,
-      propertyId: propertyId1,
-    });
-    const offerId4 = mongoose.Types.ObjectId();
-    const offer4 = OfferFactory.build({
-      _id: offerId4,
-      enquiryId: enquiryId4,
-      vendorId: adminId,
-      expires: '2030-02-12T00:00:00.000Z',
-      status: OFFER_STATUS.INTERESTED,
-    });
-
-    const enquiryId5 = mongoose.Types.ObjectId();
-    const enquiry5 = EnquiryFactory.build({
-      _id: enquiryId5,
-      userId,
-      propertyId: propertyId2,
-    });
-    const offerId5 = mongoose.Types.ObjectId();
-    const offer5 = OfferFactory.build({
-      _id: offerId5,
-      enquiryId: enquiryId5,
-      vendorId: adminId,
-      expires: '2030-11-21T00:00:00.000Z',
-      status: OFFER_STATUS.ASSIGNED,
-    });
-
-    const enquiryId6 = mongoose.Types.ObjectId();
-    const enquiry6 = EnquiryFactory.build({
-      _id: enquiryId6,
-      userId,
-      propertyId: propertyId3,
-    });
-    const offerId6 = mongoose.Types.ObjectId();
-    const offer6 = OfferFactory.build({
-      _id: offerId6,
-      enquiryId: enquiryId6,
-      vendorId: adminId,
-      expires: '2030-05-02T00:00:00.000Z',
-      status: OFFER_STATUS.ALLOCATED,
-    });
-
-    context('when no offer is found', () => {
-      it('returns empty array of offers', (done) => {
-        request()
-          .get('/api/v1/offer/active')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('offers');
-            expect(res.body.offers.length).to.be.eql(0);
-            done();
-          });
-      });
-    });
-
-    describe('when offers exist in db', () => {
-      beforeEach(async () => {
-        await addEnquiry(enquiry1);
-        await createOffer(offer1);
-        await addEnquiry(enquiry2);
-        await createOffer(offer2);
-        await addEnquiry(enquiry3);
-        await createOffer(offer3);
-        await addEnquiry(enquiry4);
-        await createOffer(offer4);
-        await addEnquiry(enquiry5);
-        await createOffer(offer5);
-        await addEnquiry(enquiry6);
-        await createOffer(offer6);
-      });
-
-      context('with a valid token & id', async () => {
-        it('returns successful payload', (done) => {
-          request()
-            .get('/api/v1/offer/active')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offers');
-              expect(res.body.offers.length).to.be.eql(1);
-              expect(res.body.offers[0].concern.length).to.be.eql(0);
-              expect(res.body.offers[0].vendorInfo._id).to.be.eql(adminId.toString());
-              expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiryId1.toString());
-              expect(res.body.offers[0].propertyInfo._id).to.be.eql(propertyId1.toString());
-              done();
-            });
-        });
-      });
-
-      context('with a valid token & id', async () => {
-        it('returns sorted offers', (done) => {
-          request()
-            .get('/api/v1/offer/active')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offers');
-              expect(res.body.offers.length).to.be.eql(3);
-              expect(res.body.offers[0]._id).to.be.eql(offerId4.toString());
-              expect(res.body.offers[1]._id).to.be.eql(offerId6.toString());
-              expect(res.body.offers[2]._id).to.be.eql(offerId5.toString());
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/offer/active')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when getActiveOffers service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/offer/active')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Offer.aggregate.restore();
-            });
-        });
-      });
-    });
-  });
-
-  describe('Raise a concern', () => {
-    const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({
-      _id: enquiryId,
-      userId,
-      propertyId: propertyId1,
-    });
-    const offerId = mongoose.Types.ObjectId();
-    const offer = OfferFactory.build({
-      _id: offerId,
-      enquiryId,
-      vendorId: adminId,
-    });
-    const concern = {
-      offerId,
-      question: 'Are all rooms ensuite',
-    };
-
-    describe('when offers exist in db', () => {
       beforeEach(async () => {
         await addEnquiry(enquiry);
         await createOffer(offer);
       });
 
-      context('with a valid token & id', async () => {
-        it('returns successful payload', (done) => {
+      context('with valid data & token', () => {
+        it('returns accepted offer', (done) => {
           request()
-            .put('/api/v1/offer/raise-concern')
+            .put('/api/v1/offer/accept')
             .set('authorization', userToken)
-            .send(concern)
+            .send(acceptanceInfo)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Offer accepted');
               expect(res.body).to.have.property('offer');
-              expect(res.body.offer.concern.length).to.be.eql(1);
-              expect(res.body.offer.concern[0].status).to.be.eql('Pending');
-              expect(res.body.offer.concern[0].question).to.be.eql(concern.question);
-              expect(sendMailStub.callCount).to.eq(1);
-              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RAISE_CONCERN);
+              expect(res.body.offer._id).to.be.eql(offer._id.toString());
+              expect(res.body.offer.status).to.be.eql('Interested');
+              expect(res.body.offer.signature).to.be.eql(acceptanceInfo.signature);
+              expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiry._id.toString());
+              expect(res.body.offer.propertyInfo._id).to.be.eql(properties[0]._id.toString());
+              expect(sendMailStub.callCount).to.eq(2);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_VENDOR);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_USER);
               done();
             });
         });
       });
 
-      context('when a concern has been raised previously on offer', async () => {
-        const firstConcern = { offerId, userId, question: 'Can you send me the house plan' };
-        beforeEach(async () => {
-          await raiseConcern(firstConcern);
-        });
-        it('returns successful payload', (done) => {
-          request()
-            .put('/api/v1/offer/raise-concern')
-            .set('authorization', userToken)
-            .send(concern)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offer');
-              expect(res.body.offer.concern.length).to.be.eql(2);
-              expect(res.body.offer.concern[1].status).to.be.eql('Pending');
-              expect(res.body.offer.concern[0].question).to.be.eql(firstConcern.question);
-              expect(res.body.offer.concern[1].question).to.be.eql(concern.question);
-              expect(sendMailStub.callCount).to.eq(1);
-              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RAISE_CONCERN);
-              done();
-            });
-        });
-      });
-
-      context('with invalid data', () => {
-        context('when offer id is empty', () => {
-          it('returns an error', (done) => {
-            request()
-              .put('/api/v1/offer/raise-concern')
-              .set('authorization', userToken)
-              .send({ offerId: '', question: 'Are all rooms ensuite' })
-              .end((err, res) => {
-                expect(res).to.have.status(412);
-                expect(res.body.success).to.be.eql(false);
-                expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
-                expect(sendMailStub.callCount).to.eq(0);
-                done();
-              });
-          });
-        });
-
-        context('when question is empty', () => {
-          it('returns an error', (done) => {
-            request()
-              .put('/api/v1/offer/raise-concern')
-              .set('authorization', userToken)
-              .send({ offerId, question: '' })
-              .end((err, res) => {
-                expect(res).to.have.status(412);
-                expect(res.body.success).to.be.eql(false);
-                expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"Question" is not allowed to be empty');
-                expect(sendMailStub.callCount).to.eq(0);
-                done();
-              });
-          });
-        });
-      });
-
-      context('without token', () => {
+      context('when offer is accepted by another user ', () => {
         it('returns error', (done) => {
           request()
-            .put('/api/v1/offer/raise-concern')
-            .send(concern)
+            .put('/api/v1/offer/accept')
+            .set('authorization', adminToken)
+            .send(acceptanceInfo)
             .end((err, res) => {
-              expect(res).to.have.status(403);
+              expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
+              expect(res.body.message).to.be.eql('You cannot accept offer of another user');
               expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
       });
 
-      context('when getActiveOffers service fails', () => {
+      itReturnsForbiddenForNoToken({ endpoint, method, data: acceptanceInfo });
+
+      context('when accept service returns an error', () => {
         it('returns the error', (done) => {
           sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
           request()
-            .put('/api/v1/offer/raise-concern')
+            .put('/api/v1/offer/accept')
             .set('authorization', userToken)
-            .send(concern)
+            .send(acceptanceInfo)
             .end((err, res) => {
               expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
               expect(sendMailStub.callCount).to.eq(0);
               done();
               Offer.findByIdAndUpdate.restore();
             });
         });
       });
-    });
-  });
-
-  describe('Resolve a concern', () => {
-    const enquiryId = mongoose.Types.ObjectId();
-    const enquiry = EnquiryFactory.build({
-      _id: enquiryId,
-      userId,
-      propertyId: propertyId1,
-    });
-    const offerId = mongoose.Types.ObjectId();
-    const concernId = mongoose.Types.ObjectId();
-    const offer = OfferFactory.build({
-      _id: offerId,
-      enquiryId,
-      vendorId: adminId,
-      concern: [
-        {
-          _id: concernId,
-          question: 'Are all rooms ensuite',
-          status: CONCERN_STATUS.PENDING,
-        },
-      ],
-    });
-
-    const concern = {
-      offerId,
-      concernId,
-      response: 'Yes all rooms are',
-    };
-
-    describe('when an offer exist in db', () => {
-      beforeEach(async () => {
-        await addEnquiry(enquiry);
-        await createOffer(offer);
-      });
-
-      context('with a valid token & id', async () => {
-        it('resolves the right concern', (done) => {
-          request()
-            .put('/api/v1/offer/resolve-concern')
-            .set('authorization', adminToken)
-            .send(concern)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('offer');
-              expect(res.body.offer.concern.length).to.be.eql(1);
-              expect(res.body.offer.concern[0].status).to.be.eql('Resolved');
-              expect(res.body.offer.concern[0].question).to.be.eql(offer.concern[0].question);
-              expect(res.body.offer.concern[0].response).to.be.eql(concern.response);
-              expect(sendMailStub.callCount).to.eq(1);
-              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RESOLVE_CONCERN);
-              done();
-            });
-        });
-      });
 
       context('with invalid data', () => {
         context('when offer id is empty', () => {
           it('returns an error', (done) => {
+            const invalidData = { offerId: '', signature: 'http://ballers.ng/signature.png' };
             request()
-              .put('/api/v1/offer/resolve-concern')
-              .set('authorization', adminToken)
-              .send({ offerId: '', concernId, question: 'Are all rooms ensuite' })
+              .put('/api/v1/offer/accept')
+              .set('authorization', userToken)
+              .send(invalidData)
               .end((err, res) => {
                 expect(res).to.have.status(412);
                 expect(res.body.success).to.be.eql(false);
@@ -1656,85 +350,1304 @@ describe('Offer Controller', () => {
               });
           });
         });
-
-        context('when concern id is empty', () => {
+        context('when signature is empty', () => {
           it('returns an error', (done) => {
+            const invalidData = { offerId: offer._id, signature: '' };
             request()
-              .put('/api/v1/offer/resolve-concern')
-              .set('authorization', adminToken)
-              .send({ concernId: '', offerId, question: 'Are all rooms ensuite' })
+              .put('/api/v1/offer/accept')
+              .set('authorization', userToken)
+              .send(invalidData)
               .end((err, res) => {
                 expect(res).to.have.status(412);
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"Concern Id" is not allowed to be empty');
-                expect(sendMailStub.callCount).to.eq(0);
-                done();
-              });
-          });
-        });
-
-        context('when response is empty', () => {
-          it('returns an error', (done) => {
-            request()
-              .put('/api/v1/offer/resolve-concern')
-              .set('authorization', adminToken)
-              .send({ offerId, concernId, response: '' })
-              .end((err, res) => {
-                expect(res).to.have.status(412);
-                expect(res.body.success).to.be.eql(false);
-                expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"Response" is not allowed to be empty');
+                expect(res.body.error).to.be.eql('"Signature" is not allowed to be empty');
                 expect(sendMailStub.callCount).to.eq(0);
                 done();
               });
           });
         });
       });
+    });
+
+    describe('Assign Offer', () => {
+      const endpoint = '/api/v1/offer/assign';
+      const method = 'put';
+
+      const enquiry = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[0]._id,
+        },
+        { generateId: true },
+      );
+      const offer = OfferFactory.build(
+        {
+          enquiryId: enquiry._id,
+          vendorId: vendorUser._id,
+          status: OFFER_STATUS.INTERESTED,
+        },
+        { generateId: true },
+      );
+      const toAssignDetails = {
+        offerId: offer._id,
+      };
+
+      beforeEach(async () => {
+        await addEnquiry(enquiry);
+        await createOffer(offer);
+      });
+
+      context('with valid data & token', () => {
+        it('returns assigned offer', (done) => {
+          request()
+            .put('/api/v1/offer/assign')
+            .set('authorization', vendorToken)
+            .send(toAssignDetails)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Offer assigned');
+              expect(res.body).to.have.property('offer');
+              expect(res.body.offer._id).to.be.eql(offer._id.toString());
+              expect(res.body.offer.status).to.be.eql('Assigned');
+              expect(res.body.offer.signature).to.be.eql(toAssignDetails.signature);
+              expect(res.body.offer.vendorInfo._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiry._id.toString());
+              expect(res.body.offer.propertyInfo._id).to.be.eql(properties[0]._id.toString());
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method, data: toAssignDetails });
 
       context('with unauthorized user access token', () => {
-        it('returns an error', (done) => {
+        it('returns error', (done) => {
           request()
-            .put('/api/v1/offer/resolve-concern')
+            .put('/api/v1/offer/assign')
             .set('authorization', userToken)
-            .send(concern)
+            .send(toAssignDetails)
             .end((err, res) => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
       });
 
-      context('without token', () => {
-        it('returns error', (done) => {
+      context('when assign service returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
           request()
-            .put('/api/v1/offer/resolve-concern')
-            .send(concern)
+            .put('/api/v1/offer/assign')
+            .set('authorization', vendorToken)
+            .send(toAssignDetails)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              Offer.findByIdAndUpdate.restore();
+            });
+        });
+      });
+
+      context('with invalid data', () => {
+        context('when offer id is empty', () => {
+          it('returns an error', (done) => {
+            const invalidData = { offerId: '' };
+            request()
+              .put('/api/v1/offer/assign')
+              .set('authorization', vendorToken)
+              .send(invalidData)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+                done();
+              });
+          });
+        });
+      });
+    });
+
+    describe('Cancel Offer', () => {
+      const endpoint = '/api/v1/offer/cancel';
+      const method = 'put';
+      let unauthorizedVendorToken;
+      const unauthorizedVendor = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+        },
+        { generateId: true },
+      );
+      const enquiry1 = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[0]._id,
+        },
+        { generateId: true },
+      );
+      const offer1 = OfferFactory.build(
+        {
+          enquiryId: enquiry1._id,
+          vendorId: vendorUser._id,
+        },
+        { generateId: true },
+      );
+      const toCancelDetails = {
+        offerId: offer1._id,
+      };
+
+      const enquiry2 = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[1]._id,
+        },
+        { generateId: true },
+      );
+      const offer2 = OfferFactory.build(
+        {
+          enquiryId: enquiry2._id,
+          vendorId: vendorUser._id,
+          status: OFFER_STATUS.INTERESTED,
+        },
+        { generateId: true },
+      );
+
+      const enquiry3 = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[2]._id,
+        },
+        { generateId: true },
+      );
+      const offer3 = OfferFactory.build(
+        {
+          enquiryId: enquiry3._id,
+          vendorId: vendorUser._id,
+          status: OFFER_STATUS.ASSIGNED,
+        },
+        { generateId: true },
+      );
+
+      const enquiry4 = EnquiryFactory.build(
+        {
+          userId: adminUser._id,
+          propertyId: properties[2]._id,
+        },
+        { generateId: true },
+      );
+      const offer4 = OfferFactory.build(
+        {
+          enquiryId: enquiry4._id,
+          vendorId: vendorUser._id,
+          status: OFFER_STATUS.ALLOCATED,
+        },
+        { generateId: true },
+      );
+
+      const enquiry5 = EnquiryFactory.build(
+        {
+          userId: adminUser._id,
+          propertyId: properties[0]._id,
+        },
+        { generateId: true },
+      );
+      const offer5 = OfferFactory.build(
+        {
+          enquiryId: enquiry5._id,
+          vendorId: vendorUser._id,
+          status: OFFER_STATUS.REJECTED,
+        },
+        { generateId: true },
+      );
+
+      const enquiry6 = EnquiryFactory.build(
+        {
+          userId: adminUser._id,
+          propertyId: properties[1]._id,
+        },
+        { generateId: true },
+      );
+      const offer6 = OfferFactory.build(
+        {
+          enquiryId: enquiry6._id,
+          vendorId: vendorUser._id,
+          status: OFFER_STATUS.CANCELLED,
+        },
+        { generateId: true },
+      );
+
+      beforeEach(async () => {
+        unauthorizedVendorToken = await addUser(unauthorizedVendor);
+        await addEnquiry(enquiry1);
+        await addEnquiry(enquiry2);
+        await addEnquiry(enquiry3);
+        await addEnquiry(enquiry4);
+        await addEnquiry(enquiry5);
+        await addEnquiry(enquiry6);
+        await createOffer(offer1);
+        await createOffer(offer2);
+        await createOffer(offer3);
+        await createOffer(offer4);
+        await createOffer(offer5);
+        await createOffer(offer6);
+      });
+
+      context('with valid data & token', () => {
+        it('returns cancelled offer', (done) => {
+          request()
+            .put('/api/v1/offer/cancel')
+            .set('authorization', vendorToken)
+            .send(toCancelDetails)
+            .end(async (err, res) => {
+              const enquiry = await getEnquiryById(enquiry1._id);
+              expect(enquiry.approved).to.be.eql(false);
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Offer cancelled');
+              done();
+            });
+        });
+      });
+
+      context('when offer is cancelled by unauthorized vendor', () => {
+        it('returns forbidden error', (done) => {
+          request()
+            .put('/api/v1/offer/cancel')
+            .set('authorization', unauthorizedVendorToken)
+            .send(toCancelDetails)
             .end((err, res) => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              expect(sendMailStub.callCount).to.eq(0);
+              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
               done();
             });
         });
       });
 
-      context('when getActiveOffers service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Offer, 'findOneAndUpdate').throws(new Error('Type Error'));
+      context('when an offer is canceled by a user', () => {
+        it('returns forbidden error', (done) => {
           request()
-            .put('/api/v1/offer/resolve-concern')
-            .set('authorization', adminToken)
-            .send(concern)
+            .put('/api/v1/offer/cancel')
+            .set('authorization', userToken)
+            .send(toCancelDetails)
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+              done();
+            });
+        });
+      });
+
+      context('when offer has been accepted', () => {
+        it('returns error', (done) => {
+          request()
+            .put('/api/v1/offer/cancel')
+            .set('authorization', vendorToken)
+            .send({ offerId: offer2._id })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
+              done();
+            });
+        });
+      });
+
+      context('when offer has been assigned', () => {
+        it('returns error', (done) => {
+          request()
+            .put('/api/v1/offer/cancel')
+            .set('authorization', vendorToken)
+            .send({ offerId: offer3._id })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
+              done();
+            });
+        });
+      });
+
+      context('when offer has been allocated', () => {
+        it('returns error', (done) => {
+          request()
+            .put('/api/v1/offer/cancel')
+            .set('authorization', vendorToken)
+            .send({ offerId: offer4._id })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You cannot cancel an accepted offer');
+              done();
+            });
+        });
+      });
+
+      context('when an offer has been rejected', () => {
+        it('returns cancelled offer', (done) => {
+          request()
+            .put('/api/v1/offer/cancel')
+            .set('authorization', vendorToken)
+            .send({ offerId: offer5._id })
+            .end(async (err, res) => {
+              const enquiry = await getEnquiryById(enquiry5._id);
+              expect(enquiry.approved).to.be.eql(false);
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Offer cancelled');
+              done();
+            });
+        });
+      });
+
+      context('when an offer has been cancelled', () => {
+        it('returns cancelled offer', (done) => {
+          request()
+            .put('/api/v1/offer/cancel')
+            .set('authorization', vendorToken)
+            .send({ offerId: offer6._id })
+            .end(async (err, res) => {
+              const enquiry = await getEnquiryById(enquiry6._id);
+              expect(enquiry.approved).to.be.eql(false);
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Offer cancelled');
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      context('when cancel service returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            .put('/api/v1/offer/cancel')
+            .set('authorization', vendorToken)
+            .send(toCancelDetails)
             .end((err, res) => {
               expect(res).to.have.status(400);
-              expect(sendMailStub.callCount).to.eq(0);
+              expect(res.body.success).to.be.eql(false);
               done();
-              Offer.findOneAndUpdate.restore();
+              Offer.findByIdAndUpdate.restore();
+            });
+        });
+      });
+
+      context('with invalid data', () => {
+        context('when offer id is empty', () => {
+          it('returns an error', (done) => {
+            const invalidData = { offerId: '' };
+            request()
+              .put('/api/v1/offer/cancel')
+              .set('authorization', vendorToken)
+              .send(invalidData)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+                done();
+              });
+          });
+        });
+      });
+    });
+
+    describe('Get one offer', () => {
+      const enquiry = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[0]._id,
+        },
+        { generateId: true },
+      );
+      const offer = OfferFactory.build(
+        { enquiryId: enquiry._id, vendorId: vendorUser._id },
+        { generateId: true },
+      );
+
+      const method = 'get';
+      const endpoint = `/api/v1/offer/${offer._id}`;
+
+      beforeEach(async () => {
+        await addEnquiry(enquiry);
+        await createOffer(offer);
+      });
+
+      context('with a valid token & id', () => {
+        [...new Array(3)].map((_, index) =>
+          it('returns successful payload', (done) => {
+            const property = PropertyFactory.build();
+            request()
+              .get(`/api/v1/offer/${offer._id}`)
+              .set('authorization', [userToken, adminToken, vendorToken][index])
+              .send(property)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body).to.have.property('offer');
+                expect(res.body.offer.concern.length).to.be.eql(0);
+                expect(res.body.offer._id).to.be.eql(offer._id.toString());
+                done();
+              });
+          }),
+        );
+      });
+
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: testUser,
+        userId: testUser._id,
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      context('with an invalid offer id', () => {
+        const invalidId = mongoose.Types.ObjectId();
+        it('returns not found', (done) => {
+          request()
+            .get(`/api/v1/offer/${invalidId}`)
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Offer not found');
+              done();
+            });
+        });
+      });
+
+      context('when getOffer service fails', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
+          request()
+            .get(`/api/v1/offer/${offer._id}`)
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(500);
+              done();
+              Offer.aggregate.restore();
+            });
+        });
+      });
+    });
+
+    describe('Get all active offers', () => {
+      const endpoint = '/api/v1/offer/active';
+      const method = 'get';
+
+      const enquiry1 = EnquiryFactory.build(
+        {
+          userId: adminUser._id,
+          propertyId: properties[0]._id,
+        },
+        { generateId: true },
+      );
+      const offer1 = OfferFactory.build(
+        {
+          enquiryId: enquiry1._id,
+          vendorId: vendorUser._id,
+          status: OFFER_STATUS.GENERATED,
+        },
+        { generateId: true },
+      );
+
+      const enquiry2 = EnquiryFactory.build(
+        {
+          userId: adminUser._id,
+          propertyId: properties[1]._id,
+        },
+        { generateId: true },
+      );
+      const offer2 = OfferFactory.build(
+        {
+          enquiryId: enquiry2._id,
+          vendorId: vendorUser._id,
+          expires: '2005-11-12T00:00:00.000Z',
+          status: OFFER_STATUS.INTERESTED,
+        },
+        { generateId: true },
+      );
+
+      const enquiry3 = EnquiryFactory.build(
+        {
+          userId: adminUser._id,
+          propertyId: properties[2]._id,
+        },
+        { generateId: true },
+      );
+      const offer3 = OfferFactory.build(
+        {
+          enquiryId: enquiry3._id,
+          vendorId: vendorUser._id,
+          status: OFFER_STATUS.NEGLECTED,
+        },
+        { generateId: true },
+      );
+
+      const enquiry4 = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[0]._id,
+        },
+        { generateId: true },
+      );
+      const offer4 = OfferFactory.build(
+        {
+          enquiryId: enquiry4._id,
+          vendorId: vendorUser._id,
+          expires: '2030-02-12T00:00:00.000Z',
+          status: OFFER_STATUS.INTERESTED,
+        },
+        { generateId: true },
+      );
+
+      const enquiry5 = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[1]._id,
+        },
+        { generateId: true },
+      );
+      const offer5 = OfferFactory.build(
+        {
+          enquiryId: enquiry5._id,
+          vendorId: vendorUser._id,
+          expires: '2030-11-21T00:00:00.000Z',
+          status: OFFER_STATUS.ASSIGNED,
+        },
+        { generateId: true },
+      );
+
+      const enquiry6 = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[2]._id,
+        },
+        { generateId: true },
+      );
+      const offer6 = OfferFactory.build(
+        {
+          enquiryId: enquiry6._id,
+          vendorId: vendorUser._id,
+          expires: '2030-05-02T00:00:00.000Z',
+          status: OFFER_STATUS.ALLOCATED,
+        },
+        { generateId: true },
+      );
+
+      context('when no offer is found', () => {
+        it('returns empty array of offers', (done) => {
+          request()
+            .get('/api/v1/offer/active')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('offers');
+              expect(res.body.offers.length).to.be.eql(0);
+              done();
+            });
+        });
+      });
+
+      describe('when offers exist in db', () => {
+        beforeEach(async () => {
+          await addEnquiry(enquiry1);
+          await createOffer(offer1);
+          await addEnquiry(enquiry2);
+          await createOffer(offer2);
+          await addEnquiry(enquiry3);
+          await createOffer(offer3);
+          await addEnquiry(enquiry4);
+          await createOffer(offer4);
+          await addEnquiry(enquiry5);
+          await createOffer(offer5);
+          await addEnquiry(enquiry6);
+          await createOffer(offer6);
+        });
+
+        context('with a valid token & id', async () => {
+          it('returns successful payload', (done) => {
+            request()
+              .get('/api/v1/offer/active')
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body).to.have.property('offers');
+                expect(res.body.offers.length).to.be.eql(1);
+                expect(res.body.offers[0].concern.length).to.be.eql(0);
+                expect(res.body.offers[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
+                expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiry1._id.toString());
+                expect(res.body.offers[0].propertyInfo._id).to.be.eql(properties[0]._id.toString());
+                done();
+              });
+          });
+        });
+
+        context('with a valid token & id', async () => {
+          it('returns sorted offers', (done) => {
+            request()
+              .get('/api/v1/offer/active')
+              .set('authorization', userToken)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body).to.have.property('offers');
+                expect(res.body.offers.length).to.be.eql(3);
+                expect(res.body.offers[0]._id).to.be.eql(offer4._id.toString());
+                expect(res.body.offers[1]._id).to.be.eql(offer6._id.toString());
+                expect(res.body.offers[2]._id).to.be.eql(offer5._id.toString());
+                done();
+              });
+          });
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        context('when getActiveOffers service fails', () => {
+          it('returns the error', (done) => {
+            sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
+            request()
+              .get('/api/v1/offer/active')
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res).to.have.status(500);
+                done();
+                Offer.aggregate.restore();
+              });
+          });
+        });
+      });
+    });
+
+    describe('Raise a concern', () => {
+      const method = 'put';
+      const endpoint = '/api/v1/offer/raise-concern';
+
+      const enquiry = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[0]._id,
+        },
+        { generateId: true },
+      );
+      const offer = OfferFactory.build(
+        {
+          enquiryId: enquiry._id,
+          vendorId: vendorUser._id,
+        },
+        { generateId: true },
+      );
+      const concern = {
+        offerId: offer._id,
+        question: 'Are all rooms ensuite',
+      };
+
+      describe('when offers exist in db', () => {
+        beforeEach(async () => {
+          await addEnquiry(enquiry);
+          await createOffer(offer);
+        });
+
+        context('with a valid token & id', async () => {
+          it('returns successful payload', (done) => {
+            request()
+              .put('/api/v1/offer/raise-concern')
+              .set('authorization', userToken)
+              .send(concern)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body).to.have.property('offer');
+                expect(res.body.offer.concern.length).to.be.eql(1);
+                expect(res.body.offer.concern[0].status).to.be.eql('Pending');
+                expect(res.body.offer.concern[0].question).to.be.eql(concern.question);
+                expect(sendMailStub.callCount).to.eq(1);
+                expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RAISE_CONCERN);
+                done();
+              });
+          });
+        });
+
+        context('when a concern has been raised previously on offer', async () => {
+          const firstConcern = {
+            offerId: offer._id,
+            userId: regularUser._id,
+            question: 'Can you send me the house plan',
+          };
+          beforeEach(async () => {
+            await raiseConcern(firstConcern);
+          });
+          it('returns successful payload', (done) => {
+            request()
+              .put('/api/v1/offer/raise-concern')
+              .set('authorization', userToken)
+              .send(concern)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body).to.have.property('offer');
+                expect(res.body.offer.concern.length).to.be.eql(2);
+                expect(res.body.offer.concern[1].status).to.be.eql('Pending');
+                expect(res.body.offer.concern[0].question).to.be.eql(firstConcern.question);
+                expect(res.body.offer.concern[1].question).to.be.eql(concern.question);
+                expect(sendMailStub.callCount).to.eq(1);
+                expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RAISE_CONCERN);
+                done();
+              });
+          });
+        });
+
+        context('with invalid data', () => {
+          context('when offer id is empty', () => {
+            it('returns an error', (done) => {
+              request()
+                .put('/api/v1/offer/raise-concern')
+                .set('authorization', userToken)
+                .send({ offerId: '', question: 'Are all rooms ensuite' })
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+                  expect(sendMailStub.callCount).to.eq(0);
+                  done();
+                });
+            });
+          });
+
+          context('when question is empty', () => {
+            it('returns an error', (done) => {
+              request()
+                .put('/api/v1/offer/raise-concern')
+                .set('authorization', userToken)
+                .send({ offerId: offer._id, question: '' })
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Question" is not allowed to be empty');
+                  expect(sendMailStub.callCount).to.eq(0);
+                  done();
+                });
+            });
+          });
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        context('when getActiveOffers service fails', () => {
+          it('returns the error', (done) => {
+            sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
+            request()
+              .put('/api/v1/offer/raise-concern')
+              .set('authorization', userToken)
+              .send(concern)
+              .end((err, res) => {
+                expect(res).to.have.status(400);
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+                Offer.findByIdAndUpdate.restore();
+              });
+          });
+        });
+      });
+    });
+
+    describe('Resolve a concern', () => {
+      const endpoint = '/api/v1/offer/resolve-concern';
+      const method = 'put';
+
+      const concernId = mongoose.Types.ObjectId();
+      const enquiry = EnquiryFactory.build(
+        {
+          userId: regularUser._id,
+          propertyId: properties[0]._id,
+        },
+        { generateId: true },
+      );
+      const offer = OfferFactory.build(
+        {
+          enquiryId: enquiry._id,
+          vendorId: vendorUser._id,
+          concern: [
+            {
+              _id: concernId,
+              question: 'Are all rooms ensuite',
+              status: CONCERN_STATUS.PENDING,
+            },
+          ],
+        },
+        { generateId: true },
+      );
+
+      const concern = {
+        offerId: offer._id,
+        concernId,
+        response: 'Yes all rooms are',
+      };
+
+      describe('when an offer exist in db', () => {
+        beforeEach(async () => {
+          await addEnquiry(enquiry);
+          await createOffer(offer);
+        });
+
+        context('with a valid token & id', async () => {
+          it('resolves the right concern', (done) => {
+            request()
+              .put('/api/v1/offer/resolve-concern')
+              .set('authorization', vendorToken)
+              .send(concern)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body).to.have.property('offer');
+                expect(res.body.offer.concern.length).to.be.eql(1);
+                expect(res.body.offer.concern[0].status).to.be.eql('Resolved');
+                expect(res.body.offer.concern[0].question).to.be.eql(offer.concern[0].question);
+                expect(res.body.offer.concern[0].response).to.be.eql(concern.response);
+                expect(sendMailStub.callCount).to.eq(1);
+                expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.RESOLVE_CONCERN);
+                done();
+              });
+          });
+        });
+
+        context('with invalid data', () => {
+          context('when offer id is empty', () => {
+            it('returns an error', (done) => {
+              request()
+                .put('/api/v1/offer/resolve-concern')
+                .set('authorization', vendorToken)
+                .send({ offerId: '', concernId, question: 'Are all rooms ensuite' })
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+                  expect(sendMailStub.callCount).to.eq(0);
+                  done();
+                });
+            });
+          });
+
+          context('when concern id is empty', () => {
+            it('returns an error', (done) => {
+              request()
+                .put('/api/v1/offer/resolve-concern')
+                .set('authorization', vendorToken)
+                .send({ concernId: '', offerId: offer._id, question: 'Are all rooms ensuite' })
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Concern Id" is not allowed to be empty');
+                  expect(sendMailStub.callCount).to.eq(0);
+                  done();
+                });
+            });
+          });
+
+          context('when response is empty', () => {
+            it('returns an error', (done) => {
+              request()
+                .put('/api/v1/offer/resolve-concern')
+                .set('authorization', vendorToken)
+                .send({ offerId: offer._id, concernId, response: '' })
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Response" is not allowed to be empty');
+                  expect(sendMailStub.callCount).to.eq(0);
+                  done();
+                });
+            });
+          });
+        });
+
+        context('with unauthorized user access token', () => {
+          it('returns an error', (done) => {
+            request()
+              .put('/api/v1/offer/resolve-concern')
+              .set('authorization', userToken)
+              .send(concern)
+              .end((err, res) => {
+                expect(res).to.have.status(403);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method, data: concern });
+
+        context('when getActiveOffers service fails', () => {
+          it('returns the error', (done) => {
+            sinon.stub(Offer, 'findOneAndUpdate').throws(new Error('Type Error'));
+            request()
+              .put('/api/v1/offer/resolve-concern')
+              .set('authorization', vendorToken)
+              .send(concern)
+              .end((err, res) => {
+                expect(res).to.have.status(400);
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+                Offer.findOneAndUpdate.restore();
+              });
+          });
+        });
+      });
+    });
+  });
+
+  describe('Get all offers', () => {
+    const endpoint = '/api/v1/offer/all';
+    const method = 'get';
+    let user2Token;
+    let vendor2Token;
+
+    const user2 = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
+
+    const vendor2 = UserFactory.build(
+      { role: USER_ROLE.VENDOR, activated: true },
+      { generateId: true },
+    );
+
+    const editorUser = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
+
+    const userProperties = PropertyFactory.buildList(
+      18,
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { generateId: true },
+    );
+
+    const user2Properties = PropertyFactory.buildList(
+      8,
+      { addedBy: vendor2._id, updatedBy: vendor2._id },
+      { generateId: true },
+    );
+
+    const userEnquiries = userProperties.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: userProperties[index]._id,
+          userId: regularUser._id,
+        },
+        { generateId: true },
+      ),
+    );
+
+    const user2Enquiries = user2Properties.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: user2Properties[index]._id,
+          userId: user2._id,
+        },
+        { generateId: true },
+      ),
+    );
+
+    const userOffers = userProperties.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: userProperties[index]._id,
+          enquiryId: userEnquiries[index]._id,
+          userId: regularUser._id,
+          vendorId: vendorUser._id,
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
+    );
+
+    const user2Offers = user2Properties.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: user2Properties[index]._id,
+          enquiryId: user2Enquiries[index]._id,
+          userId: user2._id,
+          vendorId: vendor2._id,
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
+    );
+
+    beforeEach(async () => {
+      adminToken = await addUser(adminUser);
+      userToken = await addUser(regularUser);
+      vendorToken = await addUser(vendorUser);
+      user2Token = await addUser(user2);
+      vendor2Token = await addUser(vendor2);
+    });
+
+    context('when no offers exists in db', () => {
+      [adminUser, regularUser, vendorUser].map((user) =>
+        itReturnsEmptyValuesWhenNoItemExistInDatabase({
+          endpoint,
+          method,
+          user,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    describe('when offers exist in db', () => {
+      beforeEach(async () => {
+        await Property.insertMany([...userProperties, ...user2Properties]);
+        await Enquiry.insertMany([...userEnquiries, ...user2Enquiries]);
+        await Offer.insertMany([...userOffers, ...user2Offers]);
+      });
+
+      itReturnsTheRightPaginationValue({
+        endpoint,
+        method,
+        user: regularUser,
+        useExistingUser: true,
+      });
+
+      itReturnsForbiddenForInvalidToken({ endpoint, method, user: editorUser });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      context('when request is sent by admin token', () => {
+        it('returns 26 offers', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(26);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(10);
+              done();
+            });
+        });
+      });
+
+      context('when request is sent by vendor2 token', () => {
+        it('returns vendor2 offers', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendor2Token)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(8);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(8);
+              done();
+            });
+        });
+      });
+
+      context('when request is sent by user2', () => {
+        it('returns user2 offers', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', user2Token)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(user2Offers.length);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(8);
+              done();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Get all offers of a user', () => {
+    let vendor2Token;
+    const method = 'get';
+    const endpoint = `/api/v1/offer/user/${regularUser._id}`;
+
+    const vendor2 = UserFactory.build(
+      { role: USER_ROLE.VENDOR, activated: true },
+      { generateId: true },
+    );
+
+    const vendorProperties = PropertyFactory.buildList(
+      10,
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { generateId: true },
+    );
+
+    const vendor2Properties = PropertyFactory.buildList(
+      8,
+      { addedBy: vendor2._id, updatedBy: vendor2._id },
+      { generateId: true },
+    );
+
+    const vendorEnquiries = vendorProperties.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: vendorProperties[index]._id,
+          userId: regularUser._id,
+        },
+        { generateId: true },
+      ),
+    );
+
+    const vendor2Enquiries = vendor2Properties.map((_, index) =>
+      EnquiryFactory.build(
+        {
+          propertyId: vendor2Properties[index]._id,
+          userId: regularUser._id,
+        },
+        { generateId: true },
+      ),
+    );
+
+    const vendorOffers = vendorProperties.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: vendorProperties[index]._id,
+          enquiryId: vendorEnquiries[index]._id,
+          userId: regularUser._id,
+          vendorId: vendorUser._id,
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
+    );
+
+    const vendor2Offers = vendor2Properties.map((_, index) =>
+      OfferFactory.build(
+        {
+          propertyId: vendor2Properties[index]._id,
+          enquiryId: vendor2Enquiries[index]._id,
+          userId: regularUser._id,
+          vendorId: vendor2._id,
+          referenceCode: '123456XXX',
+        },
+        { generateId: true },
+      ),
+    );
+
+    beforeEach(async () => {
+      adminToken = await addUser(adminUser);
+      userToken = await addUser(regularUser);
+      vendorToken = await addUser(vendorUser);
+      vendor2Token = await addUser(vendor2);
+    });
+
+    itReturnsEmptyValuesWhenNoItemExistInDatabase({
+      endpoint,
+      method,
+      user: adminUser,
+      useExistingUser: true,
+    });
+
+    itReturnsEmptyValuesWhenNoItemExistInDatabase({
+      endpoint,
+      method,
+      user: vendorUser,
+      useExistingUser: true,
+    });
+
+    describe('when offers exist in db', () => {
+      beforeEach(async () => {
+        await Property.insertMany([...vendorProperties, ...vendor2Properties]);
+        await Enquiry.insertMany([...vendorEnquiries, ...vendor2Enquiries]);
+        await Offer.insertMany([...vendorOffers, ...vendor2Offers]);
+      });
+
+      itReturnsTheRightPaginationValue({
+        endpoint,
+        method,
+        user: adminUser,
+        useExistingUser: true,
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      itReturnsForbiddenForInvalidToken({
+        endpoint,
+        method,
+        user: regularUser,
+        useExistingUser: true,
+      });
+
+      context('when vendor token is sent', () => {
+        it('returns 10 offers', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(10);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(10);
+              done();
+            });
+        });
+      });
+
+      context('when vendor 2 token is sent', () => {
+        it('returns vendor2 offers', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendor2Token)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(8);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(8);
+              done();
+            });
+        });
+      });
+
+      context('when invalid user id is sent', () => {
+        const invalidId = mongoose.Types.ObjectId();
+        it('returns not found', (done) => {
+          request()
+            [method](`/api/v1/offer/user/${invalidId}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.pagination.currentPage).to.be.eql(1);
+              expect(res.body.pagination.limit).to.be.eql(10);
+              expect(res.body.pagination.total).to.be.eql(0);
+              expect(res.body.pagination.offset).to.be.eql(0);
+              expect(res.body.result.length).to.be.eql(0);
+              done();
             });
         });
       });

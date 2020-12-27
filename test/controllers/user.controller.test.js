@@ -33,9 +33,8 @@ let adminToken;
 let userToken;
 const userId = mongoose.Types.ObjectId();
 const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
-const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
-
+const adminUser = UserFactory.build({ _id: adminId, role: USER_ROLE.ADMIN, activated: true });
+const regularUser = UserFactory.build({ _id: userId, role: USER_ROLE.USER, activated: true });
 let sendMailStub;
 const sandbox = sinon.createSandbox();
 
@@ -852,16 +851,25 @@ describe('User Controller', () => {
     });
 
     describe('Add property to favorite route', () => {
-      const _id = mongoose.Types.ObjectId();
-      const propertyId = mongoose.Types.ObjectId();
-      const property = PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id });
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+        },
+        { generateId: true },
+      );
+      const property = PropertyFactory.build(
+        { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+        { generateId: true },
+      );
 
       beforeEach(async () => {
+        await addUser(vendorUser);
         await addProperty(property);
       });
 
       const favorite = {
-        propertyId,
+        propertyId: property._id,
       };
 
       context('with right details', () => {
@@ -1020,40 +1028,48 @@ describe('User Controller', () => {
     });
 
     describe('Account Overview', () => {
-      const vendorId = mongoose.Types.ObjectId();
-      const propertyId = mongoose.Types.ObjectId();
-      const offerId = mongoose.Types.ObjectId();
-      const transactionId = mongoose.Types.ObjectId();
-      const vendor = UserFactory.build({ _id: vendorId });
-      const property = PropertyFactory.build({
-        _id: propertyId,
-        addedBy: vendorId,
-        updatedBy: vendorId,
-        price: 20000000,
-      });
-      const referralId = mongoose.Types.ObjectId();
-      const referral = ReferralFactory.build({
-        _id: referralId,
-        referrerId: userId,
-        reward: { amount: 50000 },
-      });
+      const vendor = UserFactory.build(
+        { role: USER_ROLE.VENDOR, activated: true },
+        { generateId: true },
+      );
+      const property = PropertyFactory.build(
+        {
+          addedBy: vendor._id,
+          updatedBy: vendor._id,
+          price: 20000000,
+        },
+        { generateId: true },
+      );
+      const referral = ReferralFactory.build(
+        {
+          referrerId: userId,
+          reward: { amount: 50000 },
+        },
+        { generateId: true },
+      );
 
-      const enquiryId = mongoose.Types.ObjectId();
-      const enquiry = EnquiryFactory.build({ _id: enquiryId, userId, propertyId });
-      const offer = OfferFactory.build({
-        _id: offerId,
-        enquiryId,
-        vendorId,
-        userId,
-        totalAmountPayable: 19000000,
-      });
-      const transaction = TransactionFactory.build({
-        _id: transactionId,
-        propertyId,
-        userId,
-        adminId: vendorId,
-        amount: 250000,
-      });
+      const enquiry = EnquiryFactory.build(
+        { userId, propertyId: property._id },
+        { generateId: true },
+      );
+      const offer = OfferFactory.build(
+        {
+          enquiryId: enquiry._id,
+          vendorId: vendor._id,
+          userId,
+          totalAmountPayable: 19000000,
+        },
+        { generateId: true },
+      );
+      const transaction = TransactionFactory.build(
+        {
+          propertyId: property._id,
+          userId,
+          adminId: vendor._id,
+          amount: 250000,
+        },
+        { generateId: true },
+      );
 
       beforeEach(async () => {
         await addUser(vendor);
@@ -1082,7 +1098,11 @@ describe('User Controller', () => {
           await addEnquiry(enquiry);
           await createOffer(offer);
           await addTransaction(transaction);
-          await acceptOffer({ userId, offerId, signature: 'https://ballers.ng/signature.png' });
+          await acceptOffer({
+            userId,
+            offerId: offer._id,
+            signature: 'https://ballers.ng/signature.png',
+          });
         });
 
         context('with valid token', () => {

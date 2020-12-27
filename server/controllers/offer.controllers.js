@@ -4,11 +4,11 @@ import {
   assignOffer,
   cancelOffer,
   getOffer,
-  getAllOffersUser,
-  getAllOffersAdmin,
+  getAllOffers,
   getActiveOffers,
   raiseConcern,
   resolveConcern,
+  getAllUserOffers,
 } from '../services/offer.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -92,29 +92,31 @@ const OfferController = {
       .catch((error) => next(error));
   },
 
-  getAllUserOffers(req, res, next) {
+  getAllOffers(req, res, next) {
     const userId = req.user._id;
-    getAllOffersUser(userId)
-      .then((offers) => {
-        res.status(httpStatus.OK).json({ success: true, offers });
+    const { page, limit } = req.query;
+    getAllOffers(userId, page, limit)
+      .then(({ pagination, result }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          pagination,
+          result,
+        });
       })
       .catch((error) => next(error));
   },
 
-  getAllAdminOffers(req, res, next) {
-    const adminId = req.user._id;
-    getAllOffersAdmin(adminId)
-      .then((offers) => {
-        res.status(httpStatus.OK).json({ success: true, offers });
-      })
-      .catch((error) => next(error));
-  },
-
-  getAllUserOffersAdmin(req, res, next) {
+  getAllUserOffers(req, res, next) {
     const userId = req.params.id;
-    getAllOffersUser(userId)
-      .then((offers) => {
-        res.status(httpStatus.OK).json({ success: true, offers });
+    const { page, limit } = req.query;
+    const { user } = req;
+    getAllUserOffers(user, userId, page, limit)
+      .then(({ pagination, result }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          pagination,
+          result,
+        });
       })
       .catch((error) => next(error));
   },

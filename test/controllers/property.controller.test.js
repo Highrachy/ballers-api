@@ -14,21 +14,38 @@ import { addProperty } from '../../server/services/property.service';
 import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addTransaction } from '../../server/services/transaction.service';
-import { OFFER_STATUS } from '../../server/helpers/constants';
+import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import Enquiry from '../../server/models/enquiry.model';
 
 useDatabase();
 
 let adminToken;
+let vendorToken;
 let userToken;
-const adminId = mongoose.Types.ObjectId();
-const userId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: 0, activated: true });
-const regularUser = UserFactory.build({ _id: userId, role: 1, activated: true });
+let invalidVendorToken;
+
+const adminUser = UserFactory.build(
+  { role: USER_ROLE.ADMIN, activated: true },
+  { generateId: true },
+);
+const vendorUser = UserFactory.build(
+  { role: USER_ROLE.VENDOR, activated: true },
+  { generateId: true },
+);
+const invalidVendorUser = UserFactory.build(
+  { role: USER_ROLE.VENDOR, activated: true },
+  { generateId: true },
+);
+const regularUser = UserFactory.build(
+  { role: USER_ROLE.USER, activated: true },
+  { generateId: true },
+);
 
 describe('Property Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
+    vendorToken = await addUser(vendorUser);
+    invalidVendorToken = await addUser(invalidVendorUser);
     userToken = await addUser(regularUser);
   });
 
@@ -38,7 +55,7 @@ describe('Property Controller', () => {
         const property = PropertyFactory.build();
         request()
           .post('/api/v1/property/add')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(property)
           .end((err, res) => {
             expect(res).to.have.status(201);
@@ -50,36 +67,38 @@ describe('Property Controller', () => {
       });
     });
 
-    context('when user token is used', () => {
+    context('with unauthorized user access token', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns forbidden', (done) => {
+          const property = PropertyFactory.build();
+          request()
+            .post('/api/v1/property/add')
+            .set('authorization', [userToken, adminToken][index])
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+              done();
+            });
+        }),
+      );
+    });
+
+    context('when token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(adminId);
+        await User.findByIdAndDelete(vendorUser._id);
       });
       it('returns token error', (done) => {
         const property = PropertyFactory.build();
         request()
           .post('/api/v1/property/add')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(property)
           .end((err, res) => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Invalid token');
-            done();
-          });
-      });
-    });
-
-    context('with unauthorized user access token', () => {
-      it('returns an error', (done) => {
-        const property = PropertyFactory.build();
-        request()
-          .post('/api/v1/property/add')
-          .set('authorization', userToken)
-          .send(property)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
             done();
           });
       });
@@ -91,7 +110,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ name: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -107,7 +126,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ titleDocument: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -133,7 +152,7 @@ describe('Property Controller', () => {
           });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -157,7 +176,7 @@ describe('Property Controller', () => {
           });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(201);
@@ -181,7 +200,7 @@ describe('Property Controller', () => {
           });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -205,7 +224,7 @@ describe('Property Controller', () => {
           });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -229,7 +248,7 @@ describe('Property Controller', () => {
           });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -245,7 +264,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ price: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -261,7 +280,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ units: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -277,7 +296,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ houseType: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -293,7 +312,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ bedrooms: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -309,7 +328,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ toilets: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -325,7 +344,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ description: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -341,7 +360,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ floorPlans: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -357,7 +376,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ neighborhood: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -373,7 +392,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ neighborhood: [] });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(201);
@@ -389,7 +408,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ mainImage: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -405,7 +424,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ gallery: '' });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -421,7 +440,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ gallery: [] });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(201);
@@ -437,7 +456,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ mapLocation: { longitude: '' } });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -455,7 +474,7 @@ describe('Property Controller', () => {
           const property = PropertyFactory.build({ mapLocation: { latitude: '' } });
           request()
             .post('/api/v1/property/add')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -472,10 +491,15 @@ describe('Property Controller', () => {
   });
 
   describe('Update Property', () => {
-    const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
+    const property = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
     const newProperty = {
-      id,
+      id: property._id,
       price: 30200000,
       units: 87,
     };
@@ -488,7 +512,7 @@ describe('Property Controller', () => {
       it('returns a updated property', (done) => {
         request()
           .put('/api/v1/property/update')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(newProperty)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -499,6 +523,40 @@ describe('Property Controller', () => {
             done();
           });
       });
+    });
+
+    context('with vendor token of another vendor', () => {
+      it('returns forbidden', (done) => {
+        request()
+          .put('/api/v1/property/update')
+          .set('authorization', invalidVendorToken)
+          .send(newProperty)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.error.message).to.be.eql(
+              'You are not permitted to perform this action',
+            );
+            done();
+          });
+      });
+    });
+
+    context('with unauthorized user access token', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns forbidden', (done) => {
+          request()
+            .put('/api/v1/property/update')
+            .set('authorization', [userToken, adminToken][index])
+            .send(newProperty)
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+              done();
+            });
+        }),
+      );
     });
 
     context('without token', () => {
@@ -517,12 +575,12 @@ describe('Property Controller', () => {
 
     context('when user token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(adminId);
+        await User.findByIdAndDelete(vendorUser._id);
       });
       it('returns token error', (done) => {
         request()
           .put('/api/v1/property/update')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(newProperty)
           .end((err, res) => {
             expect(res).to.have.status(404);
@@ -537,7 +595,7 @@ describe('Property Controller', () => {
       it('returns a updated user', (done) => {
         request()
           .put('/api/v1/property/update')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send()
           .end((err, res) => {
             expect(res).to.have.status(412);
@@ -553,7 +611,7 @@ describe('Property Controller', () => {
         sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
         request()
           .put('/api/v1/property/update')
-          .set('authorization', adminToken)
+          .set('authorization', vendorToken)
           .send(newProperty)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -567,10 +625,10 @@ describe('Property Controller', () => {
     context('with invalid data', () => {
       context('when name is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, name: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, name: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -584,10 +642,13 @@ describe('Property Controller', () => {
 
       context('when address.street1 is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, address: { street1: '' } });
+          const invalidProperty = PropertyFactory.build({
+            id: property._id,
+            address: { street1: '' },
+          });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -600,10 +661,13 @@ describe('Property Controller', () => {
       });
       context('when address.street2 is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, address: { street2: '' } });
+          const invalidProperty = PropertyFactory.build({
+            id: property._id,
+            address: { street2: '' },
+          });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -616,10 +680,13 @@ describe('Property Controller', () => {
       });
       context('when address.city is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, address: { city: '' } });
+          const invalidProperty = PropertyFactory.build({
+            id: property._id,
+            address: { city: '' },
+          });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -632,10 +699,13 @@ describe('Property Controller', () => {
       });
       context('when address.state is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, address: { state: '' } });
+          const invalidProperty = PropertyFactory.build({
+            id: property._id,
+            address: { state: '' },
+          });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -648,10 +718,13 @@ describe('Property Controller', () => {
       });
       context('when address.country is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, address: { country: '' } });
+          const invalidProperty = PropertyFactory.build({
+            id: property._id,
+            address: { country: '' },
+          });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -664,10 +737,10 @@ describe('Property Controller', () => {
       });
       context('when price is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, price: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, price: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -680,10 +753,10 @@ describe('Property Controller', () => {
       });
       context('when units is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, units: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, units: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -696,10 +769,10 @@ describe('Property Controller', () => {
       });
       context('when houseType is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, houseType: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, houseType: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -712,10 +785,10 @@ describe('Property Controller', () => {
       });
       context('when bedrooms is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, bedrooms: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, bedrooms: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -728,10 +801,10 @@ describe('Property Controller', () => {
       });
       context('when toilets is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, toilets: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, toilets: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -744,10 +817,10 @@ describe('Property Controller', () => {
       });
       context('when description is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, description: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, description: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -760,10 +833,10 @@ describe('Property Controller', () => {
       });
       context('when floorPlans is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, floorPlans: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, floorPlans: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -776,10 +849,10 @@ describe('Property Controller', () => {
       });
       context('when neighborhood is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, neighborhood: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, neighborhood: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -792,10 +865,10 @@ describe('Property Controller', () => {
       });
       context('when neighborhood is empty array', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, neighborhood: [] });
+          const invalidProperty = PropertyFactory.build({ id: property._id, neighborhood: [] });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(200);
@@ -808,10 +881,10 @@ describe('Property Controller', () => {
       });
       context('when mainImage is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, mainImage: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, mainImage: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -824,10 +897,10 @@ describe('Property Controller', () => {
       });
       context('when gallery is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, gallery: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, gallery: '' });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -840,10 +913,10 @@ describe('Property Controller', () => {
       });
       context('when gallery is empty array', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, gallery: [] });
+          const invalidProperty = PropertyFactory.build({ id: property._id, gallery: [] });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(200);
@@ -856,10 +929,13 @@ describe('Property Controller', () => {
       });
       context('when mapLocation.longitude is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, mapLocation: { longitude: '' } });
+          const invalidProperty = PropertyFactory.build({
+            id: property._id,
+            mapLocation: { longitude: '' },
+          });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -874,10 +950,13 @@ describe('Property Controller', () => {
       });
       context('when mapLocation.latitude is empty', () => {
         it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({ id, mapLocation: { latitude: '' } });
+          const invalidProperty = PropertyFactory.build({
+            id: property._id,
+            mapLocation: { latitude: '' },
+          });
           request()
             .put('/api/v1/property/update')
-            .set('authorization', adminToken)
+            .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -894,22 +973,57 @@ describe('Property Controller', () => {
   });
 
   describe('Delete property', () => {
-    const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
+    const invalidPropertyId = mongoose.Types.ObjectId();
+    const property = PropertyFactory.build(
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { generateId: true },
+    );
 
     beforeEach(async () => {
       await addProperty(property);
     });
 
     context('with a valid token & id', () => {
-      it('successfully deletes property', (done) => {
+      [...new Array(2)].map((_, index) =>
+        it('successfully deletes property', (done) => {
+          request()
+            .delete(`/api/v1/property/delete/${property._id}`)
+            .set('authorization', [vendorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Property deleted');
+              done();
+            });
+        }),
+      );
+    });
+
+    context('with user access token', () => {
+      it('returns forbidden', (done) => {
         request()
-          .delete(`/api/v1/property/delete/${id}`)
-          .set('authorization', adminToken)
+          .delete(`/api/v1/property/delete/${property._id}`)
+          .set('authorization', userToken)
           .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Property deleted');
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('with invalid vendor access token', () => {
+      it('returns forbidden', (done) => {
+        request()
+          .delete(`/api/v1/property/delete/${property._id}`)
+          .set('authorization', invalidVendorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.error.message).to.be.eql(
+              'You are not permitted to perform this action',
+            );
             done();
           });
       });
@@ -917,12 +1031,12 @@ describe('Property Controller', () => {
 
     context('when token is used', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(adminId);
+        await User.findByIdAndDelete(vendorUser._id);
       });
       it('returns token error', (done) => {
         request()
-          .delete(`/api/v1/property/delete/${id}`)
-          .set('authorization', adminToken)
+          .delete(`/api/v1/property/delete/${property._id}`)
+          .set('authorization', vendorToken)
           .end((err, res) => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
@@ -935,8 +1049,8 @@ describe('Property Controller', () => {
     context('with an invalid property id', () => {
       it('returns an error', (done) => {
         request()
-          .delete(`/api/v1/property/delete/${adminId}`)
-          .set('authorization', adminToken)
+          .delete(`/api/v1/property/delete/${invalidPropertyId}`)
+          .set('authorization', vendorToken)
           .end((err, res) => {
             expect(res).to.have.status(400);
             expect(res.body.success).to.be.eql(false);
@@ -948,7 +1062,7 @@ describe('Property Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .delete(`/api/v1/property/delete/${id}`)
+          .delete(`/api/v1/property/delete/${property._id}`)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -960,35 +1074,40 @@ describe('Property Controller', () => {
   });
 
   describe('Get one property', () => {
-    const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
+    const invalidPropertyId = mongoose.Types.ObjectId();
+    const property = PropertyFactory.build(
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { generateId: true },
+    );
 
     beforeEach(async () => {
       await addProperty(property);
     });
 
     context('with a valid token & id', () => {
-      it('returns successful payload', (done) => {
-        request()
-          .get(`/api/v1/property/${id}`)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('property');
-            done();
-          });
-      });
+      [...new Array(3)].map((_, index) =>
+        it('successfully returns property', (done) => {
+          request()
+            .get(`/api/v1/property/${property._id}`)
+            .set('authorization', [vendorToken, adminToken, userToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('property');
+              done();
+            });
+        }),
+      );
     });
 
-    context('when user token is used', () => {
+    context('when token is invalid', () => {
       beforeEach(async () => {
-        await User.findByIdAndDelete(adminId);
+        await User.findByIdAndDelete(vendorUser._id);
       });
-      it('returns token error', (done) => {
+      it('returns not found', (done) => {
         request()
-          .get(`/api/v1/property/${id}`)
-          .set('authorization', adminToken)
+          .get(`/api/v1/property/${property._id}`)
+          .set('authorization', vendorToken)
           .send(property)
           .end((err, res) => {
             expect(res).to.have.status(404);
@@ -1002,7 +1121,7 @@ describe('Property Controller', () => {
     context('with an invalid property id', () => {
       it('returns not found', (done) => {
         request()
-          .get(`/api/v1/property/${adminId}`)
+          .get(`/api/v1/property/${invalidPropertyId}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(404);
@@ -1015,7 +1134,7 @@ describe('Property Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(`/api/v1/property/${id}`)
+          .get(`/api/v1/property/${property._id}`)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -1029,7 +1148,7 @@ describe('Property Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/property/${id}`)
+          .get(`/api/v1/property/${property._id}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
@@ -1041,8 +1160,18 @@ describe('Property Controller', () => {
   });
 
   describe('Get all properties', () => {
-    const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
+    const vendorUser2 = UserFactory.build(
+      { role: USER_ROLE.VENDOR, activated: true },
+      { generateId: true },
+    );
+    const properties1 = PropertyFactory.buildList(13, {
+      addedBy: vendorUser._id,
+      updatedBy: vendorUser._id,
+    });
+    const properties2 = PropertyFactory.buildList(5, {
+      addedBy: vendorUser2._id,
+      updatedBy: vendorUser2._id,
+    });
 
     context('when no property is found', () => {
       it('returns not found', (done) => {
@@ -1060,11 +1189,13 @@ describe('Property Controller', () => {
 
     describe('when properties exist in db', () => {
       beforeEach(async () => {
-        await addProperty(property);
+        await addUser(vendorUser2);
+        await Property.insertMany(properties1);
+        await Property.insertMany(properties2);
       });
 
-      context('with a valid token & id', () => {
-        it('returns successful payload', (done) => {
+      context('with a admin token & id', () => {
+        it('returns all properties', (done) => {
           request()
             .get('/api/v1/property/all')
             .set('authorization', adminToken)
@@ -1072,6 +1203,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('properties');
+              expect(res.body.properties.length).to.be.eql(18);
               expect(res.body.properties[0]).to.have.property('name');
               expect(res.body.properties[0]).to.have.property('address');
               expect(res.body.properties[0]).to.have.property('mainImage');
@@ -1079,6 +1211,43 @@ describe('Property Controller', () => {
               expect(res.body.properties[0]).to.have.property('price');
               expect(res.body.properties[0]).to.have.property('houseType');
               expect(res.body.properties[0]).to.have.property('description');
+              done();
+            });
+        });
+      });
+
+      context('with a vendor token & id', () => {
+        it('returns all properties', (done) => {
+          request()
+            .get('/api/v1/property/all')
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('properties');
+              expect(res.body.properties.length).to.be.eql(13);
+              expect(res.body.properties[0]).to.have.property('name');
+              expect(res.body.properties[0]).to.have.property('address');
+              expect(res.body.properties[0]).to.have.property('mainImage');
+              expect(res.body.properties[0]).to.have.property('gallery');
+              expect(res.body.properties[0]).to.have.property('price');
+              expect(res.body.properties[0]).to.have.property('houseType');
+              expect(res.body.properties[0]).to.have.property('description');
+              done();
+            });
+        });
+      });
+
+      context('with a vendor token not attached to any property', () => {
+        it('returns no property', (done) => {
+          request()
+            .get('/api/v1/property/all')
+            .set('authorization', invalidVendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('properties');
+              expect(res.body.properties.length).to.be.eql(0);
               done();
             });
         });
@@ -1097,9 +1266,9 @@ describe('Property Controller', () => {
         });
       });
 
-      context('when token is used', () => {
+      context('when token is invalid', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(adminId);
+          await User.findByIdAndDelete(adminUser._id);
         });
         it('returns token error', (done) => {
           request()
@@ -1130,14 +1299,16 @@ describe('Property Controller', () => {
     });
   });
 
-  describe('Get all properties added by an admin', () => {
-    const id = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({ _id: id, addedBy: adminId, updatedBy: adminId });
+  describe('Get all properties added by an vendor', () => {
+    const properties = PropertyFactory.buildList(18, {
+      addedBy: vendorUser._id,
+      updatedBy: vendorUser._id,
+    });
 
     context('when no property is found', () => {
       it('returns not found', (done) => {
         request()
-          .get(`/api/v1/property/added-by/${adminId}`)
+          .get(`/api/v1/property/added-by/${vendorUser._id}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
@@ -1150,27 +1321,44 @@ describe('Property Controller', () => {
 
     describe('when properties exist in db', () => {
       beforeEach(async () => {
-        await addProperty(property);
+        await Property.insertMany(properties);
       });
 
       context('with a valid token & id', () => {
         it('returns successful payload', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${adminId}`)
+            .get(`/api/v1/property/added-by/${vendorUser._id}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
+              expect(res.body.properties.length).to.be.eql(18);
               expect(res.body).to.have.property('properties');
               done();
             });
         });
       });
 
+      context('with unauthorized user access token', () => {
+        [...new Array(2)].map((_, index) =>
+          it('successfully returns property', (done) => {
+            request()
+              .get(`/api/v1/property/added-by/${vendorUser._id}`)
+              .set('authorization', [vendorToken, userToken][index])
+              .end((err, res) => {
+                expect(res).to.have.status(403);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+                done();
+              });
+          }),
+        );
+      });
+
       context('with id is not a valid mongo id', () => {
         it('returns successful payload', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${adminId}a`)
+            .get(`/api/v1/property/added-by/${vendorUser._id}a`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(412);
@@ -1184,7 +1372,7 @@ describe('Property Controller', () => {
       context('without token', () => {
         it('returns error', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${adminId}`)
+            .get(`/api/v1/property/added-by/${vendorUser._id}`)
             .end((err, res) => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
@@ -1196,11 +1384,11 @@ describe('Property Controller', () => {
 
       context('when token is used', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(adminId);
+          await User.findByIdAndDelete(adminUser._id);
         });
         it('returns token error', (done) => {
           request()
-            .get(`/api/v1/property/added-by/${adminId}`)
+            .get(`/api/v1/property/added-by/${vendorUser._id}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(404);
@@ -1211,11 +1399,11 @@ describe('Property Controller', () => {
         });
       });
 
-      context('when getAllPropertiesAddedByAnAdmin service fails', () => {
+      context('when getAllPropertiesAddedByVendor service fails', () => {
         it('returns the error', (done) => {
           sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
           request()
-            .get(`/api/v1/property/added-by/${adminId}`)
+            .get(`/api/v1/property/added-by/${vendorUser._id}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(500);
@@ -1228,39 +1416,42 @@ describe('Property Controller', () => {
   });
 
   describe('Search Through Properties', () => {
-    const propertyId1 = mongoose.Types.ObjectId();
-    const propertyId2 = mongoose.Types.ObjectId();
-    const propertyId3 = mongoose.Types.ObjectId();
-    const property1 = PropertyFactory.build({
-      _id: propertyId1,
-      addedBy: adminId,
-      updatedBy: adminId,
-      houseType: '3 bedroom duplex',
-      address: {
-        state: 'lagos',
-        city: 'lekki',
+    const property1 = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+        houseType: '3 bedroom duplex',
+        address: {
+          state: 'lagos',
+          city: 'lekki',
+        },
       },
-    });
-    const property2 = PropertyFactory.build({
-      _id: propertyId2,
-      addedBy: adminId,
-      updatedBy: adminId,
-      houseType: '4 bedroom detatched duplex',
-      address: {
-        state: 'lagos',
-        city: 'epe',
+      { generateId: true },
+    );
+    const property2 = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+        houseType: '4 bedroom detatched duplex',
+        address: {
+          state: 'lagos',
+          city: 'epe',
+        },
       },
-    });
-    const property3 = PropertyFactory.build({
-      _id: propertyId3,
-      addedBy: adminId,
-      updatedBy: adminId,
-      houseType: '3 bedroom duplex',
-      address: {
-        state: 'ogun',
-        city: 'ajah',
+      { generateId: true },
+    );
+    const property3 = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+        houseType: '3 bedroom duplex',
+        address: {
+          state: 'ogun',
+          city: 'ajah',
+        },
       },
-    });
+      { generateId: true },
+    );
 
     const filter = {
       houseType: '3 bedroom duplex',
@@ -1308,7 +1499,7 @@ describe('Property Controller', () => {
               expect(res.body.properties[0]).to.have.property('houseType');
               expect(res.body.properties[0]).to.have.property('description');
               expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
-              expect(res.body.properties[0].assignedTo).to.not.include(userId.toString());
+              expect(res.body.properties[0].assignedTo).to.not.include(regularUser._id.toString());
               done();
             });
         });
@@ -1428,9 +1619,21 @@ describe('Property Controller', () => {
 
       context('when all properties have been assigned to user', () => {
         beforeEach(async () => {
-          await assignPropertyToUser({ userId, propertyId: propertyId1 });
-          await assignPropertyToUser({ userId, propertyId: propertyId2 });
-          await assignPropertyToUser({ userId, propertyId: propertyId3 });
+          await assignPropertyToUser({
+            userId: regularUser._id,
+            propertyId: property1._id,
+            vendor: vendorUser,
+          });
+          await assignPropertyToUser({
+            userId: regularUser._id,
+            propertyId: property2._id,
+            vendor: vendorUser,
+          });
+          await assignPropertyToUser({
+            userId: regularUser._id,
+            propertyId: property3._id,
+            vendor: vendorUser,
+          });
         });
         it('returns no property', (done) => {
           request()
@@ -1465,8 +1668,16 @@ describe('Property Controller', () => {
 
       context('when 2 properties have been assigned to user', () => {
         beforeEach(async () => {
-          await assignPropertyToUser({ userId, propertyId: propertyId1 });
-          await assignPropertyToUser({ userId, propertyId: propertyId2 });
+          await assignPropertyToUser({
+            userId: regularUser._id,
+            propertyId: property1._id,
+            vendor: vendorUser,
+          });
+          await assignPropertyToUser({
+            userId: regularUser._id,
+            propertyId: property2._id,
+            vendor: vendorUser,
+          });
         });
         it('returns one property', (done) => {
           request()
@@ -1490,20 +1701,20 @@ describe('Property Controller', () => {
     const property1 = PropertyFactory.build({
       houseType: '2 bedroom apartment',
       address: { state: 'taraba' },
-      addedBy: adminId,
-      updatedBy: adminId,
+      addedBy: vendorUser._id,
+      updatedBy: vendorUser._id,
     });
     const property2 = PropertyFactory.build({
       houseType: '4 bedroom semi-detatched',
       address: { state: 'taraba' },
-      addedBy: adminId,
-      updatedBy: adminId,
+      addedBy: vendorUser._id,
+      updatedBy: vendorUser._id,
     });
     const property3 = PropertyFactory.build({
       houseType: '4 bedroom semi-detatched',
       address: { state: 'kano' },
-      addedBy: adminId,
-      updatedBy: adminId,
+      addedBy: vendorUser._id,
+      updatedBy: vendorUser._id,
     });
 
     describe('when properties exist in db', () => {
@@ -1567,56 +1778,63 @@ describe('Property Controller', () => {
   });
 
   describe('Load transaction sum and info of assigned property', () => {
-    const propertyId1 = mongoose.Types.ObjectId();
-    const property1 = PropertyFactory.build({
-      _id: propertyId1,
-      addedBy: adminId,
-      updatedBy: adminId,
-    });
-    const propertyId2 = mongoose.Types.ObjectId();
-    const property2 = PropertyFactory.build({
-      _id: propertyId2,
-      addedBy: adminId,
-      updatedBy: adminId,
-    });
+    const property1 = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const property2 = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
 
-    const enquiryId1 = mongoose.Types.ObjectId();
-    const enquiry1 = EnquiryFactory.build({
-      _id: enquiryId1,
-      propertyId: propertyId1,
-      userId,
-    });
-    const enquiryId2 = mongoose.Types.ObjectId();
-    const enquiry2 = EnquiryFactory.build({
-      _id: enquiryId2,
-      propertyId: propertyId2,
-      userId,
-    });
+    const enquiry1 = EnquiryFactory.build(
+      {
+        propertyId: property1._id,
+        userId: regularUser._id,
+      },
+      { generateId: true },
+    );
+    const enquiry2 = EnquiryFactory.build(
+      {
+        propertyId: property2._id,
+        userId: regularUser._id,
+      },
+      { generateId: true },
+    );
 
-    const offerId1 = mongoose.Types.ObjectId();
-    const offer1 = OfferFactory.build({
-      _id: offerId1,
-      enquiryId: enquiryId1,
-      userId,
-      vendorId: adminId,
-    });
-    const offerId2 = mongoose.Types.ObjectId();
-    const offer2 = OfferFactory.build({
-      _id: offerId2,
-      enquiryId: enquiryId2,
-      userId,
-      vendorId: adminId,
-    });
+    const offer1 = OfferFactory.build(
+      {
+        enquiryId: enquiry1._id,
+        userId: regularUser._id,
+        vendorId: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const offer2 = OfferFactory.build(
+      {
+        enquiryId: enquiry2._id,
+        userId: regularUser._id,
+        vendorId: vendorUser._id,
+      },
+      { generateId: true },
+    );
 
-    const transactionId1 = mongoose.Types.ObjectId();
-    const transaction1 = TransactionFactory.build({
-      _id: transactionId1,
-      propertyId: propertyId1,
-      offerId: offerId1,
-      userId,
-      adminId,
-      amount: 40000,
-    });
+    const transaction1 = TransactionFactory.build(
+      {
+        propertyId: property1._id,
+        offerId: offer1._id,
+        userId: regularUser._id,
+        adminId: adminUser._id,
+        amount: 40000,
+      },
+      { generateId: true },
+    );
 
     beforeEach(async () => {
       await addProperty(property1);
@@ -1631,17 +1849,17 @@ describe('Property Controller', () => {
     context('with a valid token & id', () => {
       it('returns successful payload', (done) => {
         request()
-          .get(`/api/v1/property/assigned/${offerId1}`)
+          .get(`/api/v1/property/assigned/${offer1._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.property.totalPaid).to.be.eql(transaction1.amount);
-            expect(res.body.property.offer._id).to.be.eql(offerId1.toString());
-            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiryId1.toString());
-            expect(res.body.property.offer.propertyInfo._id).to.be.eql(propertyId1.toString());
+            expect(res.body.property.offer._id).to.be.eql(offer1._id.toString());
+            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiry1._id.toString());
+            expect(res.body.property.offer.propertyInfo._id).to.be.eql(property1._id.toString());
             expect(res.body.property.offer.transactionInfo[0]._id).to.be.eql(
-              transactionId1.toString(),
+              transaction1._id.toString(),
             );
             done();
           });
@@ -1651,15 +1869,15 @@ describe('Property Controller', () => {
     context('when no transaction has been made', () => {
       it('returns successful payload', (done) => {
         request()
-          .get(`/api/v1/property/assigned/${offerId2}`)
+          .get(`/api/v1/property/assigned/${offer2._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.property.totalPaid).to.be.eql(0);
-            expect(res.body.property.offer._id).to.be.eql(offerId2.toString());
-            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiryId2.toString());
-            expect(res.body.property.offer.propertyInfo._id).to.be.eql(propertyId2.toString());
+            expect(res.body.property.offer._id).to.be.eql(offer2._id.toString());
+            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiry2._id.toString());
+            expect(res.body.property.offer.propertyInfo._id).to.be.eql(property2._id.toString());
             done();
           });
       });
@@ -1668,7 +1886,7 @@ describe('Property Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(`/api/v1/property/assigned/${offerId1}`)
+          .get(`/api/v1/property/assigned/${offer1._id}`)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -1682,7 +1900,7 @@ describe('Property Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/property/assigned/${offerId1}`)
+          .get(`/api/v1/property/assigned/${offer1._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
@@ -1695,7 +1913,7 @@ describe('Property Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/property/assigned/${offerId1}`)
+          .get(`/api/v1/property/assigned/${offer1._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
@@ -1711,8 +1929,8 @@ describe('Property Controller', () => {
     const properties = allOfferStatus.map(() =>
       PropertyFactory.build(
         {
-          addedBy: adminId,
-          updatedBy: adminId,
+          addedBy: vendorUser._id,
+          updatedBy: vendorUser._id,
         },
         { generateId: true },
       ),
@@ -1722,7 +1940,7 @@ describe('Property Controller', () => {
       EnquiryFactory.build(
         {
           propertyId: properties[index]._id,
-          userId,
+          userId: regularUser._id,
         },
         { generateId: true },
       ),
@@ -1733,8 +1951,8 @@ describe('Property Controller', () => {
         {
           propertyId: properties[index]._id,
           enquiryId: enquiries[index]._id,
-          userId,
-          vendorId: adminId,
+          userId: regularUser._id,
+          vendorId: vendorUser._id,
           status: OFFER_STATUS[allOfferStatus[index]],
           referenceCode: '123456XXX',
         },

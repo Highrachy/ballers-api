@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { expect, sinon, useDatabase } from '../config';
 import {
   getPaymentPlanById,
@@ -10,28 +9,38 @@ import {
 import PaymentPlanFactory from '../factories/paymentPlan.factory';
 import PaymentPlan from '../../server/models/paymentPlan.model';
 import PropertyFactory from '../factories/property.factory';
-import Property from '../../server/models/property.model';
+import UserFactory from '../factories/user.factory';
+import { USER_ROLE } from '../../server/helpers/constants';
+import { addUser } from '../../server/services/user.service';
+import { addProperty } from '../../server/services/property.service';
 
 useDatabase();
 
 describe('PaymentPlan Service', () => {
+  const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
+  const admin = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
+
+  beforeEach(async () => {
+    await addUser(vendor);
+    await addUser(admin);
+  });
+
   describe('#getPaymentPlanById', () => {
-    const _id = mongoose.Types.ObjectId();
+    const paymentPlan = PaymentPlanFactory.build({ addedBy: admin._id }, { generateId: true });
 
     before(async () => {
-      await PaymentPlan.create(PaymentPlanFactory.build({ _id, addedBy: _id }));
+      await addPaymentPlan(paymentPlan);
     });
 
     it('returns a valid payment plan by Id', async () => {
-      const paymentPlan = await getPaymentPlanById(_id);
-      expect(paymentPlan.id).to.be.eql(_id.toString());
+      const plan = await getPaymentPlanById(paymentPlan._id);
+      expect(plan.id).to.be.eql(paymentPlan._id.toString());
     });
   });
 
   describe('#addPaymentPlan', () => {
     let countedPlans;
-    const id = mongoose.Types.ObjectId();
-    const plan = PaymentPlanFactory.build({ _id: id, addedBy: id });
+    const paymentPlan = PaymentPlanFactory.build({ addedBy: admin._id }, { generateId: true });
 
     beforeEach(async () => {
       countedPlans = await PaymentPlan.countDocuments({});
@@ -39,7 +48,7 @@ describe('PaymentPlan Service', () => {
 
     context('when a valid payment plan is entered', () => {
       beforeEach(async () => {
-        await addPaymentPlan(plan);
+        await addPaymentPlan(paymentPlan);
       });
 
       it('adds a new payment plan', async () => {
@@ -51,7 +60,7 @@ describe('PaymentPlan Service', () => {
     context('when an invalid data is entered', () => {
       it('throws an error', async () => {
         try {
-          const invalidPaymentPlan = PaymentPlanFactory.build({ name: '', addedBy: id });
+          const invalidPaymentPlan = PaymentPlanFactory.build({ name: '', addedBy: admin._id });
           await addPaymentPlan(invalidPaymentPlan);
         } catch (err) {
           const currentCountedPlans = await PaymentPlan.countDocuments({});
@@ -65,54 +74,58 @@ describe('PaymentPlan Service', () => {
   });
 
   describe('#getAllPaymentPlans', () => {
-    const id = mongoose.Types.ObjectId();
-    const planToAdd = PaymentPlanFactory.build({ addedBy: id });
+    const paymentPlans = PaymentPlanFactory.buildList(
+      18,
+      { addedBy: admin._id },
+      { generateId: true },
+    );
+    const paymentPlan = PaymentPlanFactory.build({ addedBy: admin._id });
 
     beforeEach(async () => {
-      await PaymentPlan.create(planToAdd);
-      await PaymentPlan.create(planToAdd);
+      await PaymentPlan.insertMany(paymentPlans);
     });
     context('when payment plan added is valid', () => {
-      it('returns 2 payment plans', async () => {
+      it('returns 18 payment plans', async () => {
         const plan = await getAllPaymentPlans();
         expect(plan).to.be.an('array');
-        expect(plan.length).to.be.eql(2);
+        expect(plan.length).to.be.eql(18);
       });
     });
     context('when new payment plan is added', () => {
       before(async () => {
-        await PaymentPlan.create(planToAdd);
+        await addPaymentPlan(paymentPlan);
       });
-      it('returns 3 payment plans', async () => {
+      it('returns 19 payment plans', async () => {
         const plan = await getAllPaymentPlans();
         expect(plan).to.be.an('array');
-        expect(plan.length).to.be.eql(3);
+        expect(plan.length).to.be.eql(19);
       });
     });
   });
 
   describe('#deletePaymentPlan', () => {
-    const id = mongoose.Types.ObjectId();
+    const paymentPlan = PaymentPlanFactory.build({ addedBy: admin._id }, { generateId: true });
+    const property = PropertyFactory.build(
+      {
+        addedBy: vendor._id,
+        updatedBy: vendor._id,
+        paymentPlan: [paymentPlan._id],
+      },
+      { generateId: true },
+    );
+
+    beforeEach(async () => {
+      await PaymentPlan.create(paymentPlan);
+    });
 
     describe('when payment plan has been assigned to a property', () => {
-      const planId = mongoose.Types.ObjectId();
-      const propId = mongoose.Types.ObjectId();
-
       beforeEach(async () => {
-        await PaymentPlan.create(PaymentPlanFactory.build({ _id: planId, addedBy: id }));
-        await Property.create(
-          PropertyFactory.build({
-            _id: propId,
-            addedBy: propId,
-            updatedBy: propId,
-            paymentPlan: [planId],
-          }),
-        );
+        await addProperty(property);
       });
       context('when payment plan has been assigned to a property', () => {
         it('returns unable to delete payment plan', async () => {
           try {
-            await deletePaymentPlan(planId);
+            await deletePaymentPlan(paymentPlan._id);
           } catch (err) {
             expect(err.statusCode).to.eql(412);
             expect(err.message).to.be.eql(
@@ -123,15 +136,11 @@ describe('PaymentPlan Service', () => {
       });
     });
 
-    beforeEach(async () => {
-      await addPaymentPlan(PaymentPlanFactory.build({ _id: id, addedBy: id }));
-    });
-
     context('when payment plan is deleted', () => {
       it('payment plan id returns error', async () => {
-        await deletePaymentPlan(id);
-        const paymentPlan = await getPaymentPlanById(id);
-        expect(paymentPlan).to.eql(null);
+        await deletePaymentPlan(paymentPlan._id);
+        const plan = await getPaymentPlanById(paymentPlan._id);
+        expect(plan).to.eql(null);
       });
     });
 
@@ -139,7 +148,7 @@ describe('PaymentPlan Service', () => {
       it('throws an error', async () => {
         sinon.stub(PaymentPlan, 'findById').throws(new Error('error msg'));
         try {
-          await deletePaymentPlan(id);
+          await deletePaymentPlan(paymentPlan._id);
         } catch (err) {
           expect(err.statusCode).to.eql(500);
           expect(err.error).to.be.an('Error');
@@ -153,7 +162,7 @@ describe('PaymentPlan Service', () => {
       it('throws an error', async () => {
         sinon.stub(PaymentPlan, 'findByIdAndDelete').throws(new Error('error msg'));
         try {
-          await deletePaymentPlan(id);
+          await deletePaymentPlan(paymentPlan._id);
         } catch (err) {
           expect(err.statusCode).to.eql(400);
           expect(err.error).to.be.an('Error');
@@ -165,29 +174,25 @@ describe('PaymentPlan Service', () => {
   });
 
   describe('#updatePaymentPlan', () => {
-    const _id = mongoose.Types.ObjectId();
+    const paymentPlan = PaymentPlanFactory.build(
+      { name: 'test monthly plan', description: 'test monthly description', addedBy: admin._id },
+      { generateId: true },
+    );
     const paymentPlanToUpdate = {
-      id: _id,
+      id: paymentPlan._id,
       name: 'updated monthly plan name',
       description: 'updated monthly description',
     };
     before(async () => {
-      await PaymentPlan.create(
-        PaymentPlanFactory.build({
-          _id,
-          name: 'test monthly plan',
-          description: 'test monthly description',
-          addedBy: _id,
-        }),
-      );
+      await addPaymentPlan(paymentPlan);
     });
 
     context('when paymentPlan is updated', () => {
       it('returns a valid updated user', async () => {
         const updatedPlan = updatePaymentPlan(paymentPlanToUpdate);
-        const paymentPlan = getPaymentPlanById(paymentPlanToUpdate.id);
-        expect(paymentPlan.name).to.eql(updatedPlan.name);
-        expect(paymentPlan.description).to.eql(updatedPlan.description);
+        const plan = getPaymentPlanById(paymentPlanToUpdate.id);
+        expect(plan.name).to.eql(updatedPlan.name);
+        expect(plan.description).to.eql(updatedPlan.description);
       });
     });
 

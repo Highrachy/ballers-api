@@ -7,32 +7,45 @@ import UserFactory from '../factories/user.factory';
 import Visitation from '../../server/models/visitation.model';
 import Property from '../../server/models/property.model';
 import { addUser } from '../../server/services/user.service';
+import { addProperty } from '../../server/services/property.service';
 import { USER_ROLE } from '../../server/helpers/constants';
 
 useDatabase();
 
 describe('Visitation Service', () => {
+  const vendor = UserFactory.build(
+    { email: 'vendoremail@mail.com', role: USER_ROLE.VENDOR },
+    { generateId: true },
+  );
+  const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
+  const property = PropertyFactory.build(
+    { addedBy: vendor._id, updatedBy: vendor._id },
+    { generateId: true },
+  );
+
+  beforeEach(async () => {
+    await addUser(vendor);
+    await addUser(user);
+    await addProperty(property);
+  });
+
   describe('#scheduleVisitation', () => {
     let countedVisitations;
-    const email = 'vendoremail@mail.com';
-    const id = mongoose.Types.ObjectId();
-    const vendorId = mongoose.Types.ObjectId();
-    const vendor = UserFactory.build({ _id: vendorId, email });
-    const property = PropertyFactory.build({ _id: id, addedBy: vendorId, updatedBy: vendorId });
 
     beforeEach(async () => {
       countedVisitations = await Visitation.countDocuments({});
-      await Property.create(property);
-      await addUser(vendor);
     });
 
     context('when a valid schedule is entered', () => {
       it('adds a new scheduled visit', async () => {
-        const validBooking = VisitationFactory.build({ propertyId: id, userId: id });
+        const validBooking = VisitationFactory.build({
+          propertyId: property._id,
+          userId: user._id,
+        });
         const schedule = await scheduleVisitation(validBooking);
         const currentcountedVisitations = await Visitation.countDocuments({});
         expect(schedule.schedule.propertyId).to.eql(validBooking.propertyId);
-        expect(schedule.vendor.email).to.eql(email);
+        expect(schedule.vendor.email).to.eql(vendor.email);
         expect(currentcountedVisitations).to.eql(countedVisitations + 1);
       });
     });
@@ -40,7 +53,10 @@ describe('Visitation Service', () => {
     context('when the visitor name is invalid', () => {
       it('throws a validation error', async () => {
         try {
-          const invalidBooking = VisitationFactory.build({ propertyId: id, visitorName: '' });
+          const invalidBooking = VisitationFactory.build({
+            propertyId: property._id,
+            visitorName: '',
+          });
           await scheduleVisitation(invalidBooking);
         } catch (err) {
           const currentcountedVisitations = await Visitation.countDocuments({});
@@ -55,7 +71,10 @@ describe('Visitation Service', () => {
     context('when the visitor email is invalid', () => {
       it('throws a validation error', async () => {
         try {
-          const invalidBooking = VisitationFactory.build({ propertyId: id, visitorEmail: '' });
+          const invalidBooking = VisitationFactory.build({
+            propertyId: property._id,
+            visitorEmail: '',
+          });
           await scheduleVisitation(invalidBooking);
         } catch (err) {
           const currentcountedVisitations = await Visitation.countDocuments({});
@@ -70,7 +89,10 @@ describe('Visitation Service', () => {
     context('when the visitor phone number is invalid', () => {
       it('throws a validation error', async () => {
         try {
-          const invalidBooking = VisitationFactory.build({ propertyId: id, visitorPhone: '' });
+          const invalidBooking = VisitationFactory.build({
+            propertyId: property._id,
+            visitorPhone: '',
+          });
           await scheduleVisitation(invalidBooking);
         } catch (err) {
           const currentcountedVisitations = await Visitation.countDocuments({});
@@ -116,7 +138,10 @@ describe('Visitation Service', () => {
       it('throws an error', async () => {
         sinon.stub(Property, 'findById').throws(new Error('error msg'));
         try {
-          const validBooking = VisitationFactory.build({ propertyId: id, visitorId: id });
+          const validBooking = VisitationFactory.build({
+            propertyId: property._id,
+            visitorId: user._id,
+          });
           await scheduleVisitation(validBooking);
         } catch (err) {
           expect(err.statusCode).to.eql(500);
@@ -129,25 +154,9 @@ describe('Visitation Service', () => {
   });
 
   describe('#getAllVisitations', () => {
-    const email = 'vendoremail@mail.com';
-    const vendorId = mongoose.Types.ObjectId();
-    const vendor = UserFactory.build({ _id: vendorId, role: USER_ROLE.VENDOR, email });
-
-    const userId = mongoose.Types.ObjectId();
-    const user = UserFactory.build({ _id: userId, role: USER_ROLE.USER });
-
-    const propertyId = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build({
-      _id: propertyId,
-      addedBy: vendorId,
-      updatedBy: vendorId,
-    });
-    const validBooking = VisitationFactory.build({ propertyId, userId });
+    const validBooking = VisitationFactory.build({ propertyId: property._id, userId: user._id });
 
     beforeEach(async () => {
-      await addUser(user);
-      await addUser(vendor);
-      await Property.create(property);
       await scheduleVisitation(validBooking);
       await scheduleVisitation(validBooking);
     });
