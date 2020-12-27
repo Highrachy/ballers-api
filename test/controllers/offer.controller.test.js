@@ -1400,25 +1400,15 @@ describe('Offer Controller', () => {
       vendor2Token = await addUser(vendor2);
     });
 
-    itReturnsEmptyValuesWhenNoItemExistInDatabase({
-      endpoint,
-      method,
-      user: regularUser,
-      useExistingUser: true,
-    });
-
-    itReturnsEmptyValuesWhenNoItemExistInDatabase({
-      endpoint,
-      method,
-      user: adminUser,
-      useExistingUser: true,
-    });
-
-    itReturnsEmptyValuesWhenNoItemExistInDatabase({
-      endpoint,
-      method,
-      user: vendorUser,
-      useExistingUser: true,
+    context('when no offers exists in db', () => {
+      [adminUser, regularUser, vendorUser].map((user) =>
+        itReturnsEmptyValuesWhenNoItemExistInDatabase({
+          endpoint,
+          method,
+          user,
+          useExistingUser: true,
+        }),
+      );
     });
 
     describe('when offers exist in db', () => {
@@ -1458,7 +1448,7 @@ describe('Offer Controller', () => {
       });
 
       context('when request is sent by vendor2 token', () => {
-        it('returns 8 offers', (done) => {
+        it('returns vendor2 offers', (done) => {
           request()
             [method](endpoint)
             .set('authorization', vendor2Token)
@@ -1475,8 +1465,8 @@ describe('Offer Controller', () => {
         });
       });
 
-      context('when request is sent by user 2', () => {
-        it('returns 8 offers', (done) => {
+      context('when request is sent by user2', () => {
+        it('returns user2 offers', (done) => {
           request()
             [method](endpoint)
             .set('authorization', user2Token)
@@ -1485,7 +1475,7 @@ describe('Offer Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.pagination.currentPage).to.be.eql(1);
               expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(8);
+              expect(res.body.pagination.total).to.be.eql(user2Offers.length);
               expect(res.body.pagination.offset).to.be.eql(0);
               expect(res.body.result.length).to.be.eql(8);
               done();
@@ -1626,7 +1616,7 @@ describe('Offer Controller', () => {
       });
 
       context('when vendor 2 token is sent', () => {
-        it('returns 8 offers', (done) => {
+        it('returns vendor2 offers', (done) => {
           request()
             [method](endpoint)
             .set('authorization', vendor2Token)

@@ -195,7 +195,7 @@ describe('Offer Service', () => {
     const vendor2 = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
 
     const userProperties = PropertyFactory.buildList(
-      10,
+      7,
       { addedBy: vendor._id, updatedBy: vendor._id },
       { generateId: true },
     );
@@ -263,11 +263,11 @@ describe('Offer Service', () => {
     });
 
     context('when user token is used', () => {
-      it('returns 10 offers', async () => {
+      it('returns 7 offers', async () => {
         const offers = await getAllOffers(user._id);
         expect(offers.pagination.currentPage).to.be.eql(1);
-        expect(offers.pagination.total).to.be.eql(10);
-        expect(offers.result.length).to.be.eql(10);
+        expect(offers.pagination.total).to.be.eql(7);
+        expect(offers.result.length).to.be.eql(7);
         expect(offers.result[0].userId).to.be.eql(user._id);
       });
     });
@@ -282,11 +282,11 @@ describe('Offer Service', () => {
     });
 
     context('when vendor token is used', () => {
-      it('returns 10 offers', async () => {
+      it('returns 7 offers', async () => {
         const vendorOffers = await getAllOffers(vendor._id);
         expect(vendorOffers.pagination.currentPage).to.be.eql(1);
-        expect(vendorOffers.pagination.total).to.be.eql(10);
-        expect(vendorOffers.result.length).to.be.eql(10);
+        expect(vendorOffers.pagination.total).to.be.eql(7);
+        expect(vendorOffers.result.length).to.be.eql(7);
         expect(vendorOffers.result[0].vendorId).to.be.eql(vendor._id);
       });
     });
@@ -301,11 +301,11 @@ describe('Offer Service', () => {
     });
 
     context('when admin token is used', () => {
-      it('returns 10 offers', async () => {
+      it('returns 7 offers', async () => {
         const vendorOffers = await getAllOffers(admin._id);
         expect(vendorOffers.pagination.currentPage).to.be.eql(1);
-        expect(vendorOffers.pagination.total).to.be.eql(10);
-        expect(vendorOffers.result.length).to.be.eql(10);
+        expect(vendorOffers.pagination.total).to.be.eql(7);
+        expect(vendorOffers.result.length).to.be.eql(7);
       });
     });
 
@@ -315,11 +315,11 @@ describe('Offer Service', () => {
       });
 
       context('when user token is used', () => {
-        it('returns 10 offers', async () => {
+        it('returns 7 offers', async () => {
           const offers = await getAllOffers(user._id);
           expect(offers.pagination.currentPage).to.be.eql(1);
-          expect(offers.pagination.total).to.be.eql(10);
-          expect(offers.result.length).to.be.eql(10);
+          expect(offers.pagination.total).to.be.eql(7);
+          expect(offers.result.length).to.be.eql(7);
           expect(offers.result[0].userId).to.be.eql(user._id);
         });
       });
@@ -334,11 +334,11 @@ describe('Offer Service', () => {
       });
 
       context('when vendor token is used', () => {
-        it('returns 10 offers', async () => {
+        it('returns 7 offers', async () => {
           const vendorOffers = await getAllOffers(vendor._id);
           expect(vendorOffers.pagination.currentPage).to.be.eql(1);
-          expect(vendorOffers.pagination.total).to.be.eql(10);
-          expect(vendorOffers.result.length).to.be.eql(10);
+          expect(vendorOffers.pagination.total).to.be.eql(7);
+          expect(vendorOffers.result.length).to.be.eql(7);
           expect(vendorOffers.result[0].vendorId).to.be.eql(vendor._id);
         });
       });
@@ -357,7 +357,7 @@ describe('Offer Service', () => {
         it('returns 18 offers', async () => {
           const vendorOffers = await getAllOffers(admin._id);
           expect(vendorOffers.pagination.currentPage).to.be.eql(1);
-          expect(vendorOffers.pagination.total).to.be.eql(18);
+          expect(vendorOffers.pagination.total).to.be.eql(15);
           expect(vendorOffers.result.length).to.be.eql(10);
         });
       });
