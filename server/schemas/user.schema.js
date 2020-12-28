@@ -45,6 +45,17 @@ const vendor = Joi.object().keys({
   companyName: optionalString('Company Name'),
 });
 
+const updateVendor = Joi.object().keys({
+  bankInfo,
+  companyLogo: optionalString('Company Logo'),
+  companyName: optionalString('Company Name'),
+  directors,
+  identification,
+  redanNumber: optionalString('Redan Number'),
+  socialMedia,
+  website: optionalString('Website'),
+});
+
 export const registerSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
@@ -95,7 +106,7 @@ export const updateUserSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
   phone,
-  phone2: Joi.string().label('Phone 2').optional(),
+  phone2: optionalString('Phone 2'),
   address,
   preferences,
 });
@@ -124,13 +135,8 @@ export const addCommentVendorSchema = Joi.object({
 });
 
 export const updateVendorSchema = Joi.object({
-  bankInfo,
-  companyAddress: address,
-  companyLogo: optionalString('Company Logo'),
-  companyName: optionalString('Company Name'),
-  directors,
-  identification,
-  redanNumber: optionalString('Redan Number'),
-  socialMedia,
-  website: optionalString('Website'),
+  phone,
+  phone2: optionalString('Phone 2'),
+  address,
+  vendor: updateVendor,
 });

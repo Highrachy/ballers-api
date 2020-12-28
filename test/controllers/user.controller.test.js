@@ -1698,6 +1698,9 @@ describe('User Controller', () => {
         _id: vendorId,
         role: 2,
         activated: true,
+        phone: '08012345678',
+        phone2: '09012345678',
+        address: AddressFactory.build(),
         vendor: {
           companyName: 'Highrachy Investment Limited',
           directors: [
@@ -1727,34 +1730,40 @@ describe('User Controller', () => {
       const method = 'put';
 
       const data = {
-        bankInfo: {
-          accountNumber: '1234567890',
-          accountName: 'Highrachy Investment Limited',
-          bankName: 'ABC Bank',
+        phone2: '12345678901',
+        address: {
+          country: 'Ghana',
+          state: 'Accra',
         },
-        companyAddress: AddressFactory.build(),
-        companyLogo: 'https://ballers.ng/logo.png',
-        directors: [
-          {
-            name: 'John Doe',
-            isSignatory: false,
-            phone: '08012345678',
+        vendor: {
+          bankInfo: {
+            accountNumber: '1234567890',
+            accountName: 'Highrachy Investment Limited',
+            bankName: 'ABC Bank',
           },
-        ],
-        identification: [
-          {
-            url: 'https://ballers.ng/cac-certificate.png',
-            type: 'CAC Certificate',
-          },
-        ],
-        redanNumber: '1234567890',
-        socialMedia: [
-          {
-            name: 'Facebook',
-            url: 'https://facebook.com/highrachy',
-          },
-        ],
-        website: 'https://highrachy.com/',
+          companyLogo: 'https://ballers.ng/logo.png',
+          directors: [
+            {
+              name: 'John Doe',
+              isSignatory: false,
+              phone: '08012345678',
+            },
+          ],
+          identification: [
+            {
+              url: 'https://ballers.ng/cac-certificate.png',
+              type: 'CAC Certificate',
+            },
+          ],
+          redanNumber: '1234567890',
+          socialMedia: [
+            {
+              name: 'Facebook',
+              url: 'https://facebook.com/highrachy',
+            },
+          ],
+          website: 'https://highrachy.com/',
+        },
       };
 
       beforeEach(async () => {
@@ -1772,9 +1781,13 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Vendor information updated');
               expect(res.body.user._id).to.be.eql(vendorId.toString());
+              expect(res.body.user.phone).to.be.eql(vendorUser.phone);
+              expect(res.body.user.phone2).to.be.eql(data.phone2);
+              expect(res.body.user.address.city).to.be.eql(vendorUser.address.city);
+              expect(res.body.user.address.country).to.be.eql(data.address.country);
               expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
-              expect(res.body.user.vendor.bankInfo).to.be.eql(data.bankInfo);
-              expect(res.body.user.vendor.companyAddress).to.be.eql(data.companyAddress);
+              expect(res.body.user.vendor.companyLogo).to.be.eql(data.vendor.companyLogo);
+              expect(res.body.user.vendor.bankInfo).to.be.eql(data.vendor.bankInfo);
               expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
               done();
@@ -1794,7 +1807,7 @@ describe('User Controller', () => {
                 expect(res.body.success).to.be.eql(true);
                 expect(res.body.message).to.be.eql('Vendor information updated');
                 expect(res.body.user._id).to.be.eql(vendorId.toString());
-                expect(res.body.user.vendor).to.have.property(field);
+                expect(res.body.user).to.have.property(field);
                 done();
               });
           }),

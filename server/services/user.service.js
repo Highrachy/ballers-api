@@ -481,22 +481,44 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
   if (!user) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Vendor not found');
   }
-  if (updatedVendor.directors && updatedVendor.directors.length > 0) {
-    Array.prototype.push.apply(updatedVendor.directors, user.vendor.directors);
+
+  if (
+    updatedVendor.vendor &&
+    updatedVendor.vendor.directors &&
+    updatedVendor.vendor.directors.length > 0
+  ) {
+    Array.prototype.push.apply(updatedVendor.vendor.directors, user.vendor.directors);
   }
-  if (updatedVendor.identification && updatedVendor.identification.length > 0) {
-    Array.prototype.push.apply(updatedVendor.identification, user.vendor.identification);
+  if (
+    updatedVendor.vendor &&
+    updatedVendor.vendor.identification &&
+    updatedVendor.vendor.identification.length > 0
+  ) {
+    Array.prototype.push.apply(updatedVendor.vendor.identification, user.vendor.identification);
   }
-  if (updatedVendor.socialMedia && updatedVendor.socialMedia.length > 0) {
-    Array.prototype.push.apply(updatedVendor.socialMedia, user.vendor.socialMedia);
+  if (
+    updatedVendor.vendor &&
+    updatedVendor.vendor.socialMedia &&
+    updatedVendor.vendor.socialMedia.length > 0
+  ) {
+    Array.prototype.push.apply(updatedVendor.vendor.socialMedia, user.vendor.socialMedia);
   }
 
-  const vendor = { ...user.vendor, ...updatedVendor };
+  const vendor = { ...user.vendor, ...updatedVendor.vendor };
 
   try {
     return User.findByIdAndUpdate(
       user._id,
-      { $set: { vendor } },
+      {
+        $set: {
+          phone: updatedVendor.phone ? updatedVendor.phone : user.phone,
+          phone2: updatedVendor.phone2 ? updatedVendor.phone2 : user.phone2,
+          address: updatedVendor.address
+            ? { ...user.address, ...updatedVendor.address }
+            : user.address,
+          vendor,
+        },
+      },
       { new: true, fields: '-password' },
     );
   } catch (error) {
