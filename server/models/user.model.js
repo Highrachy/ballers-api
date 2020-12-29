@@ -166,7 +166,6 @@ const UserSchema = new mongoose.Schema(
           type: String,
         },
       },
-      companyAddress: addressSchema,
       companyLogo: {
         type: String,
       },
