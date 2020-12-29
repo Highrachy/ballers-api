@@ -1783,8 +1783,10 @@ describe('User Controller', () => {
               expect(res.body.user._id).to.be.eql(vendorId.toString());
               expect(res.body.user.phone).to.be.eql(vendorUser.phone);
               expect(res.body.user.phone2).to.be.eql(data.phone2);
-              expect(res.body.user.address.city).to.be.eql(vendorUser.address.city);
-              expect(res.body.user.address.country).to.be.eql(data.address.country);
+              expect(res.body.user.address).to.be.eql({
+                ...vendorUser.address,
+                ...data.address,
+              });
               expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
               expect(res.body.user.vendor.companyLogo).to.be.eql(data.vendor.companyLogo);
               expect(res.body.user.vendor.bankInfo).to.be.eql(data.vendor.bankInfo);
