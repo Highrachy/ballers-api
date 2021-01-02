@@ -50,6 +50,7 @@ const vendor = Joi.object().keys({
   companyLogo: optionalString('Company Logo'),
   companyName: optionalString('Company Name'),
   directors,
+  entity: optionalString('Entity'),
   identification,
   redanNumber: optionalString('Redan Number'),
   socialMedia,

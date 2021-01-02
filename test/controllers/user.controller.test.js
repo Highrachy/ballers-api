@@ -1749,6 +1749,7 @@ describe('User Controller', () => {
               phone: '08012345678',
             },
           ],
+          entity: 'Individual',
           identification: [
             {
               url: 'https://ballers.ng/cac-certificate.png',
@@ -1790,6 +1791,7 @@ describe('User Controller', () => {
               expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
               expect(res.body.user.vendor.companyLogo).to.be.eql(data.vendor.companyLogo);
               expect(res.body.user.vendor.bankInfo).to.be.eql(data.vendor.bankInfo);
+              expect(res.body.user.vendor.entity).to.be.eql(data.vendor.entity);
               expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
               done();

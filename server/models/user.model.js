@@ -188,6 +188,9 @@ const UserSchema = new mongoose.Schema(
           },
         },
       ],
+      entity: {
+        type: String,
+      },
       identification: [
         {
           url: {
