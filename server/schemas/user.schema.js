@@ -54,6 +54,7 @@ const vendor = Joi.object().keys({
   identification,
   redanNumber: optionalString('Redan Number'),
   socialMedia,
+  taxCertificate: optionalString('Company Name'),
   website: optionalString('Website'),
 });
 

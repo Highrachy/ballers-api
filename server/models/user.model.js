@@ -214,6 +214,9 @@ const UserSchema = new mongoose.Schema(
           },
         },
       ],
+      taxCertificate: {
+        type: String,
+      },
       vendorCode: {
         type: String,
       },

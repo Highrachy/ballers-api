@@ -1763,6 +1763,7 @@ describe('User Controller', () => {
               url: 'https://facebook.com/highrachy',
             },
           ],
+          taxCertificate: 'tax-certificate',
           website: 'https://highrachy.com/',
         },
       };
@@ -1792,6 +1793,7 @@ describe('User Controller', () => {
               expect(res.body.user.vendor.companyLogo).to.be.eql(data.vendor.companyLogo);
               expect(res.body.user.vendor.bankInfo).to.be.eql(data.vendor.bankInfo);
               expect(res.body.user.vendor.entity).to.be.eql(data.vendor.entity);
+              expect(res.body.user.vendor.taxCertificate).to.be.eql(data.vendor.taxCertificate);
               expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
               done();
