@@ -18,6 +18,7 @@ import {
   updateVendor,
   addCommentToVerificationStep,
   verifyVendor,
+  getUserById,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -249,6 +250,19 @@ const UserController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Vendor information updated', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  getOneUser(req, res, next) {
+    const userId = req.params.id;
+    getUserById(userId)
+      .then((user) => {
+        if (user) {
+          res.status(httpStatus.OK).json({ success: true, user });
+        } else {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'User not found' });
+        }
       })
       .catch((error) => next(error));
   },

@@ -12,7 +12,13 @@ import {
   addCommentVendorSchema,
   verifyVendorInfoSchema,
 } from '../schemas/user.schema';
-import { schemaValidation, authenticate, isAdmin, isVendor } from '../helpers/middleware';
+import {
+  schemaValidation,
+  authenticate,
+  isAdmin,
+  isVendor,
+  hasValidObjectId,
+} from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
 import Upload, { UploadController } from '../helpers/uploadImage';
 
@@ -628,5 +634,26 @@ router.put(
   schemaValidation(updateVendorSchema),
   UserController.updateVendor,
 );
+
+/**
+ * @swagger
+ * path:
+ *  /user/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets a user based by its ID
+ *      tags: [User]
+ *      responses:
+ *        '200':
+ *          description: User found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOneUser);
 
 module.exports = router;
