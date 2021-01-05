@@ -18,6 +18,8 @@ import {
   updateVendor,
   addCommentToVerificationStep,
   verifyVendor,
+  addDirector,
+  removeDirector,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -249,6 +251,26 @@ const UserController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Vendor information updated', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  addDirector(req, res, next) {
+    const directorInfo = req.locals;
+    const userId = req.user._id;
+    addDirector({ directorInfo, userId })
+      .then((user) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Director added', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  removeDirector(req, res, next) {
+    const directorId = req.params.id;
+    const vendor = req.user;
+    removeDirector({ directorId, vendor })
+      .then(() => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Director removed' });
       })
       .catch((error) => next(error));
   },

@@ -11,8 +11,15 @@ import {
   verifyVendorSchema,
   addCommentVendorSchema,
   verifyVendorInfoSchema,
+  addDirectorSchema,
 } from '../schemas/user.schema';
-import { schemaValidation, authenticate, isAdmin, isVendor } from '../helpers/middleware';
+import {
+  schemaValidation,
+  authenticate,
+  isAdmin,
+  isVendor,
+  hasValidObjectId,
+} from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
 import Upload, { UploadController } from '../helpers/uploadImage';
 
@@ -627,6 +634,68 @@ router.put(
   isVendor,
   schemaValidation(updateVendorSchema),
   UserController.updateVendor,
+);
+
+/**
+ * @swagger
+ * /user/vendor/director/add:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Add director or signatory to vendor profile
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Add director or signatory to vendor profile
+ *     responses:
+ *      '200':
+ *        description: Director added
+ *      '400':
+ *        description: Error adding director
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/director/add',
+  authenticate,
+  isVendor,
+  schemaValidation(addDirectorSchema),
+  UserController.addDirector,
+);
+
+/**
+ * @swagger
+ * /user/vendor/director/remove/:id:
+ *   delete:
+ *     tags:
+ *       - User
+ *     description: Remove director or signatory from vendor profile
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Remove director or signatory from vendor profile
+ *     responses:
+ *      '200':
+ *        description: Director removed
+ *      '400':
+ *        description: Error removing director
+ *      '500':
+ *       description: Internal server error
+ */
+router.delete(
+  '/vendor/director/remove/:id',
+  hasValidObjectId,
+  authenticate,
+  isVendor,
+  UserController.removeDirector,
 );
 
 module.exports = router;

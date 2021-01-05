@@ -525,3 +525,36 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating vendor information', error);
   }
 };
+
+export const addDirector = async ({ directorInfo, userId }) => {
+  const user = await getUserById(userId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    return User.findByIdAndUpdate(user._id, { $push: { 'vendor.directors': directorInfo } });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding director', error);
+  }
+};
+
+export const removeDirector = async ({ directorId, vendor }) => {
+  let { directors } = vendor.vendor;
+
+  directors = directors.filter((director) => director._id.toString() !== directorId.toString());
+
+  const signatoryExists = directors.some((director) => director.isSignatory === true);
+
+  if (!signatoryExists) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Last account signatory cannot be deleted',
+    );
+  }
+
+  try {
+    return User.findByIdAndUpdate(vendor._id, { $set: { 'vendor.directors': directors } });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error removing director', error);
+  }
+};

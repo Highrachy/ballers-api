@@ -11,6 +11,7 @@ const phone = Joi.string().allow(null, '').optional().default('');
 const requiredString = (label) => Joi.string().label(label).required();
 const optionalString = (label) => Joi.string().label(label).optional();
 const optionalBoolean = (label) => Joi.boolean().label(label).optional();
+const requiredBoolean = (label) => Joi.boolean().label(label).required();
 
 const directors = Joi.array().items(
   Joi.object().keys({
@@ -141,4 +142,11 @@ export const updateVendorSchema = Joi.object({
   phone2: optionalString('Phone 2'),
   address,
   vendor,
+});
+
+export const addDirectorSchema = Joi.object({
+  name: requiredString('Name'),
+  isSignatory: requiredBoolean('Signatory'),
+  signature: requiredString('Signature'),
+  phone: requiredString('Phone'),
 });
