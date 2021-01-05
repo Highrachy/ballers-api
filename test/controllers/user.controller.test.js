@@ -19,10 +19,10 @@ import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import {
   itReturnsTheRightPaginationValue,
-  itReturnsForbiddenForInvalidToken,
+  itReturnsForbiddenForTokenWithInvalidAccess,
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
-  itReturnsAnErrorForInvalidToken,
+  itReturnsNotFoundForInvalidToken,
 } from '../helpers';
 import { USER_ROLE, VENDOR_STEPS, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
 import AddressFactory from '../factories/address.factory';
@@ -1410,8 +1410,8 @@ describe('User Controller', () => {
       });
 
       itReturnsForbiddenForNoToken({ endpoint, method, data });
-      itReturnsForbiddenForInvalidToken({ endpoint, method, user: invalidUser, data });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: invalidUser, data });
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: invalidUser,
@@ -1496,7 +1496,7 @@ describe('User Controller', () => {
         method,
         data: { ...data, status: VENDOR_STEPS[0] },
       });
-      itReturnsForbiddenForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: invalidUser,
@@ -1505,7 +1505,7 @@ describe('User Controller', () => {
           status: VENDOR_STEPS[0],
         },
       });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: invalidUser,
@@ -1616,7 +1616,7 @@ describe('User Controller', () => {
         method,
         data: { ...data, status: VENDOR_STEPS[0] },
       });
-      itReturnsForbiddenForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: invalidUser,
@@ -1625,7 +1625,7 @@ describe('User Controller', () => {
           status: VENDOR_STEPS[0],
         },
       });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: invalidUser,
@@ -1826,18 +1826,213 @@ describe('User Controller', () => {
         data,
       });
 
-      itReturnsForbiddenForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: invalidUser,
         data,
       });
 
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: invalidUser,
         userId: invalidUserId,
+        data,
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findByIdAndUpdate.restore();
+            });
+        });
+      });
+    });
+
+    describe('Delete director or signatories', () => {
+      let vendorToken;
+      const signatoryId = mongoose.Types.ObjectId();
+      const nonSignatoryId = mongoose.Types.ObjectId();
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          vendor: {
+            companyName: 'Highrachy Investment Limited',
+            directors: [
+              {
+                _id: nonSignatoryId,
+                name: 'Jane Doe',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+              {
+                _id: signatoryId,
+                name: 'Samuel',
+                isSignatory: true,
+                signature: 'signature.png',
+                phone: '08012345678',
+              },
+              {
+                name: 'John',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+            ],
+          },
+        },
+        { generateId: true },
+      );
+      const invalidUser = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
+      const endpoint = `/api/v1/user/vendor/director/remove/${nonSignatoryId}`;
+      const method = 'delete';
+
+      beforeEach(async () => {
+        vendorToken = await addUser(vendorUser);
+      });
+
+      context('when a valid token is used', () => {
+        it('returns deletes director', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Director removed');
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user.vendor.directors.length).to.be.eql(2);
+              done();
+            });
+        });
+      });
+
+      context('when id passed is last account signatory', () => {
+        it('returns error', (done) => {
+          request()
+            [method](`/api/v1/user/vendor/director/remove/${signatoryId}`)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Last account signatory cannot be deleted');
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+      });
+
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: invalidUser,
+      });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        userId: invalidUser._id,
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findByIdAndUpdate.restore();
+            });
+        });
+      });
+    });
+
+    describe('Add director or signatories', () => {
+      let vendorToken;
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          vendor: {
+            companyName: 'Highrachy Investment Limited',
+            directors: [
+              {
+                name: 'Jane Doe',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+            ],
+          },
+        },
+        { generateId: true },
+      );
+      const invalidUser = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
+      const endpoint = '/api/v1/user/vendor/director/add';
+      const method = 'put';
+
+      const data = {
+        name: 'Samuel',
+        isSignatory: true,
+        signature: 'signature.png',
+        phone: '08012345678',
+      };
+
+      beforeEach(async () => {
+        vendorToken = await addUser(vendorUser);
+      });
+
+      context('when a valid token is used', () => {
+        it('returns updated vendor', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Director added');
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user.vendor.directors.length).to.be.eql(2);
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+        data,
+      });
+
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: invalidUser,
+        data,
+      });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        userId: invalidUser._id,
         data,
       });
 
@@ -1870,7 +2065,7 @@ describe('User Controller', () => {
 
     describe('User pagination', () => {
       itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-      itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
       itReturnsAnErrorWhenServiceFails({
         endpoint,
@@ -1879,7 +2074,7 @@ describe('User Controller', () => {
         model: User,
         modelMethod: 'aggregate',
       });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: adminUser,
@@ -1902,7 +2097,7 @@ describe('User Controller', () => {
 
     describe('Vendor pagination', () => {
       itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-      itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
       itReturnsAnErrorWhenServiceFails({
         endpoint,
@@ -1911,7 +2106,7 @@ describe('User Controller', () => {
         model: User,
         modelMethod: 'aggregate',
       });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: adminUser,

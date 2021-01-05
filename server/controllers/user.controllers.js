@@ -269,8 +269,8 @@ const UserController = {
     const directorId = req.params.id;
     const vendor = req.user;
     removeDirector({ directorId, vendor })
-      .then(() => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Director removed' });
+      .then((user) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Director removed', user });
       })
       .catch((error) => next(error));
   },

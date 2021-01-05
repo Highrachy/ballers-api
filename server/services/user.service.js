@@ -532,7 +532,11 @@ export const addDirector = async ({ directorInfo, userId }) => {
   });
 
   try {
-    return User.findByIdAndUpdate(user._id, { $push: { 'vendor.directors': directorInfo } });
+    return User.findByIdAndUpdate(
+      user._id,
+      { $push: { 'vendor.directors': directorInfo } },
+      { new: true, fields: '-password' },
+    );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding director', error);
   }
@@ -553,7 +557,11 @@ export const removeDirector = async ({ directorId, vendor }) => {
   }
 
   try {
-    return User.findByIdAndUpdate(vendor._id, { $set: { 'vendor.directors': directors } });
+    return User.findByIdAndUpdate(
+      vendor._id,
+      { $set: { 'vendor.directors': directors } },
+      { new: true, fields: '-password' },
+    );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error removing director', error);
   }

@@ -147,6 +147,6 @@ export const updateVendorSchema = Joi.object({
 export const addDirectorSchema = Joi.object({
   name: requiredString('Name'),
   isSignatory: requiredBoolean('Signatory'),
-  signature: requiredString('Signature'),
+  signature: optionalString('Signature'),
   phone: requiredString('Phone'),
 });

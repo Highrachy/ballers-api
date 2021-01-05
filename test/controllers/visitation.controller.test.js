@@ -13,10 +13,10 @@ import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import {
   itReturnsTheRightPaginationValue,
-  itReturnsForbiddenForInvalidToken,
+  itReturnsForbiddenForTokenWithInvalidAccess,
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
-  itReturnsAnErrorForInvalidToken,
+  itReturnsNotFoundForInvalidToken,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
 } from '../helpers';
 
@@ -393,7 +393,7 @@ describe('Visitation Controller', () => {
       });
 
       itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-      itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
       itReturnsAnErrorWhenServiceFails({
         endpoint,
@@ -403,7 +403,7 @@ describe('Visitation Controller', () => {
         modelMethod: 'aggregate',
       });
 
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: adminUser,

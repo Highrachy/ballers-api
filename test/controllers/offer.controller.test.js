@@ -20,8 +20,8 @@ import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import {
   itReturnsForbiddenForNoToken,
-  itReturnsForbiddenForInvalidToken,
-  itReturnsAnErrorForInvalidToken,
+  itReturnsForbiddenForTokenWithInvalidAccess,
+  itReturnsNotFoundForInvalidToken,
   itReturnsErrorForEmptyFields,
   itReturnsTheRightPaginationValue,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
@@ -137,7 +137,7 @@ describe('Offer Controller', () => {
         });
       });
 
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: testVendor,
@@ -145,7 +145,7 @@ describe('Offer Controller', () => {
         data: OfferFactory.build({ enquiryId: enquiry._id }),
       });
 
-      itReturnsForbiddenForInvalidToken({ endpoint, method, user: testUser });
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: testUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
 
       context('with invalid data', () => {
@@ -803,7 +803,7 @@ describe('Offer Controller', () => {
         );
       });
 
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: testUser,
@@ -1425,7 +1425,7 @@ describe('Offer Controller', () => {
         useExistingUser: true,
       });
 
-      itReturnsForbiddenForInvalidToken({ endpoint, method, user: editorUser });
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: editorUser });
 
       itReturnsForbiddenForNoToken({ endpoint, method });
 
@@ -1590,7 +1590,7 @@ describe('Offer Controller', () => {
 
       itReturnsForbiddenForNoToken({ endpoint, method });
 
-      itReturnsForbiddenForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: regularUser,
