@@ -18,7 +18,7 @@ import {
   updateVendor,
   addCommentToVerificationStep,
   verifyVendor,
-  getUserById,
+  getOneUser,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -256,10 +256,10 @@ const UserController = {
 
   getOneUser(req, res, next) {
     const userId = req.params.id;
-    getUserById(userId)
+    getOneUser(userId)
       .then((user) => {
-        if (user) {
-          res.status(httpStatus.OK).json({ success: true, user });
+        if (user.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, user: user[0] });
         } else {
           res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'User not found' });
         }

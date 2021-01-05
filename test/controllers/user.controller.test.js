@@ -1863,7 +1863,7 @@ describe('User Controller', () => {
     });
 
     describe('Get one user', () => {
-      const invalidPropertyId = mongoose.Types.ObjectId();
+      const invalidUserId = mongoose.Types.ObjectId();
       const testUser = UserFactory.build(
         { role: USER_ROLE.USER, activated: true },
         { generateId: true },
@@ -1884,6 +1884,8 @@ describe('User Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.user._id).to.be.eql(testUser._id.toString());
+              expect(res.body.user).to.not.have.property('password');
+              expect(res.body.user).to.not.have.property('notifications');
               done();
             });
         });
@@ -1909,10 +1911,10 @@ describe('User Controller', () => {
         useExistingUser: true,
       });
 
-      context('with an invalid property id', () => {
+      context('with an invalid user id', () => {
         it('returns not found', (done) => {
           request()
-            .get(`/api/v1/user/${invalidPropertyId}`)
+            .get(`/api/v1/user/${invalidUserId}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(404);
@@ -1920,6 +1922,15 @@ describe('User Controller', () => {
               done();
             });
         });
+      });
+
+      itReturnsAnErrorWhenServiceFails({
+        endpoint,
+        method,
+        user: adminUser,
+        model: User,
+        modelMethod: 'aggregate',
+        useExistingUser: true,
       });
     });
   });
