@@ -31,10 +31,14 @@ useDatabase();
 
 let adminToken;
 let userToken;
-const userId = mongoose.Types.ObjectId();
-const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: USER_ROLE.ADMIN, activated: true });
-const regularUser = UserFactory.build({ _id: userId, role: USER_ROLE.USER, activated: true });
+const adminUser = UserFactory.build(
+  { role: USER_ROLE.ADMIN, activated: true },
+  { generateId: true },
+);
+const regularUser = UserFactory.build(
+  { role: USER_ROLE.USER, activated: true },
+  { generateId: true },
+);
 let sendMailStub;
 const sandbox = sinon.createSandbox();
 
@@ -678,7 +682,7 @@ describe('User Controller', () => {
 
       context('when user is not found', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(userId);
+          await User.findByIdAndDelete(regularUser._id);
         });
         it('returns token error', (done) => {
           request()
@@ -1042,21 +1046,21 @@ describe('User Controller', () => {
       );
       const referral = ReferralFactory.build(
         {
-          referrerId: userId,
+          referrerId: regularUser._id,
           reward: { amount: 50000 },
         },
         { generateId: true },
       );
 
       const enquiry = EnquiryFactory.build(
-        { userId, propertyId: property._id },
+        { userId: regularUser._id, propertyId: property._id },
         { generateId: true },
       );
       const offer = OfferFactory.build(
         {
           enquiryId: enquiry._id,
           vendorId: vendor._id,
-          userId,
+          userId: regularUser._id,
           totalAmountPayable: 19000000,
         },
         { generateId: true },
@@ -1064,7 +1068,7 @@ describe('User Controller', () => {
       const transaction = TransactionFactory.build(
         {
           propertyId: property._id,
-          userId,
+          userId: regularUser._id,
           adminId: vendor._id,
           amount: 250000,
         },
@@ -1099,7 +1103,7 @@ describe('User Controller', () => {
           await createOffer(offer);
           await addTransaction(transaction);
           await acceptOffer({
-            userId,
+            userId: regularUser._id,
             offerId: offer._id,
             signature: 'https://ballers.ng/signature.png',
           });
@@ -1153,7 +1157,7 @@ describe('User Controller', () => {
     });
 
     describe('Upgrade User to content editor', () => {
-      const userInfo = { userId };
+      const userInfo = { userId: regularUser._id };
       context('with valid token', () => {
         it('returns a upgraded user', (done) => {
           request()
@@ -1235,7 +1239,7 @@ describe('User Controller', () => {
     });
 
     describe('Downgrade Content editor to user', () => {
-      const userInfo = { userId };
+      const userInfo = { userId: regularUser._id };
       context('with valid token', () => {
         it('returns a upgraded user', (done) => {
           request()
@@ -1361,7 +1365,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Vendor verified');
               expect(res.body.vendor.vendor.verified).to.be.eql(true);
-              expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminId.toString());
+              expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminUser._id.toString());
               done();
             });
         });
@@ -1484,7 +1488,7 @@ describe('User Controller', () => {
                 );
                 expect(
                   res.body.vendor.vendor.verification[VENDOR_STEPS[index]].verifiedBy,
-                ).to.be.eql(adminId.toString());
+                ).to.be.eql(adminUser._id.toString());
                 done();
               });
           }),
@@ -1604,7 +1608,7 @@ describe('User Controller', () => {
                 ).to.be.eql(data.comment);
                 expect(
                   res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].addedBy,
-                ).to.be.eql(adminId.toString());
+                ).to.be.eql(adminUser._id.toString());
                 done();
               });
           }),
@@ -1857,6 +1861,78 @@ describe('User Controller', () => {
         });
       });
     });
+
+    describe('Get one user', () => {
+      const invalidUserId = mongoose.Types.ObjectId();
+      const testUser = UserFactory.build(
+        { role: USER_ROLE.USER, activated: true },
+        { generateId: true },
+      );
+      const method = 'get';
+      const endpoint = `/api/v1/user/${testUser._id}`;
+
+      beforeEach(async () => {
+        await addUser(testUser);
+      });
+
+      context('with a valid token & id', () => {
+        it('successfully returns user', (done) => {
+          request()
+            .get(endpoint)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.user._id).to.be.eql(testUser._id.toString());
+              expect(res.body.user).to.not.have.property('password');
+              expect(res.body.user).to.not.have.property('notifications');
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+      });
+
+      itReturnsForbiddenForInvalidToken({
+        endpoint,
+        method,
+        user: regularUser,
+        useExistingUser: true,
+      });
+
+      itReturnsAnErrorForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        userId: adminUser._id,
+        useExistingUser: true,
+      });
+
+      context('with an invalid user id', () => {
+        it('returns not found', (done) => {
+          request()
+            .get(`/api/v1/user/${invalidUserId}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              done();
+            });
+        });
+      });
+
+      itReturnsAnErrorWhenServiceFails({
+        endpoint,
+        method,
+        user: adminUser,
+        model: User,
+        modelMethod: 'aggregate',
+        useExistingUser: true,
+      });
+    });
   });
 
   describe('Get all users', () => {
@@ -1883,7 +1959,7 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: adminUser,
-        userId: adminId,
+        userId: adminUser._id,
       });
     });
   });
@@ -1915,7 +1991,7 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: adminUser,
-        userId: adminId,
+        userId: adminUser._id,
       });
     });
   });
