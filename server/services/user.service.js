@@ -1,4 +1,5 @@
 /* eslint-disable import/no-cycle */
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/user.model';
@@ -12,6 +13,8 @@ import { getTotalAmountPaidByUser } from './transaction.service';
 import { REFERRAL_STATUS, USER_ROLE, VENDOR_INFO_STATUS, VENDOR_STEPS } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getTodaysDateStandard } from '../helpers/dates';
+
+const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getUserByEmail = async (email, fields = null) =>
   User.findOne({ email }).select(fields);
@@ -525,6 +528,18 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating vendor information', error);
   }
 };
+
+export const getOneUser = async (userId) =>
+  User.aggregate([
+    { $match: { _id: ObjectId(userId) } },
+    {
+      $project: {
+        password: 0,
+        notifications: 0,
+        preferences: 0,
+      },
+    },
+  ]);
 
 export const addDirector = async ({ directorInfo, userId }) => {
   const user = await getUserById(userId).catch((error) => {

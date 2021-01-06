@@ -2052,6 +2052,78 @@ describe('User Controller', () => {
         });
       });
     });
+
+    describe('Get one user', () => {
+      const invalidUserId = mongoose.Types.ObjectId();
+      const testUser = UserFactory.build(
+        { role: USER_ROLE.USER, activated: true },
+        { generateId: true },
+      );
+      const method = 'get';
+      const endpoint = `/api/v1/user/${testUser._id}`;
+
+      beforeEach(async () => {
+        await addUser(testUser);
+      });
+
+      context('with a valid token & id', () => {
+        it('successfully returns user', (done) => {
+          request()
+            .get(endpoint)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.user._id).to.be.eql(testUser._id.toString());
+              expect(res.body.user).to.not.have.property('password');
+              expect(res.body.user).to.not.have.property('notifications');
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+      });
+
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: regularUser,
+        useExistingUser: true,
+      });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        userId: adminUser._id,
+        useExistingUser: true,
+      });
+
+      context('with an invalid user id', () => {
+        it('returns not found', (done) => {
+          request()
+            .get(`/api/v1/user/${invalidUserId}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              done();
+            });
+        });
+      });
+
+      itReturnsAnErrorWhenServiceFails({
+        endpoint,
+        method,
+        user: adminUser,
+        model: User,
+        modelMethod: 'aggregate',
+        useExistingUser: true,
+      });
+    });
   });
 
   describe('Get all users', () => {
