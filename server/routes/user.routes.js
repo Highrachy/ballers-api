@@ -11,7 +11,7 @@ import {
   verifyVendorSchema,
   addCommentVendorSchema,
   verifyVendorInfoSchema,
-  addDirectorSchema,
+  updateDirectorSchema,
 } from '../schemas/user.schema';
 import {
   schemaValidation,
@@ -659,11 +659,11 @@ router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOn
 
 /**
  * @swagger
- * /user/vendor/director/add:
+ * /user/vendor/director:
  *   put:
  *     tags:
  *       - User
- *     description: Add director or signatory to vendor profile
+ *     description: Edit a director or signatory info
  *     produces:
  *       - application/json
  *     requestBody:
@@ -671,26 +671,26 @@ router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOn
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/User'
- *      description: Add director or signatory to vendor profile
+ *      description: Edit a director or signatory info
  *     responses:
  *      '200':
- *        description: Director added
+ *        description: Director updated
  *      '400':
- *        description: Error adding director
+ *        description: Error updating director
  *      '500':
  *       description: Internal server error
  */
 router.put(
-  '/vendor/director/add',
+  '/vendor/director',
   authenticate,
   isVendor,
-  schemaValidation(addDirectorSchema),
-  UserController.addDirector,
+  schemaValidation(updateDirectorSchema),
+  UserController.editDirector,
 );
 
 /**
  * @swagger
- * /user/vendor/director/remove/:id:
+ * /user/vendor/director/:id:
  *   delete:
  *     tags:
  *       - User
@@ -712,7 +712,7 @@ router.put(
  *       description: Internal server error
  */
 router.delete(
-  '/vendor/director/remove/:id',
+  '/vendor/director/:id',
   hasValidObjectId,
   authenticate,
   isVendor,

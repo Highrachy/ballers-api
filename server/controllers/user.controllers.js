@@ -18,7 +18,7 @@ import {
   updateVendor,
   addCommentToVerificationStep,
   verifyVendor,
-  addDirector,
+  editDirector,
   removeDirector,
   getOneUser,
 } from '../services/user.service';
@@ -256,22 +256,24 @@ const UserController = {
       .catch((error) => next(error));
   },
 
-  addDirector(req, res, next) {
+  editDirector(req, res, next) {
     const directorInfo = req.locals;
     const userId = req.user._id;
-    addDirector({ directorInfo, userId })
+    editDirector({ directorInfo, userId })
       .then((user) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Director added', user });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Director information was successfully updated', user });
       })
       .catch((error) => next(error));
   },
 
   removeDirector(req, res, next) {
     const directorId = req.params.id;
-    const vendor = req.user;
-    removeDirector({ directorId, vendor })
-      .then((user) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Director removed', user });
+    const { user } = req;
+    removeDirector({ directorId, user })
+      .then(() => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Director removed' });
       })
       .catch((error) => next(error));
   },

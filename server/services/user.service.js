@@ -541,15 +541,31 @@ export const getOneUser = async (userId) =>
     },
   ]);
 
-export const addDirector = async ({ directorInfo, userId }) => {
+export const editDirector = async ({ directorInfo, userId }) => {
   const user = await getUserById(userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  const vendorIsForDirector = (director) =>
+    director._id.toString() === directorInfo.directorId.toString();
+
+  const validVendor = user.vendor.directors.some(vendorIsForDirector);
+
+  if (!validVendor) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid director');
+  }
+
   try {
-    return User.findByIdAndUpdate(
-      user._id,
-      { $push: { 'vendor.directors': directorInfo } },
+    return User.findOneAndUpdate(
+      { 'vendor.directors._id': directorInfo.directorId },
+      {
+        $set: {
+          'vendor.directors.$.name': directorInfo.name,
+          'vendor.directors.$.phone': directorInfo.phone,
+          'vendor.directors.$.isSignatory': directorInfo.isSignatory,
+          'vendor.directors.$.signature': directorInfo.signature,
+        },
+      },
       { new: true, fields: '-password' },
     );
   } catch (error) {
@@ -557,23 +573,23 @@ export const addDirector = async ({ directorInfo, userId }) => {
   }
 };
 
-export const removeDirector = async ({ directorId, vendor }) => {
-  let { directors } = vendor.vendor;
+export const removeDirector = async ({ directorId, user }) => {
+  let { directors } = user.vendor;
 
   directors = directors.filter((director) => director._id.toString() !== directorId.toString());
 
   const signatoryExists = directors.some((director) => director.isSignatory === true);
 
-  if (!signatoryExists) {
+  if (!signatoryExists && user.vendor.verified) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
-      'Last account signatory cannot be deleted',
+      'Signatory cannot be deleted. Verified vendors must have at least one signatory.',
     );
   }
 
   try {
     return User.findByIdAndUpdate(
-      vendor._id,
+      user._id,
       { $set: { 'vendor.directors': directors } },
       { new: true, fields: '-password' },
     );

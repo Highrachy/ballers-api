@@ -1868,6 +1868,7 @@ describe('User Controller', () => {
           activated: true,
           vendor: {
             companyName: 'Highrachy Investment Limited',
+            verified: true,
             directors: [
               {
                 _id: nonSignatoryId,
@@ -1883,6 +1884,7 @@ describe('User Controller', () => {
                 phone: '08012345678',
               },
               {
+                _id: mongoose.Types.ObjectId(),
                 name: 'John',
                 isSignatory: false,
                 phone: '08012345678',
@@ -1892,8 +1894,8 @@ describe('User Controller', () => {
         },
         { generateId: true },
       );
-      const invalidUser = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
-      const endpoint = `/api/v1/user/vendor/director/remove/${nonSignatoryId}`;
+      const invalidUser = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
+      const endpoint = `/api/v1/user/vendor/director/${nonSignatoryId}`;
       const method = 'delete';
 
       beforeEach(async () => {
@@ -1909,8 +1911,6 @@ describe('User Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Director removed');
-              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
-              expect(res.body.user.vendor.directors.length).to.be.eql(2);
               done();
             });
         });
@@ -1919,12 +1919,14 @@ describe('User Controller', () => {
       context('when id passed is last account signatory', () => {
         it('returns error', (done) => {
           request()
-            [method](`/api/v1/user/vendor/director/remove/${signatoryId}`)
+            [method](`/api/v1/user/vendor/director/${signatoryId}`)
             .set('authorization', vendorToken)
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Last account signatory cannot be deleted');
+              expect(res.body.message).to.be.eql(
+                'Signatory cannot be deleted. Verified vendors must have at least one signatory.',
+              );
               done();
             });
         });
@@ -1964,8 +1966,9 @@ describe('User Controller', () => {
       });
     });
 
-    describe('Add director or signatories', () => {
+    describe('Edit director or signatories', () => {
       let vendorToken;
+      const signatoryId = mongoose.Types.ObjectId();
       const vendorUser = UserFactory.build(
         {
           role: USER_ROLE.VENDOR,
@@ -1974,6 +1977,7 @@ describe('User Controller', () => {
             companyName: 'Highrachy Investment Limited',
             directors: [
               {
+                _id: signatoryId,
                 name: 'Jane Doe',
                 isSignatory: false,
                 phone: '08012345678',
@@ -1984,14 +1988,15 @@ describe('User Controller', () => {
         { generateId: true },
       );
       const invalidUser = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
-      const endpoint = '/api/v1/user/vendor/director/add';
+      const endpoint = '/api/v1/user/vendor/director';
       const method = 'put';
 
       const data = {
+        directorId: signatoryId,
         name: 'Samuel',
         isSignatory: true,
         signature: 'signature.png',
-        phone: '08012345678',
+        phone: '000000000',
       };
 
       beforeEach(async () => {
@@ -2007,9 +2012,12 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('Director added');
+              expect(res.body.message).to.be.eql('Director information was successfully updated');
               expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
-              expect(res.body.user.vendor.directors.length).to.be.eql(2);
+              expect(res.body.user.vendor.directors[0]._id).to.be.eql(signatoryId.toString());
+              expect(res.body.user.vendor.directors[0].name).to.be.eql(data.name);
+              expect(res.body.user.vendor.directors[0].isSignatory).to.be.eql(data.isSignatory);
+              expect(res.body.user.vendor.directors[0].phone).to.be.eql(data.phone);
               done();
             });
         });
@@ -2038,7 +2046,7 @@ describe('User Controller', () => {
 
       context('when findByIdAndUpdate returns an error', () => {
         it('returns the error', (done) => {
-          sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
           request()
             [method](endpoint)
             .set('authorization', vendorToken)
@@ -2047,7 +2055,7 @@ describe('User Controller', () => {
               expect(res).to.have.status(400);
               expect(res.body.success).to.be.eql(false);
               done();
-              User.findByIdAndUpdate.restore();
+              User.findOneAndUpdate.restore();
             });
         });
       });
