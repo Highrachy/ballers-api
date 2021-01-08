@@ -145,5 +145,5 @@ export const updateVendorSchema = Joi.object({
 
 export const updateDirectorSchema = Joi.object({
   ...directorSchema,
-  directorId: Joi.objectId().label('Director id').required(),
+  _id: Joi.objectId().label('Director id').required(),
 });

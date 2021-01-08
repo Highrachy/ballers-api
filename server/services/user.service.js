@@ -541,23 +541,18 @@ export const getOneUser = async (userId) =>
     },
   ]);
 
-export const editDirector = async ({ directorInfo, userId }) => {
-  const user = await getUserById(userId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
+export const editDirector = async ({ directorInfo, user }) => {
+  const vendorIsForDirector = (director) => director._id.toString() === directorInfo._id.toString();
 
-  const vendorIsForDirector = (director) =>
-    director._id.toString() === directorInfo.directorId.toString();
+  const directorIsValid = user.vendor.directors.some(vendorIsForDirector);
 
-  const validVendor = user.vendor.directors.some(vendorIsForDirector);
-
-  if (!validVendor) {
+  if (!directorIsValid) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid director');
   }
 
   try {
     return User.findOneAndUpdate(
-      { 'vendor.directors._id': directorInfo.directorId },
+      { 'vendor.directors._id': directorInfo._id },
       {
         $set: {
           'vendor.directors.$.name': directorInfo.name,

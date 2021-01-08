@@ -1911,6 +1911,8 @@ describe('User Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Director removed');
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user.vendor.directors.length).to.be.eql(2);
               done();
             });
         });
@@ -1927,6 +1929,23 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql(
                 'Signatory cannot be deleted. Verified vendors must have at least one signatory.',
               );
+              done();
+            });
+        });
+      });
+
+      context('when vendor is not verified', () => {
+        beforeEach(async () => {
+          await User.findByIdAndUpdate(vendorUser._id, { 'vendor.verified': false });
+        });
+        it('deletes last signatory', (done) => {
+          request()
+            [method](`/api/v1/user/vendor/director/${signatoryId}`)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Director removed');
               done();
             });
         });
@@ -1982,6 +2001,19 @@ describe('User Controller', () => {
                 isSignatory: false,
                 phone: '08012345678',
               },
+              {
+                _id: mongoose.Types.ObjectId(),
+                name: 'John',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+              {
+                _id: mongoose.Types.ObjectId(),
+                name: 'Alex',
+                isSignatory: true,
+                signature: 'signature.png',
+                phone: '08012345678',
+              },
             ],
           },
         },
@@ -1992,7 +2024,7 @@ describe('User Controller', () => {
       const method = 'put';
 
       const data = {
-        directorId: signatoryId,
+        _id: signatoryId,
         name: 'Samuel',
         isSignatory: true,
         signature: 'signature.png',
@@ -2014,6 +2046,17 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Director information was successfully updated');
               expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user.vendor.directors.length).to.be.eql(
+                vendorUser.vendor.directors.length,
+              );
+              expect(res.body.user.vendor.directors[1]).to.eql({
+                ...vendorUser.vendor.directors[1],
+                _id: vendorUser.vendor.directors[1]._id.toString(),
+              });
+              expect(res.body.user.vendor.directors[2]).to.eql({
+                ...vendorUser.vendor.directors[2],
+                _id: vendorUser.vendor.directors[2]._id.toString(),
+              });
               expect(res.body.user.vendor.directors[0]._id).to.be.eql(signatoryId.toString());
               expect(res.body.user.vendor.directors[0].name).to.be.eql(data.name);
               expect(res.body.user.vendor.directors[0].isSignatory).to.be.eql(data.isSignatory);
