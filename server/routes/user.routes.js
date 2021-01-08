@@ -11,6 +11,7 @@ import {
   verifyVendorSchema,
   addCommentVendorSchema,
   verifyVendorInfoSchema,
+  updateDirectorSchema,
 } from '../schemas/user.schema';
 import {
   schemaValidation,
@@ -655,5 +656,67 @@ router.put(
  *          description: Internal server error
  */
 router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOneUser);
+
+/**
+ * @swagger
+ * /user/vendor/director:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Edit a director or signatory info
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Edit a director or signatory info
+ *     responses:
+ *      '200':
+ *        description: Director updated
+ *      '400':
+ *        description: Error updating director
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/director',
+  authenticate,
+  isVendor,
+  schemaValidation(updateDirectorSchema),
+  UserController.editDirector,
+);
+
+/**
+ * @swagger
+ * /user/vendor/director/:id:
+ *   delete:
+ *     tags:
+ *       - User
+ *     description: Remove director or signatory from vendor profile
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Remove director or signatory from vendor profile
+ *     responses:
+ *      '200':
+ *        description: Director removed
+ *      '400':
+ *        description: Error removing director
+ *      '500':
+ *       description: Internal server error
+ */
+router.delete(
+  '/vendor/director/:id',
+  hasValidObjectId,
+  authenticate,
+  isVendor,
+  UserController.removeDirector,
+);
 
 module.exports = router;

@@ -12,14 +12,14 @@ const requiredString = (label) => Joi.string().label(label).required();
 const optionalString = (label) => Joi.string().label(label).optional();
 const optionalBoolean = (label) => Joi.boolean().label(label).optional();
 
-const directors = Joi.array().items(
-  Joi.object().keys({
-    name: optionalString('Name'),
-    isSignatory: optionalBoolean('Signatory'),
-    signature: optionalString('Signature'),
-    phone: optionalString('Phone'),
-  }),
-);
+const directorSchema = {
+  name: optionalString('Name'),
+  phone: optionalString('Phone'),
+  isSignatory: optionalBoolean('Signatory'),
+  signature: optionalString('Signature'),
+};
+
+const directors = Joi.array().items(Joi.object().keys(directorSchema));
 
 const socialMedia = Joi.array().items(
   Joi.object().keys({
@@ -141,4 +141,9 @@ export const updateVendorSchema = Joi.object({
   phone2: optionalString('Phone 2'),
   address,
   vendor,
+});
+
+export const updateDirectorSchema = Joi.object({
+  ...directorSchema,
+  _id: Joi.objectId().label('Director id').required(),
 });

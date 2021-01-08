@@ -19,10 +19,10 @@ import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import {
   itReturnsTheRightPaginationValue,
-  itReturnsForbiddenForInvalidToken,
+  itReturnsForbiddenForTokenWithInvalidAccess,
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
-  itReturnsAnErrorForInvalidToken,
+  itReturnsNotFoundForInvalidToken,
 } from '../helpers';
 import { USER_ROLE, VENDOR_STEPS, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
 import AddressFactory from '../factories/address.factory';
@@ -31,14 +31,10 @@ useDatabase();
 
 let adminToken;
 let userToken;
-const adminUser = UserFactory.build(
-  { role: USER_ROLE.ADMIN, activated: true },
-  { generateId: true },
-);
-const regularUser = UserFactory.build(
-  { role: USER_ROLE.USER, activated: true },
-  { generateId: true },
-);
+const userId = mongoose.Types.ObjectId();
+const adminId = mongoose.Types.ObjectId();
+const adminUser = UserFactory.build({ _id: adminId, role: USER_ROLE.ADMIN, activated: true });
+const regularUser = UserFactory.build({ _id: userId, role: USER_ROLE.USER, activated: true });
 let sendMailStub;
 const sandbox = sinon.createSandbox();
 
@@ -682,7 +678,7 @@ describe('User Controller', () => {
 
       context('when user is not found', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(regularUser._id);
+          await User.findByIdAndDelete(userId);
         });
         it('returns token error', (done) => {
           request()
@@ -1046,21 +1042,21 @@ describe('User Controller', () => {
       );
       const referral = ReferralFactory.build(
         {
-          referrerId: regularUser._id,
+          referrerId: userId,
           reward: { amount: 50000 },
         },
         { generateId: true },
       );
 
       const enquiry = EnquiryFactory.build(
-        { userId: regularUser._id, propertyId: property._id },
+        { userId, propertyId: property._id },
         { generateId: true },
       );
       const offer = OfferFactory.build(
         {
           enquiryId: enquiry._id,
           vendorId: vendor._id,
-          userId: regularUser._id,
+          userId,
           totalAmountPayable: 19000000,
         },
         { generateId: true },
@@ -1068,7 +1064,7 @@ describe('User Controller', () => {
       const transaction = TransactionFactory.build(
         {
           propertyId: property._id,
-          userId: regularUser._id,
+          userId,
           adminId: vendor._id,
           amount: 250000,
         },
@@ -1103,7 +1099,7 @@ describe('User Controller', () => {
           await createOffer(offer);
           await addTransaction(transaction);
           await acceptOffer({
-            userId: regularUser._id,
+            userId,
             offerId: offer._id,
             signature: 'https://ballers.ng/signature.png',
           });
@@ -1157,7 +1153,7 @@ describe('User Controller', () => {
     });
 
     describe('Upgrade User to content editor', () => {
-      const userInfo = { userId: regularUser._id };
+      const userInfo = { userId };
       context('with valid token', () => {
         it('returns a upgraded user', (done) => {
           request()
@@ -1239,7 +1235,7 @@ describe('User Controller', () => {
     });
 
     describe('Downgrade Content editor to user', () => {
-      const userInfo = { userId: regularUser._id };
+      const userInfo = { userId };
       context('with valid token', () => {
         it('returns a upgraded user', (done) => {
           request()
@@ -1365,7 +1361,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Vendor verified');
               expect(res.body.vendor.vendor.verified).to.be.eql(true);
-              expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminUser._id.toString());
+              expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminId.toString());
               done();
             });
         });
@@ -1414,8 +1410,8 @@ describe('User Controller', () => {
       });
 
       itReturnsForbiddenForNoToken({ endpoint, method, data });
-      itReturnsForbiddenForInvalidToken({ endpoint, method, user: invalidUser, data });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: invalidUser, data });
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: invalidUser,
@@ -1488,7 +1484,7 @@ describe('User Controller', () => {
                 );
                 expect(
                   res.body.vendor.vendor.verification[VENDOR_STEPS[index]].verifiedBy,
-                ).to.be.eql(adminUser._id.toString());
+                ).to.be.eql(adminId.toString());
                 done();
               });
           }),
@@ -1500,7 +1496,7 @@ describe('User Controller', () => {
         method,
         data: { ...data, status: VENDOR_STEPS[0] },
       });
-      itReturnsForbiddenForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: invalidUser,
@@ -1509,7 +1505,7 @@ describe('User Controller', () => {
           status: VENDOR_STEPS[0],
         },
       });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: invalidUser,
@@ -1608,7 +1604,7 @@ describe('User Controller', () => {
                 ).to.be.eql(data.comment);
                 expect(
                   res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].addedBy,
-                ).to.be.eql(adminUser._id.toString());
+                ).to.be.eql(adminId.toString());
                 done();
               });
           }),
@@ -1620,7 +1616,7 @@ describe('User Controller', () => {
         method,
         data: { ...data, status: VENDOR_STEPS[0] },
       });
-      itReturnsForbiddenForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: invalidUser,
@@ -1629,7 +1625,7 @@ describe('User Controller', () => {
           status: VENDOR_STEPS[0],
         },
       });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: invalidUser,
@@ -1830,14 +1826,14 @@ describe('User Controller', () => {
         data,
       });
 
-      itReturnsForbiddenForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: invalidUser,
         data,
       });
 
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: invalidUser,
@@ -1857,6 +1853,259 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(false);
               done();
               User.findByIdAndUpdate.restore();
+            });
+        });
+      });
+    });
+
+    describe('Delete director or signatories', () => {
+      let vendorToken;
+      const signatoryId = mongoose.Types.ObjectId();
+      const nonSignatoryId = mongoose.Types.ObjectId();
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          vendor: {
+            companyName: 'Highrachy Investment Limited',
+            verified: true,
+            directors: [
+              {
+                _id: nonSignatoryId,
+                name: 'Jane Doe',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+              {
+                _id: signatoryId,
+                name: 'Samuel',
+                isSignatory: true,
+                signature: 'signature.png',
+                phone: '08012345678',
+              },
+              {
+                _id: mongoose.Types.ObjectId(),
+                name: 'John',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+            ],
+          },
+        },
+        { generateId: true },
+      );
+      const invalidUser = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
+      const endpoint = `/api/v1/user/vendor/director/${nonSignatoryId}`;
+      const method = 'delete';
+
+      beforeEach(async () => {
+        vendorToken = await addUser(vendorUser);
+      });
+
+      context('when a valid token is used', () => {
+        it('returns deletes director', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Director removed');
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user.vendor.directors.length).to.be.eql(2);
+              expect(res.body.user.vendor.directors[0]._id).to.not.eql(nonSignatoryId);
+              expect(res.body.user.vendor.directors[1]._id).to.not.eql(nonSignatoryId);
+              done();
+            });
+        });
+      });
+
+      context('when id passed is last account signatory', () => {
+        it('returns error', (done) => {
+          request()
+            [method](`/api/v1/user/vendor/director/${signatoryId}`)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql(
+                'Signatory cannot be deleted. Verified vendors must have at least one signatory.',
+              );
+              done();
+            });
+        });
+      });
+
+      context('when vendor is not verified', () => {
+        beforeEach(async () => {
+          await User.findByIdAndUpdate(vendorUser._id, { 'vendor.verified': false });
+        });
+        it('deletes last signatory', (done) => {
+          request()
+            [method](`/api/v1/user/vendor/director/${signatoryId}`)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Director removed');
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+      });
+
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: invalidUser,
+      });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        userId: invalidUser._id,
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findByIdAndUpdate.restore();
+            });
+        });
+      });
+    });
+
+    describe('Edit director or signatories', () => {
+      let vendorToken;
+      const signatoryId = mongoose.Types.ObjectId();
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          vendor: {
+            companyName: 'Highrachy Investment Limited',
+            directors: [
+              {
+                _id: signatoryId,
+                name: 'Jane Doe',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+              {
+                _id: mongoose.Types.ObjectId(),
+                name: 'John',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+              {
+                _id: mongoose.Types.ObjectId(),
+                name: 'Alex',
+                isSignatory: true,
+                signature: 'signature.png',
+                phone: '08012345678',
+              },
+            ],
+          },
+        },
+        { generateId: true },
+      );
+      const invalidUser = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
+      const endpoint = '/api/v1/user/vendor/director';
+      const method = 'put';
+
+      const data = {
+        _id: signatoryId,
+        name: 'Samuel',
+        isSignatory: true,
+        signature: 'signature.png',
+        phone: '000000000',
+      };
+
+      beforeEach(async () => {
+        vendorToken = await addUser(vendorUser);
+      });
+
+      context('when a valid token is used', () => {
+        it('returns updated vendor', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Director information was successfully updated');
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user.vendor.directors.length).to.be.eql(
+                vendorUser.vendor.directors.length,
+              );
+              expect(res.body.user.vendor.directors[0]).to.eql({
+                ...vendorUser.vendor.directors[0],
+                _id: signatoryId.toString(),
+                name: data.name,
+                isSignatory: data.isSignatory,
+                signature: data.signature,
+                phone: data.phone,
+              });
+              expect(res.body.user.vendor.directors[1]).to.eql({
+                ...vendorUser.vendor.directors[1],
+                _id: vendorUser.vendor.directors[1]._id.toString(),
+              });
+              expect(res.body.user.vendor.directors[2]).to.eql({
+                ...vendorUser.vendor.directors[2],
+                _id: vendorUser.vendor.directors[2]._id.toString(),
+              });
+
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+        data,
+      });
+
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: invalidUser,
+        data,
+      });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        userId: invalidUser._id,
+        data,
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findOneAndUpdate.restore();
             });
         });
       });
@@ -1896,14 +2145,14 @@ describe('User Controller', () => {
         method,
       });
 
-      itReturnsForbiddenForInvalidToken({
+      itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: regularUser,
         useExistingUser: true,
       });
 
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: adminUser,
@@ -1946,7 +2195,7 @@ describe('User Controller', () => {
 
     describe('User pagination', () => {
       itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-      itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
       itReturnsAnErrorWhenServiceFails({
         endpoint,
@@ -1955,11 +2204,11 @@ describe('User Controller', () => {
         model: User,
         modelMethod: 'aggregate',
       });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: adminUser,
-        userId: adminUser._id,
+        userId: adminId,
       });
     });
   });
@@ -1978,7 +2227,7 @@ describe('User Controller', () => {
 
     describe('Vendor pagination', () => {
       itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-      itReturnsForbiddenForInvalidToken({ endpoint, method, user: regularUser });
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
       itReturnsAnErrorWhenServiceFails({
         endpoint,
@@ -1987,11 +2236,11 @@ describe('User Controller', () => {
         model: User,
         modelMethod: 'aggregate',
       });
-      itReturnsAnErrorForInvalidToken({
+      itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: adminUser,
-        userId: adminUser._id,
+        userId: adminId,
       });
     });
   });

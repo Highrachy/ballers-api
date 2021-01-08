@@ -540,3 +540,55 @@ export const getOneUser = async (userId) =>
       },
     },
   ]);
+
+export const editDirector = async ({ directorInfo, user }) => {
+  const vendorIsForDirector = user.vendor.directors.some(
+    (director) => director._id.toString() === directorInfo._id.toString(),
+  );
+
+  if (!vendorIsForDirector) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid director');
+  }
+
+  try {
+    return User.findOneAndUpdate(
+      { 'vendor.directors._id': directorInfo._id },
+      {
+        $set: {
+          'vendor.directors.$.name': directorInfo.name,
+          'vendor.directors.$.phone': directorInfo.phone,
+          'vendor.directors.$.isSignatory': directorInfo.isSignatory,
+          'vendor.directors.$.signature': directorInfo.signature,
+        },
+      },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding director', error);
+  }
+};
+
+export const removeDirector = async ({ directorId, user }) => {
+  let { directors } = user.vendor;
+
+  directors = directors.filter((director) => director._id.toString() !== directorId.toString());
+
+  const signatoryExists = directors.some((director) => director.isSignatory === true);
+
+  if (!signatoryExists && user.vendor.verified) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Signatory cannot be deleted. Verified vendors must have at least one signatory.',
+    );
+  }
+
+  try {
+    return User.findByIdAndUpdate(
+      user._id,
+      { $set: { 'vendor.directors': directors } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error removing director', error);
+  }
+};

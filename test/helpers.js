@@ -157,7 +157,7 @@ export const itReturnsTheRightPaginationValue = ({
   });
 };
 
-export const itReturnsForbiddenForInvalidToken = ({
+export const itReturnsForbiddenForTokenWithInvalidAccess = ({
   endpoint,
   method,
   user,
@@ -242,7 +242,7 @@ export const itReturnsAnErrorWhenServiceFails = ({
   });
 };
 
-export const itReturnsAnErrorForInvalidToken = ({
+export const itReturnsNotFoundForInvalidToken = ({
   endpoint,
   method,
   user,
