@@ -17,7 +17,7 @@ import {
   schemaValidation,
   authenticate,
   isAdmin,
-  isVendor,
+  isUnverifiedVendor,
   hasValidObjectId,
 } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
@@ -631,7 +631,7 @@ router.put(
 router.put(
   '/vendor/update',
   authenticate,
-  isVendor,
+  isUnverifiedVendor,
   schemaValidation(updateVendorSchema),
   UserController.updateVendor,
 );
@@ -683,7 +683,7 @@ router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOn
 router.put(
   '/vendor/director',
   authenticate,
-  isVendor,
+  isUnverifiedVendor,
   schemaValidation(updateDirectorSchema),
   UserController.editDirector,
 );
@@ -715,7 +715,7 @@ router.delete(
   '/vendor/director/:id',
   hasValidObjectId,
   authenticate,
-  isVendor,
+  isUnverifiedVendor,
   UserController.removeDirector,
 );
 

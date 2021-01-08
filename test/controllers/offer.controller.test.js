@@ -52,14 +52,21 @@ const vendorUser = UserFactory.build(
   {
     role: USER_ROLE.VENDOR,
     activated: true,
-    vendor: { companyName: 'Highrachy Investment' },
+    vendor: {
+      companyName: 'Highrachy Investment',
+      verified: true,
+    },
   },
   { generateId: true },
 );
 
 const testUser = UserFactory.build({ role: USER_ROLE.USER, activated: true }, { generateId: true });
 const testVendor = UserFactory.build(
-  { role: USER_ROLE.VENDOR, activated: true },
+  {
+    role: USER_ROLE.VENDOR,
+    activated: true,
+    vendor: { verified: true },
+  },
   { generateId: true },
 );
 

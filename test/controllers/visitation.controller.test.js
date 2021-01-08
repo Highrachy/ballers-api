@@ -37,6 +37,9 @@ const vendor = UserFactory.build(
     role: USER_ROLE.VENDOR,
     activated: true,
     email: 'vendor1@mail.com',
+    vendor: {
+      verified: true,
+    },
   },
   { generateId: true },
 );

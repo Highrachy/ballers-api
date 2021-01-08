@@ -63,6 +63,19 @@ export const isAdmin = async (req, res, next) => {
 
 export const isVendor = async (req, res, next) => {
   const { user } = req;
+  if (user && user.role === USER_ROLE.VENDOR && user.vendor.verified === true) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
+
+export const isUnverifiedVendor = async (req, res, next) => {
+  const { user } = req;
   if (user && user.role === USER_ROLE.VENDOR) {
     next();
   } else {

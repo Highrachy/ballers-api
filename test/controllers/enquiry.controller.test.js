@@ -16,7 +16,13 @@ let adminToken;
 let userToken;
 const adminUser = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
 const vendorUser = UserFactory.build(
-  { role: USER_ROLE.VENDOR, activated: true },
+  {
+    role: USER_ROLE.VENDOR,
+    activated: true,
+    vendor: {
+      verified: true,
+    },
+  },
   { generateId: true },
 );
 const regularUser = UserFactory.build(
