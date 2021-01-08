@@ -102,7 +102,11 @@ export const isEditor = async (req, res, next) => {
 
 export const isVendorOrAdmin = async (req, res, next) => {
   const { user } = req;
-  if (user && (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.ADMIN)) {
+  if (
+    user &&
+    ((user.role === USER_ROLE.VENDOR && user.vendor.verified === true) ||
+      (user && user.role === USER_ROLE.ADMIN))
+  ) {
     next();
   } else {
     return res.status(httpStatus.FORBIDDEN).json({

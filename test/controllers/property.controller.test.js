@@ -16,6 +16,7 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import Enquiry from '../../server/models/enquiry.model';
+import { itReturnsErrorForUnverifiedVendor } from '../helpers';
 
 useDatabase();
 
@@ -62,6 +63,8 @@ describe('Property Controller', () => {
   });
 
   describe('Add Property Route', () => {
+    const endpoint = '/api/v1/property/add';
+    const method = 'post';
     context('with valid data', () => {
       it('returns successful property', (done) => {
         const property = PropertyFactory.build();
@@ -77,6 +80,13 @@ describe('Property Controller', () => {
             done();
           });
       });
+    });
+
+    itReturnsErrorForUnverifiedVendor({
+      endpoint,
+      method,
+      user: vendorUser,
+      useExistingUser: true,
     });
 
     context('with unauthorized user access token', () => {
@@ -518,6 +528,15 @@ describe('Property Controller', () => {
 
     beforeEach(async () => {
       await addProperty(property);
+    });
+
+    const endpoint = '/api/v1/property/update';
+    const method = 'put';
+    itReturnsErrorForUnverifiedVendor({
+      endpoint,
+      method,
+      user: vendorUser,
+      useExistingUser: true,
     });
 
     context('with valid data & token', () => {
@@ -1041,6 +1060,15 @@ describe('Property Controller', () => {
       });
     });
 
+    const endpoint = `/api/v1/property/delete/${property._id}`;
+    const method = 'delete';
+    itReturnsErrorForUnverifiedVendor({
+      endpoint,
+      method,
+      user: vendorUser,
+      useExistingUser: true,
+    });
+
     context('when token is used', () => {
       beforeEach(async () => {
         await User.findByIdAndDelete(vendorUser._id);
@@ -1226,6 +1254,15 @@ describe('Property Controller', () => {
               done();
             });
         });
+      });
+
+      const endpoint = '/api/v1/property/all';
+      const method = 'get';
+      itReturnsErrorForUnverifiedVendor({
+        endpoint,
+        method,
+        user: vendorUser,
+        useExistingUser: true,
       });
 
       context('with a vendor token & id', () => {

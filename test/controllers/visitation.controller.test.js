@@ -18,6 +18,7 @@ import {
   itReturnsAnErrorWhenServiceFails,
   itReturnsNotFoundForInvalidToken,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
+  itReturnsErrorForUnverifiedVendor,
 } from '../helpers';
 
 useDatabase();
@@ -48,6 +49,9 @@ const vendor2 = UserFactory.build(
     role: USER_ROLE.VENDOR,
     activated: true,
     email: 'vendor2@mail.com',
+    vendor: {
+      verified: true,
+    },
   },
   { generateId: true },
 );
@@ -412,6 +416,8 @@ describe('Visitation Controller', () => {
         user: adminUser,
         userId: adminUser._id,
       });
+
+      itReturnsErrorForUnverifiedVendor({ endpoint, method, user: vendor, useExistingUser: true });
     });
   });
 });

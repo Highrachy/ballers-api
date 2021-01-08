@@ -320,3 +320,40 @@ export const itReturnsErrorForEmptyFields = ({
     }),
   );
 };
+
+export const itReturnsErrorForUnverifiedVendor = ({
+  endpoint,
+  method,
+  user,
+  data = {},
+  useExistingUser = false,
+}) => {
+  let token;
+
+  beforeEach(async () => {
+    if (useExistingUser) {
+      const loggedInUser = await loginUser(user);
+      token = loggedInUser.token;
+    } else {
+      token = await addUser({ ...user, vendor: { verified: false } });
+    }
+  });
+
+  context('when vendor is unverified', () => {
+    beforeEach(async () => {
+      await User.findByIdAndUpdate(user._id, { 'vendor.verified': false });
+    });
+    it('returns error', (done) => {
+      request()
+        [method](endpoint)
+        .set('authorization', token)
+        .send(data)
+        .end((err, res) => {
+          expect(res).to.have.status(403);
+          expect(res.body.success).to.be.eql(false);
+          expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+          done();
+        });
+    });
+  });
+};
