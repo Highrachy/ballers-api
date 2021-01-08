@@ -542,11 +542,11 @@ export const getOneUser = async (userId) =>
   ]);
 
 export const editDirector = async ({ directorInfo, user }) => {
-  const vendorIsForDirector = (director) => director._id.toString() === directorInfo._id.toString();
+  const vendorIsForDirector = user.vendor.directors.some(
+    (director) => director._id.toString() === directorInfo._id.toString(),
+  );
 
-  const directorIsValid = user.vendor.directors.some(vendorIsForDirector);
-
-  if (!directorIsValid) {
+  if (!vendorIsForDirector) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid director');
   }
 

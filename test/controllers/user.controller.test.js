@@ -1913,6 +1913,8 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Director removed');
               expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
+              expect(res.body.user.vendor.directors[0]._id).to.not.eql(nonSignatoryId);
+              expect(res.body.user.vendor.directors[1]._id).to.not.eql(nonSignatoryId);
               done();
             });
         });
@@ -2049,6 +2051,14 @@ describe('User Controller', () => {
               expect(res.body.user.vendor.directors.length).to.be.eql(
                 vendorUser.vendor.directors.length,
               );
+              expect(res.body.user.vendor.directors[0]).to.eql({
+                ...vendorUser.vendor.directors[0],
+                _id: signatoryId.toString(),
+                name: data.name,
+                isSignatory: data.isSignatory,
+                signature: data.signature,
+                phone: data.phone,
+              });
               expect(res.body.user.vendor.directors[1]).to.eql({
                 ...vendorUser.vendor.directors[1],
                 _id: vendorUser.vendor.directors[1]._id.toString(),
@@ -2057,10 +2067,7 @@ describe('User Controller', () => {
                 ...vendorUser.vendor.directors[2],
                 _id: vendorUser.vendor.directors[2]._id.toString(),
               });
-              expect(res.body.user.vendor.directors[0]._id).to.be.eql(signatoryId.toString());
-              expect(res.body.user.vendor.directors[0].name).to.be.eql(data.name);
-              expect(res.body.user.vendor.directors[0].isSignatory).to.be.eql(data.isSignatory);
-              expect(res.body.user.vendor.directors[0].phone).to.be.eql(data.phone);
+
               done();
             });
         });
