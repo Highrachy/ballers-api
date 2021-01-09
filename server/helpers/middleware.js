@@ -48,9 +48,18 @@ export const authenticate = async (req, res, next) => {
   return null;
 };
 
+const isVerifiedVendor = (user) =>
+  user && user.role === USER_ROLE.VENDOR && user.vendor.verified === true;
+
+const isValidAdmin = (user) => user && user.role === USER_ROLE.ADMIN;
+
+const isValidEditor = (user) => user && user.role === USER_ROLE.EDITOR;
+
+const isValidUser = (user) => user && user.role === USER_ROLE.USER;
+
 export const isAdmin = async (req, res, next) => {
   const { user } = req;
-  if (user && user.role === USER_ROLE.ADMIN) {
+  if (isValidAdmin(user)) {
     next();
   } else {
     return res.status(httpStatus.FORBIDDEN).json({
@@ -62,6 +71,19 @@ export const isAdmin = async (req, res, next) => {
 };
 
 export const isVendor = async (req, res, next) => {
+  const { user } = req;
+  if (isVerifiedVendor(user)) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
+
+export const isUnverifiedVendor = async (req, res, next) => {
   const { user } = req;
   if (user && user.role === USER_ROLE.VENDOR) {
     next();
@@ -76,7 +98,7 @@ export const isVendor = async (req, res, next) => {
 
 export const isEditor = async (req, res, next) => {
   const { user } = req;
-  if (user && user.role === USER_ROLE.EDITOR) {
+  if (isValidEditor(user)) {
     next();
   } else {
     return res.status(httpStatus.FORBIDDEN).json({
@@ -89,7 +111,7 @@ export const isEditor = async (req, res, next) => {
 
 export const isVendorOrAdmin = async (req, res, next) => {
   const { user } = req;
-  if (user && (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.ADMIN)) {
+  if (isVerifiedVendor(user) || isValidAdmin(user)) {
     next();
   } else {
     return res.status(httpStatus.FORBIDDEN).json({
@@ -102,7 +124,7 @@ export const isVendorOrAdmin = async (req, res, next) => {
 
 export const isEditorOrAdmin = async (req, res, next) => {
   const { user } = req;
-  if (user && (user.role === USER_ROLE.EDITOR || user.role === USER_ROLE.ADMIN)) {
+  if (isValidEditor(user) || isValidAdmin(user)) {
     next();
   } else {
     return res.status(httpStatus.FORBIDDEN).json({
@@ -115,12 +137,7 @@ export const isEditorOrAdmin = async (req, res, next) => {
 
 export const isAdminOrUserOrVendor = async (req, res, next) => {
   const { user } = req;
-  if (
-    user &&
-    (user.role === USER_ROLE.ADMIN ||
-      user.role === USER_ROLE.USER ||
-      user.role === USER_ROLE.VENDOR)
-  ) {
+  if (isValidAdmin(user) || isValidUser(user) || isVerifiedVendor(user)) {
     next();
   } else {
     return res.status(httpStatus.FORBIDDEN).json({

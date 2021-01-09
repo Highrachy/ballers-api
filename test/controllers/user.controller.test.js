@@ -1996,6 +1996,7 @@ describe('User Controller', () => {
           activated: true,
           vendor: {
             companyName: 'Highrachy Investment Limited',
+            verified: true,
             directors: [
               {
                 _id: signatoryId,

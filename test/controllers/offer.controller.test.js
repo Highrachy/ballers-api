@@ -25,6 +25,7 @@ import {
   itReturnsErrorForEmptyFields,
   itReturnsTheRightPaginationValue,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
+  itReturnsErrorForUnverifiedVendor,
 } from '../helpers';
 import Property from '../../server/models/property.model';
 
@@ -52,14 +53,21 @@ const vendorUser = UserFactory.build(
   {
     role: USER_ROLE.VENDOR,
     activated: true,
-    vendor: { companyName: 'Highrachy Investment' },
+    vendor: {
+      companyName: 'Highrachy Investment',
+      verified: true,
+    },
   },
   { generateId: true },
 );
 
 const testUser = UserFactory.build({ role: USER_ROLE.USER, activated: true }, { generateId: true });
 const testVendor = UserFactory.build(
-  { role: USER_ROLE.VENDOR, activated: true },
+  {
+    role: USER_ROLE.VENDOR,
+    activated: true,
+    vendor: { verified: true },
+  },
   { generateId: true },
 );
 
@@ -147,6 +155,13 @@ describe('Offer Controller', () => {
 
       itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: testUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
+
+      itReturnsErrorForUnverifiedVendor({
+        endpoint,
+        method,
+        user: vendorUser,
+        useExistingUser: true,
+      });
 
       context('with invalid data', () => {
         const invalidEmptyData = {
@@ -398,6 +413,13 @@ describe('Offer Controller', () => {
         await createOffer(offer);
       });
 
+      itReturnsErrorForUnverifiedVendor({
+        endpoint,
+        method,
+        user: vendorUser,
+        useExistingUser: true,
+      });
+
       context('with valid data & token', () => {
         it('returns assigned offer', (done) => {
           request()
@@ -613,6 +635,13 @@ describe('Offer Controller', () => {
               done();
             });
         });
+      });
+
+      itReturnsErrorForUnverifiedVendor({
+        endpoint,
+        method,
+        user: vendorUser,
+        useExistingUser: true,
       });
 
       context('when offer is cancelled by unauthorized vendor', () => {
@@ -1205,6 +1234,13 @@ describe('Offer Controller', () => {
           await createOffer(offer);
         });
 
+        itReturnsErrorForUnverifiedVendor({
+          endpoint,
+          method,
+          user: vendorUser,
+          useExistingUser: true,
+        });
+
         context('with a valid token & id', async () => {
           it('resolves the right concern', (done) => {
             request()
@@ -1328,7 +1364,13 @@ describe('Offer Controller', () => {
     );
 
     const vendor2 = UserFactory.build(
-      { role: USER_ROLE.VENDOR, activated: true },
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        vendor: {
+          verified: true,
+        },
+      },
       { generateId: true },
     );
 
@@ -1491,7 +1533,13 @@ describe('Offer Controller', () => {
     const endpoint = `/api/v1/offer/user/${regularUser._id}`;
 
     const vendor2 = UserFactory.build(
-      { role: USER_ROLE.VENDOR, activated: true },
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        vendor: {
+          verified: true,
+        },
+      },
       { generateId: true },
     );
 
