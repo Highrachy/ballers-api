@@ -1364,7 +1364,13 @@ describe('Offer Controller', () => {
     );
 
     const vendor2 = UserFactory.build(
-      { role: USER_ROLE.VENDOR, activated: true },
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        vendor: {
+          verified: true,
+        },
+      },
       { generateId: true },
     );
 

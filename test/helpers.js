@@ -335,13 +335,15 @@ export const itReturnsErrorForUnverifiedVendor = ({
       const loggedInUser = await loginUser(user);
       token = loggedInUser.token;
     } else {
-      token = await addUser({ ...user, vendor: { verified: false } });
+      token = await addUser({ ...user, vendor: { ...user.vendor, verified: false } });
     }
   });
 
   context('when vendor is unverified', () => {
     beforeEach(async () => {
-      await User.findByIdAndUpdate(user._id, { 'vendor.verified': false });
+      if (useExistingUser) {
+        await User.findByIdAndUpdate(user._id, { 'vendor.verified': false });
+      }
     });
     it('returns error', (done) => {
       request()
