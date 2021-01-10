@@ -4,6 +4,8 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getPropertyById } from './property.service';
+import { USER_ROLE } from '../helpers/constants';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -27,22 +29,26 @@ export const addEnquiry = async (enquiry) => {
     );
   }
   try {
-    const newEnquiry = await new Enquiry(enquiry).save();
+    const newEnquiry = await new Enquiry({ ...enquiry, vendorId: property.addedBy }).save();
     return newEnquiry;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding enquiry', error);
   }
 };
 
-export const approveEnquiry = async (approvedEnquiry) => {
-  const enquiry = await getEnquiryById(approvedEnquiry.enquiryId).catch((error) => {
+export const approveEnquiry = async ({ enquiryId, vendor }) => {
+  const enquiry = await getEnquiryById(enquiryId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
   try {
+    if (vendor.role === USER_ROLE.VENDOR && vendor._id.toString() !== enquiry.vendorId.toString()) {
+      throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+    }
+
     return Enquiry.findOneAndUpdate(
       { _id: enquiry.id },
-      { $set: { approved: true, approvedBy: approvedEnquiry.adminId, approvalDate: Date.now() } },
+      { $set: { approved: true, approvedBy: vendor._id, approvalDate: Date.now() } },
       { new: true },
     );
   } catch (error) {
@@ -50,8 +56,8 @@ export const approveEnquiry = async (approvedEnquiry) => {
   }
 };
 
-export const getAllEnquiries = async () =>
-  Enquiry.aggregate([
+export const getAllEnquiries = async (user, page = 1, limit = 10) => {
+  const enquiryOptions = [
     {
       $lookup: {
         from: 'properties',
@@ -61,25 +67,34 @@ export const getAllEnquiries = async () =>
       },
     },
     {
-      $lookup: {
-        from: 'users',
-        localField: 'approvedBy',
-        foreignField: '_id',
-        as: 'approvedBy',
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
       },
     },
     {
       $project: {
         'propertyInfo.assignedTo': 0,
-        'approvedBy.assignedProperties': 0,
-        'approvedBy.password': 0,
-        'approvedBy.referralCode': 0,
       },
     },
-  ]);
+  ];
+  if (user.role === USER_ROLE.VENDOR) {
+    enquiryOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  }
+  if (user.role === USER_ROLE.USER) {
+    enquiryOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+  }
 
-export const getEnquiry = async (enquiryId) =>
-  Enquiry.aggregate([
+  const enquiries = await Enquiry.aggregate(enquiryOptions);
+
+  const total = getPaginationTotal(enquiries);
+  const pagination = generatePagination(page, limit, total);
+  const result = enquiries[0].data;
+  return { pagination, result };
+};
+
+export const getEnquiry = async ({ enquiryId, user }) => {
+  const enquiryOptions = [
     { $match: { _id: ObjectId(enquiryId) } },
     {
       $lookup: {
@@ -90,19 +105,20 @@ export const getEnquiry = async (enquiryId) =>
       },
     },
     {
-      $lookup: {
-        from: 'users',
-        localField: 'approvedBy',
-        foreignField: '_id',
-        as: 'approvedBy',
-      },
-    },
-    {
       $project: {
         'propertyInfo.assignedTo': 0,
-        'approvedBy.assignedProperties': 0,
-        'approvedBy.password': 0,
-        'approvedBy.referralCode': 0,
       },
     },
-  ]);
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    enquiryOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  }
+  if (user.role === USER_ROLE.USER) {
+    enquiryOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+  }
+
+  const enquiries = await Enquiry.aggregate(enquiryOptions);
+
+  return enquiries;
+};

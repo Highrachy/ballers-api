@@ -210,6 +210,7 @@ describe('Offer Service', () => {
       EnquiryFactory.build(
         {
           propertyId: userProperties[index]._id,
+          vendorId: userProperties[index].addedBy,
           userId: user._id,
         },
         { generateId: true },
@@ -220,6 +221,7 @@ describe('Offer Service', () => {
       EnquiryFactory.build(
         {
           propertyId: user2Properties[index]._id,
+          vendorId: user2Properties[index].addedBy,
           userId: user2._id,
         },
         { generateId: true },
@@ -589,6 +591,7 @@ describe('Offer Service', () => {
       EnquiryFactory.build(
         {
           propertyId: properties[index]._id,
+          vendorId: properties[index].addedBy,
           userId: user._id,
         },
         { generateId: true },

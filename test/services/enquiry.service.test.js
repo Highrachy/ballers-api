@@ -38,6 +38,7 @@ describe('Enquiry Service', () => {
       {
         userId: user._id,
         propertyId: property._id,
+        vendorId: vendor._id,
         addedBy: user._id,
         updatedBy: user._id,
       },
@@ -96,20 +97,16 @@ describe('Enquiry Service', () => {
       { userId: user._id, propertyId: property._id, addedBy: user._id, updatedBy: user._id },
       { generateId: true },
     );
-    const updatedEnquiry = {
-      enquiryId: enquiry._id,
-      adminId: admin._id,
-    };
     beforeEach(async () => {
       await addEnquiry(enquiry);
     });
 
     context('when enquiry is approved', () => {
       it('returns a valid approved enquiry', async () => {
-        const approvedEnquiry = await approveEnquiry(updatedEnquiry);
+        const approvedEnquiry = await approveEnquiry({ enquiryId: enquiry._id, vendor });
         const validEnquiry = await getEnquiryById(enquiry._id);
         expect(validEnquiry._id).to.eql(approvedEnquiry._id);
-        expect(validEnquiry.approvedBy).to.eql(updatedEnquiry.adminId);
+        expect(validEnquiry.approvedBy).to.eql(approvedEnquiry.vendorId);
         expect(validEnquiry.approved).to.eql(true);
       });
     });
@@ -118,7 +115,7 @@ describe('Enquiry Service', () => {
       it('throws an error', async () => {
         sinon.stub(Enquiry, 'findById').throws(new Error('error msg'));
         try {
-          await approveEnquiry(updatedEnquiry);
+          await approveEnquiry({ enquiryId: enquiry._id, vendor });
         } catch (err) {
           expect(err.statusCode).to.eql(500);
           expect(err.error).to.be.an('Error');
@@ -132,7 +129,7 @@ describe('Enquiry Service', () => {
       it('throws an error', async () => {
         sinon.stub(Enquiry, 'findOneAndUpdate').throws(new Error('error msg'));
         try {
-          await approveEnquiry(updatedEnquiry);
+          await approveEnquiry({ enquiryId: enquiry._id, vendor });
         } catch (err) {
           expect(err.statusCode).to.eql(400);
           expect(err.error).to.be.an('Error');
@@ -145,7 +142,7 @@ describe('Enquiry Service', () => {
 
   describe('#getEnquiry', () => {
     const enquiry = EnquiryFactory.build(
-      { userId: user._id, propertyId: property._id },
+      { userId: user._id, propertyId: property._id, addedBy: user._id, updatedBy: user._id },
       { generateId: true },
     );
 
@@ -155,7 +152,7 @@ describe('Enquiry Service', () => {
 
     context('when enquiry exists', () => {
       it('returns a valid enquiry', async () => {
-        const gottenEnquiry = await getEnquiry(enquiry._id);
+        const gottenEnquiry = await getEnquiry({ enquiryId: enquiry._id, user });
         expect(gottenEnquiry[0]._id).to.eql(enquiry._id);
         expect(gottenEnquiry[0].propertyId).to.eql(property._id);
       });
@@ -164,7 +161,7 @@ describe('Enquiry Service', () => {
     context('when an invalid id is used', () => {
       it('returns an error', async () => {
         const invalidEnquiryId = mongoose.Types.ObjectId();
-        const gottenEnquiry = await getEnquiry(invalidEnquiryId);
+        const gottenEnquiry = await getEnquiry({ enquiryId: invalidEnquiryId, user });
         expect(gottenEnquiry.length).to.eql(0);
       });
     });
@@ -174,17 +171,24 @@ describe('Enquiry Service', () => {
     const multipleEnquiries = EnquiryFactory.buildList(18, {
       userId: user._id,
       propertyId: property._id,
+      vendorId: vendor._id,
     });
-    const enquiryToAdd = EnquiryFactory.build({ userId: user._id, propertyId: property._id });
+    const enquiryToAdd = EnquiryFactory.build({
+      userId: user._id,
+      propertyId: property._id,
+      vendorId: vendor._id,
+    });
 
     beforeEach(async () => {
       await Enquiry.insertMany(multipleEnquiries);
     });
     context('when enquiry added is valid', () => {
       it('returns 18 enquiries', async () => {
-        const enquiries = await getAllEnquiries();
-        expect(enquiries).to.be.an('array');
-        expect(enquiries.length).to.be.eql(18);
+        const enquiries = await getAllEnquiries(user);
+        expect(enquiries.pagination.currentPage).to.be.eql(1);
+        expect(enquiries.pagination.total).to.be.eql(18);
+        expect(enquiries.result.length).to.be.eql(10);
+        expect(enquiries.result[0].userId).to.be.eql(user._id);
       });
     });
     context('when new enquiry is added', () => {
@@ -192,9 +196,11 @@ describe('Enquiry Service', () => {
         await Enquiry.create(enquiryToAdd);
       });
       it('returns 19 enquiries', async () => {
-        const enquiries = await getAllEnquiries();
-        expect(enquiries).to.be.an('array');
-        expect(enquiries.length).to.be.eql(19);
+        const enquiries = await getAllEnquiries(user);
+        expect(enquiries.pagination.currentPage).to.be.eql(1);
+        expect(enquiries.pagination.total).to.be.eql(19);
+        expect(enquiries.result.length).to.be.eql(10);
+        expect(enquiries.result[0].userId).to.be.eql(user._id);
       });
     });
   });

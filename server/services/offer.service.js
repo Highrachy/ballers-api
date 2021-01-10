@@ -272,6 +272,10 @@ export const createOffer = async (offer) => {
     );
   }
 
+  const vendor = await getUserById(offer.vendorId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
   const referenceCode = await generateReferenceCode(enquiry.propertyId);
   const user = await getUserById(enquiry.userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -288,7 +292,7 @@ export const createOffer = async (offer) => {
       propertyId: enquiry.propertyId,
       referenceCode,
     }).save();
-    await approveEnquiry({ enquiryId: enquiry._id, adminId: offer.vendorId });
+    await approveEnquiry({ enquiryId: enquiry._id, vendor });
     const offerInfo = await getOffer(newOffer._id);
     return { ...offerInfo[0], userInfo };
   } catch (error) {

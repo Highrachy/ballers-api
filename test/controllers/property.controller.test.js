@@ -1990,6 +1990,7 @@ describe('Property Controller', () => {
         {
           propertyId: properties[index]._id,
           userId: regularUser._id,
+          vendorId: properties[index].addedBy,
         },
         { generateId: true },
       ),
