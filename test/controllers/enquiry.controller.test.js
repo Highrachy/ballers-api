@@ -6,7 +6,7 @@ import Property from '../../server/models/property.model';
 import EnquiryFactory from '../factories/enquiry.factory';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
-import { addUser } from '../../server/services/user.service';
+import { addUser, loginUser } from '../../server/services/user.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addProperty } from '../../server/services/property.service';
 import { USER_ROLE } from '../../server/helpers/constants';
@@ -510,6 +510,17 @@ describe('Enquiry Controller', () => {
   });
 
   describe('Approve Enquiry', () => {
+    let vendor2Token;
+    const vendor2 = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        vendor: {
+          verified: true,
+        },
+      },
+      { generateId: true },
+    );
     const enquiry = EnquiryFactory.build(
       {
         userId: regularUser._id,
@@ -524,11 +535,12 @@ describe('Enquiry Controller', () => {
     };
 
     beforeEach(async () => {
+      vendor2Token = await addUser(vendor2);
       await addEnquiry(enquiry);
     });
 
     context('with valid data & token', () => {
-      it('returns a approved enquiry', (done) => {
+      it('returns an approved enquiry', (done) => {
         request()
           .put('/api/v1/enquiry/approve')
           .set('authorization', vendorToken)
@@ -540,6 +552,24 @@ describe('Enquiry Controller', () => {
             expect(res.body).to.have.property('enquiry');
             expect(res.body.enquiry._id).to.be.eql(approvedEnquiry.enquiryId.toString());
             expect(res.body.enquiry.approved).to.be.eql(true);
+            done();
+          });
+      });
+    });
+
+    context('with token of another vendor', () => {
+      it('returns forbidden error', (done) => {
+        request()
+          .put('/api/v1/enquiry/approve')
+          .set('authorization', vendor2Token)
+          .send(approvedEnquiry)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.error.statusCode).to.be.eql(403);
+            expect(res.body.error.message).to.be.eql(
+              'You are not permitted to perform this action',
+            );
             done();
           });
       });
@@ -596,7 +626,27 @@ describe('Enquiry Controller', () => {
   });
 
   describe('Get one enquiry', () => {
-    const enquiry = EnquiryFactory.build(
+    const vendor2 = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        vendor: {
+          verified: true,
+        },
+      },
+      { generateId: true },
+    );
+    const vendor2Property = PropertyFactory.build(
+      { addedBy: vendor2._id, updatedBy: vendor2._id },
+      { generateId: true },
+    );
+
+    const demoUser = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
+
+    const vendorEnquiry = EnquiryFactory.build(
       {
         propertyId: property._id,
         userId: regularUser._id,
@@ -606,22 +656,132 @@ describe('Enquiry Controller', () => {
       { generateId: true },
     );
 
+    const vendor2Enquiry = EnquiryFactory.build(
+      {
+        propertyId: vendor2Property._id,
+        userId: demoUser._id,
+        addedBy: demoUser._id,
+        updatedBy: demoUser._id,
+      },
+      { generateId: true },
+    );
+
     beforeEach(async () => {
-      await addEnquiry(enquiry);
+      await addUser(vendor2);
+      await addUser(demoUser);
+      await addProperty(vendor2Property);
+      await addEnquiry(vendorEnquiry);
+      await addEnquiry(vendor2Enquiry);
     });
 
-    context('with a valid token & id', () => {
-      it('returns successful payload', (done) => {
-        request()
-          .get(`/api/v1/enquiry/${enquiry._id}`)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('enquiry');
-            expect(res.body.enquiry._id).to.be.eql(enquiry._id.toString());
-            done();
-          });
+    context('with admin token ', () => {
+      [vendorEnquiry, vendor2Enquiry].map((enquiry) =>
+        it('returns successful payload', (done) => {
+          request()
+            .get(`/api/v1/enquiry/${enquiry._id}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('enquiry');
+              expect(res.body.enquiry._id).to.be.eql(enquiry._id.toString());
+              done();
+            });
+        }),
+      );
+    });
+
+    context('with a token with invalid access', () => {
+      // eslint-disable-next-line array-callback-return
+      [vendorUser, regularUser].map((user) => {
+        let token;
+        beforeEach(async () => {
+          const loggedInUser = await loginUser(user);
+          token = loggedInUser.token;
+        });
+
+        it('returns not found', (done) => {
+          request()
+            .get(`/api/v1/enquiry/${vendor2Enquiry._id}`)
+            .set('authorization', token)
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Enquiry not found');
+              done();
+            });
+        });
+      });
+    });
+
+    context('with a token with valid access', () => {
+      // eslint-disable-next-line array-callback-return
+      [demoUser, vendor2].map((user) => {
+        let token;
+        beforeEach(async () => {
+          const loggedInUser = await loginUser(user);
+          token = loggedInUser.token;
+        });
+
+        it('returns enquiry', (done) => {
+          request()
+            .get(`/api/v1/enquiry/${vendor2Enquiry._id}`)
+            .set('authorization', token)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('enquiry');
+              expect(res.body.enquiry._id).to.be.eql(vendor2Enquiry._id.toString());
+              done();
+            });
+        });
+      });
+    });
+
+    context('with a token with invalid access', () => {
+      // eslint-disable-next-line array-callback-return
+      [demoUser, vendor2].map((user) => {
+        let token;
+        beforeEach(async () => {
+          const loggedInUser = await loginUser(user);
+          token = loggedInUser.token;
+        });
+
+        it('returns not found', (done) => {
+          request()
+            .get(`/api/v1/enquiry/${vendorEnquiry._id}`)
+            .set('authorization', token)
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Enquiry not found');
+              done();
+            });
+        });
+      });
+    });
+
+    context('with a token with valid access', () => {
+      // eslint-disable-next-line array-callback-return
+      [regularUser, vendorUser].map((user) => {
+        let token;
+        beforeEach(async () => {
+          const loggedInUser = await loginUser(user);
+          token = loggedInUser.token;
+        });
+
+        it('returns enquiry', (done) => {
+          request()
+            .get(`/api/v1/enquiry/${vendorEnquiry._id}`)
+            .set('authorization', token)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('enquiry');
+              expect(res.body.enquiry._id).to.be.eql(vendorEnquiry._id.toString());
+              done();
+            });
+        });
       });
     });
 
@@ -643,7 +803,7 @@ describe('Enquiry Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(`/api/v1/enquiry/${enquiry._id}`)
+          .get(`/api/v1/enquiry/${vendorEnquiry._id}`)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -657,7 +817,7 @@ describe('Enquiry Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Enquiry, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/enquiry/${enquiry._id}`)
+          .get(`/api/v1/enquiry/${vendorEnquiry._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
@@ -764,6 +924,13 @@ describe('Enquiry Controller', () => {
               expect(res.body.pagination.total).to.be.eql(19);
               expect(res.body.pagination.offset).to.be.eql(0);
               expect(res.body.result.length).to.be.eql(10);
+              expect(res.body.result[0]._id).to.be.eql(userEnquiries[0]._id.toString());
+              expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
+              expect(res.body.result[0].propertyId).to.be.eql(
+                res.body.result[0].propertyInfo[0]._id,
+              );
+              expect(res.body.result[0].firstName).to.be.eql(userEnquiries[0].firstName);
+              expect(res.body.result[0].otherName).to.be.eql(userEnquiries[0].otherName);
               done();
             });
         });
@@ -782,6 +949,13 @@ describe('Enquiry Controller', () => {
               expect(res.body.pagination.total).to.be.eql(5);
               expect(res.body.pagination.offset).to.be.eql(0);
               expect(res.body.result.length).to.be.eql(5);
+              expect(res.body.result[0]._id).to.be.eql(userEnquiries[13]._id.toString());
+              expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
+              expect(res.body.result[0].propertyId).to.be.eql(
+                res.body.result[0].propertyInfo[0]._id,
+              );
+              expect(res.body.result[0].firstName).to.be.eql(userEnquiries[13].firstName);
+              expect(res.body.result[0].otherName).to.be.eql(userEnquiries[13].otherName);
               done();
             });
         });
@@ -800,6 +974,13 @@ describe('Enquiry Controller', () => {
               expect(res.body.pagination.total).to.be.eql(14);
               expect(res.body.pagination.offset).to.be.eql(0);
               expect(res.body.result.length).to.be.eql(10);
+              expect(res.body.result[0]._id).to.be.eql(userEnquiries[0]._id.toString());
+              expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
+              expect(res.body.result[0].propertyId).to.be.eql(
+                res.body.result[0].propertyInfo[0]._id,
+              );
+              expect(res.body.result[0].firstName).to.be.eql(userEnquiries[0].firstName);
+              expect(res.body.result[0].otherName).to.be.eql(userEnquiries[0].otherName);
               done();
             });
         });
