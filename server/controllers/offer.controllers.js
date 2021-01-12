@@ -21,11 +21,11 @@ const OfferController = {
     createOffer({ ...newOffer, vendorId })
       .then((offer) => {
         const user = offer.userInfo;
-        const contentTop = `Ballers just made you an offer for property "${
-          offer.propertyInfo.name
-        }". Valid till ${new Date(
+        const contentTop = `You have received an offer via ballers.ng for a "${
+          offer.propertyInfo.houseType
+        }" in "${offer.propertyInfo.name}". This offer is Valid till ${new Date(
           Date.parse(offer.expires),
-        ).toUTCString()} Check your dashboard for more details.`;
+        ).toUTCString()}. Check your dashboard for more details.`;
 
         sendMail(EMAIL_CONTENT.OFFER_CREATED, user, { contentTop });
 
