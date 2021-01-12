@@ -511,7 +511,7 @@ describe('Enquiry Controller', () => {
 
   describe('Approve Enquiry', () => {
     let vendor2Token;
-    const vendor2 = UserFactory.build(
+    const vendorUser2 = UserFactory.build(
       {
         role: USER_ROLE.VENDOR,
         activated: true,
@@ -535,7 +535,7 @@ describe('Enquiry Controller', () => {
     };
 
     beforeEach(async () => {
-      vendor2Token = await addUser(vendor2);
+      vendor2Token = await addUser(vendorUser2);
       await addEnquiry(enquiry);
     });
 
@@ -626,7 +626,7 @@ describe('Enquiry Controller', () => {
   });
 
   describe('Get one enquiry', () => {
-    const vendor2 = UserFactory.build(
+    const vendorUser2 = UserFactory.build(
       {
         role: USER_ROLE.VENDOR,
         activated: true,
@@ -637,16 +637,16 @@ describe('Enquiry Controller', () => {
       { generateId: true },
     );
     const vendor2Property = PropertyFactory.build(
-      { addedBy: vendor2._id, updatedBy: vendor2._id },
+      { addedBy: vendorUser2._id, updatedBy: vendorUser2._id },
       { generateId: true },
     );
 
-    const demoUser = UserFactory.build(
+    const regularUser2 = UserFactory.build(
       { role: USER_ROLE.USER, activated: true },
       { generateId: true },
     );
 
-    const vendorEnquiry = EnquiryFactory.build(
+    const enquiry1 = EnquiryFactory.build(
       {
         propertyId: property._id,
         userId: regularUser._id,
@@ -656,26 +656,26 @@ describe('Enquiry Controller', () => {
       { generateId: true },
     );
 
-    const vendor2Enquiry = EnquiryFactory.build(
+    const enquiry2 = EnquiryFactory.build(
       {
         propertyId: vendor2Property._id,
-        userId: demoUser._id,
-        addedBy: demoUser._id,
-        updatedBy: demoUser._id,
+        userId: regularUser2._id,
+        addedBy: regularUser2._id,
+        updatedBy: regularUser2._id,
       },
       { generateId: true },
     );
 
     beforeEach(async () => {
-      await addUser(vendor2);
-      await addUser(demoUser);
+      await addUser(vendorUser2);
+      await addUser(regularUser2);
       await addProperty(vendor2Property);
-      await addEnquiry(vendorEnquiry);
-      await addEnquiry(vendor2Enquiry);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
     });
 
     context('with admin token ', () => {
-      [vendorEnquiry, vendor2Enquiry].map((enquiry) =>
+      [enquiry1, enquiry2].map((enquiry) =>
         it('returns successful payload', (done) => {
           request()
             .get(`/api/v1/enquiry/${enquiry._id}`)
@@ -691,8 +691,7 @@ describe('Enquiry Controller', () => {
       );
     });
 
-    context('with a token with invalid access', () => {
-      // eslint-disable-next-line array-callback-return
+    context('when viewing an unauthorized enquiry', () => {
       [vendorUser, regularUser].map((user) => {
         let token;
         beforeEach(async () => {
@@ -702,7 +701,7 @@ describe('Enquiry Controller', () => {
 
         it('returns not found', (done) => {
           request()
-            .get(`/api/v1/enquiry/${vendor2Enquiry._id}`)
+            .get(`/api/v1/enquiry/${enquiry2._id}`)
             .set('authorization', token)
             .end((err, res) => {
               expect(res).to.have.status(404);
@@ -711,12 +710,12 @@ describe('Enquiry Controller', () => {
               done();
             });
         });
+        return null;
       });
     });
 
-    context('with a token with valid access', () => {
-      // eslint-disable-next-line array-callback-return
-      [demoUser, vendor2].map((user) => {
+    context('when viewing an authorized enquiry', () => {
+      [regularUser2, vendorUser2].map((user) => {
         let token;
         beforeEach(async () => {
           const loggedInUser = await loginUser(user);
@@ -725,22 +724,22 @@ describe('Enquiry Controller', () => {
 
         it('returns enquiry', (done) => {
           request()
-            .get(`/api/v1/enquiry/${vendor2Enquiry._id}`)
+            .get(`/api/v1/enquiry/${enquiry2._id}`)
             .set('authorization', token)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('enquiry');
-              expect(res.body.enquiry._id).to.be.eql(vendor2Enquiry._id.toString());
+              expect(res.body.enquiry._id).to.be.eql(enquiry2._id.toString());
               done();
             });
         });
+        return null;
       });
     });
 
-    context('with a token with invalid access', () => {
-      // eslint-disable-next-line array-callback-return
-      [demoUser, vendor2].map((user) => {
+    context('when viewing an unauthorized enquiry', () => {
+      [regularUser2, vendorUser2].map((user) => {
         let token;
         beforeEach(async () => {
           const loggedInUser = await loginUser(user);
@@ -749,7 +748,7 @@ describe('Enquiry Controller', () => {
 
         it('returns not found', (done) => {
           request()
-            .get(`/api/v1/enquiry/${vendorEnquiry._id}`)
+            .get(`/api/v1/enquiry/${enquiry1._id}`)
             .set('authorization', token)
             .end((err, res) => {
               expect(res).to.have.status(404);
@@ -758,11 +757,11 @@ describe('Enquiry Controller', () => {
               done();
             });
         });
+        return null;
       });
     });
 
-    context('with a token with valid access', () => {
-      // eslint-disable-next-line array-callback-return
+    context('when viewing an authorized enquiry', () => {
       [regularUser, vendorUser].map((user) => {
         let token;
         beforeEach(async () => {
@@ -772,16 +771,17 @@ describe('Enquiry Controller', () => {
 
         it('returns enquiry', (done) => {
           request()
-            .get(`/api/v1/enquiry/${vendorEnquiry._id}`)
+            .get(`/api/v1/enquiry/${enquiry1._id}`)
             .set('authorization', token)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('enquiry');
-              expect(res.body.enquiry._id).to.be.eql(vendorEnquiry._id.toString());
+              expect(res.body.enquiry._id).to.be.eql(enquiry1._id.toString());
               done();
             });
         });
+        return null;
       });
     });
 
@@ -803,7 +803,7 @@ describe('Enquiry Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(`/api/v1/enquiry/${vendorEnquiry._id}`)
+          .get(`/api/v1/enquiry/${enquiry1._id}`)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -817,7 +817,7 @@ describe('Enquiry Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Enquiry, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/enquiry/${vendorEnquiry._id}`)
+          .get(`/api/v1/enquiry/${enquiry1._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
