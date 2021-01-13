@@ -1,5 +1,11 @@
 import express from 'express';
-import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
+import {
+  authenticate,
+  schemaValidation,
+  isAdminOrUserOrVendor,
+  hasValidObjectId,
+  isVendor,
+} from '../helpers/middleware';
 import { addEnquirySchema, approveEnquirySchema } from '../schemas/enquiry.schema';
 import EnquiryController from '../controllers/enquiry.controllers';
 
@@ -56,7 +62,7 @@ router.post('/add', authenticate, schemaValidation(addEnquirySchema), EnquiryCon
 router.put(
   '/approve',
   authenticate,
-  isAdmin,
+  isVendor,
   schemaValidation(approveEnquirySchema),
   EnquiryController.approve,
 );
@@ -82,7 +88,7 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, EnquiryController.getAll);
+router.get('/all', authenticate, isAdminOrUserOrVendor, EnquiryController.getAll);
 
 /**
  * @swagger

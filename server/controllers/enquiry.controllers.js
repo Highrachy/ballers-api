@@ -18,9 +18,9 @@ const EnquiryController = {
   },
 
   approve(req, res, next) {
-    const approvedEnquiry = req.locals;
+    const { enquiryId } = req.locals;
     const { user } = req;
-    approveEnquiry({ ...approvedEnquiry, adminId: user._id })
+    approveEnquiry({ enquiryId, vendor: user })
       .then((enquiry) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Enquiry approved', enquiry });
       })
@@ -29,7 +29,8 @@ const EnquiryController = {
 
   getOne(req, res, next) {
     const enquiryId = req.params.id;
-    getEnquiry(enquiryId)
+    const { user } = req;
+    getEnquiry({ enquiryId, user })
       .then((enquiry) => {
         if (enquiry.length > 0) {
           res.status(httpStatus.OK).json({ success: true, enquiry: enquiry[0] });
@@ -41,9 +42,11 @@ const EnquiryController = {
   },
 
   getAll(req, res, next) {
-    getAllEnquiries()
-      .then((enquiries) => {
-        res.status(httpStatus.OK).json({ success: true, enquiries });
+    const { page, limit } = req.query;
+    const { user } = req;
+    getAllEnquiries(user, page, limit)
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },

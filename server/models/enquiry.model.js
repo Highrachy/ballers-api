@@ -86,6 +86,10 @@ const EnquirySchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
+    vendorId: {
+      type: ObjectId,
+      required: true,
+    },
     firstName: {
       type: String,
       required: true,

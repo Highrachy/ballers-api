@@ -1393,6 +1393,7 @@ describe('Offer Controller', () => {
         {
           propertyId: userProperties[index]._id,
           userId: regularUser._id,
+          vendorId: userProperties[index].addedBy,
         },
         { generateId: true },
       ),
@@ -1403,6 +1404,7 @@ describe('Offer Controller', () => {
         {
           propertyId: user2Properties[index]._id,
           userId: user2._id,
+          vendorId: user2Properties[index].addedBy,
         },
         { generateId: true },
       ),
@@ -1560,6 +1562,7 @@ describe('Offer Controller', () => {
         {
           propertyId: vendorProperties[index]._id,
           userId: regularUser._id,
+          vendorId: vendorProperties[index].addedBy,
         },
         { generateId: true },
       ),
@@ -1570,6 +1573,7 @@ describe('Offer Controller', () => {
         {
           propertyId: vendor2Properties[index]._id,
           userId: regularUser._id,
+          vendorId: vendor2Properties[index].addedBy,
         },
         { generateId: true },
       ),
