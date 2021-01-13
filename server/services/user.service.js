@@ -480,10 +480,59 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
 };
 
 export const updateVendor = async ({ updatedVendor, vendorId }) => {
-  const user = await getUserById(vendorId);
-  if (!user) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Vendor not found');
+  // const steps = [];
+
+  const stepToReview = {
+    verification: {},
+  };
+
+  if (
+    updatedVendor.vendor &&
+    updatedVendor.vendor.directors &&
+    updatedVendor.vendor.directors.length > 0
+  ) {
+    // steps.push('directorInfo');
+    stepToReview.verification.directorInfo = {
+      status: VENDOR_INFO_STATUS.IN_REVIEW,
+    };
   }
+
+  if (updatedVendor.vendor && updatedVendor.vendor.bankInfo) {
+    // steps.push('bankDetails');
+    stepToReview.verification.bankDetails = {
+      status: VENDOR_INFO_STATUS.IN_REVIEW,
+    };
+  }
+
+  if (
+    updatedVendor.vendor &&
+    (updatedVendor.vendor.identification || updatedVendor.vendor.taxCertificate)
+  ) {
+    // steps.push('documentUpload');
+    stepToReview.verification.documentUpload = {
+      status: VENDOR_INFO_STATUS.IN_REVIEW,
+    };
+  }
+
+  if (
+    updatedVendor.phone ||
+    updatedVendor.phone2 ||
+    updatedVendor.address ||
+    (updatedVendor.vendor && updatedVendor.vendor.companyName)
+  ) {
+    // steps.push('companyInfo');
+    stepToReview.verification.companyInfo = {
+      status: VENDOR_INFO_STATUS.IN_REVIEW,
+    };
+  }
+
+  // steps.map(async (step) => {
+  //   await User.findByIdAndUpdate(vendorId, {
+  //     $set: { [`vendor.verification.${step}.status`]: VENDOR_INFO_STATUS.IN_REVIEW },
+  //   });
+  // });
+
+  const user = await getUserById(vendorId);
 
   if (
     updatedVendor.vendor &&
@@ -492,13 +541,7 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
   ) {
     Array.prototype.push.apply(updatedVendor.vendor.directors, user.vendor.directors);
   }
-  if (
-    updatedVendor.vendor &&
-    updatedVendor.vendor.identification &&
-    updatedVendor.vendor.identification.length > 0
-  ) {
-    Array.prototype.push.apply(updatedVendor.vendor.identification, user.vendor.identification);
-  }
+
   if (
     updatedVendor.vendor &&
     updatedVendor.vendor.socialMedia &&
@@ -507,7 +550,10 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
     Array.prototype.push.apply(updatedVendor.vendor.socialMedia, user.vendor.socialMedia);
   }
 
-  const vendor = { ...user.vendor, ...updatedVendor.vendor };
+  const vendor = { ...user.vendor, ...updatedVendor.vendor, ...stepToReview };
+
+  // console.log(stepToReview);
+  // console.log(vendor);
 
   try {
     return User.findByIdAndUpdate(

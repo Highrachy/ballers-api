@@ -191,16 +191,14 @@ const UserSchema = new mongoose.Schema(
       entity: {
         type: String,
       },
-      identification: [
-        {
-          url: {
-            type: String,
-          },
-          type: {
-            type: String,
-          },
+      identification: {
+        url: {
+          type: String,
         },
-      ],
+        type: {
+          type: String,
+        },
+      },
       redanNumber: {
         type: String,
       },

@@ -1710,12 +1710,10 @@ describe('User Controller', () => {
               phone: '08012345678',
             },
           ],
-          identification: [
-            {
-              url: 'https://ballers.ng/tax-filing.png',
-              type: 'Tax filing',
-            },
-          ],
+          identification: {
+            url: 'https://ballers.ng/tax-filing.png',
+            type: 'Tax filing',
+          },
           socialMedia: [
             {
               name: 'Instagram',
@@ -1750,12 +1748,10 @@ describe('User Controller', () => {
             },
           ],
           entity: 'Individual',
-          identification: [
-            {
-              url: 'https://ballers.ng/cac-certificate.png',
-              type: 'CAC Certificate',
-            },
-          ],
+          identification: {
+            url: 'https://ballers.ng/cac-certificate.png',
+            type: 'CAC Certificate',
+          },
           redanNumber: '1234567890',
           socialMedia: [
             {
