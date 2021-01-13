@@ -2,10 +2,10 @@ const EMAIL_CONTENT = {
   ACTIVATE_YOUR_ACCOUNT: {
     buttonText: 'Verify Email',
     contentTop:
-      'Your Ballers.ng account has been successfully created. To complete your registration, you need to confirm that we got your email address right.',
+      'Your ballers.ng account has been successfully created. Complete your registration by clicking on the link below to verify your email',
     subject: 'Verify your Email',
   },
-  CHANGE_PASSWORD: {
+  CHANGED_PASSWORD: {
     buttonText: 'Reset Password',
     contentBottom:
       "If you didn't change your password, your account might have been compromised and we recommend that you reset your password as soon as possible.",
@@ -21,27 +21,10 @@ const EMAIL_CONTENT = {
     link: 'sample link',
     subject: 'Email Subject is Here',
   },
-  RESET_PASSWORD_LINK: {
-    buttonText: 'Reset Password',
-    contentBottom: "If you didn't request a password reset, let us know as soon as possible",
-    contentTop:
-      "You (or someone pretending to be you) requested a password reset for your account. If you didn't made this request you can ignore this email.",
-    subject: 'Password Reset',
-  },
-  SCHEDULE_VISIT: {
-    subject: 'Property Visit Requested',
-    contentTop: 'A new propery visit has been requested',
-  },
-  REFERRAL_INVITE: {
-    subject: 'BALLERS Invite',
-    contentTop: '[Referrer Name] just invited you to BALLERS.',
-    contentBottom: `Use their code [Referral code], or click the link below`,
-    buttonText: 'Join BALLERS',
-  },
   OFFER_CREATED: {
     subject: 'New Offer Available',
     contentTop:
-      'Ballers just made you an offer for property [Property name]. Valid till [Expiry date]. Check your dashboard for more details.',
+      'You have received an offer via ballers.ng for a [Property type] in [Property name]. This offer is Valid till [expiry date]. Check your dashboard for more details.',
   },
   OFFER_RESPONSE_VENDOR: {
     subject: 'Offer Accepted',
@@ -53,18 +36,36 @@ const EMAIL_CONTENT = {
     contentTop: `Congratulations on signing your offer. Details of your next steps are included in your offer letter and we are here to guide your process.`,
     contentBottom: `Meanwhile, click below to read our article on <a href="https://ballers.ng">5 Things Every Intending Homeowner Should Know</a>. We look forward to an enjoyable process.`,
   },
-  WELCOME_MESSAGE: {
-    subject: 'Welcome to BALLERS',
-    contentTop: `Congratulations you're officially a BALLer.`,
-  },
   RAISE_CONCERN: {
     subject: 'Concern Raised',
     contentTop: `A concern has been raised on your offer to [User name]. The question states [question].`,
     contentBottom: `Check your dashboard to resolve this concern.`,
   },
+  REFERRAL_INVITE: {
+    subject: 'BALLERS Invite',
+    contentTop: '[Referrer Name] just invited you to Become A LandLord on ballers.ng',
+    contentBottom: `Click on the link below to accept their invitation`,
+    buttonText: 'Join BALLERS',
+  },
   RESOLVE_CONCERN: {
     subject: 'Concern Resolved',
     contentTop: `Your raised concern has been resolved. Details below <br /> <strong>Question: </strong> [Question]<br /> <strong>Response: </strong>[Response]`,
+  },
+  RESET_PASSWORD_LINK: {
+    buttonText: 'Reset Password',
+    contentBottom:
+      'If you did not request this password change, please ignore the reset button. However, your account might have been compromised and we recommend that you reset your password as soon as possible',
+    contentTop:
+      "You (or someone pretending to be you) requested a password reset for your account. If you didn't made this request you can ignore this email.",
+    subject: 'Password Reset',
+  },
+  SCHEDULE_VISIT: {
+    subject: 'You have a new inspection request',
+    contentTop: 'A new propery visit has been requested',
+  },
+  WELCOME_MESSAGE: {
+    subject: 'Welcome to BALLERS',
+    contentTop: `Congratulations you're officially a BALLer.`,
   },
 };
 
