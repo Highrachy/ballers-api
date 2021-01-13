@@ -543,7 +543,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Your password has been successfully changed');
               expect(sendMailStub.callCount).to.eq(1);
-              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.CHANGE_PASSWORD);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.CHANGED_PASSWORD);
               done();
             });
         });

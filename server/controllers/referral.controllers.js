@@ -44,13 +44,11 @@ const ReferralController = {
     sendReferralInvite({ ...invite, referrerId })
       .then((inviteInfo) => {
         const contentTop = `${inviteInfo.referrerName} just invited you to Become A LandLord on ballers.ng`;
-        const contentBottom = `Use their code ${inviteInfo.referralCode}, or click the link below`;
         sendMail(
           EMAIL_CONTENT.REFERRAL_INVITE,
           { email: inviteInfo.email, firstName: invite.firstName || ' ' },
           {
             contentTop,
-            contentBottom,
             link: `${HOST}/invite/${inviteInfo._id}`,
           },
         );

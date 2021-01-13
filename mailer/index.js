@@ -5,7 +5,7 @@ const EMAIL_CONTENT = {
       'Your ballers.ng account has been successfully created. Complete your registration by clicking on the link below to verify your email',
     subject: 'Verify your Email',
   },
-  CHANGE_PASSWORD: {
+  CHANGED_PASSWORD: {
     buttonText: 'Reset Password',
     contentBottom:
       "If you didn't change your password, your account might have been compromised and we recommend that you reset your password as soon as possible.",
@@ -44,7 +44,7 @@ const EMAIL_CONTENT = {
   REFERRAL_INVITE: {
     subject: 'BALLERS Invite',
     contentTop: '[Referrer Name] just invited you to Become A LandLord on ballers.ng',
-    contentBottom: `Use their code [Referral code], or click the link below`,
+    contentBottom: `Click on the link below to accept their invitation`,
     buttonText: 'Join BALLERS',
   },
   RESOLVE_CONCERN: {

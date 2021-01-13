@@ -85,7 +85,7 @@ const UserController = {
     const { password } = req.locals;
     resetPasswordViaToken(password, token)
       .then((user) => {
-        sendMail(EMAIL_CONTENT.CHANGE_PASSWORD, user, {
+        sendMail(EMAIL_CONTENT.CHANGED_PASSWORD, user, {
           link: `${HOST}/reset-password`,
         });
         res.status(httpStatus.OK).json({
