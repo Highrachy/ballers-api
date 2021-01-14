@@ -631,7 +631,12 @@ export const removeDirector = async ({ directorId, user }) => {
   try {
     return User.findByIdAndUpdate(
       user._id,
-      { $set: { 'vendor.directors': directors } },
+      {
+        $set: {
+          'vendor.directors': directors,
+          'vendor.verification.directorInfo.status': VENDOR_INFO_STATUS.IN_REVIEW,
+        },
+      },
       { new: true, fields: '-password' },
     );
   } catch (error) {

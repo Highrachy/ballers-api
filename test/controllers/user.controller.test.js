@@ -1792,6 +1792,12 @@ describe('User Controller', () => {
               expect(res.body.user.vendor.taxCertificate).to.be.eql(data.vendor.taxCertificate);
               expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
+              expect(res.body.user.vendor.verification.companyInfo.status).to.be.eql('In Review');
+              expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('In Review');
+              expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
+                'In Review',
+              );
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
               done();
             });
         });
@@ -1911,6 +1917,7 @@ describe('User Controller', () => {
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
               expect(res.body.user.vendor.directors[0]._id).to.not.eql(nonSignatoryId);
               expect(res.body.user.vendor.directors[1]._id).to.not.eql(nonSignatoryId);
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
               done();
             });
         });
@@ -2064,7 +2071,7 @@ describe('User Controller', () => {
                 ...vendorUser.vendor.directors[2],
                 _id: vendorUser.vendor.directors[2]._id.toString(),
               });
-
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
               done();
             });
         });
