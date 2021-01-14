@@ -480,7 +480,7 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
 };
 
 export const updateVendor = async ({ updatedVendor, vendorId }) => {
-  // const steps = [];
+  const user = await getUserById(vendorId);
 
   const stepToReview = {
     verification: {},
@@ -491,15 +491,15 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
     updatedVendor.vendor.directors &&
     updatedVendor.vendor.directors.length > 0
   ) {
-    // steps.push('directorInfo');
     stepToReview.verification.directorInfo = {
+      ...user.vendor.verification.directorInfo,
       status: VENDOR_INFO_STATUS.IN_REVIEW,
     };
   }
 
   if (updatedVendor.vendor && updatedVendor.vendor.bankInfo) {
-    // steps.push('bankDetails');
     stepToReview.verification.bankDetails = {
+      ...user.vendor.verification.bankDetails,
       status: VENDOR_INFO_STATUS.IN_REVIEW,
     };
   }
@@ -508,8 +508,8 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
     updatedVendor.vendor &&
     (updatedVendor.vendor.identification || updatedVendor.vendor.taxCertificate)
   ) {
-    // steps.push('documentUpload');
     stepToReview.verification.documentUpload = {
+      ...user.vendor.verification.documentUpload,
       status: VENDOR_INFO_STATUS.IN_REVIEW,
     };
   }
@@ -518,21 +518,19 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
     updatedVendor.phone ||
     updatedVendor.phone2 ||
     updatedVendor.address ||
-    (updatedVendor.vendor && updatedVendor.vendor.companyName)
+    (updatedVendor.vendor &&
+      (updatedVendor.vendor.companyName ||
+        updatedVendor.vendor.companyLogo ||
+        updatedVendor.vendor.entity ||
+        updatedVendor.vendor.redanNumber ||
+        updatedVendor.vendor.socialMedia.length > 0 ||
+        updatedVendor.vendor.website))
   ) {
-    // steps.push('companyInfo');
     stepToReview.verification.companyInfo = {
+      ...user.vendor.verification.companyInfo,
       status: VENDOR_INFO_STATUS.IN_REVIEW,
     };
   }
-
-  // steps.map(async (step) => {
-  //   await User.findByIdAndUpdate(vendorId, {
-  //     $set: { [`vendor.verification.${step}.status`]: VENDOR_INFO_STATUS.IN_REVIEW },
-  //   });
-  // });
-
-  const user = await getUserById(vendorId);
 
   if (
     updatedVendor.vendor &&
@@ -550,10 +548,9 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
     Array.prototype.push.apply(updatedVendor.vendor.socialMedia, user.vendor.socialMedia);
   }
 
-  const vendor = { ...user.vendor, ...updatedVendor.vendor, ...stepToReview };
+  const vendor = { ...user.vendor, ...updatedVendor.vendor };
 
-  // console.log(stepToReview);
-  // console.log(vendor);
+  vendor.verification = { ...vendor.verification, ...stepToReview.verification };
 
   try {
     return User.findByIdAndUpdate(
@@ -597,6 +594,9 @@ export const editDirector = async ({ directorInfo, user }) => {
   }
 
   try {
+    await User.findByIdAndUpdate(user._id, {
+      $set: { 'vendor.verification.directorInfo.status': VENDOR_INFO_STATUS.IN_REVIEW },
+    });
     return User.findOneAndUpdate(
       { 'vendor.directors._id': directorInfo._id },
       {
