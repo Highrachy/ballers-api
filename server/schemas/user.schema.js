@@ -34,12 +34,10 @@ const bankInfo = Joi.object().keys({
   bankName: optionalString('Bank Name'),
 });
 
-const identification = Joi.array().items(
-  Joi.object().keys({
-    url: optionalString('URL'),
-    type: optionalString('type'),
-  }),
-);
+const identification = Joi.object().keys({
+  url: optionalString('URL'),
+  type: optionalString('type'),
+});
 
 const vendorCompanyName = Joi.object().keys({
   companyName: optionalString('Company Name'),

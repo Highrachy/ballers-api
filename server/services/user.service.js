@@ -479,11 +479,64 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
   }
 };
 
+const getStepsReadyForReview = (updatedVendor, user) => {
+  const stepToReview = {
+    verification: {},
+  };
+
+  if (
+    updatedVendor.vendor &&
+    updatedVendor.vendor.directors &&
+    updatedVendor.vendor.directors.length > 0
+  ) {
+    stepToReview.verification.directorInfo = {
+      ...user.vendor.verification.directorInfo,
+      status: VENDOR_INFO_STATUS.IN_REVIEW,
+    };
+  }
+
+  if (updatedVendor.vendor && updatedVendor.vendor.bankInfo) {
+    stepToReview.verification.bankDetails = {
+      ...user.vendor.verification.bankDetails,
+      status: VENDOR_INFO_STATUS.IN_REVIEW,
+    };
+  }
+
+  if (
+    updatedVendor.vendor &&
+    (updatedVendor.vendor.identification || updatedVendor.vendor.taxCertificate)
+  ) {
+    stepToReview.verification.documentUpload = {
+      ...user.vendor.verification.documentUpload,
+      status: VENDOR_INFO_STATUS.IN_REVIEW,
+    };
+  }
+
+  if (
+    updatedVendor.phone ||
+    updatedVendor.phone2 ||
+    updatedVendor.address ||
+    (updatedVendor.vendor &&
+      (updatedVendor.vendor.companyName ||
+        updatedVendor.vendor.companyLogo ||
+        updatedVendor.vendor.entity ||
+        updatedVendor.vendor.redanNumber ||
+        updatedVendor.vendor.socialMedia.length > 0 ||
+        updatedVendor.vendor.website))
+  ) {
+    stepToReview.verification.companyInfo = {
+      ...user.vendor.verification.companyInfo,
+      status: VENDOR_INFO_STATUS.IN_REVIEW,
+    };
+  }
+
+  return stepToReview;
+};
+
 export const updateVendor = async ({ updatedVendor, vendorId }) => {
   const user = await getUserById(vendorId);
-  if (!user) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Vendor not found');
-  }
+
+  const stepToReview = getStepsReadyForReview(updatedVendor, user);
 
   if (
     updatedVendor.vendor &&
@@ -492,13 +545,7 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
   ) {
     Array.prototype.push.apply(updatedVendor.vendor.directors, user.vendor.directors);
   }
-  if (
-    updatedVendor.vendor &&
-    updatedVendor.vendor.identification &&
-    updatedVendor.vendor.identification.length > 0
-  ) {
-    Array.prototype.push.apply(updatedVendor.vendor.identification, user.vendor.identification);
-  }
+
   if (
     updatedVendor.vendor &&
     updatedVendor.vendor.socialMedia &&
@@ -508,6 +555,8 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
   }
 
   const vendor = { ...user.vendor, ...updatedVendor.vendor };
+
+  vendor.verification = { ...vendor.verification, ...stepToReview.verification };
 
   try {
     return User.findByIdAndUpdate(
@@ -551,6 +600,9 @@ export const editDirector = async ({ directorInfo, user }) => {
   }
 
   try {
+    await User.findByIdAndUpdate(user._id, {
+      $set: { 'vendor.verification.directorInfo.status': VENDOR_INFO_STATUS.IN_REVIEW },
+    });
     return User.findOneAndUpdate(
       { 'vendor.directors._id': directorInfo._id },
       {
@@ -585,7 +637,14 @@ export const removeDirector = async ({ directorId, user }) => {
   try {
     return User.findByIdAndUpdate(
       user._id,
-      { $set: { 'vendor.directors': directors } },
+      {
+        $set: {
+          'vendor.directors': directors,
+          'vendor.verification.directorInfo.status': user.vendor.verified
+            ? user.vendor.verification.directorInfo.status
+            : VENDOR_INFO_STATUS.IN_REVIEW,
+        },
+      },
       { new: true, fields: '-password' },
     );
   } catch (error) {

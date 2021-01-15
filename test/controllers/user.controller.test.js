@@ -1710,12 +1710,10 @@ describe('User Controller', () => {
               phone: '08012345678',
             },
           ],
-          identification: [
-            {
-              url: 'https://ballers.ng/tax-filing.png',
-              type: 'Tax filing',
-            },
-          ],
+          identification: {
+            url: 'https://ballers.ng/tax-filing.png',
+            type: 'Tax filing',
+          },
           socialMedia: [
             {
               name: 'Instagram',
@@ -1730,6 +1728,7 @@ describe('User Controller', () => {
       const method = 'put';
 
       const data = {
+        phone: '12345678901',
         phone2: '12345678901',
         address: {
           country: 'Ghana',
@@ -1750,12 +1749,10 @@ describe('User Controller', () => {
             },
           ],
           entity: 'Individual',
-          identification: [
-            {
-              url: 'https://ballers.ng/cac-certificate.png',
-              type: 'CAC Certificate',
-            },
-          ],
+          identification: {
+            url: 'https://ballers.ng/cac-certificate.png',
+            type: 'CAC Certificate',
+          },
           redanNumber: '1234567890',
           socialMedia: [
             {
@@ -1783,7 +1780,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Vendor information updated');
               expect(res.body.user._id).to.be.eql(vendorId.toString());
-              expect(res.body.user.phone).to.be.eql(vendorUser.phone);
+              expect(res.body.user.phone).to.be.eql(data.phone);
               expect(res.body.user.phone2).to.be.eql(data.phone2);
               expect(res.body.user.address).to.be.eql({
                 ...vendorUser.address,
@@ -1796,6 +1793,12 @@ describe('User Controller', () => {
               expect(res.body.user.vendor.taxCertificate).to.be.eql(data.vendor.taxCertificate);
               expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
+              expect(res.body.user.vendor.verification.companyInfo.status).to.be.eql('In Review');
+              expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('In Review');
+              expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
+                'In Review',
+              );
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
               done();
             });
         });
@@ -1890,6 +1893,11 @@ describe('User Controller', () => {
                 phone: '08012345678',
               },
             ],
+            verification: {
+              directorInfo: {
+                status: VENDOR_INFO_STATUS.VERIFIED,
+              },
+            },
           },
         },
         { generateId: true },
@@ -1903,7 +1911,7 @@ describe('User Controller', () => {
       });
 
       context('when a valid token is used', () => {
-        it('returns deletes director', (done) => {
+        it('deletes director', (done) => {
           request()
             [method](endpoint)
             .set('authorization', vendorToken)
@@ -1915,6 +1923,26 @@ describe('User Controller', () => {
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
               expect(res.body.user.vendor.directors[0]._id).to.not.eql(nonSignatoryId);
               expect(res.body.user.vendor.directors[1]._id).to.not.eql(nonSignatoryId);
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('Verified');
+              done();
+            });
+        });
+      });
+
+      context('when a valid token is used & vendor is not verified', () => {
+        beforeEach(async () => {
+          await User.findByIdAndUpdate(vendorUser._id, { 'vendor.verified': false });
+        });
+
+        it('sets director verification to `In Review`', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Director removed');
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
               done();
             });
         });
@@ -2068,7 +2096,7 @@ describe('User Controller', () => {
                 ...vendorUser.vendor.directors[2],
                 _id: vendorUser.vendor.directors[2]._id.toString(),
               });
-
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
               done();
             });
         });
