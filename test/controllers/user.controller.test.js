@@ -1893,6 +1893,11 @@ describe('User Controller', () => {
                 phone: '08012345678',
               },
             ],
+            verification: {
+              directorInfo: {
+                status: VENDOR_INFO_STATUS.VERIFIED,
+              },
+            },
           },
         },
         { generateId: true },
@@ -1906,7 +1911,7 @@ describe('User Controller', () => {
       });
 
       context('when a valid token is used', () => {
-        it('returns deletes director', (done) => {
+        it('deletes director', (done) => {
           request()
             [method](endpoint)
             .set('authorization', vendorToken)
@@ -1918,7 +1923,7 @@ describe('User Controller', () => {
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
               expect(res.body.user.vendor.directors[0]._id).to.not.eql(nonSignatoryId);
               expect(res.body.user.vendor.directors[1]._id).to.not.eql(nonSignatoryId);
-              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('Pending');
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('Verified');
               done();
             });
         });
@@ -1929,7 +1934,7 @@ describe('User Controller', () => {
           await User.findByIdAndUpdate(vendorUser._id, { 'vendor.verified': false });
         });
 
-        it('returns deletes director', (done) => {
+        it('sets director verification to `In Review`', (done) => {
           request()
             [method](endpoint)
             .set('authorization', vendorToken)
