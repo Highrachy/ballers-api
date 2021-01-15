@@ -1728,6 +1728,7 @@ describe('User Controller', () => {
       const method = 'put';
 
       const data = {
+        phone: '12345678901',
         phone2: '12345678901',
         address: {
           country: 'Ghana',
@@ -1779,7 +1780,7 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Vendor information updated');
               expect(res.body.user._id).to.be.eql(vendorId.toString());
-              expect(res.body.user.phone).to.be.eql(vendorUser.phone);
+              expect(res.body.user.phone).to.be.eql(data.phone);
               expect(res.body.user.phone2).to.be.eql(data.phone2);
               expect(res.body.user.address).to.be.eql({
                 ...vendorUser.address,
@@ -1917,6 +1918,25 @@ describe('User Controller', () => {
               expect(res.body.user.vendor.directors.length).to.be.eql(2);
               expect(res.body.user.vendor.directors[0]._id).to.not.eql(nonSignatoryId);
               expect(res.body.user.vendor.directors[1]._id).to.not.eql(nonSignatoryId);
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('Pending');
+              done();
+            });
+        });
+      });
+
+      context('when a valid token is used & vendor is not verified', () => {
+        beforeEach(async () => {
+          await User.findByIdAndUpdate(vendorUser._id, { 'vendor.verified': false });
+        });
+
+        it('returns deletes director', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Director removed');
               expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
               done();
             });

@@ -479,9 +479,7 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
   }
 };
 
-export const updateVendor = async ({ updatedVendor, vendorId }) => {
-  const user = await getUserById(vendorId);
-
+const getStepsReadyForReview = (updatedVendor, user) => {
   const stepToReview = {
     verification: {},
   };
@@ -531,6 +529,14 @@ export const updateVendor = async ({ updatedVendor, vendorId }) => {
       status: VENDOR_INFO_STATUS.IN_REVIEW,
     };
   }
+
+  return stepToReview;
+};
+
+export const updateVendor = async ({ updatedVendor, vendorId }) => {
+  const user = await getUserById(vendorId);
+
+  const stepToReview = getStepsReadyForReview(updatedVendor, user);
 
   if (
     updatedVendor.vendor &&
@@ -634,7 +640,9 @@ export const removeDirector = async ({ directorId, user }) => {
       {
         $set: {
           'vendor.directors': directors,
-          'vendor.verification.directorInfo.status': VENDOR_INFO_STATUS.IN_REVIEW,
+          'vendor.verification.directorInfo.status': user.vendor.verified
+            ? user.vendor.verification.directorInfo.status
+            : VENDOR_INFO_STATUS.IN_REVIEW,
         },
       },
       { new: true, fields: '-password' },
