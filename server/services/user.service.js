@@ -656,15 +656,18 @@ export const certifyVendor = async ({ vendorId, adminId }) => {
   const user = await getUserById(vendorId);
 
   if (!user) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Vendor not found');
   }
 
   if (user.role !== USER_ROLE.VENDOR) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
   }
 
-  if (user.vendor.verified !== true) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Vendor has not been verified');
+  if (!user.vendor.verified) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      `${user.vendor.companyName} must be verified before approval as a certified vendor`,
+    );
   }
 
   try {
