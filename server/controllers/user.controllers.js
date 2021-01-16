@@ -21,6 +21,7 @@ import {
   editDirector,
   removeDirector,
   getOneUser,
+  certifyVendor,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -291,6 +292,16 @@ const UserController = {
         } else {
           res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'User not found' });
         }
+      })
+      .catch((error) => next(error));
+  },
+
+  certifyVendor(req, res, next) {
+    const { vendorId } = req.locals;
+    const adminId = req.user._id;
+    certifyVendor({ vendorId, adminId })
+      .then((vendor) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Vendor certified', vendor });
       })
       .catch((error) => next(error));
   },

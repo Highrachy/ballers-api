@@ -719,4 +719,39 @@ router.delete(
   UserController.removeDirector,
 );
 
+/**
+ * @swagger
+ * /user/vendor/certify:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to certify a vendor
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              vendorId:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Vendor certified
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/certify',
+  authenticate,
+  isAdmin,
+  schemaValidation(verifyVendorSchema),
+  UserController.certifyVendor,
+);
+
 module.exports = router;
