@@ -9,7 +9,7 @@ const confirmPassword = Joi.string().valid(Joi.ref('password')).required().stric
 });
 const phone = Joi.string().allow(null, '').optional().default('');
 const requiredString = (label) => Joi.string().label(label).required();
-const optionalString = (label) => Joi.string().label(label).optional();
+const optionalString = (label) => Joi.string().label(label).allow(null, '').optional();
 const optionalBoolean = (label) => Joi.boolean().label(label).optional();
 
 const directorSchema = {
@@ -87,11 +87,11 @@ export const assignPropertySchema = Joi.object({
 });
 
 const address = Joi.object().keys({
-  street1: Joi.string().label('Street 1').optional(),
-  street2: Joi.string().label('Street 2').optional(),
-  city: Joi.string().label('City').optional(),
-  state: Joi.string().label('State').optional(),
-  country: Joi.string().label('Country').optional(),
+  street1: optionalString('Street 1'),
+  street2: optionalString('Street 2'),
+  city: optionalString('City'),
+  state: optionalString('State'),
+  country: optionalString('Country'),
 });
 
 const preferences = Joi.object().keys({
