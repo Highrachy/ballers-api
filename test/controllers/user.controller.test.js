@@ -47,7 +47,7 @@ describe('User Controller', () => {
     sandbox.restore();
   });
 
-  describe('User Controller', () => {
+  describe('User Registration', () => {
     beforeEach(async () => {
       adminToken = await addUser(adminUser);
       userToken = await addUser(regularUser);
@@ -710,7 +710,6 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('user');
               expect(res.body.user.firstName).to.be.eql(newUser.firstName);
               expect(res.body.user.lastName).to.be.eql(newUser.lastName);
               expect(res.body.user.phone).to.be.eql(newUser.phone);

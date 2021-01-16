@@ -122,8 +122,7 @@ const UserController = {
 
   update(req, res, next) {
     const updatedUser = req.locals;
-    const userId = req.user._id;
-    updateUser({ ...updatedUser, id: userId })
+    updateUser({ ...req.user, ...updatedUser, id: req.user._id })
       .then((user) => {
         res.status(httpStatus.OK).json({ success: true, message: 'User updated', user });
       })
@@ -246,12 +245,12 @@ const UserController = {
 
   updateVendor(req, res, next) {
     const updatedVendor = req.locals;
-    const vendorId = req.user._id;
-    updateVendor({ updatedVendor, vendorId })
-      .then((user) => {
+    const { user } = req;
+    updateVendor({ updatedVendor, user })
+      .then((updatedUser) => {
         res
           .status(httpStatus.OK)
-          .json({ success: true, message: 'Vendor information updated', user });
+          .json({ success: true, message: 'Vendor information updated', user: updatedUser });
       })
       .catch((error) => next(error));
   },

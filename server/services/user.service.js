@@ -533,9 +533,7 @@ const getStepsReadyForReview = (updatedVendor, user) => {
   return stepToReview;
 };
 
-export const updateVendor = async ({ updatedVendor, vendorId }) => {
-  const user = await getUserById(vendorId);
-
+export const updateVendor = async ({ updatedVendor, user }) => {
   const stepToReview = getStepsReadyForReview(updatedVendor, user);
 
   if (
