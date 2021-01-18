@@ -1372,9 +1372,9 @@ describe('User Controller', () => {
       });
 
       context('when vendor step has not been verified', () => {
-        const unverifiedVendorId = mongoose.Types.ObjectId();
-        const unverifiedVendor = UserFactory.build({
-          _id: unverifiedVendorId,
+        const unVerifiedVendorId = mongoose.Types.ObjectId();
+        const unVerifiedVendor = UserFactory.build({
+          _id: unVerifiedVendorId,
           role: USER_ROLE.VENDOR,
           activated: true,
           vendor: {
@@ -1396,14 +1396,14 @@ describe('User Controller', () => {
         });
 
         beforeEach(async () => {
-          await addUser(unverifiedVendor);
+          await addUser(unVerifiedVendor);
         });
 
         it('returns an error', (done) => {
           request()
             [method](endpoint)
             .set('authorization', adminToken)
-            .send({ vendorId: unverifiedVendorId })
+            .send({ vendorId: unVerifiedVendorId })
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
@@ -2264,7 +2264,7 @@ describe('User Controller', () => {
       });
 
       context('when vendor has not been verified', () => {
-        const unverifiedVendor = UserFactory.build(
+        const unVerifiedVendor = UserFactory.build(
           {
             role: USER_ROLE.VENDOR,
             activated: true,
@@ -2277,14 +2277,14 @@ describe('User Controller', () => {
         );
 
         beforeEach(async () => {
-          await addUser(unverifiedVendor);
+          await addUser(unVerifiedVendor);
         });
 
         it('returns an error', (done) => {
           request()
             [method](endpoint)
             .set('authorization', adminToken)
-            .send({ vendorId: unverifiedVendor._id })
+            .send({ vendorId: unVerifiedVendor._id })
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
@@ -2322,7 +2322,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('User is not a vendor');
+              expect(res.body.message).to.be.eql('User is not a registered vendor');
               done();
             });
         });

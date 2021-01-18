@@ -660,7 +660,7 @@ export const certifyVendor = async ({ vendorId, adminId }) => {
   }
 
   if (user.role !== USER_ROLE.VENDOR) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a registered vendor');
   }
 
   if (!user.vendor.verified) {
