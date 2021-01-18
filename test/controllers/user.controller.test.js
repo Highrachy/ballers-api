@@ -1714,6 +1714,7 @@ describe('User Controller', () => {
         address: AddressFactory.build(),
         vendor: {
           companyName: 'Highrachy Investment Limited',
+          verified: true,
           directors: [
             {
               name: 'Jane Doe',
@@ -1798,6 +1799,7 @@ describe('User Controller', () => {
                 ...data.address,
               });
               expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
+              expect(res.body.user.vendor.verified).to.be.eql(false);
               expect(res.body.user.vendor.companyLogo).to.be.eql(data.vendor.companyLogo);
               expect(res.body.user.vendor.bankInfo).to.be.eql(data.vendor.bankInfo);
               expect(res.body.user.vendor.entity).to.be.eql(data.vendor.entity);
@@ -2108,6 +2110,7 @@ describe('User Controller', () => {
                 _id: vendorUser.vendor.directors[2]._id.toString(),
               });
               expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
+              expect(res.body.user.vendor.verified).to.be.eql(false);
               done();
             });
         });

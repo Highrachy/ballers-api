@@ -552,7 +552,7 @@ export const updateVendor = async ({ updatedVendor, user }) => {
     Array.prototype.push.apply(updatedVendor.vendor.socialMedia, user.vendor.socialMedia);
   }
 
-  const vendor = { ...user.vendor, ...updatedVendor.vendor };
+  const vendor = { ...user.vendor, ...updatedVendor.vendor, verified: false };
 
   vendor.verification = { ...vendor.verification, ...stepToReview.verification };
 
@@ -599,7 +599,10 @@ export const editDirector = async ({ directorInfo, user }) => {
 
   try {
     await User.findByIdAndUpdate(user._id, {
-      $set: { 'vendor.verification.directorInfo.status': VENDOR_INFO_STATUS.IN_REVIEW },
+      $set: {
+        'vendor.verification.directorInfo.status': VENDOR_INFO_STATUS.IN_REVIEW,
+        'vendor.verified': false,
+      },
     });
     return User.findOneAndUpdate(
       { 'vendor.directors._id': directorInfo._id },
