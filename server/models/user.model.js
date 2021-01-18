@@ -166,6 +166,16 @@ const UserSchema = new mongoose.Schema(
           type: String,
         },
       },
+      certified: {
+        type: Boolean,
+        default: false,
+      },
+      certifiedBy: {
+        type: ObjectId,
+      },
+      certifiedOn: {
+        type: Date,
+      },
       companyLogo: {
         type: String,
       },

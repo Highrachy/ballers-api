@@ -31,10 +31,14 @@ useDatabase();
 
 let adminToken;
 let userToken;
-const userId = mongoose.Types.ObjectId();
-const adminId = mongoose.Types.ObjectId();
-const adminUser = UserFactory.build({ _id: adminId, role: USER_ROLE.ADMIN, activated: true });
-const regularUser = UserFactory.build({ _id: userId, role: USER_ROLE.USER, activated: true });
+const adminUser = UserFactory.build(
+  { role: USER_ROLE.ADMIN, activated: true },
+  { generateId: true },
+);
+const regularUser = UserFactory.build(
+  { role: USER_ROLE.USER, activated: true },
+  { generateId: true },
+);
 let sendMailStub;
 const sandbox = sinon.createSandbox();
 
@@ -678,7 +682,7 @@ describe('User Controller', () => {
 
       context('when user is not found', () => {
         beforeEach(async () => {
-          await User.findByIdAndDelete(userId);
+          await User.findByIdAndDelete(regularUser._id);
         });
         it('returns token error', (done) => {
           request()
@@ -1041,21 +1045,21 @@ describe('User Controller', () => {
       );
       const referral = ReferralFactory.build(
         {
-          referrerId: userId,
+          referrerId: regularUser._id,
           reward: { amount: 50000 },
         },
         { generateId: true },
       );
 
       const enquiry = EnquiryFactory.build(
-        { userId, propertyId: property._id },
+        { userId: regularUser._id, propertyId: property._id },
         { generateId: true },
       );
       const offer = OfferFactory.build(
         {
           enquiryId: enquiry._id,
           vendorId: vendor._id,
-          userId,
+          userId: regularUser._id,
           totalAmountPayable: 19000000,
         },
         { generateId: true },
@@ -1063,7 +1067,7 @@ describe('User Controller', () => {
       const transaction = TransactionFactory.build(
         {
           propertyId: property._id,
-          userId,
+          userId: regularUser._id,
           adminId: vendor._id,
           amount: 250000,
         },
@@ -1098,7 +1102,7 @@ describe('User Controller', () => {
           await createOffer(offer);
           await addTransaction(transaction);
           await acceptOffer({
-            userId,
+            userId: regularUser._id,
             offerId: offer._id,
             signature: 'https://ballers.ng/signature.png',
           });
@@ -1152,7 +1156,7 @@ describe('User Controller', () => {
     });
 
     describe('Upgrade User to content editor', () => {
-      const userInfo = { userId };
+      const userInfo = { userId: regularUser._id };
       context('with valid token', () => {
         it('returns a upgraded user', (done) => {
           request()
@@ -1234,7 +1238,7 @@ describe('User Controller', () => {
     });
 
     describe('Downgrade Content editor to user', () => {
-      const userInfo = { userId };
+      const userInfo = { userId: regularUser._id };
       context('with valid token', () => {
         it('returns a upgraded user', (done) => {
           request()
@@ -1319,7 +1323,7 @@ describe('User Controller', () => {
       const vendorId = mongoose.Types.ObjectId();
       const vendorUser = UserFactory.build({
         _id: vendorId,
-        role: 2,
+        role: USER_ROLE.VENDOR,
         activated: true,
         vendor: {
           verification: {
@@ -1360,17 +1364,17 @@ describe('User Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Vendor verified');
               expect(res.body.vendor.vendor.verified).to.be.eql(true);
-              expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminId.toString());
+              expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminUser._id.toString());
               done();
             });
         });
       });
 
       context('when vendor step has not been verified', () => {
-        const unverifiedVendorId = mongoose.Types.ObjectId();
-        const unverifiedVendor = UserFactory.build({
-          _id: unverifiedVendorId,
-          role: 2,
+        const unVerifiedVendorId = mongoose.Types.ObjectId();
+        const unVerifiedVendor = UserFactory.build({
+          _id: unVerifiedVendorId,
+          role: USER_ROLE.VENDOR,
           activated: true,
           vendor: {
             verification: {
@@ -1391,14 +1395,14 @@ describe('User Controller', () => {
         });
 
         beforeEach(async () => {
-          await addUser(unverifiedVendor);
+          await addUser(unVerifiedVendor);
         });
 
         it('returns an error', (done) => {
           request()
             [method](endpoint)
             .set('authorization', adminToken)
-            .send({ vendorId: unverifiedVendorId })
+            .send({ vendorId: unVerifiedVendorId })
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
@@ -1455,7 +1459,11 @@ describe('User Controller', () => {
 
     describe('Verify vendor step', () => {
       const vendorId = mongoose.Types.ObjectId();
-      const vendorUser = UserFactory.build({ _id: vendorId, role: 2, activated: true });
+      const vendorUser = UserFactory.build({
+        _id: vendorId,
+        role: USER_ROLE.VENDOR,
+        activated: true,
+      });
       const invalidUserId = mongoose.Types.ObjectId();
       const invalidUser = UserFactory.build({ _id: invalidUserId });
       const endpoint = '/api/v1/user/vendor/verify/step';
@@ -1483,7 +1491,7 @@ describe('User Controller', () => {
                 );
                 expect(
                   res.body.vendor.vendor.verification[VENDOR_STEPS[index]].verifiedBy,
-                ).to.be.eql(adminId.toString());
+                ).to.be.eql(adminUser._id.toString());
                 done();
               });
           }),
@@ -1572,7 +1580,11 @@ describe('User Controller', () => {
 
     describe('Add comment to vendor info', () => {
       const vendorId = mongoose.Types.ObjectId();
-      const vendorUser = UserFactory.build({ _id: vendorId, role: 2, activated: true });
+      const vendorUser = UserFactory.build({
+        _id: vendorId,
+        role: USER_ROLE.VENDOR,
+        activated: true,
+      });
       const invalidUserId = mongoose.Types.ObjectId();
       const invalidUser = UserFactory.build({ _id: invalidUserId });
       const endpoint = '/api/v1/user/vendor/verify/comment';
@@ -1603,7 +1615,7 @@ describe('User Controller', () => {
                 ).to.be.eql(data.comment);
                 expect(
                   res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].addedBy,
-                ).to.be.eql(adminId.toString());
+                ).to.be.eql(adminUser._id.toString());
                 done();
               });
           }),
@@ -1695,7 +1707,7 @@ describe('User Controller', () => {
       const vendorId = mongoose.Types.ObjectId();
       const vendorUser = UserFactory.build({
         _id: vendorId,
-        role: 2,
+        role: USER_ROLE.VENDOR,
         activated: true,
         phone: '08012345678',
         phone2: '09012345678',
@@ -2210,6 +2222,155 @@ describe('User Controller', () => {
         useExistingUser: true,
       });
     });
+
+    describe('Certify vendor', () => {
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          vendor: {
+            verified: true,
+          },
+        },
+        { generateId: true },
+      );
+      const invalidUserId = mongoose.Types.ObjectId();
+      const invalidUser = UserFactory.build({ _id: invalidUserId });
+      const endpoint = '/api/v1/user/vendor/certify';
+      const method = 'put';
+
+      const data = { vendorId: vendorUser._id };
+
+      beforeEach(async () => {
+        await addUser(vendorUser);
+      });
+
+      context('with valid token', () => {
+        it('returns a certified vendor', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Vendor certified');
+              expect(res.body.vendor.vendor.certified).to.be.eql(true);
+              expect(res.body.vendor.vendor.certifiedBy).to.be.eql(adminUser._id.toString());
+              done();
+            });
+        });
+      });
+
+      context('when vendor has not been verified', () => {
+        const unVerifiedVendor = UserFactory.build(
+          {
+            role: USER_ROLE.VENDOR,
+            activated: true,
+            vendor: {
+              companyName: 'ABC Limited',
+              verified: false,
+            },
+          },
+          { generateId: true },
+        );
+
+        beforeEach(async () => {
+          await addUser(unVerifiedVendor);
+        });
+
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ vendorId: unVerifiedVendor._id })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql(
+                'ABC Limited must be verified before approval as a certified vendor',
+              );
+              done();
+            });
+        });
+      });
+
+      context('when vendor id is invalid', () => {
+        const invalidVendorId = mongoose.Types.ObjectId();
+
+        it('returns not found', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ vendorId: invalidVendorId })
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Vendor not found');
+              done();
+            });
+        });
+      });
+
+      context('when id sent is not for a vendor', () => {
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ vendorId: regularUser._id })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('User is not a registered vendor');
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method, data });
+      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: invalidUser, data });
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        userId: invalidUserId,
+        data,
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findByIdAndUpdate.restore();
+            });
+        });
+      });
+
+      context('with invalid data', () => {
+        context('when user id is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ vendorId: '' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Vendor id" is not allowed to be empty');
+                done();
+              });
+          });
+        });
+      });
+    });
   });
 
   describe('Get all users', () => {
@@ -2236,7 +2397,7 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: adminUser,
-        userId: adminId,
+        userId: adminUser._id,
       });
     });
   });
@@ -2268,7 +2429,7 @@ describe('User Controller', () => {
         endpoint,
         method,
         user: adminUser,
-        userId: adminId,
+        userId: adminUser._id,
       });
     });
   });

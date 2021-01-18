@@ -649,3 +649,38 @@ export const removeDirector = async ({ directorId, user }) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error removing director', error);
   }
 };
+
+export const certifyVendor = async ({ vendorId, adminId }) => {
+  const user = await getUserById(vendorId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Vendor not found');
+  }
+
+  if (user.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a registered vendor');
+  }
+
+  if (!user.vendor.verified) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      `${user.vendor.companyName} must be verified before approval as a certified vendor`,
+    );
+  }
+
+  try {
+    return User.findByIdAndUpdate(
+      vendorId,
+      {
+        $set: {
+          'vendor.certified': true,
+          'vendor.certifiedBy': adminId,
+          'vendor.certifiedOn': getTodaysDateStandard(),
+        },
+      },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error certifying vendor', error);
+  }
+};
