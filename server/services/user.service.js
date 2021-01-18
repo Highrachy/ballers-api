@@ -521,7 +521,7 @@ const getStepsReadyForReview = (updatedVendor, user) => {
         updatedVendor.vendor.companyLogo ||
         updatedVendor.vendor.entity ||
         updatedVendor.vendor.redanNumber ||
-        updatedVendor.vendor.socialMedia.length > 0 ||
+        (updatedVendor.vendor.socialMedia && updatedVendor.vendor.socialMedia.length > 0) ||
         updatedVendor.vendor.website))
   ) {
     stepToReview.verification.companyInfo = {
