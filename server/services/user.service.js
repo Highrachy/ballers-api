@@ -244,12 +244,70 @@ export const resetPasswordViaToken = async (password, token) => {
   }
 };
 
-export const updateUser = async (updatedUser) => {
+export const updateUser = async ({ updateInfo, user }) => {
+  let vendor;
+  const updatedUser = updateInfo;
+
+  if (user.role === USER_ROLE.VENDOR) {
+    const stepToReview = {
+      verification: {},
+    };
+
+    delete updatedUser.phone;
+    delete updatedUser.phone2;
+    delete updatedUser.address;
+
+    if (
+      updatedUser.vendor &&
+      updatedUser.vendor.directors &&
+      updatedUser.vendor.directors.length > 0
+    ) {
+      stepToReview.verification.directorInfo = {
+        ...user.vendor.verification.directorInfo,
+        status: VENDOR_INFO_STATUS.IN_REVIEW,
+      };
+    }
+
+    if (
+      updatedUser.vendor &&
+      ((updatedUser.vendor.socialMedia && updatedUser.vendor.socialMedia.length > 0) ||
+        updatedUser.vendor.website)
+    ) {
+      stepToReview.verification.companyInfo = {
+        ...user.vendor.verification.companyInfo,
+        status: VENDOR_INFO_STATUS.IN_REVIEW,
+      };
+    }
+
+    if (
+      updatedUser.vendor &&
+      updatedUser.vendor.directors &&
+      updatedUser.vendor.directors.length > 0
+    ) {
+      Array.prototype.push.apply(updatedUser.vendor.directors, user.vendor.directors);
+    }
+
+    if (
+      updatedUser.vendor &&
+      updatedUser.vendor.socialMedia &&
+      updatedUser.vendor.socialMedia.length > 0
+    ) {
+      Array.prototype.push.apply(updatedUser.vendor.socialMedia, user.vendor.socialMedia);
+    }
+
+    vendor = { ...user.vendor, ...updatedUser.vendor };
+
+    vendor.verification = { ...vendor.verification, ...stepToReview.verification };
+  }
+
   try {
-    return User.findOneAndUpdate({ _id: updatedUser.id }, updatedUser, {
-      new: true,
-      fields: '-password',
-    });
+    const updateData = { ...updatedUser, vendor };
+
+    return User.findOneAndUpdate(
+      { _id: user._id },
+      { $set: updateData },
+      { new: true, fields: '-password' },
+    );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating user', error);
   }
@@ -484,16 +542,16 @@ const getStepsReadyForReview = (updatedVendor, user) => {
     verification: {},
   };
 
-  if (
-    updatedVendor.vendor &&
-    updatedVendor.vendor.directors &&
-    updatedVendor.vendor.directors.length > 0
-  ) {
-    stepToReview.verification.directorInfo = {
-      ...user.vendor.verification.directorInfo,
-      status: VENDOR_INFO_STATUS.IN_REVIEW,
-    };
-  }
+  // if (
+  //   updatedVendor.vendor &&
+  //   updatedVendor.vendor.directors &&
+  //   updatedVendor.vendor.directors.length > 0
+  // ) {
+  //   stepToReview.verification.directorInfo = {
+  //     ...user.vendor.verification.directorInfo,
+  //     status: VENDOR_INFO_STATUS.IN_REVIEW,
+  //   };
+  // }
 
   if (updatedVendor.vendor && updatedVendor.vendor.bankInfo) {
     stepToReview.verification.bankDetails = {
@@ -520,9 +578,9 @@ const getStepsReadyForReview = (updatedVendor, user) => {
       (updatedVendor.vendor.companyName ||
         updatedVendor.vendor.companyLogo ||
         updatedVendor.vendor.entity ||
-        updatedVendor.vendor.redanNumber ||
-        (updatedVendor.vendor.socialMedia && updatedVendor.vendor.socialMedia.length > 0) ||
-        updatedVendor.vendor.website))
+        updatedVendor.vendor.redanNumber)) // ||
+    // (updatedVendor.vendor.socialMedia && updatedVendor.vendor.socialMedia.length > 0) ||
+    // updatedVendor.vendor.website))
   ) {
     stepToReview.verification.companyInfo = {
       ...user.vendor.verification.companyInfo,
@@ -536,21 +594,21 @@ const getStepsReadyForReview = (updatedVendor, user) => {
 export const updateVendor = async ({ updatedVendor, user }) => {
   const stepToReview = getStepsReadyForReview(updatedVendor, user);
 
-  if (
-    updatedVendor.vendor &&
-    updatedVendor.vendor.directors &&
-    updatedVendor.vendor.directors.length > 0
-  ) {
-    Array.prototype.push.apply(updatedVendor.vendor.directors, user.vendor.directors);
-  }
+  // if (
+  //   updatedVendor.vendor &&
+  //   updatedVendor.vendor.directors &&
+  //   updatedVendor.vendor.directors.length > 0
+  // ) {
+  //   Array.prototype.push.apply(updatedVendor.vendor.directors, user.vendor.directors);
+  // }
 
-  if (
-    updatedVendor.vendor &&
-    updatedVendor.vendor.socialMedia &&
-    updatedVendor.vendor.socialMedia.length > 0
-  ) {
-    Array.prototype.push.apply(updatedVendor.vendor.socialMedia, user.vendor.socialMedia);
-  }
+  // if (
+  //   updatedVendor.vendor &&
+  //   updatedVendor.vendor.socialMedia &&
+  //   updatedVendor.vendor.socialMedia.length > 0
+  // ) {
+  //   Array.prototype.push.apply(updatedVendor.vendor.socialMedia, user.vendor.socialMedia);
+  // }
 
   const vendor = { ...user.vendor, ...updatedVendor.vendor, verified: false };
 

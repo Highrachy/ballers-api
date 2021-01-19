@@ -699,10 +699,64 @@ describe('User Controller', () => {
     });
 
     describe('Update User route', () => {
+      let vendorToken;
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          phone: '08012345678',
+          phone2: '09012345678',
+          address: AddressFactory.build(),
+          vendor: {
+            companyName: 'Highrachy Investment Limited',
+            verified: true,
+            directors: [
+              {
+                name: 'Jane Doe',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+            ],
+            socialMedia: [
+              {
+                name: 'Instagram',
+                url: 'https://instagram.com/highrachy',
+              },
+            ],
+          },
+        },
+        { generateId: true },
+      );
       const newUser = {
         firstName: 'John',
         lastName: 'Doe',
         phone: '08012345678',
+      };
+
+      const updatedVendor = {
+        firstName: 'Harvey',
+        phone: '12345678901',
+        phone2: '12345678901',
+        address: {
+          country: 'Ghana',
+          state: 'Accra',
+        },
+        vendor: {
+          directors: [
+            {
+              name: 'John Doe',
+              isSignatory: false,
+              phone: '08012345678',
+            },
+          ],
+          socialMedia: [
+            {
+              name: 'Facebook',
+              url: 'https://facebook.com/highrachy',
+            },
+          ],
+          website: 'https://highrachy.com/',
+        },
       };
 
       context('with valid token', () => {
@@ -722,6 +776,29 @@ describe('User Controller', () => {
         });
       });
 
+      context('user is a vendor', () => {
+        beforeEach(async () => {
+          vendorToken = await addUser(vendorUser);
+        });
+        it('returns a updated user', (done) => {
+          request()
+            .put('/api/v1/user/update')
+            .set('authorization', vendorToken)
+            .send(updatedVendor)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.user.firstName).to.be.eql(updatedVendor.firstName);
+              expect(res.body.user.address).to.be.eql(vendorUser.address);
+              expect(res.body.user.phone).to.be.eql(vendorUser.phone);
+              expect(res.body.user.phone2).to.be.eql(vendorUser.phone2);
+              expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
+              expect(res.body.user.vendor.directors.length).to.be.eql(2);
+              done();
+            });
+        });
+      });
+
       context('without token', () => {
         it('returns error', (done) => {
           request()
@@ -731,20 +808,6 @@ describe('User Controller', () => {
               expect(res).to.have.status(403);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('with invalid updated user', () => {
-        it('returns a updated user', (done) => {
-          request()
-            .put('/api/v1/user/update')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
               done();
             });
         });
@@ -767,23 +830,6 @@ describe('User Controller', () => {
       });
 
       context('with invalid data', () => {
-        context('when first name is empty', () => {
-          it('returns an error', (done) => {
-            const invalidUser = UserFactory.build({ firstName: '' });
-            request()
-              .put('/api/v1/user/update')
-              .set('authorization', userToken)
-              .send(invalidUser)
-              .end((err, res) => {
-                expect(res).to.have.status(412);
-                expect(res.body.success).to.be.eql(false);
-                expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"First Name" is not allowed to be empty');
-                done();
-              });
-          });
-        });
-
         context('when preferences house type is empty', () => {
           it('returns an error', (done) => {
             const invalidUser = UserFactory.build({ preferences: { houseType: '' } });
@@ -1704,36 +1750,37 @@ describe('User Controller', () => {
 
     describe('Update vendor info', () => {
       let vendorToken;
-      const vendorId = mongoose.Types.ObjectId();
-      const vendorUser = UserFactory.build({
-        _id: vendorId,
-        role: USER_ROLE.VENDOR,
-        activated: true,
-        phone: '08012345678',
-        phone2: '09012345678',
-        address: AddressFactory.build(),
-        vendor: {
-          companyName: 'Highrachy Investment Limited',
-          verified: true,
-          directors: [
-            {
-              name: 'Jane Doe',
-              isSignatory: false,
-              phone: '08012345678',
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          phone: '08012345678',
+          phone2: '09012345678',
+          address: AddressFactory.build(),
+          vendor: {
+            companyName: 'Highrachy Investment Limited',
+            verified: true,
+            identification: {
+              url: 'https://ballers.ng/tax-filing.png',
+              type: 'Tax filing',
             },
-          ],
-          identification: {
-            url: 'https://ballers.ng/tax-filing.png',
-            type: 'Tax filing',
+            // directors: [
+            //   {
+            //     name: 'Jane Doe',
+            //     isSignatory: false,
+            //     phone: '08012345678',
+            //   },
+            // ],
+            // socialMedia: [
+            //   {
+            //     name: 'Instagram',
+            //     url: 'https://instagram.com/highrachy',
+            //   },
+            // ],
           },
-          socialMedia: [
-            {
-              name: 'Instagram',
-              url: 'https://instagram.com/highrachy',
-            },
-          ],
         },
-      });
+        { generateId: true },
+      );
       const invalidUserId = mongoose.Types.ObjectId();
       const invalidUser = UserFactory.build({ _id: invalidUserId });
       const endpoint = '/api/v1/user/vendor/update';
@@ -1753,27 +1800,27 @@ describe('User Controller', () => {
             bankName: 'ABC Bank',
           },
           companyLogo: 'https://ballers.ng/logo.png',
-          directors: [
-            {
-              name: 'John Doe',
-              isSignatory: false,
-              phone: '08012345678',
-            },
-          ],
           entity: 'Individual',
           identification: {
             url: 'https://ballers.ng/cac-certificate.png',
             type: 'CAC Certificate',
           },
           redanNumber: '1234567890',
-          socialMedia: [
-            {
-              name: 'Facebook',
-              url: 'https://facebook.com/highrachy',
-            },
-          ],
           taxCertificate: 'tax-certificate',
-          website: 'https://highrachy.com/',
+          // directors: [
+          //   {
+          //     name: 'John Doe',
+          //     isSignatory: false,
+          //     phone: '08012345678',
+          //   },
+          // ],
+          // socialMedia: [
+          //   {
+          //     name: 'Facebook',
+          //     url: 'https://facebook.com/highrachy',
+          //   },
+          // ],
+          // website: 'https://highrachy.com/',
         },
       };
 
@@ -1791,7 +1838,7 @@ describe('User Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Vendor information updated');
-              expect(res.body.user._id).to.be.eql(vendorId.toString());
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
               expect(res.body.user.phone).to.be.eql(data.phone);
               expect(res.body.user.phone2).to.be.eql(data.phone2);
               expect(res.body.user.address).to.be.eql({
@@ -1799,19 +1846,20 @@ describe('User Controller', () => {
                 ...data.address,
               });
               expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
-              expect(res.body.user.vendor.verified).to.be.eql(false);
+
               expect(res.body.user.vendor.companyLogo).to.be.eql(data.vendor.companyLogo);
               expect(res.body.user.vendor.bankInfo).to.be.eql(data.vendor.bankInfo);
               expect(res.body.user.vendor.entity).to.be.eql(data.vendor.entity);
               expect(res.body.user.vendor.taxCertificate).to.be.eql(data.vendor.taxCertificate);
-              expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
-              expect(res.body.user.vendor.directors.length).to.be.eql(2);
               expect(res.body.user.vendor.verification.companyInfo.status).to.be.eql('In Review');
               expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('In Review');
               expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
                 'In Review',
               );
-              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
+              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('Pending');
+              expect(res.body.user.vendor.verified).to.be.eql(false);
+              // expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
+              // expect(res.body.user.vendor.directors.length).to.be.eql(2);
               done();
             });
         });
@@ -1828,7 +1876,7 @@ describe('User Controller', () => {
                 expect(res).to.have.status(200);
                 expect(res.body.success).to.be.eql(true);
                 expect(res.body.message).to.be.eql('Vendor information updated');
-                expect(res.body.user._id).to.be.eql(vendorId.toString());
+                expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
                 expect(res.body.user).to.have.property(field);
                 done();
               });

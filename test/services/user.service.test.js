@@ -492,6 +492,7 @@ describe('User Service', () => {
   });
 
   describe('#updateUser', () => {
+    let user;
     const _id = mongoose.Types.ObjectId();
     const updatedDetails = {
       id: _id,
@@ -509,12 +510,12 @@ describe('User Service', () => {
     };
 
     beforeEach(async () => {
-      await User.create(UserFactory.build({ _id }));
+      user = await User.create(UserFactory.build({ _id }));
     });
 
     context('when all is valid', () => {
       it('returns a valid updated user', async () => {
-        const updatedUser = await updateUser(updatedDetails);
+        const updatedUser = await updateUser({ updateInfo: updatedDetails, user });
         expect(updatedDetails.firstName).to.eql(updatedUser.firstName);
         expect(updatedDetails.lastName).to.eql(updatedUser.lastName);
         expect(updatedDetails.phone).to.eql(updatedUser.phone);
@@ -527,7 +528,7 @@ describe('User Service', () => {
         sinon.stub(User, 'findOneAndUpdate').throws(new Error('error msg'));
 
         try {
-          await updateUser(updatedDetails);
+          await updateUser({ updateInfo: updatedDetails, user });
         } catch (err) {
           expect(err.statusCode).to.eql(400);
           expect(err.error.message).to.be.eql('error msg');

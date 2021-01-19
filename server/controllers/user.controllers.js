@@ -122,10 +122,13 @@ const UserController = {
   },
 
   update(req, res, next) {
-    const updatedUser = req.locals;
-    updateUser({ ...req.user, ...updatedUser, id: req.user._id })
-      .then((user) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'User updated', user });
+    const updateInfo = req.locals;
+    const { user } = req;
+    updateUser({ updateInfo, user })
+      .then((updatedInfo) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'User updated', user: updatedInfo });
       })
       .catch((error) => next(error));
   },
