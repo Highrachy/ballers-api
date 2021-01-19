@@ -1793,6 +1793,7 @@ describe('User Controller', () => {
               expect(res.body.user._id).to.be.eql(vendorId.toString());
               expect(res.body.user.phone).to.be.eql(data.phone);
               expect(res.body.user.phone2).to.be.eql(data.phone2);
+              expect(res.body.user.vendor.verified).to.be.eql(false);
               expect(res.body.user.address).to.be.eql({
                 ...vendorUser.address,
                 ...data.address,
@@ -1810,6 +1811,55 @@ describe('User Controller', () => {
                 'In Review',
               );
               expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
+              done();
+            });
+        });
+      });
+
+      context('when non sensitive data is sent', () => {
+        const nonSensitiveData = {
+          phone: '12345678901',
+          phone2: '12345678901',
+          address: {
+            country: 'Ghana',
+            state: 'Accra',
+          },
+          vendor: {
+            directors: [
+              {
+                name: 'John Doe',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+            ],
+            socialMedia: [
+              {
+                name: 'Facebook',
+                url: 'https://facebook.com/highrachy',
+              },
+            ],
+            website: 'https://highrachy.com/',
+          },
+        };
+        it('verification status remains same', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send(nonSensitiveData)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Vendor information updated');
+              expect(res.body.user._id).to.be.eql(vendorId.toString());
+              expect(res.body.user.phone).to.be.eql(nonSensitiveData.phone);
+              expect(res.body.user.phone2).to.be.eql(nonSensitiveData.phone2);
+              expect(res.body.user.address).to.be.eql({
+                ...vendorUser.address,
+                ...nonSensitiveData.address,
+              });
+              expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
+              expect(res.body.user.vendor.directors.length).to.be.eql(2);
+              expect(res.body.user.vendor.verified).to.be.eql(true);
               done();
             });
         });
