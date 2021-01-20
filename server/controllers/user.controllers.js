@@ -22,6 +22,7 @@ import {
   removeDirector,
   getOneUser,
   certifyVendor,
+  resolveVerificationStepComment,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -301,6 +302,15 @@ const UserController = {
     certifyVendor({ vendorId, adminId })
       .then((vendor) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Vendor certified', vendor });
+      })
+      .catch((error) => next(error));
+  },
+
+  resolveVerificationStepComment(req, res, next) {
+    const commentInfo = req.locals;
+    resolveVerificationStepComment(commentInfo)
+      .then((vendor) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Comment resolved', vendor });
       })
       .catch((error) => next(error));
   },

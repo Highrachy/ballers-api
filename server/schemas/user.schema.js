@@ -145,3 +145,9 @@ export const updateDirectorSchema = Joi.object({
   ...directorSchema,
   _id: Joi.objectId().label('Director id').required(),
 });
+
+export const resolveCommentVendorSchema = Joi.object({
+  vendorId: Joi.objectId().label('Vendor id').required(),
+  step: requiredString('Step'),
+  commentId: Joi.objectId().label('Comment id').required(),
+});

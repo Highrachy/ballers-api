@@ -702,3 +702,37 @@ export const certifyVendor = async ({ vendorId, adminId }) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error certifying vendor', error);
   }
 };
+
+export const resolveVerificationStepComment = async ({ vendorId, commentId, step }) => {
+  const user = await getUserById(vendorId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (user.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  const commentIdIsValid = user.vendor.verification[step].comments.some(
+    (comment) => comment._id.toString() === commentId.toString(),
+  );
+
+  if (!commentIdIsValid) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid Comment id');
+  }
+
+  try {
+    return User.findOneAndUpdate(
+      { [`vendor.verification.${step}.comments._id`]: commentId },
+      {
+        $set: {
+          [`vendor.verification.${step}.comments.$.status`]: COMMENT_STATUS.RESOLVED,
+        },
+      },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving comment', error);
+  }
+};

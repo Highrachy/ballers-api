@@ -1787,6 +1787,261 @@ describe('User Controller', () => {
       });
     });
 
+    describe('Resolve verification step comment', () => {
+      const companyInfoCommentId1 = mongoose.Types.ObjectId();
+      const companyInfoCommentId2 = mongoose.Types.ObjectId();
+      const bankDetailsCommentId1 = mongoose.Types.ObjectId();
+      const bankDetailsCommentId2 = mongoose.Types.ObjectId();
+      const directorInfoCommentId1 = mongoose.Types.ObjectId();
+      const directorInfoCommentId2 = mongoose.Types.ObjectId();
+      const documentUploadCommentId1 = mongoose.Types.ObjectId();
+      const documentUploadCommentId2 = mongoose.Types.ObjectId();
+
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          vendor: {
+            verification: {
+              companyInfo: {
+                status: VENDOR_INFO_STATUS.PENDING,
+                comments: [
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: companyInfoCommentId1,
+                    comment: 'sample comment 1',
+                    addedBy: adminUser._id,
+                  },
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: companyInfoCommentId2,
+                    comment: 'sample comment 2',
+                    addedBy: adminUser._id,
+                  },
+                ],
+              },
+              bankDetails: {
+                status: VENDOR_INFO_STATUS.PENDING,
+                comments: [
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: bankDetailsCommentId1,
+                    comment: 'sample comment 1',
+                    addedBy: adminUser._id,
+                  },
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: bankDetailsCommentId2,
+                    comment: 'sample comment 2',
+                    addedBy: adminUser._id,
+                  },
+                ],
+              },
+              documentUpload: {
+                status: VENDOR_INFO_STATUS.PENDING,
+                comments: [
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: documentUploadCommentId1,
+                    comment: 'sample comment 1',
+                    addedBy: adminUser._id,
+                  },
+                  {
+                    status: VENDOR_INFO_STATUS.PENDING,
+                    _id: documentUploadCommentId2,
+                    comment: 'sample comment 2',
+                    addedBy: adminUser._id,
+                  },
+                ],
+              },
+              directorInfo: {
+                status: VENDOR_INFO_STATUS.PENDING,
+                comments: [
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: directorInfoCommentId1,
+                    comment: 'sample comment 1',
+                    addedBy: adminUser._id,
+                  },
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: directorInfoCommentId2,
+                    comment: 'sample comment 2',
+                    addedBy: adminUser._id,
+                  },
+                ],
+              },
+            },
+          },
+        },
+        { generateId: true },
+      );
+      const invalidUserId = mongoose.Types.ObjectId();
+      const invalidUser = UserFactory.build({ _id: invalidUserId });
+      const endpoint = '/api/v1/user/vendor/verify/comment/resolve';
+      const method = 'put';
+
+      const data = { vendorId: vendorUser._id };
+
+      beforeEach(async () => {
+        await addUser(vendorUser);
+      });
+
+      context('when a valid token is used', () => {
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+          it('returns verified step', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({
+                ...data,
+                step: VENDOR_STEPS[index],
+                // eslint-disable-next-line no-eval
+                commentId: eval(`${VENDOR_STEPS[index]}CommentId1`),
+              })
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.message).to.be.eql('Comment resolved');
+                expect(res.body.vendor._id).to.be.eql(vendorUser._id.toString());
+                expect(
+                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].status,
+                ).to.be.eql('Resolved');
+                expect(
+                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[1].status,
+                ).to.be.eql('Pending');
+                done();
+              });
+          }),
+        );
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+        // eslint-disable-next-line no-eval
+        data: { ...data, step: VENDOR_STEPS[0], commentId: eval(`${VENDOR_STEPS[0]}CommentId1`) },
+      });
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: invalidUser,
+        // eslint-disable-next-line no-eval
+        data: { ...data, step: VENDOR_STEPS[0], commentId: eval(`${VENDOR_STEPS[0]}CommentId1`) },
+      });
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        userId: invalidUserId,
+        // eslint-disable-next-line no-eval
+        data: { ...data, step: VENDOR_STEPS[0], commentId: eval(`${VENDOR_STEPS[0]}CommentId1`) },
+      });
+
+      context('when vendor id is invalid', () => {
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+          it('returns not found', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({
+                vendorId: invalidUserId,
+                step: VENDOR_STEPS[index],
+                // eslint-disable-next-line no-eval
+                commentId: eval(`${VENDOR_STEPS[index]}CommentId1`),
+              })
+              .end((err, res) => {
+                expect(res).to.have.status(404);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('User not found');
+                done();
+              });
+          }),
+        );
+      });
+
+      context('when vendor id is not for a vendor', () => {
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+          it('returns not found', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({
+                vendorId: regularUser._id,
+                step: VENDOR_STEPS[index],
+                // eslint-disable-next-line no-eval
+                commentId: eval(`${VENDOR_STEPS[index]}CommentId1`),
+              })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('User is not a vendor');
+                done();
+              });
+          }),
+        );
+      });
+
+      context('when findOneAndUpdate returns an error', () => {
+        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+          it('returns the error', (done) => {
+            sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({
+                ...data,
+                step: VENDOR_STEPS[index],
+                // eslint-disable-next-line no-eval
+                commentId: eval(`${VENDOR_STEPS[index]}CommentId1`),
+              })
+              .end((err, res) => {
+                expect(res).to.have.status(400);
+                expect(res.body.success).to.be.eql(false);
+                done();
+                User.findOneAndUpdate.restore();
+              });
+          }),
+        );
+      });
+
+      context('with invalid data', () => {
+        context('when step is empty', () => {
+          it('returns an error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: '' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Step" is not allowed to be empty');
+                done();
+              });
+          });
+        });
+
+        context('when vendor id is empty', () => {
+          [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+            it('returns an error', (done) => {
+              request()
+                [method](endpoint)
+                .set('authorization', adminToken)
+                .send({ vendorId: '', step: VENDOR_STEPS[index] })
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Vendor id" is not allowed to be empty');
+                  done();
+                });
+            }),
+          );
+        });
+      });
+    });
+
     describe('Update vendor info', () => {
       let vendorToken;
       const vendorId = mongoose.Types.ObjectId();
