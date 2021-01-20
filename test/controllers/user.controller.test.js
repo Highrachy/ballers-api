@@ -24,7 +24,12 @@ import {
   itReturnsAnErrorWhenServiceFails,
   itReturnsNotFoundForInvalidToken,
 } from '../helpers';
-import { USER_ROLE, VENDOR_STEPS, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
+import {
+  USER_ROLE,
+  VENDOR_STEPS,
+  VENDOR_INFO_STATUS,
+  COMMENT_STATUS,
+} from '../../server/helpers/constants';
 import AddressFactory from '../factories/address.factory';
 
 useDatabase();
@@ -1458,18 +1463,91 @@ describe('User Controller', () => {
     });
 
     describe('Verify vendor step', () => {
-      const vendorId = mongoose.Types.ObjectId();
-      const vendorUser = UserFactory.build({
-        _id: vendorId,
-        role: USER_ROLE.VENDOR,
-        activated: true,
-      });
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          vendor: {
+            verification: {
+              companyInfo: {
+                status: VENDOR_INFO_STATUS.PENDING,
+                comments: [
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: mongoose.Types.ObjectId(),
+                    comment: 'sample comment 1',
+                    addedBy: adminUser._id,
+                  },
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: mongoose.Types.ObjectId(),
+                    comment: 'sample comment 2',
+                    addedBy: adminUser._id,
+                  },
+                ],
+              },
+              bankDetails: {
+                status: VENDOR_INFO_STATUS.PENDING,
+                comments: [
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: mongoose.Types.ObjectId(),
+                    comment: 'sample comment 1',
+                    addedBy: adminUser._id,
+                  },
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: mongoose.Types.ObjectId(),
+                    comment: 'sample comment 2',
+                    addedBy: adminUser._id,
+                  },
+                ],
+              },
+              documentUpload: {
+                status: VENDOR_INFO_STATUS.PENDING,
+                comments: [
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: mongoose.Types.ObjectId(),
+                    comment: 'sample comment 1',
+                    addedBy: adminUser._id,
+                  },
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: mongoose.Types.ObjectId(),
+                    comment: 'sample comment 2',
+                    addedBy: adminUser._id,
+                  },
+                ],
+              },
+              directorInfo: {
+                status: VENDOR_INFO_STATUS.PENDING,
+                comments: [
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: mongoose.Types.ObjectId(),
+                    comment: 'sample comment 1',
+                    addedBy: adminUser._id,
+                  },
+                  {
+                    status: COMMENT_STATUS.PENDING,
+                    _id: mongoose.Types.ObjectId(),
+                    comment: 'sample comment 2',
+                    addedBy: adminUser._id,
+                  },
+                ],
+              },
+            },
+          },
+        },
+        { generateId: true },
+      );
       const invalidUserId = mongoose.Types.ObjectId();
       const invalidUser = UserFactory.build({ _id: invalidUserId });
       const endpoint = '/api/v1/user/vendor/verify/step';
       const method = 'put';
 
-      const data = { vendorId };
+      const data = { vendorId: vendorUser._id };
 
       beforeEach(async () => {
         await addUser(vendorUser);
@@ -1486,12 +1564,19 @@ describe('User Controller', () => {
                 expect(res).to.have.status(200);
                 expect(res.body.success).to.be.eql(true);
                 expect(res.body.message).to.be.eql('Vendor information verified');
+                expect(res.body.vendor._id).to.be.eql(vendorUser._id.toString());
                 expect(res.body.vendor.vendor.verification[VENDOR_STEPS[index]].status).to.be.eql(
                   'Verified',
                 );
                 expect(
                   res.body.vendor.vendor.verification[VENDOR_STEPS[index]].verifiedBy,
                 ).to.be.eql(adminUser._id.toString());
+                expect(
+                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].status,
+                ).to.be.eql('Resolved');
+                expect(
+                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[1].status,
+                ).to.be.eql('Resolved');
                 done();
               });
           }),

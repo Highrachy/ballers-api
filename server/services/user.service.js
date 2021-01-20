@@ -15,7 +15,7 @@ import {
   USER_ROLE,
   VENDOR_INFO_STATUS,
   VENDOR_STEPS,
-  VERIFICATION_COMMENT_STATUS,
+  COMMENT_STATUS,
 } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getTodaysDateStandard } from '../helpers/dates';
@@ -404,21 +404,23 @@ export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
     [`vendor.verification.${step}.verifiedOn`]: getTodaysDateStandard(),
   };
   try {
-    await User.update(
-      { [`vendor.verification.${step}.comments.status`]: VERIFICATION_COMMENT_STATUS.PENDING },
-      {
-        $set: {
-          [`vendor.verification.${step}.comments.$.status`]: VERIFICATION_COMMENT_STATUS.RESOLVED,
-        },
-      },
-      { multi: true },
-    );
-
-    return User.findByIdAndUpdate(
+    await User.findByIdAndUpdate(
       vendorId,
       { $set: verificationInfo },
       { new: true, fields: '-password' },
     );
+
+    await User.updateMany(
+      { [`vendor.verification.${step}.comments.status`]: COMMENT_STATUS.PENDING },
+      {
+        $set: {
+          [`vendor.verification.${step}.comments.$[element].status`]: COMMENT_STATUS.RESOLVED,
+        },
+      },
+      { arrayFilters: [{ 'element.status': COMMENT_STATUS.PENDING }] },
+    );
+
+    return getUserById(vendorId);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, `Error verifying ${step}`, error);
   }

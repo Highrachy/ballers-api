@@ -58,7 +58,7 @@ export const addressSchema = {
   },
 };
 
-export const VERIFICATION_COMMENT_STATUS = {
+export const COMMENT_STATUS = {
   RESOLVED: 'Resolved',
   PENDING: 'Pending',
 };
