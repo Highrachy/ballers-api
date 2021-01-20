@@ -10,7 +10,13 @@ import { getPropertyById, updateProperty } from './property.service';
 import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
-import { REFERRAL_STATUS, USER_ROLE, VENDOR_INFO_STATUS, VENDOR_STEPS } from '../helpers/constants';
+import {
+  REFERRAL_STATUS,
+  USER_ROLE,
+  VENDOR_INFO_STATUS,
+  VENDOR_STEPS,
+  VERIFICATION_COMMENT_STATUS,
+} from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getTodaysDateStandard } from '../helpers/dates';
 
@@ -398,6 +404,16 @@ export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
     [`vendor.verification.${step}.verifiedOn`]: getTodaysDateStandard(),
   };
   try {
+    await User.update(
+      { [`vendor.verification.${step}.comments.status`]: VERIFICATION_COMMENT_STATUS.PENDING },
+      {
+        $set: {
+          [`vendor.verification.${step}.comments.$.status`]: VERIFICATION_COMMENT_STATUS.RESOLVED,
+        },
+      },
+      { multi: true },
+    );
+
     return User.findByIdAndUpdate(
       vendorId,
       { $set: verificationInfo },
