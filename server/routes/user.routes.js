@@ -12,6 +12,7 @@ import {
   addCommentVendorSchema,
   verifyVendorInfoSchema,
   updateDirectorSchema,
+  resolveCommentVendorSchema,
 } from '../schemas/user.schema';
 import {
   schemaValidation,
@@ -603,6 +604,45 @@ router.put(
   isAdmin,
   schemaValidation(addCommentVendorSchema),
   UserController.addCommentToVerificationStep,
+);
+
+/**
+ * @swagger
+ * /user/vendor/verify/comment/resolve:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to resolve a comment
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              vendorId:
+ *                  type: string
+ *              step:
+ *                  type: string
+ *              comment:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Comment resolved
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/vendor/verify/comment/resolve',
+  authenticate,
+  isAdmin,
+  schemaValidation(resolveCommentVendorSchema),
+  UserController.resolveVerificationStepComment,
 );
 
 /**

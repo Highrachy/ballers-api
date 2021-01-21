@@ -57,3 +57,8 @@ export const addressSchema = {
     type: String,
   },
 };
+
+export const COMMENT_STATUS = {
+  RESOLVED: 'Resolved',
+  PENDING: 'Pending',
+};

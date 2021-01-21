@@ -1,4 +1,5 @@
 import Joi from '@hapi/joi';
+import { VENDOR_STEPS } from '../helpers/constants';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
@@ -55,6 +56,11 @@ const vendor = Joi.object().keys({
   taxCertificate: optionalString('Company Name'),
   website: optionalString('Website'),
 });
+
+const step = Joi.string()
+  .label('Step')
+  .valid(...VENDOR_STEPS)
+  .required();
 
 export const registerSchema = Joi.object({
   firstName: requiredString('First Name'),
@@ -125,12 +131,12 @@ export const verifyVendorSchema = Joi.object({
 
 export const verifyVendorInfoSchema = Joi.object({
   vendorId: Joi.objectId().label('Vendor id').required(),
-  step: requiredString('Step'),
+  step,
 });
 
 export const addCommentVendorSchema = Joi.object({
   vendorId: Joi.objectId().label('Vendor id').required(),
-  step: requiredString('Step'),
+  step,
   comment: requiredString('Comment'),
 });
 
@@ -144,4 +150,10 @@ export const updateVendorSchema = Joi.object({
 export const updateDirectorSchema = Joi.object({
   ...directorSchema,
   _id: Joi.objectId().label('Director id').required(),
+});
+
+export const resolveCommentVendorSchema = Joi.object({
+  vendorId: Joi.objectId().label('Vendor id').required(),
+  step,
+  commentId: Joi.objectId().label('Comment id').required(),
 });

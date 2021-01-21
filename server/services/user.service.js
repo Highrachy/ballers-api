@@ -10,7 +10,13 @@ import { getPropertyById, updateProperty } from './property.service';
 import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
-import { REFERRAL_STATUS, USER_ROLE, VENDOR_INFO_STATUS, VENDOR_STEPS } from '../helpers/constants';
+import {
+  REFERRAL_STATUS,
+  USER_ROLE,
+  VENDOR_INFO_STATUS,
+  VENDOR_STEPS,
+  COMMENT_STATUS,
+} from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getTodaysDateStandard } from '../helpers/dates';
 
@@ -376,12 +382,6 @@ export const getAllVendors = async (page = 1, limit = 10) => {
 };
 
 export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
-  const stepIsValid = VENDOR_STEPS.includes(step);
-
-  if (!stepIsValid) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid step');
-  }
-
   const vendor = await getUserById(vendorId);
 
   if (!vendor) {
@@ -398,23 +398,29 @@ export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
     [`vendor.verification.${step}.verifiedOn`]: getTodaysDateStandard(),
   };
   try {
-    return User.findByIdAndUpdate(
+    await User.findByIdAndUpdate(
       vendorId,
       { $set: verificationInfo },
       { new: true, fields: '-password' },
     );
+
+    await User.updateMany(
+      { [`vendor.verification.${step}.comments.status`]: COMMENT_STATUS.PENDING },
+      {
+        $set: {
+          [`vendor.verification.${step}.comments.$[element].status`]: COMMENT_STATUS.RESOLVED,
+        },
+      },
+      { arrayFilters: [{ 'element.status': COMMENT_STATUS.PENDING }] },
+    );
+
+    return getUserById(vendorId);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, `Error verifying ${step}`, error);
   }
 };
 
 export const addCommentToVerificationStep = async ({ vendorId, adminId, step, comment }) => {
-  const stepIsValid = VENDOR_STEPS.includes(step);
-
-  if (!stepIsValid) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid step');
-  }
-
   const vendor = await getUserById(vendorId);
 
   if (!vendor) {
@@ -702,5 +708,39 @@ export const certifyVendor = async ({ vendorId, adminId }) => {
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error certifying vendor', error);
+  }
+};
+
+export const resolveVerificationStepComment = async ({ vendorId, commentId, step }) => {
+  const user = await getUserById(vendorId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (user.role !== USER_ROLE.VENDOR) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User is not a vendor');
+  }
+
+  const commentIdIsValid = user.vendor.verification[step].comments.some(
+    (comment) => comment._id.toString() === commentId.toString(),
+  );
+
+  if (!commentIdIsValid) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid comment id');
+  }
+
+  try {
+    return User.findOneAndUpdate(
+      { [`vendor.verification.${step}.comments._id`]: commentId },
+      {
+        $set: {
+          [`vendor.verification.${step}.comments.$.status`]: COMMENT_STATUS.RESOLVED,
+        },
+      },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving comment', error);
   }
 };

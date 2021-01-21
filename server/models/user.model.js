@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { USER_ROLE, VENDOR_INFO_STATUS, addressSchema } from '../helpers/constants';
+import { USER_ROLE, VENDOR_INFO_STATUS, addressSchema, COMMENT_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -59,6 +59,10 @@ const vendorInfoSchema = {
     {
       comment: {
         type: String,
+      },
+      status: {
+        type: String,
+        default: COMMENT_STATUS.PENDING,
       },
       addedBy: {
         type: ObjectId,
