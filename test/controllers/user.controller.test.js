@@ -1704,41 +1704,43 @@ describe('User Controller', () => {
 
     describe('Update vendor info', () => {
       let vendorToken;
-      const vendorId = mongoose.Types.ObjectId();
-      const vendorUser = UserFactory.build({
-        _id: vendorId,
-        role: USER_ROLE.VENDOR,
-        activated: true,
-        phone: '08012345678',
-        phone2: '09012345678',
-        address: AddressFactory.build(),
-        vendor: {
-          companyName: 'Highrachy Investment Limited',
-          directors: [
-            {
-              name: 'Jane Doe',
-              isSignatory: false,
-              phone: '08012345678',
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          phone: '08012345678',
+          phone2: '09012345678',
+          address: AddressFactory.build(),
+          vendor: {
+            companyName: 'Highrachy Investment Limited',
+            verified: true,
+            directors: [
+              {
+                name: 'Jane Doe',
+                isSignatory: false,
+                phone: '08012345678',
+              },
+            ],
+            identification: {
+              url: 'https://ballers.ng/tax-filing.png',
+              type: 'Tax filing',
             },
-          ],
-          identification: {
-            url: 'https://ballers.ng/tax-filing.png',
-            type: 'Tax filing',
+            socialMedia: [
+              {
+                name: 'Instagram',
+                url: 'https://instagram.com/highrachy',
+              },
+            ],
           },
-          socialMedia: [
-            {
-              name: 'Instagram',
-              url: 'https://instagram.com/highrachy',
-            },
-          ],
         },
-      });
+        { generateId: true },
+      );
       const invalidUserId = mongoose.Types.ObjectId();
       const invalidUser = UserFactory.build({ _id: invalidUserId });
       const endpoint = '/api/v1/user/vendor/update';
       const method = 'put';
 
-      const data = {
+      const sensitiveData = {
         phone: '12345678901',
         phone2: '12345678901',
         address: {
@@ -1776,57 +1778,149 @@ describe('User Controller', () => {
         },
       };
 
+      const nonSensitiveData = {
+        phone: '12345678901',
+        phone2: '12345678901',
+        address: {
+          country: 'Ghana',
+          state: 'Accra',
+        },
+        vendor: {
+          directors: [
+            {
+              name: 'John Doe',
+              isSignatory: false,
+              phone: '08012345678',
+            },
+          ],
+          socialMedia: [
+            {
+              name: 'Facebook',
+              url: 'https://facebook.com/highrachy',
+            },
+          ],
+          website: 'https://highrachy.com/',
+        },
+      };
+
+      const itReturnsUpdatedVendor = (res, data) => {
+        expect(res).to.have.status(200);
+        expect(res.body.success).to.be.eql(true);
+        expect(res.body.message).to.be.eql('Vendor information updated');
+        expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+        expect(res.body.user.phone).to.be.eql(data.phone);
+        expect(res.body.user.phone2).to.be.eql(data.phone2);
+        expect(res.body.user.address).to.be.eql({
+          ...vendorUser.address,
+          ...data.address,
+        });
+        expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
+        expect(res.body.user.vendor.companyLogo).to.be.eql(data.vendor.companyLogo);
+        expect(res.body.user.vendor.bankInfo).to.be.eql(data.vendor.bankInfo);
+        expect(res.body.user.vendor.entity).to.be.eql(data.vendor.entity);
+        expect(res.body.user.vendor.taxCertificate).to.be.eql(data.vendor.taxCertificate);
+        expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
+        expect(res.body.user.vendor.directors.length).to.be.eql(2);
+        expect(res.body.user.vendor.verification.companyInfo.status).to.be.eql('In Review');
+        expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
+      };
+
       beforeEach(async () => {
         vendorToken = await addUser(vendorUser);
       });
 
-      context('when a valid token is used', () => {
-        it('returns updated vendor', (done) => {
-          request()
-            [method](endpoint)
-            .set('authorization', vendorToken)
-            .send(data)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('Vendor information updated');
-              expect(res.body.user._id).to.be.eql(vendorId.toString());
-              expect(res.body.user.phone).to.be.eql(data.phone);
-              expect(res.body.user.phone2).to.be.eql(data.phone2);
-              expect(res.body.user.address).to.be.eql({
-                ...vendorUser.address,
-                ...data.address,
-              });
-              expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
-              expect(res.body.user.vendor.companyLogo).to.be.eql(data.vendor.companyLogo);
-              expect(res.body.user.vendor.bankInfo).to.be.eql(data.vendor.bankInfo);
-              expect(res.body.user.vendor.entity).to.be.eql(data.vendor.entity);
-              expect(res.body.user.vendor.taxCertificate).to.be.eql(data.vendor.taxCertificate);
-              expect(res.body.user.vendor.socialMedia.length).to.be.eql(2);
-              expect(res.body.user.vendor.directors.length).to.be.eql(2);
-              expect(res.body.user.vendor.verification.companyInfo.status).to.be.eql('In Review');
-              expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('In Review');
-              expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
-                'In Review',
-              );
-              expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
-              done();
-            });
-        });
-      });
-
-      context('updating a single field', () => {
-        Object.keys(data).map((field) =>
+      context('when vendor is verified', () => {
+        context('when sensitive data is sent', () => {
           it('returns updated vendor', (done) => {
             request()
               [method](endpoint)
               .set('authorization', vendorToken)
-              .send({ [field]: data[field] })
+              .send(sensitiveData)
+              .end((err, res) => {
+                itReturnsUpdatedVendor(res, sensitiveData);
+                expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('In Review');
+                expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
+                  'In Review',
+                );
+                expect(res.body.user.vendor.verified).to.be.eql(false);
+                done();
+              });
+          });
+        });
+
+        context('when non sensitive data is sent', () => {
+          it('verification status remains true', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendorToken)
+              .send(nonSensitiveData)
+              .end((err, res) => {
+                itReturnsUpdatedVendor(res, nonSensitiveData);
+                expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('Pending');
+                expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
+                  'Pending',
+                );
+                expect(res.body.user.vendor.verified).to.be.eql(true);
+                done();
+              });
+          });
+        });
+      });
+
+      context('when vendor is unverified', () => {
+        beforeEach(async () => {
+          await User.findByIdAndUpdate(vendorUser._id, { 'vendor.verified': false });
+        });
+
+        context('when sensitive data is sent', () => {
+          it('returns updated vendor', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendorToken)
+              .send(sensitiveData)
+              .end((err, res) => {
+                itReturnsUpdatedVendor(res, sensitiveData);
+                expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('In Review');
+                expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
+                  'In Review',
+                );
+                expect(res.body.user.vendor.verified).to.be.eql(false);
+                done();
+              });
+          });
+        });
+
+        context('when non sensitive data is sent', () => {
+          it('verification status remains false', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendorToken)
+              .send(nonSensitiveData)
+              .end((err, res) => {
+                itReturnsUpdatedVendor(res, nonSensitiveData);
+                expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('Pending');
+                expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
+                  'Pending',
+                );
+                expect(res.body.user.vendor.verified).to.be.eql(false);
+                done();
+              });
+          });
+        });
+      });
+
+      context('updating a single field', () => {
+        Object.keys(sensitiveData).map((field) =>
+          it('returns updated vendor', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendorToken)
+              .send({ [field]: sensitiveData[field] })
               .end((err, res) => {
                 expect(res).to.have.status(200);
                 expect(res.body.success).to.be.eql(true);
                 expect(res.body.message).to.be.eql('Vendor information updated');
-                expect(res.body.user._id).to.be.eql(vendorId.toString());
+                expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
                 expect(res.body.user).to.have.property(field);
                 done();
               });
@@ -1837,14 +1931,14 @@ describe('User Controller', () => {
       itReturnsForbiddenForNoToken({
         endpoint,
         method,
-        data,
+        data: sensitiveData,
       });
 
       itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: invalidUser,
-        data,
+        data: sensitiveData,
       });
 
       itReturnsNotFoundForInvalidToken({
@@ -1852,7 +1946,7 @@ describe('User Controller', () => {
         method,
         user: invalidUser,
         userId: invalidUserId,
-        data,
+        data: sensitiveData,
       });
 
       context('when findByIdAndUpdate returns an error', () => {
@@ -1861,7 +1955,7 @@ describe('User Controller', () => {
           request()
             [method](endpoint)
             .set('authorization', vendorToken)
-            .send(data)
+            .send(sensitiveData)
             .end((err, res) => {
               expect(res).to.have.status(400);
               expect(res.body.success).to.be.eql(false);

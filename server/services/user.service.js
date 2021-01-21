@@ -533,6 +533,22 @@ const getStepsReadyForReview = (updatedVendor, user) => {
   return stepToReview;
 };
 
+const containsSensitiveInfo = (user) => {
+  const sensitive = [
+    'bankInfo',
+    'companyLogo',
+    'companyName',
+    'entity',
+    'identification',
+    'redanNumber',
+    'taxCertificate',
+  ];
+
+  const updatedVendorInfo = Object.keys({ ...user, ...user.vendor });
+
+  return sensitive.some((info) => updatedVendorInfo.includes(info));
+};
+
 export const updateVendor = async ({ updatedVendor, user }) => {
   const stepToReview = getStepsReadyForReview(updatedVendor, user);
 
@@ -552,7 +568,11 @@ export const updateVendor = async ({ updatedVendor, user }) => {
     Array.prototype.push.apply(updatedVendor.vendor.socialMedia, user.vendor.socialMedia);
   }
 
-  const vendor = { ...user.vendor, ...updatedVendor.vendor };
+  const vendor = {
+    ...user.vendor,
+    ...updatedVendor.vendor,
+    verified: containsSensitiveInfo(updatedVendor) ? false : user.vendor.verified,
+  };
 
   vendor.verification = { ...vendor.verification, ...stepToReview.verification };
 
