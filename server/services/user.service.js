@@ -533,7 +533,7 @@ const getStepsReadyForReview = (updatedVendor, user) => {
   return stepToReview;
 };
 
-const containsSensitiveInfo = (updatedVendor) => {
+const containsSensitiveInfo = (user) => {
   const sensitive = [
     'bankInfo',
     'companyLogo',
@@ -544,9 +544,9 @@ const containsSensitiveInfo = (updatedVendor) => {
     'taxCertificate',
   ];
 
-  const isSensitive = sensitive.some((key) => Object.keys(updatedVendor).includes(key));
+  const updatedVendorInfo = Object.keys({ ...user, ...user.vendor });
 
-  return !isSensitive;
+  return sensitive.some((info) => updatedVendorInfo.includes(info));
 };
 
 export const updateVendor = async ({ updatedVendor, user }) => {
@@ -571,9 +571,7 @@ export const updateVendor = async ({ updatedVendor, user }) => {
   const vendor = {
     ...user.vendor,
     ...updatedVendor.vendor,
-    verified: updatedVendor.vendor
-      ? containsSensitiveInfo(updatedVendor.vendor)
-      : user.vendor.verified,
+    verified: containsSensitiveInfo(updatedVendor) ? false : user.vendor.verified,
   };
 
   vendor.verification = { ...vendor.verification, ...stepToReview.verification };
