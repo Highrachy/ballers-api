@@ -1554,29 +1554,27 @@ describe('User Controller', () => {
       });
 
       context('when a valid token is used', () => {
-        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+        VENDOR_STEPS.map((step) =>
           it('returns verified step', (done) => {
             request()
               [method](endpoint)
               .set('authorization', adminToken)
-              .send({ ...data, step: VENDOR_STEPS[index] })
+              .send({ ...data, step })
               .end((err, res) => {
                 expect(res).to.have.status(200);
                 expect(res.body.success).to.be.eql(true);
                 expect(res.body.message).to.be.eql('Vendor information verified');
                 expect(res.body.vendor._id).to.be.eql(vendorUser._id.toString());
-                expect(res.body.vendor.vendor.verification[VENDOR_STEPS[index]].status).to.be.eql(
-                  'Verified',
+                expect(res.body.vendor.vendor.verification[step].status).to.be.eql('Verified');
+                expect(res.body.vendor.vendor.verification[step].verifiedBy).to.be.eql(
+                  adminUser._id.toString(),
                 );
-                expect(
-                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].verifiedBy,
-                ).to.be.eql(adminUser._id.toString());
-                expect(
-                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].status,
-                ).to.be.eql('Resolved');
-                expect(
-                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[1].status,
-                ).to.be.eql('Resolved');
+                expect(res.body.vendor.vendor.verification[step].comments[0].status).to.be.eql(
+                  'Resolved',
+                );
+                expect(res.body.vendor.vendor.verification[step].comments[1].status).to.be.eql(
+                  'Resolved',
+                );
                 done();
               });
           }),
@@ -1609,13 +1607,13 @@ describe('User Controller', () => {
       });
 
       context('when findByIdAndUpdate returns an error', () => {
-        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+        VENDOR_STEPS.map((step) =>
           it('returns the error', (done) => {
             sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
             request()
               [method](endpoint)
               .set('authorization', adminToken)
-              .send({ ...data, step: VENDOR_STEPS[index] })
+              .send({ ...data, step })
               .end((err, res) => {
                 expect(res).to.have.status(400);
                 expect(res.body.success).to.be.eql(false);
@@ -1637,19 +1635,39 @@ describe('User Controller', () => {
                 expect(res).to.have.status(412);
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"Step" is not allowed to be empty');
+                expect(res.body.error).to.be.eql(
+                  '"Step" must be one of [companyInfo, bankDetails, directorInfo, documentUpload]',
+                );
+                done();
+              });
+          });
+        });
+
+        context('when step contains incorrect value', () => {
+          it('returns an error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: 'randomtext' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  '"Step" must be one of [companyInfo, bankDetails, directorInfo, documentUpload]',
+                );
                 done();
               });
           });
         });
 
         context('when vendor id is empty', () => {
-          [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+          VENDOR_STEPS.map((step) =>
             it('returns an error', (done) => {
               request()
                 [method](endpoint)
                 .set('authorization', adminToken)
-                .send({ vendorId: '', step: VENDOR_STEPS[index] })
+                .send({ vendorId: '', step })
                 .end((err, res) => {
                   expect(res).to.have.status(412);
                   expect(res.body.success).to.be.eql(false);
@@ -1682,25 +1700,23 @@ describe('User Controller', () => {
       });
 
       context('when a valid token is used', () => {
-        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+        VENDOR_STEPS.map((step) =>
           it('returns verified step', (done) => {
             request()
               [method](endpoint)
               .set('authorization', adminToken)
-              .send({ ...data, step: VENDOR_STEPS[index] })
+              .send({ ...data, step })
               .end((err, res) => {
                 expect(res).to.have.status(200);
                 expect(res.body.success).to.be.eql(true);
                 expect(res.body.message).to.be.eql('Comment added');
-                expect(res.body.vendor.vendor.verification[VENDOR_STEPS[index]].status).to.be.eql(
-                  'Pending',
+                expect(res.body.vendor.vendor.verification[step].status).to.be.eql('Pending');
+                expect(res.body.vendor.vendor.verification[step].comments[0].comment).to.be.eql(
+                  data.comment,
                 );
-                expect(
-                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].comment,
-                ).to.be.eql(data.comment);
-                expect(
-                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].addedBy,
-                ).to.be.eql(adminUser._id.toString());
+                expect(res.body.vendor.vendor.verification[step].comments[0].addedBy).to.be.eql(
+                  adminUser._id.toString(),
+                );
                 done();
               });
           }),
@@ -1733,13 +1749,13 @@ describe('User Controller', () => {
       });
 
       context('when findByIdAndUpdate returns an error', () => {
-        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+        VENDOR_STEPS.map((step) =>
           it('returns the error', (done) => {
             sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
             request()
               [method](endpoint)
               .set('authorization', adminToken)
-              .send({ ...data, step: VENDOR_STEPS[index] })
+              .send({ ...data, step })
               .end((err, res) => {
                 expect(res).to.have.status(400);
                 expect(res.body.success).to.be.eql(false);
@@ -1761,19 +1777,39 @@ describe('User Controller', () => {
                 expect(res).to.have.status(412);
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"Step" is not allowed to be empty');
+                expect(res.body.error).to.be.eql(
+                  '"Step" must be one of [companyInfo, bankDetails, directorInfo, documentUpload]',
+                );
+                done();
+              });
+          });
+        });
+
+        context('when step contains incorrect value', () => {
+          it('returns an error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: 'randomtext' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  '"Step" must be one of [companyInfo, bankDetails, directorInfo, documentUpload]',
+                );
                 done();
               });
           });
         });
 
         context('when vendor id is empty', () => {
-          [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+          VENDOR_STEPS.map((step) =>
             it('returns an error', (done) => {
               request()
                 [method](endpoint)
                 .set('authorization', adminToken)
-                .send({ vendorId: '', step: VENDOR_STEPS[index] })
+                .send({ vendorId: '', step })
                 .end((err, res) => {
                   expect(res).to.have.status(412);
                   expect(res.body.success).to.be.eql(false);
@@ -1788,14 +1824,13 @@ describe('User Controller', () => {
     });
 
     describe('Resolve verification step comment', () => {
-      const companyInfoCommentId1 = mongoose.Types.ObjectId();
-      const companyInfoCommentId2 = mongoose.Types.ObjectId();
-      const bankDetailsCommentId1 = mongoose.Types.ObjectId();
-      const bankDetailsCommentId2 = mongoose.Types.ObjectId();
-      const directorInfoCommentId1 = mongoose.Types.ObjectId();
-      const directorInfoCommentId2 = mongoose.Types.ObjectId();
-      const documentUploadCommentId1 = mongoose.Types.ObjectId();
-      const documentUploadCommentId2 = mongoose.Types.ObjectId();
+      const generateComments = (step) =>
+        [...new Array(2)].map((_, index) => ({
+          status: COMMENT_STATUS.PENDING,
+          _id: mongoose.Types.ObjectId(),
+          comment: `${step} comment ${index}`,
+          addedBy: adminUser._id,
+        }));
 
       const vendorUser = UserFactory.build(
         {
@@ -1805,71 +1840,19 @@ describe('User Controller', () => {
             verification: {
               companyInfo: {
                 status: VENDOR_INFO_STATUS.PENDING,
-                comments: [
-                  {
-                    status: COMMENT_STATUS.PENDING,
-                    _id: companyInfoCommentId1,
-                    comment: 'sample comment 1',
-                    addedBy: adminUser._id,
-                  },
-                  {
-                    status: COMMENT_STATUS.PENDING,
-                    _id: companyInfoCommentId2,
-                    comment: 'sample comment 2',
-                    addedBy: adminUser._id,
-                  },
-                ],
+                comments: generateComments('companyInfo'),
               },
               bankDetails: {
                 status: VENDOR_INFO_STATUS.PENDING,
-                comments: [
-                  {
-                    status: COMMENT_STATUS.PENDING,
-                    _id: bankDetailsCommentId1,
-                    comment: 'sample comment 1',
-                    addedBy: adminUser._id,
-                  },
-                  {
-                    status: COMMENT_STATUS.PENDING,
-                    _id: bankDetailsCommentId2,
-                    comment: 'sample comment 2',
-                    addedBy: adminUser._id,
-                  },
-                ],
+                comments: generateComments('bankDetails'),
               },
               documentUpload: {
                 status: VENDOR_INFO_STATUS.PENDING,
-                comments: [
-                  {
-                    status: COMMENT_STATUS.PENDING,
-                    _id: documentUploadCommentId1,
-                    comment: 'sample comment 1',
-                    addedBy: adminUser._id,
-                  },
-                  {
-                    status: VENDOR_INFO_STATUS.PENDING,
-                    _id: documentUploadCommentId2,
-                    comment: 'sample comment 2',
-                    addedBy: adminUser._id,
-                  },
-                ],
+                comments: generateComments('documentUpload'),
               },
               directorInfo: {
                 status: VENDOR_INFO_STATUS.PENDING,
-                comments: [
-                  {
-                    status: COMMENT_STATUS.PENDING,
-                    _id: directorInfoCommentId1,
-                    comment: 'sample comment 1',
-                    addedBy: adminUser._id,
-                  },
-                  {
-                    status: COMMENT_STATUS.PENDING,
-                    _id: directorInfoCommentId2,
-                    comment: 'sample comment 2',
-                    addedBy: adminUser._id,
-                  },
-                ],
+                comments: generateComments('directorInfo'),
               },
             },
           },
@@ -1888,28 +1871,27 @@ describe('User Controller', () => {
       });
 
       context('when a valid token is used', () => {
-        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+        VENDOR_STEPS.map((step) =>
           it('returns verified step', (done) => {
             request()
               [method](endpoint)
               .set('authorization', adminToken)
               .send({
                 ...data,
-                step: VENDOR_STEPS[index],
-                // eslint-disable-next-line no-eval
-                commentId: eval(`${VENDOR_STEPS[index]}CommentId1`),
+                step,
+                commentId: vendorUser.vendor.verification[step].comments[0]._id,
               })
               .end((err, res) => {
                 expect(res).to.have.status(200);
                 expect(res.body.success).to.be.eql(true);
                 expect(res.body.message).to.be.eql('Comment resolved');
                 expect(res.body.vendor._id).to.be.eql(vendorUser._id.toString());
-                expect(
-                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[0].status,
-                ).to.be.eql('Resolved');
-                expect(
-                  res.body.vendor.vendor.verification[VENDOR_STEPS[index]].comments[1].status,
-                ).to.be.eql('Pending');
+                expect(res.body.vendor.vendor.verification[step].comments[0].status).to.be.eql(
+                  'Resolved',
+                );
+                expect(res.body.vendor.vendor.verification[step].comments[1].status).to.be.eql(
+                  'Pending',
+                );
                 done();
               });
           }),
@@ -1919,36 +1901,44 @@ describe('User Controller', () => {
       itReturnsForbiddenForNoToken({
         endpoint,
         method,
-        // eslint-disable-next-line no-eval
-        data: { ...data, step: VENDOR_STEPS[0], commentId: eval(`${VENDOR_STEPS[0]}CommentId1`) },
+        data: {
+          ...data,
+          step: VENDOR_STEPS[0],
+          commentId: vendorUser.vendor.verification[VENDOR_STEPS[0]].comments[0]._id,
+        },
       });
       itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
         method,
         user: invalidUser,
-        // eslint-disable-next-line no-eval
-        data: { ...data, step: VENDOR_STEPS[0], commentId: eval(`${VENDOR_STEPS[0]}CommentId1`) },
+        data: {
+          ...data,
+          step: VENDOR_STEPS[0],
+          commentId: vendorUser.vendor.verification[VENDOR_STEPS[0]].comments[0]._id,
+        },
       });
       itReturnsNotFoundForInvalidToken({
         endpoint,
         method,
         user: invalidUser,
         userId: invalidUserId,
-        // eslint-disable-next-line no-eval
-        data: { ...data, step: VENDOR_STEPS[0], commentId: eval(`${VENDOR_STEPS[0]}CommentId1`) },
+        data: {
+          ...data,
+          step: VENDOR_STEPS[0],
+          commentId: vendorUser.vendor.verification[VENDOR_STEPS[0]].comments[0]._id,
+        },
       });
 
       context('when vendor id is invalid', () => {
-        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+        VENDOR_STEPS.map((step) =>
           it('returns not found', (done) => {
             request()
               [method](endpoint)
               .set('authorization', adminToken)
               .send({
                 vendorId: invalidUserId,
-                step: VENDOR_STEPS[index],
-                // eslint-disable-next-line no-eval
-                commentId: eval(`${VENDOR_STEPS[index]}CommentId1`),
+                step,
+                commentId: vendorUser.vendor.verification[step].comments[0]._id,
               })
               .end((err, res) => {
                 expect(res).to.have.status(404);
@@ -1961,16 +1951,15 @@ describe('User Controller', () => {
       });
 
       context('when vendor id is not for a vendor', () => {
-        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+        VENDOR_STEPS.map((step) =>
           it('returns not found', (done) => {
             request()
               [method](endpoint)
               .set('authorization', adminToken)
               .send({
                 vendorId: regularUser._id,
-                step: VENDOR_STEPS[index],
-                // eslint-disable-next-line no-eval
-                commentId: eval(`${VENDOR_STEPS[index]}CommentId1`),
+                step,
+                commentId: vendorUser.vendor.verification[step].comments[0]._id,
               })
               .end((err, res) => {
                 expect(res).to.have.status(412);
@@ -1983,7 +1972,7 @@ describe('User Controller', () => {
       });
 
       context('when findOneAndUpdate returns an error', () => {
-        [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+        VENDOR_STEPS.map((step) =>
           it('returns the error', (done) => {
             sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
             request()
@@ -1991,9 +1980,8 @@ describe('User Controller', () => {
               .set('authorization', adminToken)
               .send({
                 ...data,
-                step: VENDOR_STEPS[index],
-                // eslint-disable-next-line no-eval
-                commentId: eval(`${VENDOR_STEPS[index]}CommentId1`),
+                step,
+                commentId: vendorUser.vendor.verification[step].comments[0]._id,
               })
               .end((err, res) => {
                 expect(res).to.have.status(400);
@@ -2016,19 +2004,39 @@ describe('User Controller', () => {
                 expect(res).to.have.status(412);
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"Step" is not allowed to be empty');
+                expect(res.body.error).to.be.eql(
+                  '"Step" must be one of [companyInfo, bankDetails, directorInfo, documentUpload]',
+                );
+                done();
+              });
+          });
+        });
+
+        context('when step contains incorrect value', () => {
+          it('returns an error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, step: 'randomtext' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  '"Step" must be one of [companyInfo, bankDetails, directorInfo, documentUpload]',
+                );
                 done();
               });
           });
         });
 
         context('when vendor id is empty', () => {
-          [...new Array(VENDOR_STEPS.length)].map((_, index) =>
+          VENDOR_STEPS.map((step) =>
             it('returns an error', (done) => {
               request()
                 [method](endpoint)
                 .set('authorization', adminToken)
-                .send({ vendorId: '', step: VENDOR_STEPS[index] })
+                .send({ vendorId: '', step })
                 .end((err, res) => {
                   expect(res).to.have.status(412);
                   expect(res.body.success).to.be.eql(false);

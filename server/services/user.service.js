@@ -382,12 +382,6 @@ export const getAllVendors = async (page = 1, limit = 10) => {
 };
 
 export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
-  const stepIsValid = VENDOR_STEPS.includes(step);
-
-  if (!stepIsValid) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid step');
-  }
-
   const vendor = await getUserById(vendorId);
 
   if (!vendor) {
@@ -427,12 +421,6 @@ export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
 };
 
 export const addCommentToVerificationStep = async ({ vendorId, adminId, step, comment }) => {
-  const stepIsValid = VENDOR_STEPS.includes(step);
-
-  if (!stepIsValid) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid step');
-  }
-
   const vendor = await getUserById(vendorId);
 
   if (!vendor) {
@@ -719,7 +707,7 @@ export const resolveVerificationStepComment = async ({ vendorId, commentId, step
   );
 
   if (!commentIdIsValid) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid Comment id');
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid comment id');
   }
 
   try {
