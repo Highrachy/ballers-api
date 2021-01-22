@@ -1,11 +1,13 @@
 import Joi from '@hapi/joi';
 import {
+  requiredAddress,
   requiredObjectId,
   requiredString,
   requiredNumber,
   optionalArray,
   optionalString,
   optionalNumber,
+  optionalAddress,
 } from './helper.schema';
 
 const mapLocation = Joi.object().keys({
@@ -13,26 +15,10 @@ const mapLocation = Joi.object().keys({
   latitude: optionalString('Map location latitude'),
 });
 
-const addressAdd = Joi.object().keys({
-  street1: requiredString('Street 1'),
-  street2: Joi.string().label('Street 2').allow(null, ''),
-  city: requiredString('City'),
-  state: requiredString('State'),
-  country: Joi.string().label('Country').default('Nigeria'),
-});
-
-const addressUpdate = Joi.object().keys({
-  street1: optionalString('Street 1'),
-  street2: optionalString('Street 2'),
-  city: optionalString('City'),
-  state: optionalString('State'),
-  country: optionalString('Country'),
-});
-
 const property = {
   name: requiredString('Property name'),
   titleDocument: optionalString('Property title document'),
-  address: addressAdd,
+  address: requiredAddress,
   price: requiredNumber('Property price'),
   units: requiredNumber('Property units'),
   houseType: requiredString('Property type'),
@@ -54,7 +40,7 @@ export const updatePropertySchema = Joi.object({
   units: optionalNumber('Property units'),
   name: optionalString('Property name'),
   titleDocument: optionalString('Property title document'),
-  address: addressUpdate,
+  address: optionalAddress,
   price: optionalNumber('Property price'),
   houseType: optionalString('Property type'),
   bedrooms: optionalNumber('Bedroom number'),

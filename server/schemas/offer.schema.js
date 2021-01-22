@@ -7,7 +7,7 @@ import {
 } from './helper.schema';
 
 export const createOfferSchema = Joi.object({
-  enquiryId: requiredObjectId('Enquiry ID').required(),
+  enquiryId: requiredObjectId('Enquiry ID'),
   deliveryState: requiredString('Delivery State'),
   totalAmountPayable: requiredNumber('Total Amount Payable'),
   title: requiredString('Title'),

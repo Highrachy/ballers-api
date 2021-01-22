@@ -622,8 +622,8 @@ describe('Property Controller', () => {
       });
     });
 
-    context('with invalid property', () => {
-      it('returns a updated user', (done) => {
+    context('with invalid body', () => {
+      it('returns error', (done) => {
         request()
           .put('/api/v1/property/update')
           .set('authorization', vendorToken)
@@ -691,20 +691,17 @@ describe('Property Controller', () => {
         });
       });
       context('when address.street2 is empty', () => {
-        it('returns an error', (done) => {
-          const invalidProperty = PropertyFactory.build({
-            id: property._id,
-            address: { street2: '' },
-          });
+        it('returns updated property', (done) => {
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
-            .send(invalidProperty)
+            .send({ ...newProperty, address: { street2: '' } })
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Street 2" is not allowed to be empty');
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('property');
+              expect(res.body.property.price).to.be.eql(newProperty.price);
+              expect(res.body.property.units).to.be.eql(newProperty.units);
               done();
             });
         });

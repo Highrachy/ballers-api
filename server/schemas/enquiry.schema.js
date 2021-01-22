@@ -1,32 +1,25 @@
 import Joi from '@hapi/joi';
 import {
+  requiredAddress,
   requiredObjectId,
   requiredFutureDate,
   requiredString,
   requiredNumber,
   requiredPhoneNumber,
-  optionalString,
-  optionalPhoneNumber,
+  notRequiredString,
+  notRequiredPhoneNumber,
   requiredEmail,
 } from './helper.schema';
-
-const address = Joi.object().keys({
-  street1: requiredString('Street 1'),
-  street2: optionalString('Street 2'),
-  city: requiredString('City'),
-  state: requiredString('State'),
-  country: requiredString('Country'),
-});
 
 export const addEnquirySchema = Joi.object({
   title: requiredString('Title'),
   propertyId: requiredObjectId('Property ID'),
   firstName: requiredString('First Name'),
-  otherName: optionalString('Other Name'),
+  otherName: notRequiredString('Other Name'),
   lastName: requiredString('Last Name'),
-  address,
+  address: requiredAddress,
   phone: requiredPhoneNumber('Phone'),
-  phone2: optionalPhoneNumber('Phone 2'),
+  phone2: notRequiredPhoneNumber('Phone 2'),
   occupation: requiredString('Occupation'),
   email: requiredEmail('Email Address'),
   nameOnTitleDocument: requiredString('Name on Title Document'),

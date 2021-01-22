@@ -9,6 +9,8 @@ import {
   optionalString,
   optionalBoolean,
   optionalNumber,
+  optionalAddress,
+  notRequiredPhoneNumber,
 } from './helper.schema';
 
 const email = requiredEmail('Email Address');
@@ -71,7 +73,7 @@ export const registerSchema = Joi.object({
   lastName: requiredString('Last Name'),
   vendor: vendorCompanyName,
   email,
-  phone: Joi.string().allow(null, '').label('Phone').min(7).max(15).optional().default(''),
+  phone: notRequiredPhoneNumber('Phone'),
   password,
   confirmPassword,
   referralCode: optionalString('Referral Code'),
@@ -96,14 +98,6 @@ export const assignPropertySchema = Joi.object({
   userId: requiredObjectId('User id'),
 });
 
-const address = Joi.object().keys({
-  street1: optionalString('Street 1'),
-  street2: optionalString('Street 2'),
-  city: optionalString('City'),
-  state: optionalString('State'),
-  country: optionalString('Country'),
-});
-
 const preferences = Joi.object().keys({
   houseType: optionalString('Property House Type'),
   location: optionalString('Property Location'),
@@ -116,8 +110,8 @@ export const updateUserSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
   phone: requiredPhoneNumber('Phone'),
-  phone2: optionalPhoneNumber('Phone 2'),
-  address,
+  phone2: notRequiredPhoneNumber('Phone 2'),
+  address: optionalAddress,
   preferences,
 });
 
@@ -146,8 +140,8 @@ export const addCommentVendorSchema = Joi.object({
 
 export const updateVendorSchema = Joi.object({
   phone: optionalPhoneNumber('Phone'),
-  phone2: optionalPhoneNumber('Phone 2'),
-  address,
+  phone2: notRequiredPhoneNumber('Phone 2'),
+  address: optionalAddress,
   vendor,
 });
 
