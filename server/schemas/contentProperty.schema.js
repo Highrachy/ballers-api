@@ -1,22 +1,28 @@
 import Joi from '@hapi/joi';
-
-Joi.objectId = require('joi-objectid')(Joi);
+import {
+  requiredObjectId,
+  requiredString,
+  requiredNumber,
+  optionalObjectId,
+  optionalString,
+  optionalNumber,
+} from './helper.schema';
 
 export const addContentPropertySchema = Joi.object({
-  areaId: Joi.objectId().label('Area Id').required(),
-  category: Joi.string().label('Category').required(),
-  houseType: Joi.string().label('Property Type').required(),
-  price: Joi.number().label('Price').required(),
-  website: Joi.string().label('Website').optional(),
-  link: Joi.string().label('URL').optional(),
+  areaId: requiredObjectId('Area Id'),
+  category: requiredString('Category'),
+  houseType: requiredString('Property Type'),
+  price: requiredNumber('Price'),
+  website: optionalString('Website'),
+  link: optionalString('URL'),
 });
 
 export const updateContentPropertySchema = Joi.object({
-  id: Joi.objectId().label('Property Id').required(),
-  areaId: Joi.objectId().label('Area Id').optional(),
-  category: Joi.string().label('Category').optional(),
-  houseType: Joi.string().label('Property Type').optional(),
-  price: Joi.number().label('Price').optional(),
-  website: Joi.string().label('Website').optional(),
-  link: Joi.string().label('URL').optional(),
+  id: requiredObjectId('Property Id'),
+  areaId: optionalObjectId('Area Id'),
+  category: optionalString('Category'),
+  houseType: optionalString('Property Type'),
+  price: optionalNumber('Price'),
+  website: optionalString('Website'),
+  link: optionalString('URL'),
 });

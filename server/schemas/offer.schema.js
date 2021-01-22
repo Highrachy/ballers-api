@@ -1,49 +1,40 @@
 import Joi from '@hapi/joi';
-import { getTodaysDateInWords, getTodaysDateStandard } from '../helpers/dates';
-
-Joi.objectId = require('joi-objectid')(Joi);
+import {
+  requiredObjectId,
+  requiredString,
+  requiredNumber,
+  requiredFutureDate,
+} from './helper.schema';
 
 export const createOfferSchema = Joi.object({
-  enquiryId: Joi.objectId().label('Enquiry ID').required(),
-  handOverDate: Joi.date()
-    .greater(getTodaysDateStandard())
-    .label('Handover Date')
-    .required()
-    .messages({
-      'date.greater': `"Handover Date" should a date later than ${getTodaysDateInWords()}`,
-    }),
-  deliveryState: Joi.string().label('Delivery State').required(),
-  totalAmountPayable: Joi.number().label('Total Amount Payable').required(),
+  enquiryId: requiredObjectId('Enquiry ID').required(),
+  deliveryState: requiredString('Delivery State'),
+  totalAmountPayable: requiredNumber('Total Amount Payable'),
+  title: requiredString('Title'),
+  initialPayment: requiredNumber('Initial Payment'),
+  monthlyPayment: requiredNumber('Monthly Payment'),
+  paymentFrequency: requiredNumber('Payment Frequency'),
   allocationInPercentage: Joi.number().min(1).max(100).label('Allocation In Percentage').required(),
-  title: Joi.string().label('Title').required(),
-  expires: Joi.date()
-    .greater(getTodaysDateStandard())
-    .label('Expiry Date')
-    .required()
-    .messages({
-      'date.greater': `"Expiry Date" should a date later than ${getTodaysDateInWords()}`,
-    }),
-  initialPayment: Joi.number().label('Initial Payment').required(),
-  monthlyPayment: Joi.number().label('Monthly Payment').required(),
-  paymentFrequency: Joi.number().label('Payment Frequency').required(),
+  handOverDate: requiredFutureDate('Handover Date'),
+  expires: requiredFutureDate('Expiry Date'),
 });
 
 export const acceptOfferSchema = Joi.object({
-  offerId: Joi.objectId().label('Offer Id').required(),
-  signature: Joi.string().label('Signature').required(),
+  offerId: requiredObjectId('Offer Id'),
+  signature: requiredString('Signature'),
 });
 
 export const validateOfferIdSchema = Joi.object({
-  offerId: Joi.objectId().label('Offer Id').required(),
+  offerId: requiredObjectId('Offer Id'),
 });
 
 export const raiseConcernSchema = Joi.object({
-  offerId: Joi.objectId().label('Offer Id').required(),
-  question: Joi.string().label('Question').required(),
+  offerId: requiredObjectId('Offer Id'),
+  question: requiredString('Question'),
 });
 
 export const resolveConcernSchema = Joi.object({
-  offerId: Joi.objectId().label('Offer Id').required(),
-  concernId: Joi.objectId().label('Concern Id').required(),
-  response: Joi.string().label('Response').required(),
+  offerId: requiredObjectId('Offer Id'),
+  concernId: requiredObjectId('Concern Id'),
+  response: requiredString('Response'),
 });

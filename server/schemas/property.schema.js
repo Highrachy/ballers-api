@@ -1,71 +1,77 @@
 import Joi from '@hapi/joi';
-
-Joi.objectId = require('joi-objectid')(Joi);
+import {
+  requiredObjectId,
+  requiredString,
+  requiredNumber,
+  optionalArray,
+  optionalString,
+  optionalNumber,
+} from './helper.schema';
 
 const mapLocation = Joi.object().keys({
-  longitude: Joi.string().label('Map location longitude').optional(),
-  latitude: Joi.string().label('Map location latitude').optional(),
+  longitude: optionalString('Map location longitude'),
+  latitude: optionalString('Map location latitude'),
 });
 
 const addressAdd = Joi.object().keys({
-  street1: Joi.string().label('Street 1').required(),
+  street1: requiredString('Street 1'),
   street2: Joi.string().label('Street 2').allow(null, ''),
-  city: Joi.string().label('City').required(),
-  state: Joi.string().label('State').required(),
+  city: requiredString('City'),
+  state: requiredString('State'),
   country: Joi.string().label('Country').default('Nigeria'),
 });
 
 const addressUpdate = Joi.object().keys({
-  street1: Joi.string().label('Street 1').optional(),
-  street2: Joi.string().label('Street 2').optional(),
-  city: Joi.string().label('City').optional(),
-  state: Joi.string().label('State').optional(),
-  country: Joi.string().label('Country').optional(),
+  street1: optionalString('Street 1'),
+  street2: optionalString('Street 2'),
+  city: optionalString('City'),
+  state: optionalString('State'),
+  country: optionalString('Country'),
 });
 
 const property = {
-  name: Joi.string().label('Property name').required(),
-  titleDocument: Joi.string().label('Property title document').optional(),
+  name: requiredString('Property name'),
+  titleDocument: optionalString('Property title document'),
   address: addressAdd,
-  price: Joi.number().label('Property price').required(),
-  units: Joi.number().label('Property units').required(),
-  houseType: Joi.string().label('Property type').required(),
-  bedrooms: Joi.number().label('Bedroom number').required(),
-  toilets: Joi.number().label('Toilet number').required(),
-  description: Joi.string().label('Property description').required(),
-  floorPlans: Joi.string().label('Property floor plans').optional(),
+  price: requiredNumber('Property price'),
+  units: requiredNumber('Property units'),
+  houseType: requiredString('Property type'),
+  bedrooms: requiredNumber('Bedroom number'),
+  toilets: requiredNumber('Toilet number'),
+  description: requiredString('Property description'),
+  floorPlans: optionalString('Property floor plans'),
   mapLocation,
-  neighborhood: Joi.array().label('Property neighborhood').optional(),
-  mainImage: Joi.string().label('Property main image').optional(),
-  gallery: Joi.array().label('Property gallery').optional(),
-  paymentPlan: Joi.array().label('Payment plan').optional(),
+  neighborhood: optionalArray('Property neighborhood'),
+  mainImage: optionalString('Property main image'),
+  gallery: optionalArray('Property gallery'),
+  paymentPlan: optionalArray('Payment plan'),
 };
 
 export const addPropertySchema = Joi.object({ ...property });
 
 export const updatePropertySchema = Joi.object({
-  id: Joi.objectId().label('Property id').required(),
-  units: Joi.number().label('Property units').optional(),
-  name: Joi.string().label('Property name').optional(),
-  titleDocument: Joi.string().label('Property title document').optional(),
+  id: requiredObjectId('Property id'),
+  units: optionalNumber('Property units'),
+  name: optionalString('Property name'),
+  titleDocument: optionalString('Property title document'),
   address: addressUpdate,
-  price: Joi.number().label('Property price').optional(),
-  houseType: Joi.string().label('Property type').optional(),
-  bedrooms: Joi.number().label('Bedroom number').optional(),
-  toilets: Joi.number().label('Toilet number').optional(),
-  description: Joi.string().label('Property description').optional(),
-  floorPlans: Joi.string().label('Property floor plans').optional(),
+  price: optionalNumber('Property price'),
+  houseType: optionalString('Property type'),
+  bedrooms: optionalNumber('Bedroom number'),
+  toilets: optionalNumber('Toilet number'),
+  description: optionalString('Property description'),
+  floorPlans: optionalString('Property floor plans'),
   mapLocation,
-  neighborhood: Joi.array().label('Property neighborhood').optional(),
-  mainImage: Joi.string().label('Property main image').optional(),
-  gallery: Joi.array().label('Property gallery').optional(),
-  paymentPlan: Joi.array().label('Payment plan').optional(),
+  neighborhood: optionalArray('Property neighborhood'),
+  mainImage: optionalString('Property main image'),
+  gallery: optionalArray('Property gallery'),
+  paymentPlan: optionalArray('Payment plan'),
 });
 
 export const searchPropertySchema = Joi.object({
-  state: Joi.string().label('Property State').optional(),
-  city: Joi.string().label('Property City').optional(),
-  houseType: Joi.string().label('Property Type').optional(),
-  minPrice: Joi.number().label('Property Minimum Price').optional(),
-  maxPrice: Joi.number().label('Property Maximum Price').optional(),
+  state: optionalString('Property State'),
+  city: optionalString('Property City'),
+  houseType: optionalString('Property Type'),
+  minPrice: optionalNumber('Property Minimum Price'),
+  maxPrice: optionalNumber('Property Maximum Price'),
 });

@@ -1,11 +1,10 @@
 import Joi from '@hapi/joi';
+import { requiredObjectId, requiredString } from './helper.schema';
 
-Joi.objectId = require('joi-objectid')(Joi);
-
-export const requiredString = (label) => Joi.string().label(label).required();
-
-export const paymentSchema = Joi.object({
+const paymentSchema = Joi.object({
   amount: requiredString('Amount'),
-  offerId: Joi.objectId().label('Offer Id').required(),
-  propertyId: Joi.objectId().label('Property Id').required(),
+  offerId: requiredObjectId('Offer Id'),
+  propertyId: requiredObjectId('Property Id'),
 });
+
+export default paymentSchema;

@@ -1,21 +1,25 @@
 import Joi from '@hapi/joi';
 import { VENDOR_STEPS } from '../helpers/constants';
+import {
+  requiredEmail,
+  requiredObjectId,
+  requiredPhoneNumber,
+  requiredString,
+  optionalPhoneNumber,
+  optionalString,
+  optionalBoolean,
+  optionalNumber,
+} from './helper.schema';
 
-Joi.objectId = require('joi-objectid')(Joi);
-
-const email = Joi.string().label('Email Address').email().required();
+const email = requiredEmail('Email Address');
 const password = Joi.string().label('Password').min(6).required().strict();
 const confirmPassword = Joi.string().valid(Joi.ref('password')).required().strict().messages({
   'any.only': 'Password does not match',
 });
-const phone = Joi.string().allow(null, '').label('Phone').min(7).max(15).optional().default('');
-const requiredString = (label) => Joi.string().label(label).required();
-const optionalString = (label) => Joi.string().label(label).allow(null, '').optional();
-const optionalBoolean = (label) => Joi.boolean().label(label).optional();
 
 const directorSchema = {
   name: optionalString('Name'),
-  phone: Joi.string().label('Phone').min(7).max(15).optional(),
+  phone: optionalPhoneNumber('Phone'),
   isSignatory: optionalBoolean('Signatory'),
   signature: optionalString('Signature'),
 };
@@ -67,7 +71,7 @@ export const registerSchema = Joi.object({
   lastName: requiredString('Last Name'),
   vendor: vendorCompanyName,
   email,
-  phone,
+  phone: Joi.string().allow(null, '').label('Phone').min(7).max(15).optional().default(''),
   password,
   confirmPassword,
   referralCode: optionalString('Referral Code'),
@@ -88,8 +92,8 @@ export const changePasswordSchema = Joi.object({
 });
 
 export const assignPropertySchema = Joi.object({
-  propertyId: Joi.objectId().label('Property id').required(),
-  userId: Joi.objectId().label('User id').required(),
+  propertyId: requiredObjectId('Property id'),
+  userId: requiredObjectId('User id'),
 });
 
 const address = Joi.object().keys({
@@ -101,59 +105,59 @@ const address = Joi.object().keys({
 });
 
 const preferences = Joi.object().keys({
-  houseType: Joi.string().label('Property House Type').optional(),
-  location: Joi.string().label('Property Location').optional(),
-  maxPrice: Joi.number().label('Property Maximum Price').optional(),
-  minPrice: Joi.number().label('Property Minimum Price').optional(),
-  paymentPlan: Joi.string().label('Payment Plan').optional(),
+  houseType: optionalString('Property House Type'),
+  location: optionalString('Property Location'),
+  maxPrice: optionalNumber('Property Maximum Price'),
+  minPrice: optionalNumber('Property Minimum Price'),
+  paymentPlan: optionalString('Payment Plan'),
 });
 
 export const updateUserSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
-  phone: Joi.string().label('Phone').min(7).max(15).required(),
-  phone2: Joi.string().label('Phone 2').min(7).max(15).optional(),
+  phone: requiredPhoneNumber('Phone'),
+  phone2: optionalPhoneNumber('Phone 2'),
   address,
   preferences,
 });
 
 export const favoritePropertySchema = Joi.object({
-  propertyId: Joi.objectId().label('Property id').required(),
+  propertyId: requiredObjectId('Property id'),
 });
 
 export const userEditorSchema = Joi.object({
-  userId: Joi.objectId().label('User id').required(),
+  userId: requiredObjectId('User id'),
 });
 
 export const verifyVendorSchema = Joi.object({
-  vendorId: Joi.objectId().label('Vendor id').required(),
+  vendorId: requiredObjectId('Vendor id'),
 });
 
 export const verifyVendorInfoSchema = Joi.object({
-  vendorId: Joi.objectId().label('Vendor id').required(),
+  vendorId: requiredObjectId('Vendor id'),
   step,
 });
 
 export const addCommentVendorSchema = Joi.object({
-  vendorId: Joi.objectId().label('Vendor id').required(),
+  vendorId: requiredObjectId('Vendor id'),
   step,
   comment: requiredString('Comment'),
 });
 
 export const updateVendorSchema = Joi.object({
-  phone: Joi.string().label('Phone').min(7).max(15).optional(),
-  phone2: Joi.string().label('Phone 2').min(7).max(15).optional(),
+  phone: optionalPhoneNumber('Phone'),
+  phone2: optionalPhoneNumber('Phone 2'),
   address,
   vendor,
 });
 
 export const updateDirectorSchema = Joi.object({
   ...directorSchema,
-  _id: Joi.objectId().label('Director id').required(),
+  _id: requiredObjectId('Director id'),
 });
 
 export const resolveCommentVendorSchema = Joi.object({
-  vendorId: Joi.objectId().label('Vendor id').required(),
+  vendorId: requiredObjectId('Vendor id'),
   step,
-  commentId: Joi.objectId().label('Comment id').required(),
+  commentId: requiredObjectId('Comment id'),
 });

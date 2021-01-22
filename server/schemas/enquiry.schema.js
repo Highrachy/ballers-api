@@ -1,40 +1,41 @@
 import Joi from '@hapi/joi';
-import { getTodaysDateInWords, getTodaysDateStandard } from '../helpers/dates';
-
-Joi.objectId = require('joi-objectid')(Joi);
+import {
+  requiredObjectId,
+  requiredFutureDate,
+  requiredString,
+  requiredNumber,
+  requiredPhoneNumber,
+  optionalString,
+  optionalPhoneNumber,
+  requiredEmail,
+} from './helper.schema';
 
 const address = Joi.object().keys({
-  street1: Joi.string().label('Street 1').required(),
-  street2: Joi.string().label('Street 2').optional(),
-  city: Joi.string().label('City').required(),
-  state: Joi.string().label('State').required(),
-  country: Joi.string().label('Country').required(),
+  street1: requiredString('Street 1'),
+  street2: optionalString('Street 2'),
+  city: requiredString('City'),
+  state: requiredString('State'),
+  country: requiredString('Country'),
 });
 
 export const addEnquirySchema = Joi.object({
-  title: Joi.string().label('Title').required(),
-  propertyId: Joi.objectId().label('Property ID').required(),
-  firstName: Joi.string().label('First Name').required(),
-  otherName: Joi.string().label('Other Name').optional(),
-  lastName: Joi.string().label('Last Name').required(),
+  title: requiredString('Title'),
+  propertyId: requiredObjectId('Property ID'),
+  firstName: requiredString('First Name'),
+  otherName: optionalString('Other Name'),
+  lastName: requiredString('Last Name'),
   address,
-  phone: Joi.string().label('Phone').min(7).max(15).required(),
-  phone2: Joi.string().label('Phone 2').min(7).max(15).optional(),
-  occupation: Joi.string().label('Occupation').required(),
-  email: Joi.string().label('Email Address').email().required(),
-  nameOnTitleDocument: Joi.string().label('Name on Title Document').required(),
-  investmentFrequency: Joi.string().label('Investment Frequency').required(),
-  initialInvestmentAmount: Joi.number().label('Initial Investment Amount').required(),
-  periodicInvestmentAmount: Joi.number().label('Periodic Investment Amount').required(),
-  investmentStartDate: Joi.date()
-    .greater(getTodaysDateStandard())
-    .label('Investment Start Date')
-    .required()
-    .messages({
-      'date.greater': `"Investment Start Date" should a date later than ${getTodaysDateInWords()}`,
-    }),
+  phone: requiredPhoneNumber('Phone'),
+  phone2: optionalPhoneNumber('Phone 2'),
+  occupation: requiredString('Occupation'),
+  email: requiredEmail('Email Address'),
+  nameOnTitleDocument: requiredString('Name on Title Document'),
+  investmentFrequency: requiredString('Investment Frequency'),
+  initialInvestmentAmount: requiredNumber('Initial Investment Amount'),
+  periodicInvestmentAmount: requiredNumber('Periodic Investment Amount'),
+  investmentStartDate: requiredFutureDate('Investment Start Date'),
 });
 
 export const approveEnquirySchema = Joi.object({
-  enquiryId: Joi.objectId().label('Enquiry Id').required(),
+  enquiryId: requiredObjectId('Enquiry Id'),
 });
