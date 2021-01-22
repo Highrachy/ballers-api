@@ -215,9 +215,9 @@ describe('Visitation Controller', () => {
             });
         });
       });
-      context('when visitor phone is less than 11 numbers', () => {
+      context('when visitor phone is less than 7 numbers', () => {
         it('returns an error', (done) => {
-          const booking = VisitationFactory.build({ visitorPhone: '1234567890' });
+          const booking = VisitationFactory.build({ visitorPhone: '123456' });
           request()
             .post('/api/v1/visitation/schedule')
             .set('authorization', userToken)
@@ -226,17 +226,15 @@ describe('Visitation Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                '"Phone" length must be at least 11 characters long',
-              );
+              expect(res.body.error).to.be.eql('"Phone" length must be at least 7 characters long');
               expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
       });
-      context('when visitor phone is more than 14 numbers', () => {
+      context('when visitor phone is more than 15 numbers', () => {
         it('returns an error', (done) => {
-          const booking = VisitationFactory.build({ visitorPhone: '123456789012345' });
+          const booking = VisitationFactory.build({ visitorPhone: '1234567890123456' });
           request()
             .post('/api/v1/visitation/schedule')
             .set('authorization', userToken)
@@ -246,7 +244,7 @@ describe('Visitation Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql(
-                '"Phone" length must be less than or equal to 14 characters long',
+                '"Phone" length must be less than or equal to 15 characters long',
               );
               expect(sendMailStub.callCount).to.eq(0);
               done();

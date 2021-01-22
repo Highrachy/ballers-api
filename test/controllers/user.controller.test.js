@@ -335,6 +335,40 @@ describe('User Controller', () => {
             });
         });
       });
+
+      context('when phone number is less than 7 digits', () => {
+        it('registers the user', (done) => {
+          const user = UserFactory.build({ phone: '123456' });
+          request()
+            .post('/api/v1/user/register')
+            .send(user)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.error).to.be.eql('"Phone" length must be at least 7 characters long');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('when phone number is less than 15 digits', () => {
+        it('registers the user', (done) => {
+          const user = UserFactory.build({ phone: '1234567890123456' });
+          request()
+            .post('/api/v1/user/register')
+            .send(user)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.error).to.be.eql(
+                '"Phone" length must be less than or equal to 15 characters long',
+              );
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
     });
 
     describe('Login Route', () => {

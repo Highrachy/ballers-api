@@ -8,13 +8,13 @@ export const addTransactionSchema = Joi.object({
   offerId: Joi.objectId().label('Offer Id').required(),
   paymentSource: Joi.string().label('Transaction Payment Source').required(),
   amount: Joi.number().label('Transaction Amount').required(),
-  paidOn: Joi.string().label('Payment Date').required(),
+  paidOn: Joi.date().label('Payment Date').required(),
   additionalInfo: Joi.string().label('Additional Info').optional(),
 });
 
 export const updateTransactionSchema = Joi.object({
   transactionId: Joi.objectId().label('Transaction Id').required(),
-  paidOn: Joi.string().label('Payment Date').required(),
+  paidOn: Joi.date().label('Payment Date').required(),
 });
 
 export const getTransactionsByPropertySchema = Joi.object({

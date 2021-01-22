@@ -8,14 +8,14 @@ const password = Joi.string().label('Password').min(6).required().strict();
 const confirmPassword = Joi.string().valid(Joi.ref('password')).required().strict().messages({
   'any.only': 'Password does not match',
 });
-const phone = Joi.string().allow(null, '').optional().default('');
+const phone = Joi.string().allow(null, '').label('Phone').min(7).max(15).optional().default('');
 const requiredString = (label) => Joi.string().label(label).required();
 const optionalString = (label) => Joi.string().label(label).allow(null, '').optional();
 const optionalBoolean = (label) => Joi.boolean().label(label).optional();
 
 const directorSchema = {
   name: optionalString('Name'),
-  phone: optionalString('Phone'),
+  phone: Joi.string().label('Phone').min(7).max(15).optional(),
   isSignatory: optionalBoolean('Signatory'),
   signature: optionalString('Signature'),
 };
@@ -111,8 +111,8 @@ const preferences = Joi.object().keys({
 export const updateUserSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
-  phone,
-  phone2: optionalString('Phone 2'),
+  phone: Joi.string().label('Phone').min(7).max(15).required(),
+  phone2: Joi.string().label('Phone 2').min(7).max(15).optional(),
   address,
   preferences,
 });
@@ -141,8 +141,8 @@ export const addCommentVendorSchema = Joi.object({
 });
 
 export const updateVendorSchema = Joi.object({
-  phone,
-  phone2: optionalString('Phone 2'),
+  phone: Joi.string().label('Phone').min(7).max(15).optional(),
+  phone2: Joi.string().label('Phone 2').min(7).max(15).optional(),
   address,
   vendor,
 });
