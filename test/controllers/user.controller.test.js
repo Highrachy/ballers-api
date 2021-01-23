@@ -302,7 +302,7 @@ describe('User Controller', () => {
       });
 
       context('when phone number is empty', () => {
-        it('registers the user', (done) => {
+        it('registers error', (done) => {
           const user = UserFactory.build({ phone: '' });
           request()
             .post('/api/v1/user/register')
@@ -331,6 +331,40 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Registration successful');
               expect(res.body).to.have.property('token');
               expect(sendMailStub.callCount).to.eq(1);
+              done();
+            });
+        });
+      });
+
+      context('when phone number is less than 6 digits', () => {
+        it('returns an error', (done) => {
+          const user = UserFactory.build({ phone: '12345' });
+          request()
+            .post('/api/v1/user/register')
+            .send(user)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.error).to.be.eql('"Phone" length must be at least 6 characters long');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('when phone number is more than 14 digits', () => {
+        it('returns an error', (done) => {
+          const user = UserFactory.build({ phone: '123456789012345' });
+          request()
+            .post('/api/v1/user/register')
+            .send(user)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.error).to.be.eql(
+                '"Phone" length must be less than or equal to 14 characters long',
+              );
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });

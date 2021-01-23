@@ -1,5 +1,5 @@
 import express from 'express';
-import { paymentSchema } from '../schemas/payment.schema';
+import paymentSchema from '../schemas/payment.schema';
 import { schemaValidation, authenticate } from '../helpers/middleware';
 import PaymentController from '../controllers/payment.controllers';
 

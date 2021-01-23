@@ -169,17 +169,17 @@ describe('Enquiry Controller', () => {
         });
       });
       context('when othername is empty', () => {
-        it('returns an error', (done) => {
-          const enquiry = EnquiryFactory.build({ otherName: '' });
+        it('returns enquiry', (done) => {
+          const enquiry = EnquiryFactory.build({ propertyId: property._id, otherName: '' });
           request()
             .post('/api/v1/enquiry/add')
             .set('authorization', userToken)
             .send(enquiry)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Other Name" is not allowed to be empty');
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Enquiry added');
+              expect(res.body).to.have.property('enquiry');
               done();
             });
         });
@@ -257,8 +257,9 @@ describe('Enquiry Controller', () => {
         });
       });
       context('when street 2 is empty', () => {
-        it('returns an error', (done) => {
+        it('returns enquiry', (done) => {
           const enquiry = EnquiryFactory.build({
+            propertyId: property._id,
             address: {
               street1: 'opebi street',
               street2: '',
@@ -272,10 +273,10 @@ describe('Enquiry Controller', () => {
             .set('authorization', userToken)
             .send(enquiry)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Street 2" is not allowed to be empty');
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Enquiry added');
+              expect(res.body).to.have.property('enquiry');
               done();
             });
         });

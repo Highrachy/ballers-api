@@ -119,34 +119,34 @@ describe('Area Controller', () => {
       });
 
       context('when longitude is empty', () => {
-        it('returns an error', (done) => {
+        it('returns added area', (done) => {
           const area = AreaFactory.build({ longitude: '' });
           request()
             .post('/api/v1/area/add')
             .set('authorization', editorToken)
             .send(area)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Longitude" must be a number');
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Area added successfully');
+              expect(res.body.area).to.include({ ...area, longitude: null });
               done();
             });
         });
       });
 
       context('when latitude is empty', () => {
-        it('returns an error', (done) => {
+        it('returns added area', (done) => {
           const area = AreaFactory.build({ latitude: '' });
           request()
             .post('/api/v1/area/add')
             .set('authorization', editorToken)
             .send(area)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Latitude" must be a number');
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Area added successfully');
+              expect(res.body.area).to.include({ ...area, latitude: null });
               done();
             });
         });
@@ -414,32 +414,32 @@ describe('Area Controller', () => {
       });
 
       context('when latitude is empty', () => {
-        it('returns an error', (done) => {
+        it('returns updated area', (done) => {
           request()
             .put('/api/v1/area/update')
             .set('authorization', editorToken)
             .send({ ...updatedArea, latitude: '' })
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Latitude" must be a number');
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.area._id).to.be.eql(areaId.toString());
+              expect(res.body.area.latitude).to.be.eql(null);
               done();
             });
         });
       });
 
       context('when longitude is empty', () => {
-        it('returns an error', (done) => {
+        it('returns updated area', (done) => {
           request()
             .put('/api/v1/area/update')
             .set('authorization', editorToken)
             .send({ ...updatedArea, longitude: '' })
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Longitude" must be a number');
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.area._id).to.be.eql(areaId.toString());
+              expect(res.body.area.longitude).to.be.eql(null);
               done();
             });
         });

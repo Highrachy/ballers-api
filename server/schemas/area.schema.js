@@ -1,16 +1,22 @@
 import Joi from '@hapi/joi';
+import {
+  requiredObjectId,
+  requiredString,
+  optionalString,
+  nonRequiredNumber,
+} from './helper.schema';
 
 export const addAreaSchema = Joi.object({
-  area: Joi.string().label('Area').required(),
-  state: Joi.string().label('State').required(),
-  longitude: Joi.number().label('Longitude').optional(),
-  latitude: Joi.number().label('Latitude').optional(),
+  area: requiredString('Area'),
+  state: requiredString('State'),
+  longitude: nonRequiredNumber('Longitude'),
+  latitude: nonRequiredNumber('Latitude'),
 });
 
 export const updateAreaSchema = Joi.object({
-  id: Joi.objectId().label('Area Id').required(),
-  area: Joi.string().label('Area').optional(),
-  state: Joi.string().label('State').optional(),
-  longitude: Joi.number().label('Longitude').optional(),
-  latitude: Joi.number().label('Latitude').optional(),
+  id: requiredObjectId('Area Id'),
+  area: optionalString('Area'),
+  state: optionalString('State'),
+  longitude: nonRequiredNumber('Longitude'),
+  latitude: nonRequiredNumber('Latitude'),
 });

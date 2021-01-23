@@ -1,22 +1,27 @@
 import Joi from '@hapi/joi';
-
-Joi.objectId = require('joi-objectid')(Joi);
+import {
+  requiredObjectId,
+  requiredDate,
+  requiredString,
+  requiredNumber,
+  nonRequiredString,
+} from './helper.schema';
 
 export const addTransactionSchema = Joi.object({
-  propertyId: Joi.objectId().label('Property Id').required(),
-  userId: Joi.objectId().label('User Id').required(),
-  offerId: Joi.objectId().label('Offer Id').required(),
-  paymentSource: Joi.string().label('Transaction Payment Source').required(),
-  amount: Joi.number().label('Transaction Amount').required(),
-  paidOn: Joi.string().label('Payment Date').required(),
-  additionalInfo: Joi.string().label('Additional Info').optional(),
+  propertyId: requiredObjectId('Property Id'),
+  userId: requiredObjectId('User Id'),
+  offerId: requiredObjectId('Offer Id'),
+  paymentSource: requiredString('Transaction Payment Source'),
+  amount: requiredNumber('Transaction Amount'),
+  paidOn: requiredDate('Payment Date'),
+  additionalInfo: nonRequiredString('Additional Info'),
 });
 
 export const updateTransactionSchema = Joi.object({
-  transactionId: Joi.objectId().label('Transaction Id').required(),
-  paidOn: Joi.string().label('Payment Date').required(),
+  transactionId: requiredObjectId('Transaction Id'),
+  paidOn: requiredDate('Payment Date'),
 });
 
 export const getTransactionsByPropertySchema = Joi.object({
-  propertyId: Joi.objectId().label('Property Id').required(),
+  propertyId: requiredObjectId('Property Id'),
 });

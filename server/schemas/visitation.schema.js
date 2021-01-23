@@ -1,20 +1,18 @@
 import Joi from '@hapi/joi';
-import { getTodaysDateInWords, getTodaysDateStandard } from '../helpers/dates';
-
-Joi.objectId = require('joi-objectid')(Joi);
+import {
+  requiredFutureDate,
+  requiredObjectId,
+  requiredPhoneNumber,
+  requiredString,
+  nonRequiredEmail,
+} from './helper.schema';
 
 const propertyVisitationSchema = Joi.object({
-  propertyId: Joi.objectId().label('Property id').required(),
-  visitorName: Joi.string().label('Name').required(),
-  visitorEmail: Joi.string().label('Email address').email().optional(),
-  visitorPhone: Joi.string().label('Phone').min(11).max(14).required(),
-  visitDate: Joi.date()
-    .greater(getTodaysDateStandard())
-    .label('Visit Date')
-    .required()
-    .messages({
-      'date.greater': `"Visit Date" should a date later than ${getTodaysDateInWords()}`,
-    }),
+  propertyId: requiredObjectId('Property id'),
+  visitorName: requiredString('Name'),
+  visitorEmail: nonRequiredEmail('Email address'),
+  visitorPhone: requiredPhoneNumber('Phone'),
+  visitDate: requiredFutureDate('Visit Date'),
 });
 
 export default propertyVisitationSchema;

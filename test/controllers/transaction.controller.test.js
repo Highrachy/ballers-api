@@ -387,7 +387,7 @@ describe('Transaction Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Payment Date" is not allowed to be empty');
+              expect(res.body.error).to.be.eql('"Payment Date" must be a valid date');
               done();
             });
         });

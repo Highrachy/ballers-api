@@ -1,15 +1,14 @@
 import Joi from '@hapi/joi';
-
-Joi.objectId = require('joi-objectid')(Joi);
+import { requiredObjectId, requiredString, requiredNumber, optionalString } from './helper.schema';
 
 export const addPaymentPlanSchema = Joi.object({
-  name: Joi.string().label('Plan Name').required(),
-  description: Joi.string().label('Plan Description').required(),
-  paymentFrequency: Joi.number().label('Plan Payment Frequency').required(),
+  name: requiredString('Plan Name'),
+  description: requiredString('Plan Description'),
+  paymentFrequency: requiredNumber('Plan Payment Frequency'),
 });
 
 export const updatePaymentPlanSchema = Joi.object({
-  id: Joi.objectId().label('Plan ID').required(),
-  name: Joi.string().label('Plan Name').optional(),
-  description: Joi.string().label('Plan Description').optional(),
+  id: requiredObjectId('Plan ID'),
+  name: optionalString('Plan Name'),
+  description: optionalString('Plan Description'),
 });
