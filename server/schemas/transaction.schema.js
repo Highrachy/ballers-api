@@ -4,7 +4,7 @@ import {
   requiredDate,
   requiredString,
   requiredNumber,
-  optionalString,
+  nonRequiredString,
 } from './helper.schema';
 
 export const addTransactionSchema = Joi.object({
@@ -14,7 +14,7 @@ export const addTransactionSchema = Joi.object({
   paymentSource: requiredString('Transaction Payment Source'),
   amount: requiredNumber('Transaction Amount'),
   paidOn: requiredDate('Payment Date'),
-  additionalInfo: optionalString('Additional Info'),
+  additionalInfo: nonRequiredString('Additional Info'),
 });
 
 export const updateTransactionSchema = Joi.object({

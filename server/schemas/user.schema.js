@@ -5,19 +5,15 @@ import {
   requiredObjectId,
   requiredPhoneNumber,
   requiredString,
+  requiredPassword,
+  requiredConfirmPassword,
   optionalPhoneNumber,
   optionalString,
   optionalBoolean,
   optionalNumber,
   optionalAddress,
-  notRequiredPhoneNumber,
+  nonRequiredPhoneNumber,
 } from './helper.schema';
-
-const email = requiredEmail('Email Address');
-const password = Joi.string().label('Password').min(6).required().strict();
-const confirmPassword = Joi.string().valid(Joi.ref('password')).required().strict().messages({
-  'any.only': 'Password does not match',
-});
 
 const directorSchema = {
   name: optionalString('Name'),
@@ -72,25 +68,25 @@ export const registerSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
   vendor: vendorCompanyName,
-  email,
-  phone: notRequiredPhoneNumber('Phone'),
-  password,
-  confirmPassword,
+  email: requiredEmail('Email Address'),
+  phone: requiredPhoneNumber('Phone'),
+  password: requiredPassword('Password'),
+  confirmPassword: requiredConfirmPassword('password'),
   referralCode: optionalString('Referral Code'),
 });
 
 export const loginSchema = Joi.object({
-  email,
-  password,
+  email: requiredEmail('Email Address'),
+  password: requiredPassword('Password'),
 });
 
 export const resetPasswordSchema = Joi.object({
-  email,
+  email: requiredEmail('Email Address'),
 });
 
 export const changePasswordSchema = Joi.object({
-  password,
-  confirmPassword,
+  password: requiredPassword('Password'),
+  confirmPassword: requiredConfirmPassword('password'),
 });
 
 export const assignPropertySchema = Joi.object({
@@ -110,7 +106,7 @@ export const updateUserSchema = Joi.object({
   firstName: requiredString('First Name'),
   lastName: requiredString('Last Name'),
   phone: requiredPhoneNumber('Phone'),
-  phone2: notRequiredPhoneNumber('Phone 2'),
+  phone2: nonRequiredPhoneNumber('Phone 2'),
   address: optionalAddress,
   preferences,
 });
@@ -140,7 +136,7 @@ export const addCommentVendorSchema = Joi.object({
 
 export const updateVendorSchema = Joi.object({
   phone: optionalPhoneNumber('Phone'),
-  phone2: notRequiredPhoneNumber('Phone 2'),
+  phone2: nonRequiredPhoneNumber('Phone 2'),
   address: optionalAddress,
   vendor,
 });

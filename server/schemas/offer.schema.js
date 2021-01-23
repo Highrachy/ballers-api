@@ -4,6 +4,7 @@ import {
   requiredString,
   requiredNumber,
   requiredFutureDate,
+  requiredPercentage,
 } from './helper.schema';
 
 export const createOfferSchema = Joi.object({
@@ -14,7 +15,7 @@ export const createOfferSchema = Joi.object({
   initialPayment: requiredNumber('Initial Payment'),
   monthlyPayment: requiredNumber('Monthly Payment'),
   paymentFrequency: requiredNumber('Payment Frequency'),
-  allocationInPercentage: Joi.number().min(1).max(100).label('Allocation In Percentage').required(),
+  allocationInPercentage: requiredPercentage('Allocation'),
   handOverDate: requiredFutureDate('Handover Date'),
   expires: requiredFutureDate('Expiry Date'),
 });

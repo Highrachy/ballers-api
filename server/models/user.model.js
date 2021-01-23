@@ -127,7 +127,10 @@ const UserSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
-    phone: String,
+    phone: {
+      type: String,
+      required: true,
+    },
     phone2: String,
     preferences: {
       houseType: {

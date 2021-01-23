@@ -4,13 +4,13 @@ import {
   requiredObjectId,
   requiredPhoneNumber,
   requiredString,
-  optionalEmail,
+  nonRequiredEmail,
 } from './helper.schema';
 
 const propertyVisitationSchema = Joi.object({
   propertyId: requiredObjectId('Property id'),
   visitorName: requiredString('Name'),
-  visitorEmail: optionalEmail('Email address'),
+  visitorEmail: nonRequiredEmail('Email address'),
   visitorPhone: requiredPhoneNumber('Phone'),
   visitDate: requiredFutureDate('Visit Date'),
 });

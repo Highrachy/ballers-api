@@ -151,12 +151,10 @@ describe('Property Controller', () => {
             .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                '"Property title document" is not allowed to be empty',
-              );
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Property added');
+              expect(res.body).to.have.property('property');
               done();
             });
         });
@@ -378,17 +376,17 @@ describe('Property Controller', () => {
         });
       });
       context('when floorPlans is empty', () => {
-        it('returns an error', (done) => {
+        it('returns added property', (done) => {
           const property = PropertyFactory.build({ floorPlans: '' });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property floor plans" is not allowed to be empty');
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Property added');
+              expect(res.body).to.have.property('property');
               done();
             });
         });
@@ -426,17 +424,17 @@ describe('Property Controller', () => {
         });
       });
       context('when mainImage is empty', () => {
-        it('returns an error', (done) => {
+        it('returns added property', (done) => {
           const property = PropertyFactory.build({ mainImage: '' });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property main image" is not allowed to be empty');
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Property added');
+              expect(res.body).to.have.property('property');
               done();
             });
         });
@@ -474,37 +472,33 @@ describe('Property Controller', () => {
         });
       });
       context('when mapLocation.longitude is empty', () => {
-        it('returns an error', (done) => {
+        it('returns added property', (done) => {
           const property = PropertyFactory.build({ mapLocation: { longitude: '' } });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                '"Map location longitude" is not allowed to be empty',
-              );
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Property added');
+              expect(res.body).to.have.property('property');
               done();
             });
         });
       });
       context('when mapLocation.latitude is empty', () => {
-        it('returns an error', (done) => {
+        it('returns added property', (done) => {
           const property = PropertyFactory.build({ mapLocation: { latitude: '' } });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                '"Map location latitude" is not allowed to be empty',
-              );
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Property added');
+              expect(res.body).to.have.property('property');
               done();
             });
         });
@@ -860,17 +854,16 @@ describe('Property Controller', () => {
         });
       });
       context('when floorPlans is empty', () => {
-        it('returns an error', (done) => {
+        it('returns updated property', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, floorPlans: '' });
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property floor plans" is not allowed to be empty');
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('property');
               done();
             });
         });
@@ -892,7 +885,7 @@ describe('Property Controller', () => {
         });
       });
       context('when neighborhood is empty array', () => {
-        it('returns an error', (done) => {
+        it('returns updated property', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, neighborhood: [] });
           request()
             .put('/api/v1/property/update')
@@ -908,17 +901,16 @@ describe('Property Controller', () => {
         });
       });
       context('when mainImage is empty', () => {
-        it('returns an error', (done) => {
+        it('returns updated property', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, mainImage: '' });
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property main image" is not allowed to be empty');
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('property');
               done();
             });
         });
@@ -940,7 +932,7 @@ describe('Property Controller', () => {
         });
       });
       context('when gallery is empty array', () => {
-        it('returns an error', (done) => {
+        it('returns updated property', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, gallery: [] });
           request()
             .put('/api/v1/property/update')
@@ -956,7 +948,7 @@ describe('Property Controller', () => {
         });
       });
       context('when mapLocation.longitude is empty', () => {
-        it('returns an error', (done) => {
+        it('returns updated property', (done) => {
           const invalidProperty = PropertyFactory.build({
             id: property._id,
             mapLocation: { longitude: '' },
@@ -966,18 +958,15 @@ describe('Property Controller', () => {
             .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                '"Map location longitude" is not allowed to be empty',
-              );
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('property');
               done();
             });
         });
       });
       context('when mapLocation.latitude is empty', () => {
-        it('returns an error', (done) => {
+        it('returns updated property', (done) => {
           const invalidProperty = PropertyFactory.build({
             id: property._id,
             mapLocation: { latitude: '' },
@@ -987,12 +976,9 @@ describe('Property Controller', () => {
             .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                '"Map location latitude" is not allowed to be empty',
-              );
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('property');
               done();
             });
         });

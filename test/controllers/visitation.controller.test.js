@@ -183,17 +183,21 @@ describe('Visitation Controller', () => {
       });
       context('when visitor email is empty', () => {
         it('returns an error', (done) => {
-          const property = VisitationFactory.build({ visitorEmail: '' });
+          const property = VisitationFactory.build({
+            propertyId: demoProperty._id,
+            visitorEmail: '',
+          });
           request()
             .post('/api/v1/visitation/schedule')
             .set('authorization', userToken)
             .send(property)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Email address" is not allowed to be empty');
-              expect(sendMailStub.callCount).to.eq(0);
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Visit scheduled successfully');
+              expect(res.body).to.have.property('schedule');
+              expect(res.body.schedule.propertyId).to.be.eql(demoProperty._id.toString());
+              expect(sendMailStub.callCount).to.eq(1);
               done();
             });
         });
@@ -215,9 +219,9 @@ describe('Visitation Controller', () => {
             });
         });
       });
-      context('when visitor phone is less than 7 numbers', () => {
+      context('when visitor phone is less than 6 numbers', () => {
         it('returns an error', (done) => {
-          const booking = VisitationFactory.build({ visitorPhone: '123456' });
+          const booking = VisitationFactory.build({ visitorPhone: '12345' });
           request()
             .post('/api/v1/visitation/schedule')
             .set('authorization', userToken)
@@ -226,13 +230,13 @@ describe('Visitation Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Phone" length must be at least 7 characters long');
+              expect(res.body.error).to.be.eql('"Phone" length must be at least 6 characters long');
               expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
       });
-      context('when visitor phone is more than 15 numbers', () => {
+      context('when visitor phone is more than 14 numbers', () => {
         it('returns an error', (done) => {
           const booking = VisitationFactory.build({ visitorPhone: '1234567890123456' });
           request()
@@ -244,7 +248,7 @@ describe('Visitation Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql(
-                '"Phone" length must be less than or equal to 15 characters long',
+                '"Phone" length must be less than or equal to 14 characters long',
               );
               expect(sendMailStub.callCount).to.eq(0);
               done();

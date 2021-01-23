@@ -6,6 +6,7 @@ import {
   optionalObjectId,
   optionalString,
   optionalNumber,
+  nonRequiredString,
 } from './helper.schema';
 
 export const addContentPropertySchema = Joi.object({
@@ -13,8 +14,8 @@ export const addContentPropertySchema = Joi.object({
   category: requiredString('Category'),
   houseType: requiredString('Property Type'),
   price: requiredNumber('Price'),
-  website: optionalString('Website'),
-  link: optionalString('URL'),
+  website: nonRequiredString('Website'),
+  link: nonRequiredString('URL'),
 });
 
 export const updateContentPropertySchema = Joi.object({
@@ -23,6 +24,6 @@ export const updateContentPropertySchema = Joi.object({
   category: optionalString('Category'),
   houseType: optionalString('Property Type'),
   price: optionalNumber('Price'),
-  website: optionalString('Website'),
-  link: optionalString('URL'),
+  website: nonRequiredString('Website'),
+  link: nonRequiredString('URL'),
 });
