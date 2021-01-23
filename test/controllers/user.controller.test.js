@@ -308,10 +308,11 @@ describe('User Controller', () => {
             .post('/api/v1/user/register')
             .send(user)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(sendMailStub.callCount).to.eq(0);
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Registration successful');
+              expect(res.body).to.have.property('token');
+              expect(sendMailStub.callCount).to.eq(1);
               done();
             });
         });
@@ -325,10 +326,11 @@ describe('User Controller', () => {
             .post('/api/v1/user/register')
             .send(user)
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(sendMailStub.callCount).to.eq(0);
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Registration successful');
+              expect(res.body).to.have.property('token');
+              expect(sendMailStub.callCount).to.eq(1);
               done();
             });
         });

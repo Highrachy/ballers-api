@@ -69,7 +69,7 @@ export const registerSchema = Joi.object({
   lastName: requiredString('Last Name'),
   vendor: vendorCompanyName,
   email: requiredEmail('Email Address'),
-  phone: requiredPhoneNumber('Phone'),
+  phone: nonRequiredPhoneNumber('Phone'),
   password: requiredPassword('Password'),
   confirmPassword: requiredConfirmPassword('password'),
   referralCode: optionalString('Referral Code'),
