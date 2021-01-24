@@ -744,3 +744,32 @@ export const resolveVerificationStepComment = async ({ vendorId, commentId, step
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving comment', error);
   }
 };
+
+export const banOrUnbanUser = async ({ adminId, userId, reason, status }) => {
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    return User.findByIdAndUpdate(
+      userId,
+      {
+        $push: { 'banned.reason': reason },
+        $set: {
+          'banned.by': adminId,
+          'banned.status': status,
+          'banned.date': getTodaysDateStandard(),
+        },
+      },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(
+      httpStatus.BAD_REQUEST,
+      `Error ${status ? 'banning' : 'unbanning'} user`,
+      error,
+    );
+  }
+};

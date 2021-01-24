@@ -13,6 +13,7 @@ import {
   verifyVendorInfoSchema,
   updateDirectorSchema,
   resolveCommentVendorSchema,
+  banOrUnbanUserSchema,
 } from '../schemas/user.schema';
 import {
   schemaValidation,
@@ -792,6 +793,80 @@ router.put(
   isAdmin,
   schemaValidation(verifyVendorSchema),
   UserController.certifyVendor,
+);
+
+/**
+ * @swagger
+ * /user/ban:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to ban a user
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              userId:
+ *                  type: string
+ *              reason:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: User banned
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/ban',
+  authenticate,
+  isAdmin,
+  schemaValidation(banOrUnbanUserSchema),
+  UserController.banUser,
+);
+
+/**
+ * @swagger
+ * /user/unban:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to unban a user
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              userId:
+ *                  type: string
+ *              reason:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: User unbanned
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/unban',
+  authenticate,
+  isAdmin,
+  schemaValidation(banOrUnbanUserSchema),
+  UserController.unbanUser,
 );
 
 module.exports = router;
