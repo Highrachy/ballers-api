@@ -33,7 +33,8 @@ export const authenticate = async (req, res, next) => {
       if (user.banned.status) {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
-          message: 'Account has been banned. Contact admin for more information',
+          message:
+            'Your account has been locked. Kindly contact Ballers Support for more information',
         });
       }
       req.user = user.toJSON();

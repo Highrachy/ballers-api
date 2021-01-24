@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
-import { addUser } from '../../server/services/user.service';
+import { addUser, banUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
@@ -2889,6 +2889,30 @@ describe('User Controller', () => {
         });
       });
 
+      context('when user has been banned previously', () => {
+        beforeEach(async () => {
+          await banUser({ adminId: adminUser._id, userId: user._id, reason: 'Fake Certificate' });
+        });
+        it('adds reason to user ban', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('User banned');
+              expect(res.body.user._id).to.be.eql(user._id.toString());
+              expect(res.body.user.banned.status).to.be.eql(true);
+              expect(res.body.user.banned.case[0].bannedReason).to.be.eql('Fake Certificate');
+              expect(res.body.user.banned.case[0].bannedBy).to.be.eql(adminUser._id.toString());
+              expect(res.body.user.banned.case[1].bannedReason).to.be.eql(data.reason);
+              expect(res.body.user.banned.case[1].bannedBy).to.be.eql(adminUser._id.toString());
+              done();
+            });
+        });
+      });
+
       itReturnsForbiddenForNoToken({
         endpoint,
         method,
@@ -2939,9 +2963,6 @@ describe('User Controller', () => {
                 _id: mongoose.Types.ObjectId(),
                 bannedBy: adminUser._id,
                 bannedReason: 'Suspected fraud',
-                unBannedBy: '5fd3794445973e647c624d49',
-                unBannedDate: '2021-01-24T00:00:00.000Z',
-                unBannedReason: 'Fraud case resolved',
               },
             ],
           },
