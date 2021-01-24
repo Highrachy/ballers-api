@@ -23,6 +23,8 @@ import {
   getOneUser,
   certifyVendor,
   resolveVerificationStepComment,
+  banUser,
+  unbanUser,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -311,6 +313,26 @@ const UserController = {
     resolveVerificationStepComment(commentInfo)
       .then((vendor) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Comment resolved', vendor });
+      })
+      .catch((error) => next(error));
+  },
+
+  banUser(req, res, next) {
+    const banInfo = req.locals;
+    const adminId = req.user._id;
+    banUser({ ...banInfo, adminId })
+      .then((user) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'User banned', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  unbanUser(req, res, next) {
+    const unbanInfo = req.locals;
+    const adminId = req.user._id;
+    unbanUser({ ...unbanInfo, adminId })
+      .then((user) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'User unbanned', user });
       })
       .catch((error) => next(error));
   },

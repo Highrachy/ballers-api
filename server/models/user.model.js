@@ -89,6 +89,34 @@ const UserSchema = new mongoose.Schema(
     },
     activationDate: Date,
     address: addressSchema,
+    banned: {
+      status: {
+        type: Boolean,
+        default: false,
+      },
+      case: [
+        {
+          bannedBy: {
+            type: ObjectId,
+          },
+          bannedDate: {
+            type: Date,
+          },
+          bannedReason: {
+            type: String,
+          },
+          unBannedBy: {
+            type: ObjectId,
+          },
+          unBannedDate: {
+            type: Date,
+          },
+          unBannedReason: {
+            type: String,
+          },
+        },
+      ],
+    },
     email: {
       type: String,
       unique: true,
