@@ -23,7 +23,8 @@ import {
   getOneUser,
   certifyVendor,
   resolveVerificationStepComment,
-  banOrUnbanUser,
+  banUser,
+  unbanUser,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -319,8 +320,7 @@ const UserController = {
   banUser(req, res, next) {
     const banInfo = req.locals;
     const adminId = req.user._id;
-    const status = true;
-    banOrUnbanUser({ ...banInfo, adminId, status })
+    banUser({ ...banInfo, adminId })
       .then((user) => {
         res.status(httpStatus.OK).json({ success: true, message: 'User banned', user });
       })
@@ -330,8 +330,7 @@ const UserController = {
   unbanUser(req, res, next) {
     const unbanInfo = req.locals;
     const adminId = req.user._id;
-    const status = false;
-    banOrUnbanUser({ ...unbanInfo, adminId, status })
+    unbanUser({ ...unbanInfo, adminId })
       .then((user) => {
         res.status(httpStatus.OK).json({ success: true, message: 'User unbanned', user });
       })

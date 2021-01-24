@@ -13,7 +13,8 @@ import {
   verifyVendorInfoSchema,
   updateDirectorSchema,
   resolveCommentVendorSchema,
-  banOrUnbanUserSchema,
+  unbanUserSchema,
+  banUserSchema,
 } from '../schemas/user.schema';
 import {
   schemaValidation,
@@ -824,13 +825,7 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.put(
-  '/ban',
-  authenticate,
-  isAdmin,
-  schemaValidation(banOrUnbanUserSchema),
-  UserController.banUser,
-);
+router.put('/ban', authenticate, isAdmin, schemaValidation(banUserSchema), UserController.banUser);
 
 /**
  * @swagger
@@ -865,7 +860,7 @@ router.put(
   '/unban',
   authenticate,
   isAdmin,
-  schemaValidation(banOrUnbanUserSchema),
+  schemaValidation(unbanUserSchema),
   UserController.unbanUser,
 );
 

@@ -152,7 +152,13 @@ export const resolveCommentVendorSchema = Joi.object({
   commentId: requiredObjectId('Comment id'),
 });
 
-export const banOrUnbanUserSchema = Joi.object({
+export const banUserSchema = Joi.object({
+  userId: requiredObjectId('User id'),
+  reason: requiredString('Reason'),
+});
+
+export const unbanUserSchema = Joi.object({
+  caseId: requiredObjectId('Case id'),
   userId: requiredObjectId('User id'),
   reason: requiredString('Reason'),
 });

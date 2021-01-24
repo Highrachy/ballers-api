@@ -745,7 +745,7 @@ export const resolveVerificationStepComment = async ({ vendorId, commentId, step
   }
 };
 
-export const banOrUnbanUser = async ({ adminId, userId, reason, status }) => {
+export const banUser = async ({ adminId, userId, reason }) => {
   const user = await getUserById(userId);
 
   if (!user) {
@@ -756,20 +756,44 @@ export const banOrUnbanUser = async ({ adminId, userId, reason, status }) => {
     return User.findByIdAndUpdate(
       userId,
       {
-        $push: { 'banned.reason': reason },
-        $set: {
-          'banned.by': adminId,
-          'banned.status': status,
-          'banned.date': getTodaysDateStandard(),
+        $set: { 'banned.status': true },
+        $push: {
+          'banned.info': {
+            bannedBy: adminId,
+            bannedDate: getTodaysDateStandard(),
+            bannedReason: reason,
+          },
         },
       },
       { new: true, fields: '-password' },
     );
   } catch (error) {
-    throw new ErrorHandler(
-      httpStatus.BAD_REQUEST,
-      `Error ${status ? 'banning' : 'unbanning'} user`,
-      error,
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error banning user', error);
+  }
+};
+
+export const unbanUser = async ({ adminId, userId, caseId, reason }) => {
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await User.findByIdAndUpdate(userId, { $set: { 'banned.status': false } });
+
+    return User.findOneAndUpdate(
+      { 'banned.info._id': caseId },
+      {
+        $set: {
+          'banned.info.$.unBannedBy': adminId,
+          'banned.info.$.unBannedDate': getTodaysDateStandard(),
+          'banned.info.$.unBannedReason': reason,
+        },
+      },
+      { new: true, fields: '-password' },
     );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error unbanning user', error);
   }
 };
