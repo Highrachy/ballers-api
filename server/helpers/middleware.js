@@ -30,6 +30,12 @@ export const authenticate = async (req, res, next) => {
     const { id } = decodeToken(req.headers.authorization);
     const user = await getUserById(id);
     if (user) {
+      if (user.banned.status) {
+        return res.status(httpStatus.UNAUTHORIZED).json({
+          success: false,
+          message: 'Account has been banned. Contact admin for more information',
+        });
+      }
       req.user = user.toJSON();
       next();
     } else {

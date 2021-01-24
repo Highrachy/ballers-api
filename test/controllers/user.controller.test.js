@@ -2847,6 +2847,178 @@ describe('User Controller', () => {
         });
       });
     });
+
+    describe('Ban User', () => {
+      const user = UserFactory.build(
+        {
+          role: USER_ROLE.USER,
+          activated: true,
+          banned: { status: false },
+        },
+        { generateId: true },
+      );
+      const invalidUser = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
+      const endpoint = '/api/v1/user/ban';
+      const method = 'put';
+
+      const data = {
+        userId: user._id,
+        reason: 'Suspected fraud',
+      };
+
+      beforeEach(async () => {
+        await addUser(user);
+      });
+
+      context('when a valid token is used', () => {
+        it('returns banned user', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('User banned');
+              expect(res.body.user._id).to.be.eql(user._id.toString());
+              expect(res.body.user.banned.status).to.be.eql(true);
+              expect(res.body.user.banned.case[0].bannedReason).to.be.eql(data.reason);
+              expect(res.body.user.banned.case[0].bannedBy).to.be.eql(adminUser._id.toString());
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+        data,
+      });
+
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: invalidUser,
+        data,
+      });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        userId: invalidUser._id,
+        data,
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findOneAndUpdate.restore();
+            });
+        });
+      });
+    });
+
+    describe('Unban User', () => {
+      const user = UserFactory.build(
+        {
+          role: USER_ROLE.USER,
+          activated: true,
+          banned: {
+            status: true,
+            case: [
+              {
+                _id: mongoose.Types.ObjectId(),
+                bannedBy: adminUser._id,
+                bannedReason: 'Suspected fraud',
+                unBannedBy: '5fd3794445973e647c624d49',
+                unBannedDate: '2021-01-24T00:00:00.000Z',
+                unBannedReason: 'Fraud case resolved',
+              },
+            ],
+          },
+        },
+        { generateId: true },
+      );
+      const invalidUser = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
+      const endpoint = '/api/v1/user/unban';
+      const method = 'put';
+
+      const data = {
+        userId: user._id,
+        caseId: user.banned.case[0]._id,
+        reason: 'Fraud case resolved',
+      };
+
+      beforeEach(async () => {
+        await addUser(user);
+      });
+
+      context('when a valid token is used', () => {
+        it('returns unbanned user', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('User unbanned');
+              expect(res.body.user._id).to.be.eql(user._id.toString());
+              expect(res.body.user.banned.status).to.be.eql(false);
+              expect(res.body.user.banned.case[0]._id).to.be.eql(data.caseId.toString());
+              expect(res.body.user.banned.case[0].unBannedReason).to.be.eql(data.reason);
+              expect(res.body.user.banned.case[0].unBannedBy).to.be.eql(adminUser._id.toString());
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+        data,
+      });
+
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: invalidUser,
+        data,
+      });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: invalidUser,
+        userId: invalidUser._id,
+        data,
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findOneAndUpdate.restore();
+            });
+        });
+      });
+    });
   });
 
   describe('Get all users', () => {

@@ -94,7 +94,7 @@ const UserSchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
-      info: [
+      case: [
         {
           bannedBy: {
             type: ObjectId,

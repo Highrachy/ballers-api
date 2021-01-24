@@ -758,7 +758,7 @@ export const banUser = async ({ adminId, userId, reason }) => {
       {
         $set: { 'banned.status': true },
         $push: {
-          'banned.info': {
+          'banned.case': {
             bannedBy: adminId,
             bannedDate: getTodaysDateStandard(),
             bannedReason: reason,
@@ -780,17 +780,20 @@ export const unbanUser = async ({ adminId, userId, caseId, reason }) => {
   }
 
   try {
-    await User.findByIdAndUpdate(userId, { $set: { 'banned.status': false } });
-
-    return User.findOneAndUpdate(
-      { 'banned.info._id': caseId },
+    await User.findOneAndUpdate(
+      { 'banned.case._id': caseId },
       {
         $set: {
-          'banned.info.$.unBannedBy': adminId,
-          'banned.info.$.unBannedDate': getTodaysDateStandard(),
-          'banned.info.$.unBannedReason': reason,
+          'banned.case.$.unBannedBy': adminId,
+          'banned.case.$.unBannedDate': getTodaysDateStandard(),
+          'banned.case.$.unBannedReason': reason,
         },
       },
+    );
+
+    return User.findByIdAndUpdate(
+      userId,
+      { $set: { 'banned.status': false } },
       { new: true, fields: '-password' },
     );
   } catch (error) {
