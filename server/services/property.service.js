@@ -151,6 +151,13 @@ export const getAllProperties = async (user) => {
         'vendorInfo.firstName': 1,
         'vendorInfo.lastName': 1,
         'vendorInfo.email': 1,
+        'vendorInfo.vendor.companyLogo': 1,
+        'vendorInfo.vendor.companyName': 1,
+        'vendorInfo.vendor.socialMedia': 1,
+        'vendorInfo.vendor.certified': 1,
+        'vendorInfo.vendor.verified': 1,
+        'vendorInfo.vendor.website': 1,
+        'vendorInfo.vendor.vendorCode': 1,
       },
     },
   ];
@@ -172,7 +179,7 @@ export const getOneProperty = async (propertyId) =>
         from: 'users',
         localField: 'addedBy',
         foreignField: '_id',
-        as: 'adminInfo',
+        as: 'vendorInfo',
       },
     },
     {
@@ -184,7 +191,7 @@ export const getOneProperty = async (propertyId) =>
       },
     },
     {
-      $unwind: '$adminInfo',
+      $unwind: '$vendorInfo',
     },
     {
       $project: {
@@ -203,10 +210,17 @@ export const getOneProperty = async (propertyId) =>
         description: 1,
         paymentPlan: 1,
         floorPlans: 1,
-        'adminInfo._id': 1,
-        'adminInfo.firstName': 1,
-        'adminInfo.lastName': 1,
-        'adminInfo.email': 1,
+        'vendorInfo._id': 1,
+        'vendorInfo.firstName': 1,
+        'vendorInfo.lastName': 1,
+        'vendorInfo.email': 1,
+        'vendorInfo.vendor.companyLogo': 1,
+        'vendorInfo.vendor.companyName': 1,
+        'vendorInfo.vendor.socialMedia': 1,
+        'vendorInfo.vendor.certified': 1,
+        'vendorInfo.vendor.verified': 1,
+        'vendorInfo.vendor.website': 1,
+        'vendorInfo.vendor.vendorCode': 1,
       },
     },
   ]);
