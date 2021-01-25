@@ -5,6 +5,11 @@ const EMAIL_CONTENT = {
       'Your ballers.ng account has been successfully created. Complete your registration by clicking on the link below to verify your email',
     subject: 'Verify your Email',
   },
+  BAN_USER: {
+    subject: 'Account Locked',
+    contentTop:
+      'Your account has been locked for security reasons. Kindly contact Ballers Support for more information.',
+  },
   CHANGED_PASSWORD: {
     buttonText: 'Reset Password',
     contentBottom:
@@ -58,6 +63,11 @@ const EMAIL_CONTENT = {
     contentTop:
       "You (or someone pretending to be you) requested a password reset for your account. If you didn't made this request you can ignore this email.",
     subject: 'Password Reset',
+  },
+  UNBAN_USER: {
+    subject: 'Account Unlocked',
+    contentTop:
+      'Your account has been unlocked, and the issue resolved. Your dashboard is now accessible.',
   },
   SCHEDULE_VISIT: {
     subject: 'You have a new inspection request',

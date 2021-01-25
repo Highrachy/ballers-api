@@ -719,6 +719,29 @@ describe('User Controller', () => {
         });
       });
 
+      context('with user is banned', () => {
+        beforeEach(async () => {
+          await banUser({
+            adminId: adminUser._id,
+            userId: regularUser._id,
+            reason: 'Fake Certificate',
+          });
+        });
+        it('returns unauthorized', (done) => {
+          request()
+            .get('/api/v1/user/who-am-i')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(401);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql(
+                'Your account has been locked. Kindly contact Ballers Support for more information',
+              );
+              done();
+            });
+        });
+      });
+
       context('when user is not found', () => {
         beforeEach(async () => {
           await User.findByIdAndDelete(regularUser._id);
@@ -2884,6 +2907,8 @@ describe('User Controller', () => {
               expect(res.body.user.banned.status).to.be.eql(true);
               expect(res.body.user.banned.case[0].bannedReason).to.be.eql(data.reason);
               expect(res.body.user.banned.case[0].bannedBy).to.be.eql(adminUser._id.toString());
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.BAN_USER);
               done();
             });
         });
@@ -2908,6 +2933,8 @@ describe('User Controller', () => {
               expect(res.body.user.banned.case[0].bannedBy).to.be.eql(adminUser._id.toString());
               expect(res.body.user.banned.case[1].bannedReason).to.be.eql(data.reason);
               expect(res.body.user.banned.case[1].bannedBy).to.be.eql(adminUser._id.toString());
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.BAN_USER);
               done();
             });
         });
@@ -2998,6 +3025,8 @@ describe('User Controller', () => {
               expect(res.body.user.banned.case[0]._id).to.be.eql(data.caseId.toString());
               expect(res.body.user.banned.case[0].unBannedReason).to.be.eql(data.reason);
               expect(res.body.user.banned.case[0].unBannedBy).to.be.eql(adminUser._id.toString());
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.UNBAN_USER);
               done();
             });
         });

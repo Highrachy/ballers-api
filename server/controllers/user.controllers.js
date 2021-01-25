@@ -322,6 +322,7 @@ const UserController = {
     const adminId = req.user._id;
     banUser({ ...banInfo, adminId })
       .then((user) => {
+        sendMail(EMAIL_CONTENT.BAN_USER, user, {});
         res.status(httpStatus.OK).json({ success: true, message: 'User banned', user });
       })
       .catch((error) => next(error));
@@ -332,6 +333,7 @@ const UserController = {
     const adminId = req.user._id;
     unbanUser({ ...unbanInfo, adminId })
       .then((user) => {
+        sendMail(EMAIL_CONTENT.UNBAN_USER, user, {});
         res.status(httpStatus.OK).json({ success: true, message: 'User unbanned', user });
       })
       .catch((error) => next(error));
