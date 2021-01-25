@@ -542,8 +542,8 @@ const getStepsReadyForReview = (updatedVendor, user) => {
 const containsSensitiveInfo = (user) => {
   const sensitive = [
     'bankInfo',
-    'companyLogo',
     'companyName',
+    'phone',
     'entity',
     'identification',
     'redanNumber',

@@ -2135,7 +2135,7 @@ describe('User Controller', () => {
             accountName: 'Highrachy Investment Limited',
             bankName: 'ABC Bank',
           },
-          companyLogo: 'https://ballers.ng/logo.png',
+          companyName: 'Dangote PLC',
           directors: [
             {
               name: 'John Doe',
@@ -2161,13 +2161,13 @@ describe('User Controller', () => {
       };
 
       const nonSensitiveData = {
-        phone: '12345678901',
         phone2: '12345678901',
         address: {
           country: 'Ghana',
           state: 'Accra',
         },
         vendor: {
+          companyLogo: 'https://ballers.ng/newlogo.png',
           directors: [
             {
               name: 'John Doe',
@@ -2190,13 +2190,11 @@ describe('User Controller', () => {
         expect(res.body.success).to.be.eql(true);
         expect(res.body.message).to.be.eql('Vendor information updated');
         expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
-        expect(res.body.user.phone).to.be.eql(data.phone);
         expect(res.body.user.phone2).to.be.eql(data.phone2);
         expect(res.body.user.address).to.be.eql({
           ...vendorUser.address,
           ...data.address,
         });
-        expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
         expect(res.body.user.vendor.companyLogo).to.be.eql(data.vendor.companyLogo);
         expect(res.body.user.vendor.bankInfo).to.be.eql(data.vendor.bankInfo);
         expect(res.body.user.vendor.entity).to.be.eql(data.vendor.entity);
@@ -2220,6 +2218,10 @@ describe('User Controller', () => {
               .send(sensitiveData)
               .end((err, res) => {
                 itReturnsUpdatedVendor(res, sensitiveData);
+                expect(res.body.user.vendor.companyName).to.be.eql(
+                  sensitiveData.vendor.companyName,
+                );
+                expect(res.body.user.phone).to.be.eql(sensitiveData.phone);
                 expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('In Review');
                 expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
                   'In Review',
@@ -2238,6 +2240,8 @@ describe('User Controller', () => {
               .send(nonSensitiveData)
               .end((err, res) => {
                 itReturnsUpdatedVendor(res, nonSensitiveData);
+                expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
+                expect(res.body.user.phone).to.be.eql(vendorUser.phone);
                 expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('Pending');
                 expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
                   'Pending',
@@ -2262,6 +2266,10 @@ describe('User Controller', () => {
               .send(sensitiveData)
               .end((err, res) => {
                 itReturnsUpdatedVendor(res, sensitiveData);
+                expect(res.body.user.vendor.companyName).to.be.eql(
+                  sensitiveData.vendor.companyName,
+                );
+                expect(res.body.user.phone).to.be.eql(sensitiveData.phone);
                 expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('In Review');
                 expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
                   'In Review',
@@ -2280,6 +2288,8 @@ describe('User Controller', () => {
               .send(nonSensitiveData)
               .end((err, res) => {
                 itReturnsUpdatedVendor(res, nonSensitiveData);
+                expect(res.body.user.vendor.companyName).to.be.eql(vendorUser.vendor.companyName);
+                expect(res.body.user.phone).to.be.eql(vendorUser.phone);
                 expect(res.body.user.vendor.verification.bankDetails.status).to.be.eql('Pending');
                 expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql(
                   'Pending',
