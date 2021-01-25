@@ -719,7 +719,7 @@ describe('User Controller', () => {
         });
       });
 
-      context('with user is banned', () => {
+      context('when a user is banned', () => {
         beforeEach(async () => {
           await banUser({
             adminId: adminUser._id,
