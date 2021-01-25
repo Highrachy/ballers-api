@@ -543,9 +543,9 @@ const containsSensitiveInfo = (user) => {
   const sensitive = [
     'bankInfo',
     'companyName',
-    'phone',
     'entity',
     'identification',
+    'phone',
     'redanNumber',
     'taxCertificate',
   ];
