@@ -476,6 +476,7 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
           'vendor.verified': true,
           'vendor.verifiedBy': adminId,
           'vendor.verifiedOn': getTodaysDateStandard(),
+          'vendor.updatedFields': [],
         },
       },
       { new: true, fields: '-password' },
@@ -552,7 +553,10 @@ const containsSensitiveInfo = (user) => {
 
   const updatedVendorInfo = Object.keys({ ...user, ...user.vendor });
 
-  return sensitive.some((info) => updatedVendorInfo.includes(info));
+  return {
+    status: sensitive.some((info) => updatedVendorInfo.includes(info)),
+    updatedFields: sensitive.filter((element) => updatedVendorInfo.includes(element)),
+  };
 };
 
 export const updateVendor = async ({ updatedVendor, user }) => {
@@ -577,7 +581,13 @@ export const updateVendor = async ({ updatedVendor, user }) => {
   const vendor = {
     ...user.vendor,
     ...updatedVendor.vendor,
-    verified: containsSensitiveInfo(updatedVendor) ? false : user.vendor.verified,
+    verified: containsSensitiveInfo(updatedVendor).status ? false : user.vendor.verified,
+    updatedFields: Array.from(
+      new Set([
+        ...user.vendor.updatedFields,
+        ...containsSensitiveInfo(updatedVendor).updatedFields,
+      ]),
+    ),
   };
 
   vendor.verification = { ...vendor.verification, ...stepToReview.verification };

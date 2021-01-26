@@ -279,6 +279,9 @@ const UserSchema = new mongoose.Schema(
         documentUpload: vendorInfoSchema,
         directorInfo: vendorInfoSchema,
       },
+      updatedFields: {
+        type: [String],
+      },
     },
   },
   { timestamps: true },
