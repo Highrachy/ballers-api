@@ -66,7 +66,7 @@ const PropertyController = {
     getOneProperty(propertId)
       .then((property) => {
         if (property.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, property });
+          res.status(httpStatus.OK).json({ success: true, property: property[0] });
         } else {
           res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Property not found' });
         }
