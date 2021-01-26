@@ -3,12 +3,7 @@ import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import {
-  OFFER_STATUS,
-  CONCERN_STATUS,
-  USER_ROLE,
-  NON_PROJECTED_USER_INFO,
-} from '../helpers/constants';
+import { OFFER_STATUS, CONCERN_STATUS, USER_ROLE } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, assignPropertyToUser } from './user.service';
 // eslint-disable-next-line import/no-cycle
@@ -17,6 +12,7 @@ import { getEnquiryById, approveEnquiry } from './enquiry.service';
 import { getOneProperty } from './property.service';
 import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 

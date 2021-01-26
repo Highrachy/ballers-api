@@ -5,14 +5,13 @@ import httpStatus from '../helpers/httpStatus';
 import Transaction from '../models/transaction.model';
 // eslint-disable-next-line import/no-cycle
 import { getOffer } from './offer.service';
+import { OFFER_STATUS, USER_ROLE } from '../helpers/constants';
+import Offer from '../models/offer.model';
 import {
-  OFFER_STATUS,
-  USER_ROLE,
   PROJECTED_VENDOR_INFO,
   PROJECTED_PROPERTY_INFO,
   PROJECTED_ASSIGNED_USER_INFO,
-} from '../helpers/constants';
-import Offer from '../models/offer.model';
+} from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 

@@ -16,7 +16,10 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import Enquiry from '../../server/models/enquiry.model';
-import { itReturnsErrorForUnverifiedVendor, itDoesNotReturnSensitiveData } from '../helpers';
+import {
+  itReturnsErrorForUnverifiedVendor,
+  expectResponseToExcludeSensitiveVendorData,
+} from '../helpers';
 
 useDatabase();
 
@@ -1118,7 +1121,7 @@ describe('Property Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('property');
               expect(res.body.property).to.not.have.property('assignedTo');
-              itDoesNotReturnSensitiveData(res.body.property.vendorInfo);
+              expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
               done();
             });
         }),
@@ -1537,8 +1540,8 @@ describe('Property Controller', () => {
               expect(res.body.properties[0].assignedUsers).to.not.include(
                 regularUser._id.toString(),
               );
-              itDoesNotReturnSensitiveData(res.body.properties[0].assignedUsers);
-              itDoesNotReturnSensitiveData(res.body.properties[0].vendorInfo);
+              expectResponseToExcludeSensitiveVendorData(res.body.properties[0].assignedUsers);
+              expectResponseToExcludeSensitiveVendorData(res.body.properties[0].vendorInfo);
               done();
             });
         });

@@ -26,7 +26,7 @@ import {
   itReturnsTheRightPaginationValue,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
   itReturnsErrorForUnverifiedVendor,
-  itDoesNotReturnSensitiveData,
+  expectResponseToExcludeSensitiveVendorData,
 } from '../helpers';
 import Property from '../../server/models/property.model';
 
@@ -828,7 +828,7 @@ describe('Offer Controller', () => {
                 expect(res.body.offer.concern.length).to.be.eql(0);
                 expect(res.body.offer._id).to.be.eql(offer._id.toString());
                 expect(res.body.offer.propertyInfo).to.not.have.property('assignedTo');
-                itDoesNotReturnSensitiveData(res.body.offer.vendorInfo);
+                expectResponseToExcludeSensitiveVendorData(res.body.offer.vendorInfo);
                 done();
               });
           }),
@@ -1024,7 +1024,7 @@ describe('Offer Controller', () => {
                 expect(res.body.offers[0].enquiryInfo._id).to.be.eql(enquiry1._id.toString());
                 expect(res.body.offers[0].propertyInfo._id).to.be.eql(properties[0]._id.toString());
                 expect(res.body.offers[0].propertyInfo).to.not.have.property('assignedTo');
-                itDoesNotReturnSensitiveData(res.body.offers[0].vendorInfo);
+                expectResponseToExcludeSensitiveVendorData(res.body.offers[0].vendorInfo);
                 done();
               });
           });
