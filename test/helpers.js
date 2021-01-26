@@ -359,3 +359,19 @@ export const itReturnsErrorForUnverifiedVendor = ({
     });
   });
 };
+
+export const expectResponseToExcludeSensitiveVendorData = (data) => {
+  expect(data).to.not.have.property('assignedProperties');
+  expect(data).to.not.have.property('favorites');
+  expect(data).to.not.have.property('password');
+  expect(data).to.not.have.property('referralCode');
+  expect(data).to.not.have.property('notifications');
+  if (data.vendor) {
+    expect(data.vendor).to.not.have.property('bankInfo');
+    expect(data.vendor).to.not.have.property('directors');
+    expect(data.vendor).to.not.have.property('identification');
+    expect(data.vendor).to.not.have.property('entity');
+    expect(data.vendor).to.not.have.property('redanNumber');
+    expect(data.vendor).to.not.have.property('taxCertificate');
+  }
+};

@@ -16,7 +16,10 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import Enquiry from '../../server/models/enquiry.model';
-import { itReturnsErrorForUnverifiedVendor } from '../helpers';
+import {
+  itReturnsErrorForUnverifiedVendor,
+  expectResponseToExcludeSensitiveVendorData,
+} from '../helpers';
 
 useDatabase();
 
@@ -1117,6 +1120,8 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('property');
+              expect(res.body.property).to.not.have.property('assignedTo');
+              expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
               done();
             });
         }),
@@ -1530,8 +1535,13 @@ describe('Property Controller', () => {
               expect(res.body.properties[0]).to.have.property('price');
               expect(res.body.properties[0]).to.have.property('houseType');
               expect(res.body.properties[0]).to.have.property('description');
+              expect(res.body.properties[0]).to.not.have.property('assignedTo');
               expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
-              expect(res.body.properties[0].assignedTo).to.not.include(regularUser._id.toString());
+              expect(res.body.properties[0].assignedUsers).to.not.include(
+                regularUser._id.toString(),
+              );
+              expectResponseToExcludeSensitiveVendorData(res.body.properties[0].assignedUsers);
+              expectResponseToExcludeSensitiveVendorData(res.body.properties[0].vendorInfo);
               done();
             });
         });

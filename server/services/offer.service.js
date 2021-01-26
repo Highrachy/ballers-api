@@ -12,6 +12,7 @@ import { getEnquiryById, approveEnquiry } from './enquiry.service';
 import { getOneProperty } from './property.service';
 import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -99,12 +100,7 @@ export const getAllOffers = async (accounId, page = 1, limit = 10) => {
       },
     },
     {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-        [`${accountType.as}.assignedProperties`]: 0,
-        [`${accountType.as}.password`]: 0,
-        [`${accountType.as}.referralCode`]: 0,
-      },
+      $project: NON_PROJECTED_USER_INFO(accountType.as),
     },
   ];
 
@@ -169,12 +165,7 @@ export const getActiveOffers = async (userId) =>
       $unwind: '$propertyInfo',
     },
     {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-        'vendorInfo.assignedProperties': 0,
-        'vendorInfo.password': 0,
-        'vendorInfo.referralCode': 0,
-      },
+      $project: NON_PROJECTED_USER_INFO('vendorInfo'),
     },
   ]);
 
@@ -235,23 +226,8 @@ export const getOffer = async (offerId) =>
     },
     {
       $project: {
-        'propertyInfo.assignedTo': 0,
-        'vendorInfo.assignedProperties': 0,
-        'vendorInfo.password': 0,
-        'vendorInfo.referralCode': 0,
-        'vendorInfo.role': 0,
-        'vendorInfo.favorites': 0,
-        'vendorInfo.activated': 0,
-        'vendorInfo.phone': 0,
-        'vendorInfo.notifications': 0,
-        'userInfo.assignedProperties': 0,
-        'userInfo.password': 0,
-        'userInfo.referralCode': 0,
-        'userInfo.role': 0,
-        'userInfo.favorites': 0,
-        'userInfo.activated': 0,
-        'userInfo.phone': 0,
-        'userInfo.notifications': 0,
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO('userInfo'),
       },
     },
   ]);
@@ -525,12 +501,7 @@ export const getAllUserOffers = async (user, accounId, page = 1, limit = 10) => 
       },
     },
     {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-        'userInfo.assignedProperties': 0,
-        'userInfo.password': 0,
-        'userInfo.referralCode': 0,
-      },
+      $project: NON_PROJECTED_USER_INFO('userInfo'),
     },
   ];
 
