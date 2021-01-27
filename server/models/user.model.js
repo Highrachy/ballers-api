@@ -81,6 +81,15 @@ const vendorInfoSchema = {
   },
 };
 
+const changedEntry = {
+  old: {
+    type: String,
+  },
+  new: {
+    type: String,
+  },
+};
+
 const UserSchema = new mongoose.Schema(
   {
     activated: {
@@ -281,78 +290,13 @@ const UserSchema = new mongoose.Schema(
       },
       logs: [
         {
-          bankInfo: {
-            old: {
-              accountName: {
-                type: String,
-              },
-              accountNumber: {
-                type: String,
-              },
-              bankName: {
-                type: String,
-              },
-            },
-            new: {
-              accountName: {
-                type: String,
-              },
-              accountNumber: {
-                type: String,
-              },
-              bankName: {
-                type: String,
-              },
-            },
-          },
-          companyName: {
-            old: {
-              type: String,
-            },
-            new: {
-              type: String,
-            },
-          },
-          entity: {
-            old: {
-              type: String,
-            },
-            new: {
-              type: String,
-            },
-          },
-          identification: {
-            old: {
-              type: String,
-            },
-            new: {
-              type: String,
-            },
-          },
-          phone: {
-            old: {
-              type: String,
-            },
-            new: {
-              type: String,
-            },
-          },
-          redanNumber: {
-            old: {
-              type: String,
-            },
-            new: {
-              type: String,
-            },
-          },
-          taxCertificate: {
-            old: {
-              type: String,
-            },
-            new: {
-              type: String,
-            },
-          },
+          bankInfo: changedEntry,
+          companyName: changedEntry,
+          entity: changedEntry,
+          identification: changedEntry,
+          phone: changedEntry,
+          redanNumber: changedEntry,
+          taxCertificate: changedEntry,
           updatedAt: Date,
         },
       ],
