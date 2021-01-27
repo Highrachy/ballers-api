@@ -388,7 +388,7 @@ describe('Offer Service', () => {
 
     context('when offer exists', () => {
       it('returns a valid offer', async () => {
-        const gottenOffer = await getOffer(offer._id);
+        const gottenOffer = await getOffer(offer._id, vendor);
         expect(gottenOffer[0]._id).to.eql(offer._id);
         expect(gottenOffer[0].propertyId).to.eql(property._id);
         expect(gottenOffer[0].enquiryId).to.eql(enquiry._id);
@@ -406,7 +406,7 @@ describe('Offer Service', () => {
     context('when an invalid id is used', () => {
       it('returns an error', async () => {
         const invalidOfferId = mongoose.Types.ObjectId();
-        const gottenOffer = await getOffer(invalidOfferId);
+        const gottenOffer = await getOffer(invalidOfferId, vendor);
         expect(gottenOffer.length).to.eql(0);
       });
     });

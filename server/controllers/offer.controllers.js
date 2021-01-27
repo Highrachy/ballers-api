@@ -81,7 +81,8 @@ const OfferController = {
 
   getOne(req, res, next) {
     const offerId = req.params.id;
-    getOffer(offerId)
+    const { user } = req;
+    getOffer(offerId, user)
       .then((offer) => {
         if (offer.length > 0) {
           res.status(httpStatus.OK).json({ success: true, offer: offer[0] });

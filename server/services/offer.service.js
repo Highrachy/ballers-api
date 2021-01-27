@@ -169,8 +169,8 @@ export const getActiveOffers = async (userId) =>
     },
   ]);
 
-export const getOffer = async (offerId) =>
-  Offer.aggregate([
+export const getOffer = async (offerId, user = { role: USER_ROLE.ADMIN }) => {
+  const offerOptions = [
     { $match: { _id: ObjectId(offerId) } },
     {
       $lookup: {
@@ -230,7 +230,18 @@ export const getOffer = async (offerId) =>
         ...NON_PROJECTED_USER_INFO('userInfo'),
       },
     },
-  ]);
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    offerOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  } else if (user.role === USER_ROLE.USER) {
+    offerOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+  }
+
+  const offer = await Offer.aggregate(offerOptions);
+
+  return offer;
+};
 
 export const createOffer = async (offer) => {
   const enquiry = await getEnquiryById(offer.enquiryId).catch((error) => {
@@ -507,6 +518,10 @@ export const getAllUserOffers = async (user, accounId, page = 1, limit = 10) => 
 
   if (user.role === USER_ROLE.VENDOR) {
     offerOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  }
+
+  if (user.role === USER_ROLE.USER && user._id.toString() !== accounId.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
   const offers = await Offer.aggregate(offerOptions);

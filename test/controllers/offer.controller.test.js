@@ -1638,21 +1638,18 @@ describe('Offer Controller', () => {
         await Offer.insertMany([...vendorOffers, ...vendor2Offers]);
       });
 
-      itReturnsTheRightPaginationValue({
-        endpoint,
-        method,
-        user: adminUser,
-        useExistingUser: true,
+      context('when no offers exists in db', () => {
+        [adminUser, regularUser].map((user) =>
+          itReturnsTheRightPaginationValue({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
       });
 
       itReturnsForbiddenForNoToken({ endpoint, method });
-
-      itReturnsForbiddenForTokenWithInvalidAccess({
-        endpoint,
-        method,
-        user: regularUser,
-        useExistingUser: true,
-      });
 
       context('when vendor token is sent', () => {
         it('returns 10 offers', (done) => {
