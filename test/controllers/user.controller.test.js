@@ -1402,7 +1402,7 @@ describe('User Controller', () => {
               status: VENDOR_INFO_STATUS.VERIFIED,
             },
           },
-          updatedFields: ['phone', 'taxCertificate'],
+          logs: ['phone', 'taxCertificate'],
         },
       });
       const invalidUserId = mongoose.Types.ObjectId();
@@ -1428,7 +1428,6 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Vendor verified');
               expect(res.body.vendor.vendor.verified).to.be.eql(true);
               expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminUser._id.toString());
-              expect(res.body.vendor.vendor.updatedFields).to.be.eql([]);
               done();
             });
         });
@@ -2109,7 +2108,7 @@ describe('User Controller', () => {
       });
     });
 
-    describe('Update vendor info', () => {
+    describe.only('Update vendor info', () => {
       let vendorToken;
       const vendorUser = UserFactory.build(
         {
@@ -2166,15 +2165,11 @@ describe('User Controller', () => {
         },
       };
 
-      const updatedFields = [
-        'bankInfo',
-        'companyName',
-        'entity',
-        'identification',
-        'phone',
-        'redanNumber',
-        'taxCertificate',
-      ];
+      // const updatedFields = Object.keys({ ...sensitiveData, ...sensitiveData.vendor })
+      //   .filter((key) => {
+      //     return key !== 'vendor';
+      //   })
+      //   .sort();
 
       const nonSensitiveData = {
         phone2: '12345678901',
@@ -2217,7 +2212,7 @@ describe('User Controller', () => {
         expect(res.body.user.vendor.verification.companyInfo.status).to.be.eql('In Review');
         expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql('In Review');
         expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('Pending');
-        expect(res.body.user.vendor.updatedFields).to.be.eql(updatedFields);
+        // expect(res.body.user.vendor.logs).to.be.eql(logs);
         expect(res.body.user.vendor.verified).to.be.eql(false);
       };
 
@@ -2239,7 +2234,6 @@ describe('User Controller', () => {
         expect(res.body.user.vendor.verification.companyInfo.status).to.be.eql('In Review');
         expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('In Review');
         expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql('Pending');
-        expect(res.body.user.vendor.updatedFields).to.be.eql([]);
       };
 
       beforeEach(async () => {

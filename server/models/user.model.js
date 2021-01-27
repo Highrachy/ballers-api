@@ -279,9 +279,83 @@ const UserSchema = new mongoose.Schema(
         documentUpload: vendorInfoSchema,
         directorInfo: vendorInfoSchema,
       },
-      updatedFields: {
-        type: [String],
-      },
+      logs: [
+        {
+          bankInfo: {
+            old: {
+              accountName: {
+                type: String,
+              },
+              accountNumber: {
+                type: String,
+              },
+              bankName: {
+                type: String,
+              },
+            },
+            new: {
+              accountName: {
+                type: String,
+              },
+              accountNumber: {
+                type: String,
+              },
+              bankName: {
+                type: String,
+              },
+            },
+          },
+          companyName: {
+            old: {
+              type: String,
+            },
+            new: {
+              type: String,
+            },
+          },
+          entity: {
+            old: {
+              type: String,
+            },
+            new: {
+              type: String,
+            },
+          },
+          identification: {
+            old: {
+              type: String,
+            },
+            new: {
+              type: String,
+            },
+          },
+          phone: {
+            old: {
+              type: String,
+            },
+            new: {
+              type: String,
+            },
+          },
+          redanNumber: {
+            old: {
+              type: String,
+            },
+            new: {
+              type: String,
+            },
+          },
+          taxCertificate: {
+            old: {
+              type: String,
+            },
+            new: {
+              type: String,
+            },
+          },
+          updatedAt: Date,
+        },
+      ],
     },
   },
   { timestamps: true },

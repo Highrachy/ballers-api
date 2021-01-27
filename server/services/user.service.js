@@ -476,7 +476,6 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
           'vendor.verified': true,
           'vendor.verifiedBy': adminId,
           'vendor.verifiedOn': getTodaysDateStandard(),
-          'vendor.updatedFields': [],
         },
       },
       { new: true, fields: '-password' },
@@ -552,10 +551,11 @@ const containsSensitiveInfo = (user) => {
   ];
 
   const updatedVendorInfo = Object.keys({ ...user, ...user.vendor });
+  const logs = sensitive.filter((element) => updatedVendorInfo.includes(element));
 
   return {
-    status: sensitive.some((info) => updatedVendorInfo.includes(info)),
-    updatedFields: sensitive.filter((element) => updatedVendorInfo.includes(element)),
+    status: logs.length > 0,
+    logs,
   };
 };
 
@@ -578,16 +578,60 @@ export const updateVendor = async ({ updatedVendor, user }) => {
     Array.prototype.push.apply(updatedVendor.vendor.socialMedia, user.vendor.socialMedia);
   }
 
+  const sensitiveInfo = containsSensitiveInfo(updatedVendor);
+
+  const logs = [
+    {
+      bankInfo: {
+        old: {
+          accountName: user.vendor.bankInfo ? user.vendor.bankInfo.accountName : 'NA',
+          accountNumber: user.vendor.bankInfo ? user.vendor.bankInfo.accountNumber : 'NA',
+          bankName: user.vendor.bankInfo ? user.vendor.bankInfo.bankName : 'NA',
+        },
+        new: {
+          accountName: updatedVendor.vendor.bankInfo
+            ? updatedVendor.vendor.bankInfo.accountName
+            : 'NA',
+          accountNumber: updatedVendor.vendor.bankInfo
+            ? updatedVendor.vendor.bankInfo.accountNumber
+            : 'NA',
+          bankName: updatedVendor.vendor.bankInfo ? updatedVendor.vendor.bankInfo.bankName : 'NA',
+        },
+      },
+      companyName: {
+        old: user.vendor.companyName || 'NA',
+        new: updatedVendor.vendor.companyName || 'NA',
+      },
+      entity: {
+        old: user.vendor.entity || 'NA',
+        new: updatedVendor.vendor.entity || 'NA',
+      },
+      identification: {
+        old: user.vendor.identification || 'NA',
+        new: updatedVendor.vendor.identification || 'NA',
+      },
+      phone: {
+        old: user.phone || 'NA',
+        new: updatedVendor.phone || 'NA',
+      },
+      redanNumber: {
+        old: user.vendor.redanNumber || 'NA',
+        new: updatedVendor.vendor.redanNumber || 'NA',
+      },
+      taxCertificate: {
+        old: user.vendor.taxCertificate || 'NA',
+        new: updatedVendor.vendor.taxCertificate || 'NA',
+      },
+      updatedAt: getTodaysDateStandard(),
+    },
+    ...user.vendor.logs,
+  ];
+
   const vendor = {
     ...user.vendor,
     ...updatedVendor.vendor,
-    verified: containsSensitiveInfo(updatedVendor).status ? false : user.vendor.verified,
-    updatedFields: Array.from(
-      new Set([
-        ...user.vendor.updatedFields,
-        ...containsSensitiveInfo(updatedVendor).updatedFields,
-      ]),
-    ),
+    verified: sensitiveInfo.status ? false : user.vendor.verified,
+    logs,
   };
 
   vendor.verification = { ...vendor.verification, ...stepToReview.verification };
