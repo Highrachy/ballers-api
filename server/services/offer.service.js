@@ -39,9 +39,9 @@ export const generateReferenceCode = async (propertyId) => {
   return referenceCode;
 };
 
-export const getAllOffers = async (accounId, page = 1, limit = 10) => {
+export const getAllOffers = async (accountId, page = 1, limit = 10) => {
   let accountType;
-  const user = await getUserById(accounId);
+  const user = await getUserById(accountId);
 
   if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.ADMIN) {
     accountType = {
@@ -169,8 +169,8 @@ export const getActiveOffers = async (userId) =>
     },
   ]);
 
-export const getOffer = async (offerId) =>
-  Offer.aggregate([
+export const getOffer = async (offerId, user) => {
+  const offerOptions = [
     { $match: { _id: ObjectId(offerId) } },
     {
       $lookup: {
@@ -230,7 +230,18 @@ export const getOffer = async (offerId) =>
         ...NON_PROJECTED_USER_INFO('userInfo'),
       },
     },
-  ]);
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    offerOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  } else if (user.role === USER_ROLE.USER) {
+    offerOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+  }
+
+  const offer = await Offer.aggregate(offerOptions);
+
+  return offer;
+};
 
 export const createOffer = async (offer) => {
   const enquiry = await getEnquiryById(offer.enquiryId).catch((error) => {
@@ -269,7 +280,7 @@ export const createOffer = async (offer) => {
       referenceCode,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, vendor });
-    const offerInfo = await getOffer(newOffer._id);
+    const offerInfo = await getOffer(newOffer._id, user);
     return { ...offerInfo[0], userInfo };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error creating offer', error);
@@ -277,11 +288,11 @@ export const createOffer = async (offer) => {
 };
 
 export const acceptOffer = async (offerToAccept) => {
-  const offer = await getOffer(offerToAccept.offerId).catch((error) => {
+  const offer = await getOffer(offerToAccept.offerId, offerToAccept.user).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (offer[0].userId.toString() !== offerToAccept.userId.toString()) {
+  if (offer[0].userId.toString() !== offerToAccept.user._id.toString()) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
       'You cannot accept offer of another user',
@@ -320,13 +331,13 @@ export const acceptOffer = async (offerToAccept) => {
       },
       { new: true },
     );
-    return await getOffer(offerToAccept.offerId);
+    return await getOffer(offerToAccept.offerId, offerToAccept.user);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error accepting offer', error);
   }
 };
 
-export const assignOffer = async (offerId) => {
+export const assignOffer = async (offerId, user) => {
   const offer = await getOfferById(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -346,7 +357,7 @@ export const assignOffer = async (offerId) => {
       },
       { new: true },
     );
-    return await getOffer(offerId);
+    return await getOffer(offerId, user);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning offer', error);
   }
@@ -407,7 +418,7 @@ export const raiseConcern = async (concern) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (offer.userId.toString() !== concern.userId.toString()) {
+  if (offer.userId.toString() !== concern.user._id.toString()) {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
@@ -425,7 +436,7 @@ export const raiseConcern = async (concern) => {
       },
       { new: true, safe: true, upsert: true },
     );
-    return await getOffer(concern.offerId);
+    return await getOffer(concern.offerId, concern.user);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error raising concern', error);
   }
@@ -436,7 +447,7 @@ export const resolveConcern = async (concern) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (offer.vendorId.toString() !== concern.vendorId.toString()) {
+  if (offer.vendorId.toString() !== concern.vendor._id.toString()) {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
@@ -452,15 +463,15 @@ export const resolveConcern = async (concern) => {
       },
       { new: true },
     );
-    return await getOffer(concern.offerId);
+    return await getOffer(concern.offerId, concern.vendor);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving concern', error);
   }
 };
 
-export const getAllUserOffers = async (user, accounId, page = 1, limit = 10) => {
+export const getAllUserOffers = async (user, accountId, page = 1, limit = 10) => {
   const offerOptions = [
-    { $match: { userId: ObjectId(accounId) } },
+    { $match: { userId: ObjectId(accountId) } },
     {
       $lookup: {
         from: 'users',
@@ -507,6 +518,10 @@ export const getAllUserOffers = async (user, accounId, page = 1, limit = 10) => 
 
   if (user.role === USER_ROLE.VENDOR) {
     offerOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  }
+
+  if (user.role === USER_ROLE.USER && user._id.toString() !== accountId.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
   const offers = await Offer.aggregate(offerOptions);

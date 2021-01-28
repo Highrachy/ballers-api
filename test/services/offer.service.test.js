@@ -388,7 +388,7 @@ describe('Offer Service', () => {
 
     context('when offer exists', () => {
       it('returns a valid offer', async () => {
-        const gottenOffer = await getOffer(offer._id);
+        const gottenOffer = await getOffer(offer._id, vendor);
         expect(gottenOffer[0]._id).to.eql(offer._id);
         expect(gottenOffer[0].propertyId).to.eql(property._id);
         expect(gottenOffer[0].enquiryId).to.eql(enquiry._id);
@@ -406,7 +406,7 @@ describe('Offer Service', () => {
     context('when an invalid id is used', () => {
       it('returns an error', async () => {
         const invalidOfferId = mongoose.Types.ObjectId();
-        const gottenOffer = await getOffer(invalidOfferId);
+        const gottenOffer = await getOffer(invalidOfferId, vendor);
         expect(gottenOffer.length).to.eql(0);
       });
     });
@@ -450,12 +450,12 @@ describe('Offer Service', () => {
     const toAcceptValid = {
       offerId: offer1._id,
       signature: 'http://www.ballers.ng/signature.png',
-      userId: user1._id,
+      user: user1,
     };
     const toAcceptInvalid = {
       offerId: offer2._id,
       signature: 'http://www.ballers.ng/signature.png',
-      userId: user2._id,
+      user: user2,
     };
 
     beforeEach(async () => {
@@ -513,7 +513,7 @@ describe('Offer Service', () => {
 
     context('when all is valid', () => {
       it('returns a valid assigned offer', async () => {
-        const assignedOffer = await assignOffer(offer._id);
+        const assignedOffer = await assignOffer(offer._id, vendor);
         expect(assignedOffer[0].status).to.eql('Assigned');
       });
     });
@@ -522,7 +522,7 @@ describe('Offer Service', () => {
       it('throws an error', async () => {
         sinon.stub(Offer, 'findById').throws(new Error('error msg'));
         try {
-          await assignOffer(offer._id);
+          await assignOffer(offer._id, vendor);
         } catch (err) {
           expect(err.statusCode).to.eql(500);
           expect(err.error).to.be.an('Error');

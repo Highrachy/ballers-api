@@ -5,7 +5,6 @@ import {
   isVendor,
   hasValidObjectId,
   isAdminOrUserOrVendor,
-  isVendorOrAdmin,
 } from '../helpers/middleware';
 import {
   createOfferSchema,
@@ -244,7 +243,7 @@ router.get('/all', authenticate, isAdminOrUserOrVendor, OfferController.getAllOf
 router.get(
   '/user/:id',
   authenticate,
-  isVendorOrAdmin,
+  isAdminOrUserOrVendor,
   hasValidObjectId,
   OfferController.getAllUserOffers,
 );
@@ -291,6 +290,6 @@ router.get('/active', authenticate, OfferController.getAllActive);
  *        '500':
  *          description: Internal server error
  */
-router.get('/:id', authenticate, hasValidObjectId, OfferController.getOne);
+router.get('/:id', authenticate, isAdminOrUserOrVendor, hasValidObjectId, OfferController.getOne);
 
 module.exports = router;

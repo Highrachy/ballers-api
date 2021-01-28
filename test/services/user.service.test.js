@@ -879,7 +879,7 @@ describe('User Service', () => {
         await addEnquiry(enquiry);
         await createOffer(offer);
         await acceptOffer({
-          userId: user._id,
+          user,
           offerId: offer._id,
           signature: 'https://ballers.ng/signature.png',
         });

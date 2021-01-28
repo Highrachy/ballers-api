@@ -1120,6 +1120,7 @@ describe('Offer Controller', () => {
             offerId: offer._id,
             userId: regularUser._id,
             question: 'Can you send me the house plan',
+            user: regularUser,
           };
           beforeEach(async () => {
             await raiseConcern(firstConcern);
@@ -1491,6 +1492,11 @@ describe('Offer Controller', () => {
               expect(res.body.pagination.total).to.be.eql(26);
               expect(res.body.pagination.offset).to.be.eql(0);
               expect(res.body.result.length).to.be.eql(10);
+              expect(res.body.result[0]._id).to.be.eql(userOffers[0]._id.toString());
+              expect(res.body.result[0].enquiryId).to.be.eql(userEnquiries[0]._id._id.toString());
+              expect(res.body.result[0].propertyId).to.be.eql(userProperties[0]._id._id.toString());
+              expect(res.body.result[0].vendorId).to.be.eql(vendorUser._id._id.toString());
+              expect(res.body.result[0].userId).to.be.eql(regularUser._id._id.toString());
               done();
             });
         });
@@ -1638,21 +1644,18 @@ describe('Offer Controller', () => {
         await Offer.insertMany([...vendorOffers, ...vendor2Offers]);
       });
 
-      itReturnsTheRightPaginationValue({
-        endpoint,
-        method,
-        user: adminUser,
-        useExistingUser: true,
+      context('when no offers exists in db', () => {
+        [adminUser, regularUser].map((user) =>
+          itReturnsTheRightPaginationValue({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
       });
 
       itReturnsForbiddenForNoToken({ endpoint, method });
-
-      itReturnsForbiddenForTokenWithInvalidAccess({
-        endpoint,
-        method,
-        user: regularUser,
-        useExistingUser: true,
-      });
 
       context('when vendor token is sent', () => {
         it('returns 10 offers', (done) => {

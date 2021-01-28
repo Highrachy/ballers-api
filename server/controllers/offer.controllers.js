@@ -36,16 +36,16 @@ const OfferController = {
 
   accept(req, res, next) {
     const offerInfo = req.locals;
-    const userId = req.user._id;
-    acceptOffer({ ...offerInfo, userId })
+    const { user } = req;
+    acceptOffer({ ...offerInfo, user })
       .then((offer) => {
         const offerResponse = offer[0];
         const vendor = offerResponse.vendorInfo;
         vendor.firstName = `${vendor.firstName}'s team`;
-        const user = offerResponse.userInfo;
+        const { userInfo } = offerResponse;
         const contentTop = `Note that your offer to ${offerResponse.enquiryInfo.lastName} ${offerResponse.enquiryInfo.firstName} on ${offerResponse.propertyInfo.name} has been accepted. Check your dashboard for more details.`;
         sendMail(EMAIL_CONTENT.OFFER_RESPONSE_VENDOR, vendor, { contentTop });
-        sendMail(EMAIL_CONTENT.OFFER_RESPONSE_USER, user, {});
+        sendMail(EMAIL_CONTENT.OFFER_RESPONSE_USER, userInfo, {});
 
         offerResponse.vendorId = null;
         offerResponse.vendorInfo = null;
@@ -60,7 +60,8 @@ const OfferController = {
 
   assign(req, res, next) {
     const { offerId } = req.locals;
-    assignOffer(offerId)
+    const vendor = req.user;
+    assignOffer(offerId, vendor)
       .then((offer) => {
         res
           .status(httpStatus.OK)
@@ -81,7 +82,8 @@ const OfferController = {
 
   getOne(req, res, next) {
     const offerId = req.params.id;
-    getOffer(offerId)
+    const { user } = req;
+    getOffer(offerId, user)
       .then((offer) => {
         if (offer.length > 0) {
           res.status(httpStatus.OK).json({ success: true, offer: offer[0] });
@@ -132,8 +134,8 @@ const OfferController = {
 
   raiseConcern(req, res, next) {
     const concern = req.locals;
-    const userId = req.user._id;
-    raiseConcern({ ...concern, userId })
+    const { user } = req;
+    raiseConcern({ ...concern, user })
       .then((offer) => {
         const offerResponse = offer[0];
         const vendor = offerResponse.vendorInfo;
@@ -149,8 +151,8 @@ const OfferController = {
 
   resolveConcern(req, res, next) {
     const concern = req.locals;
-    const vendorId = req.user._id;
-    resolveConcern({ ...concern, vendorId })
+    const vendor = req.user;
+    resolveConcern({ ...concern, vendor })
       .then((offer) => {
         const offerResponse = offer[0];
         const user = offerResponse.userInfo;
