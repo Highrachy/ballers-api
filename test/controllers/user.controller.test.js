@@ -1164,7 +1164,7 @@ describe('User Controller', () => {
           await createOffer(offer);
           await addTransaction(transaction);
           await acceptOffer({
-            userId: regularUser._id,
+            user: regularUser,
             offerId: offer._id,
             signature: 'https://ballers.ng/signature.png',
           });

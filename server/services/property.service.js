@@ -251,11 +251,11 @@ export const getTotalAmountPaidForProperty = async (offerId) =>
     },
   ]);
 
-export const getAssignedPropertyByOfferId = async (offerId) => {
+export const getAssignedPropertyByOfferId = async (offerId, user) => {
   const total = await getTotalAmountPaidForProperty(offerId);
   const totalPaid = total.length > 0 ? total[0].totalAmountContributed : 0;
 
-  const offer = await getOffer(offerId);
+  const offer = await getOffer(offerId, user);
 
   return {
     totalPaid,
