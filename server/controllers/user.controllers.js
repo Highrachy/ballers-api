@@ -14,7 +14,6 @@ import {
   upgradeUserToEditor,
   downgradeEditorToUser,
   verifyVendorStep,
-  getAllVendors,
   updateVendor,
   addCommentToVerificationStep,
   verifyVendor,
@@ -134,8 +133,8 @@ const UserController = {
   },
 
   getAllRegisteredUsers(req, res, next) {
-    const { page, limit } = req.query;
-    getAllRegisteredUsers(page, limit)
+    const { page, limit, role } = req.query;
+    getAllRegisteredUsers({ page, limit, role })
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,
@@ -198,19 +197,6 @@ const UserController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Content Editor is now a User', user });
-      })
-      .catch((error) => next(error));
-  },
-
-  getAllVendors(req, res, next) {
-    const { page, limit } = req.query;
-    getAllVendors(page, limit)
-      .then(({ pagination, result }) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          pagination,
-          result,
-        });
       })
       .catch((error) => next(error));
   },

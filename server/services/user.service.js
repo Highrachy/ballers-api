@@ -261,16 +261,9 @@ export const updateUser = async (updatedUser) => {
   }
 };
 
-export const getAllRegisteredUsers = async (page = 1, limit = 10) => {
-  const users = await User.aggregate([
-    {
-      $lookup: {
-        from: 'properties',
-        localField: '_id',
-        foreignField: 'assignedTo',
-        as: 'assignedProperties',
-      },
-    },
+export const getAllRegisteredUsers = async ({ page = 1, limit = 10, role }) => {
+  const userOptions = [
+    { $match: { role: role ? parseInt(role, 10) : { $exists: true } } },
     {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
@@ -278,7 +271,24 @@ export const getAllRegisteredUsers = async (page = 1, limit = 10) => {
       },
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },
-  ]);
+  ];
+
+  if (role === USER_ROLE.VENDOR.toString()) {
+    userOptions.unshift({ $sort: { 'vendor.verified': 1, 'vendor.companyName': 1 } });
+  }
+
+  if (role === USER_ROLE.USER.toString()) {
+    userOptions.unshift({
+      $lookup: {
+        from: 'properties',
+        localField: '_id',
+        foreignField: 'assignedTo',
+        as: 'assignedProperties',
+      },
+    });
+  }
+
+  const users = await User.aggregate(userOptions);
   const total = getPaginationTotal(users);
   const pagination = generatePagination(page, limit, total);
   const result = users[0].data;
@@ -361,24 +371,6 @@ export const downgradeEditorToUser = async (userId) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error downgrading user', error);
   }
-};
-
-export const getAllVendors = async (page = 1, limit = 10) => {
-  const vendors = await User.aggregate([
-    { $match: { role: USER_ROLE.VENDOR } },
-    { $sort: { 'vendor.verified': 1, 'vendor.companyName': 1 } },
-    {
-      $facet: {
-        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
-        data: generateFacetData(page, limit),
-      },
-    },
-    { $project: { preferences: 0, password: 0, notifications: 0 } },
-  ]);
-  const total = getPaginationTotal(vendors);
-  const pagination = generatePagination(page, limit, total);
-  const result = vendors[0].data;
-  return { pagination, result };
 };
 
 export const verifyVendorStep = async ({ vendorId, adminId, step }) => {

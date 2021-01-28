@@ -23,6 +23,7 @@ import {
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
   itReturnsNotFoundForInvalidToken,
+  expectsPaginationToReturnTheRightValues,
 } from '../helpers';
 import {
   USER_ROLE,
@@ -3079,11 +3080,12 @@ describe('User Controller', () => {
 
   describe('Get all users', () => {
     const endpoint = '/api/v1/user/all';
-    const dummyUsers = UserFactory.buildList(17);
+    const dummyUsers = UserFactory.buildList(10, { role: USER_ROLE.USER });
+    const dummyVendors = UserFactory.buildList(7, { role: USER_ROLE.VENDOR });
     const method = 'get';
 
     beforeEach(async () => {
-      await User.insertMany(dummyUsers);
+      await User.insertMany([...dummyUsers, ...dummyVendors]);
     });
 
     describe('User pagination', () => {
@@ -3104,36 +3106,27 @@ describe('User Controller', () => {
         userId: adminUser._id,
       });
     });
-  });
 
-  describe('Get all vendors', () => {
-    const endpoint = '/api/v1/user/vendor/all';
-    const method = 'get';
-    const dummyVendors = UserFactory.buildList(18, {
-      vendor: { companyName: 'Google', verified: false },
-      role: USER_ROLE.VENDOR,
-    });
-
-    beforeEach(async () => {
-      await User.insertMany(dummyVendors);
-    });
-
-    describe('Vendor pagination', () => {
-      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
-      itReturnsForbiddenForNoToken({ endpoint, method });
-      itReturnsAnErrorWhenServiceFails({
-        endpoint,
-        method,
-        user: adminUser,
-        model: User,
-        modelMethod: 'aggregate',
+    context('when role for vendor is passed', () => {
+      beforeEach(async () => {
+        adminToken = await addUser(adminUser);
       });
-      itReturnsNotFoundForInvalidToken({
-        endpoint,
-        method,
-        user: adminUser,
-        userId: adminUser._id,
+      it('returns all vendors', (done) => {
+        request()
+          [method](`${endpoint}?role=2`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expectsPaginationToReturnTheRightValues(res, {
+              currentPage: 1,
+              limit: 10,
+              offset: 0,
+              result: 7,
+              total: 7,
+              totalPage: 1,
+            });
+            expect(res.body.result[0].role).to.be.eql(USER_ROLE.VENDOR);
+            done();
+          });
       });
     });
   });
