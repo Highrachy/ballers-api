@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
-import { addUser, banUser } from '../../server/services/user.service';
+import { addUser, banUser, generateLog } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
@@ -31,6 +31,7 @@ import {
   COMMENT_STATUS,
 } from '../../server/helpers/constants';
 import AddressFactory from '../factories/address.factory';
+import VendorFactory from '../factories/vendor.factory';
 
 useDatabase();
 
@@ -2116,27 +2117,7 @@ describe('User Controller', () => {
           phone: '08012345678',
           phone2: '09012345678',
           address: AddressFactory.build(),
-          vendor: {
-            companyName: 'Highrachy Investment Limited',
-            verified: true,
-            directors: [
-              {
-                name: 'Jane Doe',
-                isSignatory: false,
-                phone: '08012345678',
-              },
-            ],
-            identification: {
-              url: 'https://ballers.ng/tax-filing.png',
-              type: 'Tax filing',
-            },
-            socialMedia: [
-              {
-                name: 'Instagram',
-                url: 'https://instagram.com/highrachy',
-              },
-            ],
-          },
+          vendor: VendorFactory.build(),
         },
         { generateId: true },
       );
@@ -2163,6 +2144,20 @@ describe('User Controller', () => {
           taxCertificate: 'tax-certificate',
         },
       };
+
+      const updatedFields = Object.keys({ ...sensitiveData, ...sensitiveData.vendor })
+        .filter((key) => {
+          return key !== 'vendor';
+        })
+        .sort();
+
+      const logs = [
+        generateLog({
+          updatedFields,
+          updatedVendor: sensitiveData,
+          user: vendorUser,
+        }),
+      ];
 
       const nonSensitiveData = {
         phone2: '12345678901',
@@ -2205,6 +2200,10 @@ describe('User Controller', () => {
         expect(res.body.user.vendor.verification.companyInfo.status).to.be.eql('In Review');
         expect(res.body.user.vendor.verification.documentUpload.status).to.be.eql('In Review');
         expect(res.body.user.vendor.verification.directorInfo.status).to.be.eql('Pending');
+        expect(res.body.user.vendor.logs[0].bankInfo).to.be.eql(logs[0].bankInfo);
+        expect(res.body.user.vendor.logs[0].taxCertificate).to.be.eql(logs[0].taxCertificate);
+        expect(res.body.user.vendor.logs[0].companyName).to.be.eql(logs[0].companyName);
+        expect(res.body.user.vendor.logs[0].identification).to.be.eql(logs[0].identification);
         expect(res.body.user.vendor.verified).to.be.eql(false);
       };
 
@@ -2241,6 +2240,32 @@ describe('User Controller', () => {
               .send(sensitiveData)
               .end((err, res) => {
                 itReturnsUpdatedVendorForSensitive(res, sensitiveData);
+                expect(res.body.user.vendor.logs.length).to.be.eql(1);
+                done();
+              });
+          });
+        });
+
+        context('when user has existing log', () => {
+          beforeEach(async () => {
+            await User.findByIdAndUpdate(vendorUser._id, { 'vendor.logs': logs });
+          });
+          it('returns updated vendor', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendorToken)
+              .send(sensitiveData)
+              .end((err, res) => {
+                itReturnsUpdatedVendorForSensitive(res, sensitiveData);
+                expect(res.body.user.vendor.logs.length).to.be.eql(2);
+                expect(res.body.user.vendor.logs[1].bankInfo).to.be.eql(logs[0].bankInfo);
+                expect(res.body.user.vendor.logs[1].taxCertificate).to.be.eql(
+                  logs[0].taxCertificate,
+                );
+                expect(res.body.user.vendor.logs[1].companyName).to.be.eql(logs[0].companyName);
+                expect(res.body.user.vendor.logs[1].identification).to.be.eql(
+                  logs[0].identification,
+                );
                 done();
               });
           });
@@ -2274,6 +2299,7 @@ describe('User Controller', () => {
               .send(sensitiveData)
               .end((err, res) => {
                 itReturnsUpdatedVendorForSensitive(res, sensitiveData);
+                expect(res.body.user.vendor.logs.length).to.be.eql(1);
                 done();
               });
           });

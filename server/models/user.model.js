@@ -81,6 +81,15 @@ const vendorInfoSchema = {
   },
 };
 
+const changedEntry = {
+  old: {
+    type: String,
+  },
+  new: {
+    type: String,
+  },
+};
+
 const UserSchema = new mongoose.Schema(
   {
     activated: {
@@ -279,6 +288,18 @@ const UserSchema = new mongoose.Schema(
         documentUpload: vendorInfoSchema,
         directorInfo: vendorInfoSchema,
       },
+      logs: [
+        {
+          bankInfo: changedEntry,
+          companyName: changedEntry,
+          entity: changedEntry,
+          identification: changedEntry,
+          phone: changedEntry,
+          redanNumber: changedEntry,
+          taxCertificate: changedEntry,
+          updatedAt: Date,
+        },
+      ],
     },
   },
   { timestamps: true },

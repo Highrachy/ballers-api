@@ -551,8 +551,30 @@ const containsSensitiveInfo = (user) => {
   ];
 
   const updatedVendorInfo = Object.keys({ ...user, ...user.vendor });
+  const updatedFields = sensitive.filter((element) => updatedVendorInfo.includes(element));
 
-  return sensitive.some((info) => updatedVendorInfo.includes(info));
+  return {
+    status: updatedFields.length > 0,
+    updatedFields,
+  };
+};
+
+export const generateLog = ({ updatedFields, updatedVendor, user }) => {
+  const oldValues = { ...user, ...user.vendor };
+  const newValues = { ...updatedVendor, ...updatedVendor.vendor };
+  const log = [];
+
+  updatedFields.forEach((field) => {
+    log.push({
+      [field]: {
+        old: JSON.stringify(oldValues[field]),
+        new: JSON.stringify(newValues[field]),
+      },
+    });
+  });
+  const updateDate = { updatedAt: getTodaysDateStandard() };
+
+  return Object.assign({}, updateDate, ...log);
 };
 
 export const updateVendor = async ({ updatedVendor, user }) => {
@@ -574,10 +596,21 @@ export const updateVendor = async ({ updatedVendor, user }) => {
     Array.prototype.push.apply(updatedVendor.vendor.socialMedia, user.vendor.socialMedia);
   }
 
+  const { updatedFields, status } = containsSensitiveInfo(updatedVendor);
+
+  const log = generateLog({
+    updatedFields,
+    updatedVendor,
+    user,
+  });
+
+  const logs = [log, ...user.vendor.logs];
+
   const vendor = {
     ...user.vendor,
     ...updatedVendor.vendor,
-    verified: containsSensitiveInfo(updatedVendor) ? false : user.vendor.verified,
+    verified: status ? false : user.vendor.verified,
+    logs,
   };
 
   vendor.verification = { ...vendor.verification, ...stepToReview.verification };
