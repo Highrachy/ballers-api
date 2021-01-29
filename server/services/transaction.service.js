@@ -2,9 +2,13 @@ import mongoose from 'mongoose';
 import Transaction from '../models/transaction.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { OFFER_STATUS } from '../helpers/constants';
+import { OFFER_STATUS, USER_ROLE } from '../helpers/constants';
 import Offer from '../models/offer.model';
 import Referral from '../models/referral.model';
+// eslint-disable-next-line import/no-cycle
+import { getOfferById } from './offer.service';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -13,6 +17,26 @@ export const getTransactionByInfo = async (additionalInfo) =>
   Transaction.findOne({ additionalInfo }).select();
 
 export const addTransaction = async (transaction) => {
+  const offer = await getOfferById(transaction.offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!offer) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offer');
+  }
+
+  if (offer.vendorId.toString() !== transaction.vendorId.toString()) {
+    throw new ErrorHandler(httpStatus.UNAUTHORIZED, 'You are not permitted to perform this action');
+  }
+
+  if (offer.propertyId.toString() !== transaction.propertyId.toString()) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Property not for offer');
+  }
+
+  if (offer.userId.toString() !== transaction.userId.toString()) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User not for offer');
+  }
+
   try {
     const newTransaction = await new Transaction(transaction).save();
     return newTransaction;
@@ -21,10 +45,14 @@ export const addTransaction = async (transaction) => {
   }
 };
 
-export const updateTransaction = async ({ transactionId, paidOn }) => {
+export const updateTransaction = async ({ transactionId, paidOn, vendorId }) => {
   const transaction = await getTransactionById(transactionId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
+  if (transaction.vendorId.toString() !== vendorId.toString()) {
+    throw new ErrorHandler(httpStatus.UNAUTHORIZED, 'You are not permitted to perform this action');
+  }
   try {
     return Transaction.findByIdAndUpdate(transaction.id, { $set: { paidOn } }, { new: true });
   } catch (error) {
@@ -32,8 +60,8 @@ export const updateTransaction = async ({ transactionId, paidOn }) => {
   }
 };
 
-export const getAllTransactions = async () =>
-  Transaction.aggregate([
+export const getAllTransactions = async (user, page = 1, limit = 10) => {
+  const transactionOptions = [
     {
       $lookup: {
         from: 'properties',
@@ -53,9 +81,9 @@ export const getAllTransactions = async () =>
     {
       $lookup: {
         from: 'users',
-        localField: 'adminId',
+        localField: 'vendorId',
         foreignField: '_id',
-        as: 'adminInfo',
+        as: 'vendorInfo',
       },
     },
     {
@@ -66,22 +94,35 @@ export const getAllTransactions = async () =>
     },
     {
       $unwind: {
-        path: '$adminInfo',
+        path: '$vendorInfo',
         preserveNullAndEmptyArrays: true,
       },
     },
     {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-        'userInfo.assignedProperties': 0,
-        'userInfo.password': 0,
-        'userInfo.referralCode': 0,
-        'adminInfo.assignedProperties': 0,
-        'adminInfo.password': 0,
-        'adminInfo.referralCode': 0,
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
       },
     },
-  ]);
+    {
+      $project: {
+        ...NON_PROJECTED_USER_INFO('userInfo'),
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+      },
+    },
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    transactionOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  }
+
+  const transactions = await Transaction.aggregate(transactionOptions);
+
+  const total = getPaginationTotal(transactions);
+  const pagination = generatePagination(page, limit, total);
+  const result = transactions[0].data;
+  return { pagination, result };
+};
 
 export const getTransactionsByUser = async (userId) =>
   Transaction.aggregate([
@@ -104,8 +145,8 @@ export const getTransactionsByUser = async (userId) =>
     },
   ]);
 
-export const getUserTransactionsByProperty = async (propertyId) =>
-  Transaction.aggregate([
+export const getUserTransactionsByProperty = async (propertyId, user) => {
+  const transactionOptions = [
     { $match: { propertyId: ObjectId(propertyId) } },
     {
       $lookup: {
@@ -130,14 +171,18 @@ export const getUserTransactionsByProperty = async (propertyId) =>
       $unwind: '$userInfo',
     },
     {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-        'userInfo.assignedProperties': 0,
-        'userInfo.password': 0,
-        'userInfo.referralCode': 0,
-      },
+      $project: NON_PROJECTED_USER_INFO('userInfo'),
     },
-  ]);
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    transactionOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  }
+
+  const transaction = await Transaction.aggregate(transactionOptions);
+
+  return transaction;
+};
 
 export const getTotalAmountPaidByUser = async (userId) =>
   Transaction.aggregate([

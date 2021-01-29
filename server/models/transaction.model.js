@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
  *        required:
  *          - propertyId
  *          - userId
- *          - adminId
+ *          - vendorId
  *          - offerId
  *          - paymentSource
  *          - amount
@@ -18,7 +18,7 @@ import mongoose from 'mongoose';
  *            type: string
  *          userId:
  *            type: string
- *          adminId:
+ *          vendorId:
  *            type: string
  *          offerId:
  *            type: string
@@ -33,7 +33,7 @@ import mongoose from 'mongoose';
  *        example:
  *           propertyId: 5f22f7f8c790039da1242381
  *           userId: 5f4502b70e3a39175130ad52
- *           adminId: 5f74473ff99c5fdff59a8f16
+ *           vendorId: 5f74473ff99c5fdff59a8f16
  *           offerId: 5f7a453a605ddb721fc26946
  *           paymentSource: bank transfer
  *           amount: 15000000
@@ -46,7 +46,7 @@ const TransactionSchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
-    adminId: {
+    vendorId: {
       type: ObjectId,
     },
     propertyId: {

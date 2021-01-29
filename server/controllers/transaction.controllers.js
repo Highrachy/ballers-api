@@ -13,7 +13,7 @@ const TransactionController = {
   add(req, res, next) {
     const newTransaction = req.locals;
     const { user } = req;
-    addTransaction({ ...newTransaction, adminId: user._id })
+    addTransaction({ ...newTransaction, vendorId: user._id })
       .then((transaction) => {
         res
           .status(httpStatus.CREATED)
@@ -23,16 +23,23 @@ const TransactionController = {
   },
 
   getAll(req, res, next) {
-    getAllTransactions()
-      .then((transactions) => {
-        res.status(httpStatus.OK).json({ success: true, transactions });
+    const { user } = req;
+    const { page, limit } = req.query;
+    getAllTransactions(user, page, limit)
+      .then(({ pagination, result }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          pagination,
+          result,
+        });
       })
       .catch((error) => next(error));
   },
 
   update(req, res, next) {
     const updatedInfo = req.locals;
-    updateTransaction(updatedInfo)
+    const { user } = req;
+    updateTransaction({ ...updatedInfo, vendorId: user._id })
       .then((transaction) => {
         res
           .status(httpStatus.OK)
@@ -52,9 +59,16 @@ const TransactionController = {
 
   getTransactionsByProperty(req, res, next) {
     const propertyId = req.params.id;
-    getUserTransactionsByProperty(propertyId)
+    const { user } = req;
+    getUserTransactionsByProperty(propertyId, user)
       .then((transactions) => {
-        res.status(httpStatus.OK).json({ success: true, transactions });
+        if (transactions.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, transactions });
+        } else {
+          res
+            .status(httpStatus.NOT_FOUND)
+            .json({ success: false, message: 'No transactions attached to property' });
+        }
       })
       .catch((error) => next(error));
   },

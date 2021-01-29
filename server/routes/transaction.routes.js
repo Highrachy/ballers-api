@@ -1,5 +1,11 @@
 import express from 'express';
-import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
+import {
+  authenticate,
+  schemaValidation,
+  isVendorOrAdmin,
+  isVendor,
+  hasValidObjectId,
+} from '../helpers/middleware';
 import { addTransactionSchema, updateTransactionSchema } from '../schemas/transaction.schema';
 import TransactionController from '../controllers/transaction.controllers';
 
@@ -31,7 +37,7 @@ const router = express.Router();
 router.post(
   '/add',
   authenticate,
-  isAdmin,
+  isVendor,
   schemaValidation(addTransactionSchema),
   TransactionController.add,
 );
@@ -57,7 +63,7 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, TransactionController.getAll);
+router.get('/all', authenticate, isVendorOrAdmin, TransactionController.getAll);
 
 /**
  * @swagger
@@ -83,7 +89,7 @@ router.get('/all', authenticate, isAdmin, TransactionController.getAll);
 router.put(
   '/update',
   authenticate,
-  isAdmin,
+  isVendor,
   schemaValidation(updateTransactionSchema),
   TransactionController.update,
 );
@@ -133,7 +139,7 @@ router.get('/user', authenticate, TransactionController.getAllPersonal);
 router.get(
   '/property/:id',
   authenticate,
-  isAdmin,
+  isVendorOrAdmin,
   hasValidObjectId,
   TransactionController.getTransactionsByProperty,
 );

@@ -1872,7 +1872,7 @@ describe('Property Controller', () => {
         propertyId: property1._id,
         offerId: offer1._id,
         userId: regularUser._id,
-        adminId: adminUser._id,
+        vendorId: vendorUser._id,
         amount: 40000,
       },
       { generateId: true },
