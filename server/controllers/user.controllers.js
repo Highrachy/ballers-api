@@ -6,7 +6,7 @@ import {
   resetPasswordViaToken,
   updateUser,
   assignPropertyToUser,
-  getAllRegisteredUsers,
+  getAllUsers,
   getUserInfo,
   addPropertyToFavorites,
   removePropertyFromFavorites,
@@ -132,9 +132,35 @@ const UserController = {
       .catch((error) => next(error));
   },
 
-  getAllRegisteredUsers(req, res, next) {
-    const { page, limit, role } = req.query;
-    getAllRegisteredUsers({ page, limit, role })
+  getAllUsers(req, res, next) {
+    const {
+      page,
+      limit,
+      role,
+      activated,
+      firstName,
+      lastName,
+      email,
+      phone,
+      referralCode,
+      verified,
+      certified,
+      companyName,
+    } = req.query;
+    getAllUsers({
+      page,
+      limit,
+      role,
+      activated,
+      firstName,
+      lastName,
+      email,
+      phone,
+      referralCode,
+      verified,
+      certified,
+      companyName,
+    })
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,

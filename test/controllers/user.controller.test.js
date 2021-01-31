@@ -3080,12 +3080,30 @@ describe('User Controller', () => {
 
   describe('Get all users', () => {
     const endpoint = '/api/v1/user/all';
-    const dummyUsers = UserFactory.buildList(10, { role: USER_ROLE.USER });
-    const dummyVendors = UserFactory.buildList(7, { role: USER_ROLE.VENDOR });
+    const dummyUsers = UserFactory.buildList(10, {
+      role: USER_ROLE.USER,
+      activated: true,
+      referralCode: 'ab1234',
+    });
+    const dummyEditors = UserFactory.buildList(2, {
+      role: USER_ROLE.EDITOR,
+      activated: true,
+      referralCode: 'ab1234',
+    });
+    const dummyVendors = UserFactory.buildList(5, {
+      role: USER_ROLE.VENDOR,
+      activated: true,
+      referralCode: 'ab1234',
+      vendor: {
+        companyName: 'Dangote PLC',
+        verified: true,
+        certified: true,
+      },
+    });
     const method = 'get';
 
     beforeEach(async () => {
-      await User.insertMany([...dummyUsers, ...dummyVendors]);
+      await User.insertMany([...dummyUsers, ...dummyEditors, ...dummyVendors]);
     });
 
     describe('User pagination', () => {
@@ -3113,18 +3131,64 @@ describe('User Controller', () => {
       });
       it('returns all vendors', (done) => {
         request()
-          [method](`${endpoint}?role=2`)
+          [method](`${endpoint}?role=${USER_ROLE.VENDOR}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expectsPaginationToReturnTheRightValues(res, {
               currentPage: 1,
               limit: 10,
               offset: 0,
-              result: 7,
-              total: 7,
+              result: 5,
+              total: 5,
               totalPage: 1,
             });
             expect(res.body.result[0].role).to.be.eql(USER_ROLE.VENDOR);
+            done();
+          });
+      });
+    });
+
+    context('when role for admin is passed', () => {
+      beforeEach(async () => {
+        adminToken = await addUser(adminUser);
+      });
+      it('returns admin', (done) => {
+        request()
+          [method](`${endpoint}?role=${USER_ROLE.ADMIN}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expectsPaginationToReturnTheRightValues(res, {
+              currentPage: 1,
+              limit: 10,
+              offset: 0,
+              result: 1,
+              total: 1,
+              totalPage: 1,
+            });
+            expect(res.body.result[0].role).to.be.eql(USER_ROLE.ADMIN);
+            done();
+          });
+      });
+    });
+
+    context('when role for editor is passed', () => {
+      beforeEach(async () => {
+        adminToken = await addUser(adminUser);
+      });
+      it('returns all editors', (done) => {
+        request()
+          [method](`${endpoint}?role=${USER_ROLE.EDITOR}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expectsPaginationToReturnTheRightValues(res, {
+              currentPage: 1,
+              limit: 10,
+              offset: 0,
+              result: 2,
+              total: 2,
+              totalPage: 1,
+            });
+            expect(res.body.result[0].role).to.be.eql(USER_ROLE.EDITOR);
             done();
           });
       });

@@ -261,9 +261,38 @@ export const updateUser = async (updatedUser) => {
   }
 };
 
-export const getAllRegisteredUsers = async ({ page = 1, limit = 10, role }) => {
+export const getAllUsers = async ({
+  page = 1,
+  limit = 10,
+  role,
+  activated,
+  firstName,
+  lastName,
+  email,
+  phone,
+  referralCode,
+  verified,
+  certified,
+  companyName,
+}) => {
   const userOptions = [
-    { $match: { role: role ? parseInt(role, 10) : { $exists: true } } },
+    {
+      $match: {
+        $and: [
+          { role: role ? parseInt(role, 10) : { $exists: true } },
+          { activated: activated ? activated === 'true' : { $exists: true } },
+          { firstName: firstName ? { $regex: firstName, $options: 'i' } : { $exists: true } },
+          { lastName: lastName ? { $regex: lastName, $options: 'i' } : { $exists: true } },
+          { email: email ? { $regex: email, $options: 'i' } : { $exists: true } },
+          { phone: phone ? { $regex: phone, $options: 'i' } : { $exists: true } },
+          {
+            referralCode: referralCode
+              ? { $regex: referralCode, $options: 'i' }
+              : { $exists: true },
+          },
+        ],
+      },
+    },
     {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
@@ -274,10 +303,20 @@ export const getAllRegisteredUsers = async ({ page = 1, limit = 10, role }) => {
   ];
 
   if (role === USER_ROLE.VENDOR.toString()) {
+    userOptions[0].$match.$and.push(
+      { 'vendor.verified': verified ? verified === 'true' : { $exists: true } },
+      { 'vendor.certified': certified ? certified === 'true' : { $exists: true } },
+      {
+        'vendor.companyName': companyName
+          ? { $regex: companyName, $options: 'i' }
+          : { $exists: true },
+      },
+    );
+
     userOptions.unshift({ $sort: { 'vendor.verified': 1, 'vendor.companyName': 1 } });
   }
 
-  if (role === USER_ROLE.USER.toString()) {
+  if (!role || role !== USER_ROLE.VENDOR.toString()) {
     userOptions.unshift({
       $lookup: {
         from: 'properties',
