@@ -567,7 +567,7 @@ export const generateLog = ({ updatedFields, updatedVendor, user }) => {
   updatedFields.forEach((field) => {
     const oldValue = JSON.stringify(oldValues[field]);
     const newValue = JSON.stringify(newValues[field]);
-    if (oldValue !== newValue) {
+    if (oldValue && oldValue !== newValue) {
       log.push({
         [field]: {
           old: oldValue,
