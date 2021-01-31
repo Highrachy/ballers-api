@@ -565,16 +565,21 @@ export const generateLog = ({ updatedFields, updatedVendor, user }) => {
   const log = [];
 
   updatedFields.forEach((field) => {
-    log.push({
-      [field]: {
-        old: JSON.stringify(oldValues[field]),
-        new: JSON.stringify(newValues[field]),
-      },
-    });
+    const oldValue = JSON.stringify(oldValues[field]);
+    const newValue = JSON.stringify(newValues[field]);
+    if (oldValue !== newValue) {
+      log.push({
+        [field]: {
+          old: oldValue,
+          new: newValue,
+        },
+      });
+    }
   });
+
   const updateDate = { updatedAt: getTodaysDateStandard() };
 
-  return Object.assign({}, updateDate, ...log);
+  return log.length > 0 ? Object.assign({}, updateDate, ...log) : null;
 };
 
 export const updateVendor = async ({ updatedVendor, user }) => {
@@ -604,7 +609,7 @@ export const updateVendor = async ({ updatedVendor, user }) => {
     user,
   });
 
-  const logs = [log, ...user.vendor.logs];
+  const logs = log ? [log, ...user.vendor.logs] : user.vendor.logs;
 
   const vendor = {
     ...user.vendor,
