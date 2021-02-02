@@ -19,6 +19,7 @@ import {
 } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getTodaysDateStandard } from '../helpers/dates';
+import { filterStringKeys, filterIntegerKeys, filterBooleanKeys } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -262,35 +263,20 @@ export const updateUser = async (updatedUser) => {
 };
 
 export const getAllUsers = async ({ page = 1, limit = 10, ...query }) => {
-  const filterQuery = [{ role: query.role ? parseInt(query.role, 10) : { $exists: true } }];
-  const stringKeys = ['firstName', 'lastName', 'email', 'phone', 'referralCode'];
+  const filterQuery = [];
+  const stringKeys = ['firstName', 'lastName', 'email', 'phone', 'phone2', 'referralCode'];
+  const integerKeys = ['role'];
   const booleanKeys = ['activated'];
   const vendorBooleanKeys = ['verified', 'certified'];
-  const vendorStringKeys = ['companyName'];
+  const vendorStringKeys = ['companyName', 'entity', 'redanNumber'];
+  const addressStringkeys = ['city', 'country', 'state', 'street1', 'street2'];
 
-  stringKeys.forEach((key) => {
-    if (query[key]) {
-      filterQuery.push({ [key]: { $regex: query[key], $options: 'i' } });
-    }
-  });
-
-  booleanKeys.forEach((key) => {
-    if (query[key]) {
-      filterQuery.push({ [key]: query[key] === 'true' });
-    }
-  });
-
-  vendorBooleanKeys.forEach((key) => {
-    if (query[key]) {
-      filterQuery.push({ [`vendor.${key}`]: query[key] === 'true' });
-    }
-  });
-
-  vendorStringKeys.forEach((key) => {
-    if (query[key]) {
-      filterQuery.push({ [`vendor.${key}`]: { $regex: query[key], $options: 'i' } });
-    }
-  });
+  filterStringKeys(filterQuery, stringKeys, query);
+  filterStringKeys(filterQuery, vendorStringKeys, query, 'vendor');
+  filterStringKeys(filterQuery, addressStringkeys, query, 'address');
+  filterIntegerKeys(filterQuery, integerKeys, query);
+  filterBooleanKeys(filterQuery, booleanKeys, query);
+  filterBooleanKeys(filterQuery, vendorBooleanKeys, query, 'vendor');
 
   const userOptions = [
     { $match: { $and: filterQuery } },
@@ -303,19 +289,8 @@ export const getAllUsers = async ({ page = 1, limit = 10, ...query }) => {
     { $project: { preferences: 0, password: 0, notifications: 0 } },
   ];
 
-  if (query.role === USER_ROLE.VENDOR.toString()) {
-    userOptions.unshift({ $sort: { 'vendor.verified': 1, 'vendor.companyName': 1 } });
-  }
-
-  if (!query.role || query.role !== USER_ROLE.VENDOR.toString()) {
-    userOptions.unshift({
-      $lookup: {
-        from: 'properties',
-        localField: '_id',
-        foreignField: 'assignedTo',
-        as: 'assignedProperties',
-      },
-    });
+  if (filterQuery.length < 1) {
+    userOptions.shift();
   }
 
   const users = await User.aggregate(userOptions);

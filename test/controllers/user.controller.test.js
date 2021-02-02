@@ -3090,25 +3090,42 @@ describe('User Controller', () => {
       activated: true,
       referralCode: 'ab1234',
     });
-    const dummyVendors = UserFactory.buildList(2, {
+    const dummyVendor1 = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        firstName: 'vendor1',
+        address: {
+          country: 'Ghana',
+        },
+        vendor: {
+          companyName: 'Dangote PLC',
+          verified: true,
+          certified: false,
+        },
+      },
+      { generateId: true },
+    );
+    const dummyVendor2 = UserFactory.build({
       role: USER_ROLE.VENDOR,
       activated: true,
-      referralCode: 'ab1234',
+      address: {
+        country: 'Nigeria',
+      },
       vendor: {
-        companyName: 'Dangote PLC',
+        companyName: 'Google Nigeria',
         verified: true,
         certified: true,
       },
     });
-    const dummyAdmin = UserFactory.build(
-      { role: USER_ROLE.ADMIN, activated: true },
-      { generateId: true },
-    );
+    const dummyAdmin = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
     const method = 'get';
 
     beforeEach(async () => {
-      await User.insertMany([...dummyUsers, ...dummyEditors, ...dummyVendors]);
+      await User.insertMany([...dummyUsers, ...dummyEditors]);
       adminToken = await addUser(dummyAdmin);
+      await addUser(dummyVendor1);
+      await addUser(dummyVendor2);
     });
 
     describe('User pagination', () => {
@@ -3153,6 +3170,27 @@ describe('User Controller', () => {
             });
         }),
       );
+    });
+    context('when multiple filters are used', () => {
+      it('returns matched user', (done) => {
+        request()
+          [method](
+            `${endpoint}?firstName=${dummyVendor1.firstName}&role=${dummyVendor1.role}&activated=${dummyVendor1.activated}&verified=${dummyVendor1.vendor.verified}&companyName=${dummyVendor1.vendor.companyName}&country=${dummyVendor1.address.country}`,
+          )
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expectsPaginationToReturnTheRightValues(res, {
+              currentPage: 1,
+              limit: 10,
+              offset: 0,
+              result: 1,
+              total: 1,
+              totalPage: 1,
+            });
+            expect(res.body.result[0]._id).to.be.eql(dummyVendor1._id.toString());
+            done();
+          });
+      });
     });
   });
 });
