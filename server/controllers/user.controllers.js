@@ -227,6 +227,7 @@ const UserController = {
     const adminId = req.user._id;
     verifyVendor({ vendorId, adminId })
       .then((vendor) => {
+        sendMail(EMAIL_CONTENT.VERIFY_VENDOR, vendor, {});
         res.status(httpStatus.OK).json({ success: true, message: 'Vendor verified', vendor });
       })
       .catch((error) => next(error));
@@ -288,6 +289,7 @@ const UserController = {
     const adminId = req.user._id;
     certifyVendor({ vendorId, adminId })
       .then((vendor) => {
+        sendMail(EMAIL_CONTENT.CERTIFY_VENDOR, vendor, {});
         res.status(httpStatus.OK).json({ success: true, message: 'Vendor certified', vendor });
       })
       .catch((error) => next(error));

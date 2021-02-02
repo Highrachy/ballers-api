@@ -10,6 +10,11 @@ const EMAIL_CONTENT = {
     contentTop:
       'Your account has been locked for security reasons. Kindly contact Ballers Support for more information.',
   },
+  CERTIFY_VENDOR: {
+    subject: 'Account Certified',
+    contentTop:
+      'Congratulaions, you are now a ceritified vendor on BALLers. Visit your dashboard for more information.',
+  },
   CHANGED_PASSWORD: {
     buttonText: 'Reset Password',
     contentBottom:
@@ -68,6 +73,11 @@ const EMAIL_CONTENT = {
     subject: 'Account Unlocked',
     contentTop:
       'Your account has been unlocked, and the issue resolved. Your dashboard is now accessible.',
+  },
+  VERIFY_VENDOR: {
+    subject: 'Account Verified',
+    contentTop:
+      'Congratulaions, your information has been reviewed and your account verified. Your dashboard is now fully accessible.',
   },
   SCHEDULE_VISIT: {
     subject: 'You have a new inspection request',
