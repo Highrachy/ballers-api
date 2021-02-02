@@ -2209,6 +2209,7 @@ describe('User Controller', () => {
         expect(res.body.user.vendor.logs[0].taxCertificate).to.be.eql(logs[0].taxCertificate);
         expect(res.body.user.vendor.logs[0].companyName).to.be.eql(logs[0].companyName);
         expect(res.body.user.vendor.logs[0].identification).to.be.eql(logs[0].identification);
+        expect(res.body.user.vendor.logs[0]).to.have.property('updatedAt');
         expect(res.body.user.vendor.verified).to.be.eql(false);
       };
 

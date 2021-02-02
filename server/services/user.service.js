@@ -18,7 +18,7 @@ import {
   COMMENT_STATUS,
 } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { getTodaysDateStandard } from '../helpers/dates';
+import { getDateWithTimestamp } from '../helpers/dates';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -395,7 +395,7 @@ export const verifyVendorStep = async ({ vendorId, adminId, step }) => {
   const verificationInfo = {
     [`vendor.verification.${step}.status`]: VENDOR_INFO_STATUS.VERIFIED,
     [`vendor.verification.${step}.verifiedBy`]: adminId,
-    [`vendor.verification.${step}.verifiedOn`]: getTodaysDateStandard(),
+    [`vendor.verification.${step}.verifiedOn`]: getDateWithTimestamp(),
   };
   try {
     await User.findByIdAndUpdate(
@@ -475,7 +475,7 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
         $set: {
           'vendor.verified': true,
           'vendor.verifiedBy': adminId,
-          'vendor.verifiedOn': getTodaysDateStandard(),
+          'vendor.verifiedOn': getDateWithTimestamp(),
         },
       },
       { new: true, fields: '-password' },
@@ -577,7 +577,7 @@ export const generateLog = ({ updatedFields, updatedVendor, user }) => {
     }
   });
 
-  const updateDate = { updatedAt: getTodaysDateStandard() };
+  const updateDate = { updatedAt: getDateWithTimestamp() };
 
   return log.length > 0 ? Object.assign({}, updateDate, ...log) : null;
 };
@@ -739,7 +739,7 @@ export const certifyVendor = async ({ vendorId, adminId }) => {
         $set: {
           'vendor.certified': true,
           'vendor.certifiedBy': adminId,
-          'vendor.certifiedOn': getTodaysDateStandard(),
+          'vendor.certifiedOn': getDateWithTimestamp(),
         },
       },
       { new: true, fields: '-password' },
@@ -798,7 +798,7 @@ export const banUser = async ({ adminId, userId, reason }) => {
         $push: {
           'banned.case': {
             bannedBy: adminId,
-            bannedDate: getTodaysDateStandard(),
+            bannedDate: getDateWithTimestamp(),
             bannedReason: reason,
           },
         },
@@ -823,7 +823,7 @@ export const unbanUser = async ({ adminId, userId, caseId, reason }) => {
       {
         $set: {
           'banned.case.$.unBannedBy': adminId,
-          'banned.case.$.unBannedDate': getTodaysDateStandard(),
+          'banned.case.$.unBannedDate': getDateWithTimestamp(),
           'banned.case.$.unBannedReason': reason,
         },
       },
