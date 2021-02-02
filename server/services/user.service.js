@@ -261,38 +261,39 @@ export const updateUser = async (updatedUser) => {
   }
 };
 
-export const getAllUsers = async ({
-  page = 1,
-  limit = 10,
-  role,
-  activated,
-  firstName,
-  lastName,
-  email,
-  phone,
-  referralCode,
-  verified,
-  certified,
-  companyName,
-}) => {
+export const getAllUsers = async ({ page = 1, limit = 10, ...query }) => {
+  const filterQuery = [{ role: query.role ? parseInt(query.role, 10) : { $exists: true } }];
+  const stringKeys = ['firstName', 'lastName', 'email', 'phone', 'referralCode'];
+  const booleanKeys = ['activated'];
+  const vendorBooleanKeys = ['verified', 'certified'];
+  const vendorStringKeys = ['companyName'];
+
+  stringKeys.forEach((key) => {
+    if (query[key]) {
+      filterQuery.push({ [key]: { $regex: query[key], $options: 'i' } });
+    }
+  });
+
+  booleanKeys.forEach((key) => {
+    if (query[key]) {
+      filterQuery.push({ [key]: query[key] === 'true' });
+    }
+  });
+
+  vendorBooleanKeys.forEach((key) => {
+    if (query[key]) {
+      filterQuery.push({ [`vendor.${key}`]: query[key] === 'true' });
+    }
+  });
+
+  vendorStringKeys.forEach((key) => {
+    if (query[key]) {
+      filterQuery.push({ [`vendor.${key}`]: { $regex: query[key], $options: 'i' } });
+    }
+  });
+
   const userOptions = [
-    {
-      $match: {
-        $and: [
-          { role: role ? parseInt(role, 10) : { $exists: true } },
-          { activated: activated ? activated === 'true' : { $exists: true } },
-          { firstName: firstName ? { $regex: firstName, $options: 'i' } : { $exists: true } },
-          { lastName: lastName ? { $regex: lastName, $options: 'i' } : { $exists: true } },
-          { email: email ? { $regex: email, $options: 'i' } : { $exists: true } },
-          { phone: phone ? { $regex: phone, $options: 'i' } : { $exists: true } },
-          {
-            referralCode: referralCode
-              ? { $regex: referralCode, $options: 'i' }
-              : { $exists: true },
-          },
-        ],
-      },
-    },
+    { $match: { $and: filterQuery } },
     {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
@@ -302,21 +303,11 @@ export const getAllUsers = async ({
     { $project: { preferences: 0, password: 0, notifications: 0 } },
   ];
 
-  if (role === USER_ROLE.VENDOR.toString()) {
-    userOptions[0].$match.$and.push(
-      { 'vendor.verified': verified ? verified === 'true' : { $exists: true } },
-      { 'vendor.certified': certified ? certified === 'true' : { $exists: true } },
-      {
-        'vendor.companyName': companyName
-          ? { $regex: companyName, $options: 'i' }
-          : { $exists: true },
-      },
-    );
-
+  if (query.role === USER_ROLE.VENDOR.toString()) {
     userOptions.unshift({ $sort: { 'vendor.verified': 1, 'vendor.companyName': 1 } });
   }
 
-  if (!role || role !== USER_ROLE.VENDOR.toString()) {
+  if (!query.role || query.role !== USER_ROLE.VENDOR.toString()) {
     userOptions.unshift({
       $lookup: {
         from: 'properties',

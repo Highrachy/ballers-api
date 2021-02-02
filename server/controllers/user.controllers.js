@@ -133,34 +133,7 @@ const UserController = {
   },
 
   getAllUsers(req, res, next) {
-    const {
-      page,
-      limit,
-      role,
-      activated,
-      firstName,
-      lastName,
-      email,
-      phone,
-      referralCode,
-      verified,
-      certified,
-      companyName,
-    } = req.query;
-    getAllUsers({
-      page,
-      limit,
-      role,
-      activated,
-      firstName,
-      lastName,
-      email,
-      phone,
-      referralCode,
-      verified,
-      certified,
-      companyName,
-    })
+    getAllUsers(req.query)
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,

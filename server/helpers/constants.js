@@ -43,23 +43,18 @@ export const VENDOR_STEPS = ['companyInfo', 'bankDetails', 'directorInfo', 'docu
 export const addressSchema = {
   city: {
     type: String,
-    default: null,
   },
   country: {
     type: String,
-    default: null,
   },
   state: {
     type: String,
-    default: null,
   },
   street1: {
     type: String,
-    default: null,
   },
   street2: {
     type: String,
-    default: null,
   },
 };
 
