@@ -7,4 +7,4 @@ export const getTodaysDateShortCode = () => format(new Date(), 'ddMMyyyy');
 
 export const getTodaysDateStandard = () => format(new Date(), 'yyyy-MM-dd');
 
-export const getDateWithTimestamp = () => formatISO(new Date(), 'yyyy-MM-dd');
+export const getDateWithTimestamp = () => formatISO(new Date());
