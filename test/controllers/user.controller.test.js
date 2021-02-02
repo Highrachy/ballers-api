@@ -1428,6 +1428,8 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Vendor verified');
               expect(res.body.vendor.vendor.verified).to.be.eql(true);
               expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminUser._id.toString());
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.VERIFY_VENDOR);
               done();
             });
         });
@@ -1470,6 +1472,7 @@ describe('User Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('companyInfo has not been verified');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -1495,6 +1498,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(400);
               expect(res.body.success).to.be.eql(false);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
               User.findByIdAndUpdate.restore();
             });
@@ -1513,6 +1517,7 @@ describe('User Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"Vendor id" is not allowed to be empty');
+                expect(sendMailStub.callCount).to.eq(0);
                 done();
               });
           });
@@ -2762,6 +2767,8 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Vendor certified');
               expect(res.body.vendor.vendor.certified).to.be.eql(true);
               expect(res.body.vendor.vendor.certifiedBy).to.be.eql(adminUser._id.toString());
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.CERTIFY_VENDOR);
               done();
             });
         });
@@ -2795,6 +2802,7 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql(
                 'ABC Limited must be verified before approval as a certified vendor',
               );
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -2812,6 +2820,7 @@ describe('User Controller', () => {
               expect(res).to.have.status(404);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Vendor not found');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -2827,6 +2836,7 @@ describe('User Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('User is not a registered vendor');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -2852,6 +2862,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(400);
               expect(res.body.success).to.be.eql(false);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
               User.findByIdAndUpdate.restore();
             });
@@ -2870,6 +2881,7 @@ describe('User Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"Vendor id" is not allowed to be empty');
+                expect(sendMailStub.callCount).to.eq(0);
                 done();
               });
           });
