@@ -19,7 +19,10 @@ import Enquiry from '../../server/models/enquiry.model';
 import {
   itReturnsErrorForUnverifiedVendor,
   expectResponseToExcludeSensitiveVendorData,
+  expectResponseToContainNecessaryVendorData,
 } from '../helpers';
+import VendorFactory from '../factories/vendor.factory';
+import AddressFactory from '../factories/address.factory';
 
 useDatabase();
 
@@ -36,9 +39,17 @@ const vendorUser = UserFactory.build(
   {
     role: USER_ROLE.VENDOR,
     activated: true,
-    vendor: {
-      verified: true,
-    },
+    address: AddressFactory.build(),
+    vendor: VendorFactory.build({
+      directors: [
+        {
+          name: 'John Doe',
+          isSignatory: true,
+          signature: 'signature.jpg',
+          phone: '08012345678',
+        },
+      ],
+    }),
   },
   { generateId: true },
 );
@@ -1122,6 +1133,7 @@ describe('Property Controller', () => {
               expect(res.body).to.have.property('property');
               expect(res.body.property).to.not.have.property('assignedTo');
               expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
               done();
             });
         }),
@@ -1239,6 +1251,8 @@ describe('Property Controller', () => {
               expect(res.body.properties[0]).to.have.property('price');
               expect(res.body.properties[0]).to.have.property('houseType');
               expect(res.body.properties[0]).to.have.property('description');
+              expectResponseToExcludeSensitiveVendorData(res.body.properties[0].vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.properties[0].vendorInfo);
               done();
             });
         });
@@ -1542,6 +1556,8 @@ describe('Property Controller', () => {
               );
               expectResponseToExcludeSensitiveVendorData(res.body.properties[0].assignedUsers);
               expectResponseToExcludeSensitiveVendorData(res.body.properties[0].vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.properties[0].vendorInfo);
+
               done();
             });
         });

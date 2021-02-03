@@ -27,8 +27,11 @@ import {
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
   itReturnsErrorForUnverifiedVendor,
   expectResponseToExcludeSensitiveVendorData,
+  expectResponseToContainNecessaryVendorData,
 } from '../helpers';
 import Property from '../../server/models/property.model';
+import AddressFactory from '../factories/address.factory';
+import VendorFactory from '../factories/vendor.factory';
 
 useDatabase();
 
@@ -54,10 +57,17 @@ const vendorUser = UserFactory.build(
   {
     role: USER_ROLE.VENDOR,
     activated: true,
-    vendor: {
-      companyName: 'Highrachy Investment',
-      verified: true,
-    },
+    address: AddressFactory.build(),
+    vendor: VendorFactory.build({
+      directors: [
+        {
+          name: 'John Doe',
+          isSignatory: true,
+          signature: 'signature.jpg',
+          phone: '08012345678',
+        },
+      ],
+    }),
   },
   { generateId: true },
 );
@@ -829,6 +839,7 @@ describe('Offer Controller', () => {
                 expect(res.body.offer._id).to.be.eql(offer._id.toString());
                 expect(res.body.offer.propertyInfo).to.not.have.property('assignedTo');
                 expectResponseToExcludeSensitiveVendorData(res.body.offer.vendorInfo);
+                expectResponseToContainNecessaryVendorData(res.body.offer.vendorInfo);
                 done();
               });
           }),
@@ -1025,6 +1036,7 @@ describe('Offer Controller', () => {
                 expect(res.body.offers[0].propertyInfo._id).to.be.eql(properties[0]._id.toString());
                 expect(res.body.offers[0].propertyInfo).to.not.have.property('assignedTo');
                 expectResponseToExcludeSensitiveVendorData(res.body.offers[0].vendorInfo);
+                expectResponseToContainNecessaryVendorData(res.body.offers[0].vendorInfo);
                 done();
               });
           });
@@ -1493,10 +1505,13 @@ describe('Offer Controller', () => {
               expect(res.body.pagination.offset).to.be.eql(0);
               expect(res.body.result.length).to.be.eql(10);
               expect(res.body.result[0]._id).to.be.eql(userOffers[0]._id.toString());
-              expect(res.body.result[0].enquiryId).to.be.eql(userEnquiries[0]._id._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(userProperties[0]._id._id.toString());
-              expect(res.body.result[0].vendorId).to.be.eql(vendorUser._id._id.toString());
-              expect(res.body.result[0].userId).to.be.eql(regularUser._id._id.toString());
+              expect(res.body.result[0].enquiryId).to.be.eql(userEnquiries[0]._id.toString());
+              expect(res.body.result[0].propertyId).to.be.eql(userProperties[0]._id.toString());
+              expect(res.body.result[0].vendorId).to.be.eql(vendorUser._id.toString());
+              expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
+              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
+              expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
               done();
             });
         });
@@ -1670,6 +1685,9 @@ describe('Offer Controller', () => {
               expect(res.body.pagination.total).to.be.eql(10);
               expect(res.body.pagination.offset).to.be.eql(0);
               expect(res.body.result.length).to.be.eql(10);
+              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
+              expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
               done();
             });
         });

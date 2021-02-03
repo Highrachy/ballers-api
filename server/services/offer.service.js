@@ -94,15 +94,34 @@ export const getAllOffers = async (accountId, page = 1, limit = 10) => {
       $unwind: '$propertyInfo',
     },
     {
+      $project: {
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO(accountType.as),
+      },
+    },
+    {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
         data: generateFacetData(page, limit),
       },
     },
-    {
-      $project: NON_PROJECTED_USER_INFO(accountType.as),
-    },
   ];
+
+  if (user.role === USER_ROLE.ADMIN) {
+    offerOptions.unshift(
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'vendorId',
+          foreignField: '_id',
+          as: 'vendorInfo',
+        },
+      },
+      {
+        $unwind: '$vendorInfo',
+      },
+    );
+  }
 
   if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.USER) {
     offerOptions.unshift({ $match: { [accountType.matchKey]: ObjectId(user._id) } });
@@ -497,6 +516,14 @@ export const getAllUserOffers = async (user, accountId, page = 1, limit = 10) =>
       },
     },
     {
+      $lookup: {
+        from: 'users',
+        localField: 'vendorId',
+        foreignField: '_id',
+        as: 'vendorInfo',
+      },
+    },
+    {
       $unwind: '$userInfo',
     },
     {
@@ -506,13 +533,19 @@ export const getAllUserOffers = async (user, accountId, page = 1, limit = 10) =>
       $unwind: '$propertyInfo',
     },
     {
+      $unwind: '$vendorInfo',
+    },
+    {
+      $project: {
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO('userInfo'),
+      },
+    },
+    {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
         data: generateFacetData(page, limit),
       },
-    },
-    {
-      $project: NON_PROJECTED_USER_INFO('userInfo'),
     },
   ];
 

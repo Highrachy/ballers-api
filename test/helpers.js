@@ -368,10 +368,19 @@ export const expectResponseToExcludeSensitiveVendorData = (data) => {
   expect(data).to.not.have.property('notifications');
   if (data.vendor) {
     expect(data.vendor).to.not.have.property('bankInfo');
-    expect(data.vendor).to.not.have.property('directors');
+    expect(data.vendor.directors).to.not.have.property('phone');
     expect(data.vendor).to.not.have.property('identification');
     expect(data.vendor).to.not.have.property('entity');
     expect(data.vendor).to.not.have.property('redanNumber');
     expect(data.vendor).to.not.have.property('taxCertificate');
   }
+};
+
+export const expectResponseToContainNecessaryVendorData = (data) => {
+  expect(data.vendor).to.have.property('companyLogo');
+  expect(data.vendor).to.have.property('companyName');
+  expect(data.vendor.directors[0]).to.have.property('name');
+  expect(data.vendor.directors[0]).to.have.property('signature');
+  expect(data.vendor.directors[0]).to.not.have.property('phone');
+  expect(data).to.have.property('address');
 };

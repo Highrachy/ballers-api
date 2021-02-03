@@ -6,6 +6,7 @@ import httpStatus from '../helpers/httpStatus';
 import { getPropertyById } from './property.service';
 import { USER_ROLE } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -67,14 +68,26 @@ export const getAllEnquiries = async (user, page = 1, limit = 10) => {
       },
     },
     {
-      $facet: {
-        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
-        data: generateFacetData(page, limit),
+      $unwind: '$propertyInfo',
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'propertyInfo.addedBy',
+        foreignField: '_id',
+        as: 'vendorInfo',
       },
     },
     {
-      $project: {
-        'propertyInfo.assignedTo': 0,
+      $unwind: '$vendorInfo',
+    },
+    {
+      $project: NON_PROJECTED_USER_INFO('vendorInfo'),
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
       },
     },
   ];
@@ -105,9 +118,21 @@ export const getEnquiry = async ({ enquiryId, user }) => {
       },
     },
     {
-      $project: {
-        'propertyInfo.assignedTo': 0,
+      $unwind: '$propertyInfo',
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'propertyInfo.addedBy',
+        foreignField: '_id',
+        as: 'vendorInfo',
       },
+    },
+    {
+      $unwind: '$vendorInfo',
+    },
+    {
+      $project: NON_PROJECTED_USER_INFO('vendorInfo'),
     },
   ];
 
