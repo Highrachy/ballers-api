@@ -1,38 +1,31 @@
-export const filterStringKeys = (filterQuery, stringArray, query, prefix = '') => {
-  let pre = '';
-  if (prefix.length > 0) {
-    pre = `${prefix}.`;
-  }
-
-  stringArray.forEach((key) => {
-    if (query[key]) {
-      filterQuery.push({ [`${pre}${key}`]: { $regex: query[key], $options: 'i' } });
-    }
-  });
+export const FILTER_TYPE = {
+  BOOLEAN: 'boolean',
+  INTEGER: 'integer',
+  STRING: 'string',
 };
 
-export const filterIntegerKeys = (filterQuery, integerArray, query, prefix = '') => {
-  let pre = '';
-  if (prefix.length > 0) {
-    pre = `${prefix}.`;
-  }
+export const buildFilterQuery = (arrayWithKeys, query, type, prefix = '') => {
+  const pre = prefix.length > 0 ? `${prefix}.` : '';
 
-  integerArray.forEach((key) => {
+  return arrayWithKeys.reduce((acc, key) => {
     if (query[key]) {
-      filterQuery.push({ [`${pre}${key}`]: parseInt(query[key], 10) });
-    }
-  });
-};
+      switch (type) {
+        case FILTER_TYPE.BOOLEAN:
+          acc.push({ [`${pre}${key}`]: query[key] === 'true' });
+          break;
 
-export const filterBooleanKeys = (filterQuery, booleanArray, query, prefix = '') => {
-  let pre = '';
-  if (prefix.length > 0) {
-    pre = `${prefix}.`;
-  }
+        case FILTER_TYPE.INTEGER:
+          acc.push({ [`${pre}${key}`]: parseInt(query[key], 10) });
+          break;
 
-  booleanArray.forEach((key) => {
-    if (query[key]) {
-      filterQuery.push({ [`${pre}${key}`]: query[key] === 'true' });
+        case FILTER_TYPE.STRING:
+          acc.push({ [`${pre}${key}`]: { $regex: query[key], $options: 'i' } });
+          break;
+
+        default:
+          break;
+      }
     }
-  });
+    return acc;
+  }, []);
 };

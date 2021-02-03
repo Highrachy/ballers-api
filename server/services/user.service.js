@@ -19,7 +19,7 @@ import {
 } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
-import { filterStringKeys, filterIntegerKeys, filterBooleanKeys } from '../helpers/filters';
+import { buildFilterQuery, FILTER_TYPE } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -263,7 +263,6 @@ export const updateUser = async (updatedUser) => {
 };
 
 export const getAllUsers = async ({ page = 1, limit = 10, ...query }) => {
-  const filterQuery = [];
   const stringKeys = ['firstName', 'lastName', 'email', 'phone', 'phone2', 'referralCode'];
   const integerKeys = ['role'];
   const booleanKeys = ['activated'];
@@ -271,12 +270,14 @@ export const getAllUsers = async ({ page = 1, limit = 10, ...query }) => {
   const vendorStringKeys = ['companyName', 'entity', 'redanNumber'];
   const addressStringkeys = ['city', 'country', 'state', 'street1', 'street2'];
 
-  filterStringKeys(filterQuery, stringKeys, query);
-  filterStringKeys(filterQuery, vendorStringKeys, query, 'vendor');
-  filterStringKeys(filterQuery, addressStringkeys, query, 'address');
-  filterIntegerKeys(filterQuery, integerKeys, query);
-  filterBooleanKeys(filterQuery, booleanKeys, query);
-  filterBooleanKeys(filterQuery, vendorBooleanKeys, query, 'vendor');
+  const filterQuery = [
+    ...buildFilterQuery(booleanKeys, query, FILTER_TYPE.BOOLEAN),
+    ...buildFilterQuery(integerKeys, query, FILTER_TYPE.INTEGER),
+    ...buildFilterQuery(stringKeys, query, FILTER_TYPE.STRING),
+    ...buildFilterQuery(addressStringkeys, query, FILTER_TYPE.STRING, 'address'),
+    ...buildFilterQuery(vendorBooleanKeys, query, FILTER_TYPE.BOOLEAN, 'vendor'),
+    ...buildFilterQuery(vendorStringKeys, query, FILTER_TYPE.STRING, 'vendor'),
+  ];
 
   const userOptions = [
     { $match: { $and: filterQuery } },

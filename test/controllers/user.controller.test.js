@@ -3133,6 +3133,14 @@ describe('User Controller', () => {
     });
     const dummyAdmin = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
     const method = 'get';
+    const dummyVendor1Details = {
+      firstName: dummyVendor1.firstName,
+      role: dummyVendor1.role,
+      activated: dummyVendor1.activated,
+      verified: dummyVendor1.vendor.verified,
+      companyName: dummyVendor1.vendor.companyName,
+      country: dummyVendor1.address.country,
+    };
 
     beforeEach(async () => {
       await User.insertMany([...dummyUsers, ...dummyEditors]);
@@ -3184,12 +3192,19 @@ describe('User Controller', () => {
         }),
       );
     });
+
     context('when multiple filters are used', () => {
+      const filteredUrl = JSON.stringify(dummyVendor1Details)
+        .replace(/{"/g, '')
+        .replace(/":"/g, '=')
+        .replace(/":/g, '=')
+        .replace(/","/g, '&')
+        .replace(/,"/g, '&')
+        .replace(/"}/g, '');
+
       it('returns matched user', (done) => {
         request()
-          [method](
-            `${endpoint}?firstName=${dummyVendor1.firstName}&role=${dummyVendor1.role}&activated=${dummyVendor1.activated}&verified=${dummyVendor1.vendor.verified}&companyName=${dummyVendor1.vendor.companyName}&country=${dummyVendor1.address.country}`,
-          )
+          [method](`${endpoint}?${filteredUrl}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expectsPaginationToReturnTheRightValues(res, {
