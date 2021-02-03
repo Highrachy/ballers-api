@@ -94,7 +94,10 @@ export const getAllOffers = async (accountId, page = 1, limit = 10) => {
       $unwind: '$propertyInfo',
     },
     {
-      $project: NON_PROJECTED_USER_INFO(accountType.as),
+      $project: {
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO(accountType.as),
+      },
     },
     {
       $facet: {
@@ -103,6 +106,22 @@ export const getAllOffers = async (accountId, page = 1, limit = 10) => {
       },
     },
   ];
+
+  if (user.role === USER_ROLE.ADMIN) {
+    offerOptions.unshift(
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'vendorId',
+          foreignField: '_id',
+          as: 'vendorInfo',
+        },
+      },
+      {
+        $unwind: '$vendorInfo',
+      },
+    );
+  }
 
   if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.USER) {
     offerOptions.unshift({ $match: { [accountType.matchKey]: ObjectId(user._id) } });

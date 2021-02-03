@@ -686,6 +686,7 @@ describe('Enquiry Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('enquiry');
               expect(res.body.enquiry._id).to.be.eql(enquiry._id.toString());
+              expect(res.body.enquiry).to.have.property('vendorInfo');
               done();
             });
         }),
@@ -927,9 +928,8 @@ describe('Enquiry Controller', () => {
               expect(res.body.result.length).to.be.eql(10);
               expect(res.body.result[0]._id).to.be.eql(userEnquiries[0]._id.toString());
               expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(
-                res.body.result[0].propertyInfo[0]._id,
-              );
+              expect(res.body.result[0].propertyId).to.be.eql(res.body.result[0].propertyInfo._id);
+              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
               expect(res.body.result[0].firstName).to.be.eql(userEnquiries[0].firstName);
               expect(res.body.result[0].otherName).to.be.eql(userEnquiries[0].otherName);
               done();
@@ -952,9 +952,8 @@ describe('Enquiry Controller', () => {
               expect(res.body.result.length).to.be.eql(5);
               expect(res.body.result[0]._id).to.be.eql(userEnquiries[13]._id.toString());
               expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(
-                res.body.result[0].propertyInfo[0]._id,
-              );
+              expect(res.body.result[0].propertyId).to.be.eql(res.body.result[0].propertyInfo._id);
+              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendor2._id.toString());
               expect(res.body.result[0].firstName).to.be.eql(userEnquiries[13].firstName);
               expect(res.body.result[0].otherName).to.be.eql(userEnquiries[13].otherName);
               done();
@@ -977,9 +976,8 @@ describe('Enquiry Controller', () => {
               expect(res.body.result.length).to.be.eql(10);
               expect(res.body.result[0]._id).to.be.eql(userEnquiries[0]._id.toString());
               expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(
-                res.body.result[0].propertyInfo[0]._id,
-              );
+              expect(res.body.result[0].propertyId).to.be.eql(res.body.result[0].propertyInfo._id);
+              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
               expect(res.body.result[0].firstName).to.be.eql(userEnquiries[0].firstName);
               expect(res.body.result[0].otherName).to.be.eql(userEnquiries[0].otherName);
               done();
