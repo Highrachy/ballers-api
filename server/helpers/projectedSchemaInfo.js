@@ -49,6 +49,7 @@ export const NON_PROJECTED_USER_INFO = (infoType) => {
     [`${infoType}.role`]: 0,
     [`${infoType}.notifications`]: 0,
     [`${infoType}.vendor.bankInfo`]: 0,
+    [`${infoType}.vendor.logs`]: 0,
     [`${infoType}.vendor.directors`]: 0,
     [`${infoType}.vendor.identification`]: 0,
     [`${infoType}.vendor.verification`]: 0,
