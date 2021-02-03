@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import querystring from 'querystring';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
 import { addUser, banUser, generateLog } from '../../server/services/user.service';
@@ -39,7 +40,7 @@ useDatabase();
 let adminToken;
 let userToken;
 const adminUser = UserFactory.build(
-  { role: USER_ROLE.ADMIN, activated: true },
+  { role: USER_ROLE.ADMIN, activated: true, address: { country: 'Nigeria' } },
   { generateId: true },
 );
 const regularUser = UserFactory.build(
@@ -3097,20 +3098,20 @@ describe('User Controller', () => {
       role: USER_ROLE.USER,
       activated: true,
       referralCode: 'ab1234',
+      address: { country: 'Nigeria' },
     });
     const dummyEditors = UserFactory.buildList(2, {
       role: USER_ROLE.EDITOR,
       activated: true,
       referralCode: 'ab1234',
+      address: { country: 'Nigeria' },
     });
     const dummyVendor1 = UserFactory.build(
       {
         role: USER_ROLE.VENDOR,
-        activated: true,
+        activated: false,
         firstName: 'vendor1',
-        address: {
-          country: 'Ghana',
-        },
+        address: { country: 'Ghana' },
         vendor: {
           companyName: 'Dangote PLC',
           verified: true,
@@ -3122,16 +3123,18 @@ describe('User Controller', () => {
     const dummyVendor2 = UserFactory.build({
       role: USER_ROLE.VENDOR,
       activated: true,
-      address: {
-        country: 'Nigeria',
-      },
+      address: { country: 'Nigeria' },
       vendor: {
         companyName: 'Google Nigeria',
         verified: true,
         certified: true,
       },
     });
-    const dummyAdmin = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
+    const dummyAdmin = UserFactory.build({
+      role: USER_ROLE.ADMIN,
+      activated: true,
+      address: { country: 'Nigeria' },
+    });
     const method = 'get';
     const dummyVendor1Details = {
       firstName: dummyVendor1.firstName,
@@ -3140,6 +3143,19 @@ describe('User Controller', () => {
       verified: dummyVendor1.vendor.verified,
       companyName: dummyVendor1.vendor.companyName,
       country: dummyVendor1.address.country,
+    };
+
+    const filterToReturnOneResult = {
+      firstName: 'vendor1',
+      companyName: 'Dangote',
+    };
+    const filterToReturnTwoResults = {
+      role: 2,
+      verified: true,
+    };
+    const filterToReturnSeventeenResults = {
+      activated: true,
+      country: 'Nigeria',
     };
 
     beforeEach(async () => {
@@ -3194,17 +3210,13 @@ describe('User Controller', () => {
     });
 
     context('when multiple filters are used', () => {
-      const filteredUrl = JSON.stringify(dummyVendor1Details)
-        .replace(/{"/g, '')
-        .replace(/":"/g, '=')
-        .replace(/":/g, '=')
-        .replace(/","/g, '&')
-        .replace(/,"/g, '&')
-        .replace(/"}/g, '');
-
+      beforeEach(async () => {
+        adminToken = await addUser(adminUser);
+      });
+      const filteredParams = querystring.stringify(dummyVendor1Details);
       it('returns matched user', (done) => {
         request()
-          [method](`${endpoint}?${filteredUrl}`)
+          [method](`${endpoint}?${filteredParams}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expectsPaginationToReturnTheRightValues(res, {
@@ -3219,6 +3231,78 @@ describe('User Controller', () => {
             done();
           });
       });
+    });
+
+    context('sending single parameter', () => {
+      beforeEach(async () => {
+        adminToken = await addUser(adminUser);
+      });
+      Object.keys(filterToReturnOneResult).map((field) =>
+        it('returns matched user', (done) => {
+          request()
+            [method](`${endpoint}?${field}=${filterToReturnOneResult[field]}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              done();
+            });
+        }),
+      );
+    });
+
+    context('sending single parameter', () => {
+      beforeEach(async () => {
+        adminToken = await addUser(adminUser);
+      });
+      Object.keys(filterToReturnTwoResults).map((field) =>
+        it('returns matched users', (done) => {
+          request()
+            [method](`${endpoint}?${field}=${filterToReturnTwoResults[field]}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 2,
+                total: 2,
+                totalPage: 1,
+              });
+              done();
+            });
+        }),
+      );
+    });
+
+    context('sending single parameter', () => {
+      beforeEach(async () => {
+        adminToken = await addUser(adminUser);
+      });
+      Object.keys(filterToReturnSeventeenResults).map((field) =>
+        it('returns matched users', (done) => {
+          request()
+            [method](`${endpoint}?${field}=${filterToReturnSeventeenResults[field]}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 10,
+                total: 17,
+                totalPage: 2,
+              });
+              done();
+            });
+        }),
+      );
     });
   });
 });

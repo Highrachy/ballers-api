@@ -4,10 +4,10 @@ export const FILTER_TYPE = {
   STRING: 'string',
 };
 
-export const buildFilterQuery = (arrayWithKeys, query, type, prefix = '') => {
+export const buildFilterQuery = (filterKeys, query, type, prefix = '') => {
   const pre = prefix.length > 0 ? `${prefix}.` : '';
 
-  return arrayWithKeys.reduce((acc, key) => {
+  return filterKeys.reduce((acc, key) => {
     if (query[key]) {
       switch (type) {
         case FILTER_TYPE.BOOLEAN:
