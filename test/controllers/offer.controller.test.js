@@ -1686,7 +1686,8 @@ describe('Offer Controller', () => {
               expect(res.body.pagination.offset).to.be.eql(0);
               expect(res.body.result.length).to.be.eql(10);
               expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
-
+              expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
               done();
             });
         });
