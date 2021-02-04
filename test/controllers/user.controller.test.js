@@ -3136,27 +3136,6 @@ describe('User Controller', () => {
       address: { country: 'Nigeria' },
     });
     const method = 'get';
-    const dummyVendor1Details = {
-      firstName: dummyVendor1.firstName,
-      role: dummyVendor1.role,
-      activated: dummyVendor1.activated,
-      verified: dummyVendor1.vendor.verified,
-      companyName: dummyVendor1.vendor.companyName,
-      country: dummyVendor1.address.country,
-    };
-
-    const filterToReturnOneResult = {
-      firstName: 'vendor1',
-      companyName: 'Dangote',
-    };
-    const filterToReturnTwoResults = {
-      role: 2,
-      verified: true,
-    };
-    const filterToReturnSeventeenResults = {
-      activated: true,
-      country: 'Nigeria',
-    };
 
     beforeEach(async () => {
       await User.insertMany([...dummyUsers, ...dummyEditors]);
@@ -3184,63 +3163,48 @@ describe('User Controller', () => {
       });
     });
 
-    context('when role is passed', () => {
+    describe('User filters', () => {
+      const dummyVendor1Details = {
+        firstName: dummyVendor1.firstName,
+        role: dummyVendor1.role,
+        activated: dummyVendor1.activated,
+        verified: dummyVendor1.vendor.verified,
+        companyName: dummyVendor1.vendor.companyName,
+        country: dummyVendor1.address.country,
+      };
+
       beforeEach(async () => {
         adminToken = await addUser(adminUser);
       });
-      [USER_ROLE.VENDOR, USER_ROLE.ADMIN, USER_ROLE.EDITOR].map((user) =>
-        it('returns the error', (done) => {
-          request()
-            [method](`${endpoint}?role=${user}`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                currentPage: 1,
-                limit: 10,
-                offset: 0,
-                result: 2,
-                total: 2,
-                totalPage: 1,
+
+      context('sending single parameter', () => {
+        [USER_ROLE.VENDOR, USER_ROLE.ADMIN, USER_ROLE.EDITOR].map((user) =>
+          it('returns the user', (done) => {
+            request()
+              [method](`${endpoint}?role=${user}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0].role).to.be.eql(user);
+                done();
               });
-              expect(res.body.result[0].role).to.be.eql(user);
-              done();
-            });
-        }),
-      );
-    });
+          }),
+        );
+      });
 
-    context('when multiple filters are used', () => {
-      beforeEach(async () => {
-        adminToken = await addUser(adminUser);
-      });
-      const filteredParams = querystring.stringify(dummyVendor1Details);
-      it('returns matched user', (done) => {
-        request()
-          [method](`${endpoint}?${filteredParams}`)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expectsPaginationToReturnTheRightValues(res, {
-              currentPage: 1,
-              limit: 10,
-              offset: 0,
-              result: 1,
-              total: 1,
-              totalPage: 1,
-            });
-            expect(res.body.result[0]._id).to.be.eql(dummyVendor1._id.toString());
-            done();
-          });
-      });
-    });
+      context('when multiple filters are used', () => {
+        const filteredParams = querystring.stringify(dummyVendor1Details);
 
-    context('sending single parameter', () => {
-      beforeEach(async () => {
-        adminToken = await addUser(adminUser);
-      });
-      Object.keys(filterToReturnOneResult).map((field) =>
         it('returns matched user', (done) => {
           request()
-            [method](`${endpoint}?${field}=${filterToReturnOneResult[field]}`)
+            [method](`${endpoint}?${filteredParams}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
@@ -3251,20 +3215,22 @@ describe('User Controller', () => {
                 total: 1,
                 totalPage: 1,
               });
+              expect(res.body.result[0]._id).to.be.eql(dummyVendor1._id.toString());
               done();
             });
-        }),
-      );
-    });
-
-    context('sending single parameter', () => {
-      beforeEach(async () => {
-        adminToken = await addUser(adminUser);
+        });
       });
-      Object.keys(filterToReturnTwoResults).map((field) =>
+
+      context('sending multiple parameters', () => {
+        const filterToReturnTwoResults = {
+          role: 2,
+          verified: true,
+        };
+        const filteredParams = querystring.stringify(filterToReturnTwoResults);
+
         it('returns matched users', (done) => {
           request()
-            [method](`${endpoint}?${field}=${filterToReturnTwoResults[field]}`)
+            [method](`${endpoint}?${filteredParams}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
@@ -3275,34 +3241,69 @@ describe('User Controller', () => {
                 total: 2,
                 totalPage: 1,
               });
+              expect(res.body.result[0].role).to.be.eql(filterToReturnTwoResults.role);
+              expect(res.body.result[0].vendor.verified).to.be.eql(
+                filterToReturnTwoResults.verified,
+              );
+              expect(res.body.result[1].role).to.be.eql(filterToReturnTwoResults.role);
+              expect(res.body.result[1].vendor.verified).to.be.eql(
+                filterToReturnTwoResults.verified,
+              );
               done();
             });
-        }),
-      );
-    });
-
-    context('sending single parameter', () => {
-      beforeEach(async () => {
-        adminToken = await addUser(adminUser);
+        });
       });
-      Object.keys(filterToReturnSeventeenResults).map((field) =>
-        it('returns matched users', (done) => {
+
+      context('when no parameter is matched', () => {
+        const filterToReturnEmptyResult = {
+          role: 2,
+          verified: false,
+          firstName: 'John',
+          activated: true,
+          companyName: 'Highrachy',
+          country: 'Ghana',
+        };
+        const filteredParams = querystring.stringify(filterToReturnEmptyResult);
+
+        it('returns empty result', (done) => {
           request()
-            [method](`${endpoint}?${field}=${filterToReturnSeventeenResults[field]}`)
+            [method](`${endpoint}?${filteredParams}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
                 currentPage: 1,
                 limit: 10,
                 offset: 0,
-                result: 10,
-                total: 17,
-                totalPage: 2,
+                result: 0,
+                total: 0,
+                totalPage: 0,
               });
               done();
             });
-        }),
-      );
+        });
+      });
+
+      context('sending single parameter', () => {
+        const singleParameterFilers = {
+          firstName: dummyVendor1.firstName,
+          role: dummyVendor1.role,
+          activated: dummyVendor1.activated,
+        };
+
+        Object.keys(singleParameterFilers).map((field) =>
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${field}=${singleParameterFilers[field]}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.result[0][field]).to.be.eql(singleParameterFilers[field]);
+                done();
+              });
+          }),
+        );
+      });
     });
   });
 });

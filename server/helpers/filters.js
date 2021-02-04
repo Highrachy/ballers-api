@@ -1,5 +1,8 @@
+import { parse } from 'date-fns';
+
 export const FILTER_TYPE = {
   BOOLEAN: 'boolean',
+  DATE: 'date',
   INTEGER: 'integer',
   STRING: 'string',
 };
@@ -12,6 +15,12 @@ export const buildFilterQuery = (filterKeys, query, type, prefix = '') => {
       switch (type) {
         case FILTER_TYPE.BOOLEAN:
           acc.push({ [`${pre}${key}`]: query[key] === 'true' });
+          break;
+
+        case FILTER_TYPE.DATE:
+          acc.push({
+            [`${pre}${key}`]: { $gte: parse(query[key], 'yyyy-MM-dd', new Date()) },
+          });
           break;
 
         case FILTER_TYPE.INTEGER:
