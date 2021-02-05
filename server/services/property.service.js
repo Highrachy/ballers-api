@@ -132,8 +132,8 @@ export const getAllProperties = async (user) => {
   return properties;
 };
 
-export const getOneProperty = async (propertyId) =>
-  Property.aggregate([
+export const getOneProperty = async (propertyId, user = {}) => {
+  const propertyOptions = [
     { $match: { _id: ObjectId(propertyId) } },
     {
       $lookup: {
@@ -160,7 +160,67 @@ export const getOneProperty = async (propertyId) =>
         ...PROJECTED_VENDOR_INFO,
       },
     },
-  ]);
+  ];
+
+  if (user && user.role === USER_ROLE.USER) {
+    propertyOptions.splice(
+      1,
+      0,
+      {
+        $lookup: {
+          from: 'enquiries',
+          let: { propPropertyId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$propertyId', '$$propPropertyId'] },
+                    { $eq: ['$userId', ObjectId(user._id)] },
+                  ],
+                },
+              },
+            },
+            { $project: { propertyId: 0, _id: 0 } },
+          ],
+          as: 'enquiryInfo',
+        },
+      },
+      {
+        $lookup: {
+          from: 'visitations',
+          let: { propPropertyId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$propertyId', '$$propPropertyId'] },
+                    { $eq: ['$userId', ObjectId(user._id)] },
+                  ],
+                },
+              },
+            },
+            { $project: { propertyId: 0, _id: 0 } },
+          ],
+          as: 'visitationInfo',
+        },
+      },
+    );
+    propertyOptions.splice(propertyOptions.length - 1, 0, {
+      $unwind: '$enquiryInfo',
+      preserveNullAndEmptyArrays: true,
+    });
+    propertyOptions[propertyOptions.length - 1].$project = {
+      ...propertyOptions[propertyOptions.length - 1].$project,
+      enquiryInfo: 1,
+      visitationInfo: 1,
+    };
+  }
+
+  const property = await Property.aggregate(propertyOptions);
+  return property;
+};
 
 export const searchThroughProperties = async ({
   userId,
