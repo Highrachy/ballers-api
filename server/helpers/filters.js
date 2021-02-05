@@ -7,30 +7,31 @@ export const FILTER_TYPE = {
   STRING: 'string',
 };
 
-export const buildFilterQuery = (filterKeys, query, type, prefix = '') => {
-  return filterKeys.reduce((acc, key) => {
-    const matchKey = prefix.length > 0 ? `${prefix}.${key}` : key;
-    if (query[key]) {
+export const buildFilterQuery = (allFilters, query) => {
+  return Object.entries(allFilters).reduce((acc, [queryKey, { key, type }]) => {
+    const filterKey = key || queryKey;
+
+    if (query[queryKey]) {
       switch (type) {
         case FILTER_TYPE.BOOLEAN:
-          acc.push({ [matchKey]: query[key] === 'true' });
+          acc.push({ [filterKey]: query[queryKey] === 'true' });
           break;
 
         case FILTER_TYPE.DATE:
           acc.push({
-            [matchKey]: {
-              $gte: parse(query[key], 'yyyy-MM-dd', new Date()),
-              $lt: add(new Date(query[key]), { days: 1 }),
+            [filterKey]: {
+              $gte: parse(query[queryKey], 'yyyy-MM-dd', new Date()),
+              $lt: add(new Date(query[queryKey]), { days: 1 }),
             },
           });
           break;
 
         case FILTER_TYPE.INTEGER:
-          acc.push({ [matchKey]: parseInt(query[key], 10) });
+          acc.push({ [filterKey]: parseInt(query[queryKey], 10) });
           break;
 
         case FILTER_TYPE.STRING:
-          acc.push({ [matchKey]: { $regex: query[key], $options: 'i' } });
+          acc.push({ [filterKey]: { $regex: query[queryKey], $options: 'i' } });
           break;
 
         default:
@@ -39,4 +40,33 @@ export const buildFilterQuery = (filterKeys, query, type, prefix = '') => {
     }
     return acc;
   }, []);
+};
+
+export const ADDRESS_FILTERS = {
+  city: { key: 'address.city', type: FILTER_TYPE.STRING },
+  country: { key: 'address.country', type: FILTER_TYPE.STRING },
+  state: { key: 'address.state', type: FILTER_TYPE.STRING },
+  street1: { key: 'address.street1', type: FILTER_TYPE.STRING },
+  street2: { key: 'address.street2', type: FILTER_TYPE.STRING },
+};
+
+export const USER_FILTERS = {
+  ...ADDRESS_FILTERS,
+  activated: { type: FILTER_TYPE.BOOLEAN },
+  activationDate: { type: FILTER_TYPE.DATE },
+  banned: { key: 'banned.status', type: FILTER_TYPE.BOOLEAN },
+  certified: { key: 'vendor.certified', type: FILTER_TYPE.BOOLEAN },
+  certifiedOn: { key: 'vendor.certifiedOn', type: FILTER_TYPE.DATE },
+  companyName: { key: 'vendor.companyName', type: FILTER_TYPE.STRING },
+  createdAt: { type: FILTER_TYPE.DATE },
+  email: { type: FILTER_TYPE.STRING },
+  entity: { key: 'vendor.entity', type: FILTER_TYPE.STRING },
+  firstName: { type: FILTER_TYPE.STRING },
+  lastName: { type: FILTER_TYPE.STRING },
+  phone: { type: FILTER_TYPE.STRING },
+  phone2: { type: FILTER_TYPE.STRING },
+  referralCode: { type: FILTER_TYPE.STRING },
+  role: { type: FILTER_TYPE.INTEGER },
+  verified: { key: 'vendor.verified', type: FILTER_TYPE.BOOLEAN },
+  verifiedOn: { key: 'vendor.verifiedOn', type: FILTER_TYPE.DATE },
 };

@@ -19,7 +19,7 @@ import {
 } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
-import { buildFilterQuery, FILTER_TYPE } from '../helpers/filters';
+import { buildFilterQuery, USER_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -263,37 +263,7 @@ export const updateUser = async (updatedUser) => {
 };
 
 export const getAllUsers = async ({ page = 1, limit = 10, ...query }) => {
-  const stringKeys = ['firstName', 'lastName', 'email', 'phone', 'phone2', 'referralCode'];
-  const integerKeys = ['role'];
-  const booleanKeys = ['activated'];
-  const vendorBooleanKeys = ['verified', 'certified'];
-  const vendorStringKeys = ['companyName', 'entity', 'redanNumber'];
-  const addressStringkeys = ['city', 'country', 'state', 'street1', 'street2'];
-  const dateKeys = ['createdAt', 'activationDate'];
-  const vendorDateKeys = ['verifiedOn', 'certifiedOn'];
-  const bannedBooleanKeys = ['status'];
-
-  const filterQuery = [
-    ...buildFilterQuery(booleanKeys, query, FILTER_TYPE.BOOLEAN),
-    ...buildFilterQuery(dateKeys, query, FILTER_TYPE.DATE),
-    ...buildFilterQuery(integerKeys, query, FILTER_TYPE.INTEGER),
-    ...buildFilterQuery(stringKeys, query, FILTER_TYPE.STRING),
-    ...buildFilterQuery(addressStringkeys, query, FILTER_TYPE.STRING, 'address'),
-    ...buildFilterQuery(vendorBooleanKeys, query, FILTER_TYPE.BOOLEAN, 'vendor'),
-    ...buildFilterQuery(vendorDateKeys, query, FILTER_TYPE.DATE, 'vendor'),
-    ...buildFilterQuery(vendorStringKeys, query, FILTER_TYPE.STRING, 'vendor'),
-  ];
-
-  if ('banned' in query) {
-    filterQuery.push(
-      ...buildFilterQuery(
-        bannedBooleanKeys,
-        { status: query.banned },
-        FILTER_TYPE.BOOLEAN,
-        'banned',
-      ),
-    );
-  }
+  const filterQuery = buildFilterQuery(USER_FILTERS, query);
 
   const userOptions = [
     { $match: { $and: filterQuery } },
