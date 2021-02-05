@@ -3094,17 +3094,31 @@ describe('User Controller', () => {
 
   describe('Get all users', () => {
     const endpoint = '/api/v1/user/all';
-    const dummyUsers = UserFactory.buildList(12, {
+    const dummyUsers = UserFactory.buildList(13, {
       role: USER_ROLE.USER,
       activated: true,
       referralCode: 'ab1234',
       address: { country: 'Nigeria' },
     });
-    const dummyEditors = UserFactory.buildList(2, {
+    const dummyEditor = UserFactory.buildList(1, {
+      firstName: 'editor',
+      lastName: 'doe',
       role: USER_ROLE.EDITOR,
       activated: true,
-      referralCode: 'ab1234',
-      address: { country: 'Nigeria' },
+      email: 'dummyeditor@mail.com',
+      referralCode: 'ed1234',
+      phone: '08023054226',
+      phone2: '08132139448',
+      address: {
+        country: 'france',
+        city: 'marsielle',
+        state: 'paris',
+        street1: 'napoleon st',
+        street2: 'CDG street',
+      },
+      banned: {
+        status: true,
+      },
     });
     const dummyVendor1 = UserFactory.build(
       {
@@ -3113,9 +3127,11 @@ describe('User Controller', () => {
         firstName: 'vendor1',
         address: { country: 'Ghana' },
         vendor: {
-          companyName: 'Dangote PLC',
+          companyName: 'dangote plc',
           verified: true,
-          certified: false,
+          certified: true,
+          entity: 'Coporation',
+          redanNumber: '0123456789',
         },
       },
       { generateId: true },
@@ -3125,9 +3141,9 @@ describe('User Controller', () => {
       activated: true,
       address: { country: 'Nigeria' },
       vendor: {
-        companyName: 'Google Nigeria',
-        verified: true,
-        certified: true,
+        companyName: 'google nigeria',
+        verified: false,
+        certified: false,
       },
     });
     const dummyAdmin = UserFactory.build({
@@ -3138,7 +3154,7 @@ describe('User Controller', () => {
     const method = 'get';
 
     beforeEach(async () => {
-      await User.insertMany([...dummyUsers, ...dummyEditors]);
+      await User.insertMany([...dummyUsers, ...dummyEditor]);
       adminToken = await addUser(dummyAdmin);
       await addUser(dummyVendor1);
       await addUser(dummyVendor2);
@@ -3164,22 +3180,13 @@ describe('User Controller', () => {
     });
 
     describe('User filters', () => {
-      const dummyVendor1Details = {
-        firstName: dummyVendor1.firstName,
-        role: dummyVendor1.role,
-        activated: dummyVendor1.activated,
-        verified: dummyVendor1.vendor.verified,
-        companyName: dummyVendor1.vendor.companyName,
-        country: dummyVendor1.address.country,
-      };
-
       beforeEach(async () => {
         adminToken = await addUser(adminUser);
       });
 
-      context('sending single parameter', () => {
-        [USER_ROLE.VENDOR, USER_ROLE.ADMIN, USER_ROLE.EDITOR].map((user) =>
-          it('returns the user', (done) => {
+      context('when single filter satisfies multiple users', () => {
+        [USER_ROLE.VENDOR, USER_ROLE.ADMIN].map((user) =>
+          it('returns matched users', (done) => {
             request()
               [method](`${endpoint}?role=${user}`)
               .set('authorization', adminToken)
@@ -3200,6 +3207,14 @@ describe('User Controller', () => {
       });
 
       context('when multiple filters are used', () => {
+        const dummyVendor1Details = {
+          firstName: dummyVendor1.firstName,
+          role: dummyVendor1.role,
+          activated: dummyVendor1.activated,
+          verified: dummyVendor1.vendor.verified,
+          companyName: dummyVendor1.vendor.companyName,
+          country: dummyVendor1.address.country,
+        };
         const filteredParams = querystring.stringify(dummyVendor1Details);
 
         it('returns matched user', (done) => {
@@ -3216,15 +3231,23 @@ describe('User Controller', () => {
                 totalPage: 1,
               });
               expect(res.body.result[0]._id).to.be.eql(dummyVendor1._id.toString());
+              expect(res.body.result[0].firstName).to.be.eql(dummyVendor1Details.firstName);
+              expect(res.body.result[0].role).to.be.eql(dummyVendor1Details.role);
+              expect(res.body.result[0].activated).to.be.eql(dummyVendor1Details.activated);
+              expect(res.body.result[0].vendor.verified).to.be.eql(dummyVendor1Details.verified);
+              expect(res.body.result[0].vendor.companyName).to.be.eql(
+                dummyVendor1Details.companyName,
+              );
+              expect(res.body.result[0].address.country).to.be.eql(dummyVendor1Details.country);
               done();
             });
         });
       });
 
-      context('sending multiple parameters', () => {
+      context('when multiple filters are used', () => {
         const filterToReturnTwoResults = {
           role: 2,
-          verified: true,
+          companyName: 'go',
         };
         const filteredParams = querystring.stringify(filterToReturnTwoResults);
 
@@ -3242,12 +3265,12 @@ describe('User Controller', () => {
                 totalPage: 1,
               });
               expect(res.body.result[0].role).to.be.eql(filterToReturnTwoResults.role);
-              expect(res.body.result[0].vendor.verified).to.be.eql(
-                filterToReturnTwoResults.verified,
+              expect(res.body.result[0].vendor.companyName).to.have.string(
+                filterToReturnTwoResults.companyName,
               );
               expect(res.body.result[1].role).to.be.eql(filterToReturnTwoResults.role);
-              expect(res.body.result[1].vendor.verified).to.be.eql(
-                filterToReturnTwoResults.verified,
+              expect(res.body.result[1].vendor.companyName).to.have.string(
+                filterToReturnTwoResults.companyName,
               );
               done();
             });
@@ -3283,22 +3306,137 @@ describe('User Controller', () => {
         });
       });
 
-      context('sending single parameter', () => {
-        const singleParameterFilers = {
-          firstName: dummyVendor1.firstName,
-          role: dummyVendor1.role,
+      context('when unknown filter is used', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+        const filteredParams = querystring.stringify(unknownFilter);
+
+        it('returns all users', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 10,
+                total: 18,
+                totalPage: 2,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when sending single parameter', () => {
+        const singleParameterFilters = {
+          firstName: dummyEditor[0].firstName,
+          lastName: dummyEditor[0].lastName,
+          email: dummyEditor[0].email,
+          phone: dummyEditor[0].phone,
+          phone2: dummyEditor[0].phone2,
+          referralCode: dummyEditor[0].referralCode,
+          role: dummyEditor[0].role,
           activated: dummyVendor1.activated,
         };
 
-        Object.keys(singleParameterFilers).map((field) =>
-          it('returns matched users', (done) => {
+        Object.keys(singleParameterFilters).map((field) =>
+          it('returns matched user', (done) => {
             request()
-              [method](`${endpoint}?${field}=${singleParameterFilers[field]}`)
+              [method](`${endpoint}?${field}=${singleParameterFilters[field]}`)
               .set('authorization', adminToken)
               .end((err, res) => {
-                expect(res).to.have.status(200);
-                expect(res.body.success).to.be.eql(true);
-                expect(res.body.result[0][field]).to.be.eql(singleParameterFilers[field]);
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 1,
+                  total: 1,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0][field]).to.be.eql(singleParameterFilters[field]);
+                done();
+              });
+          }),
+        );
+
+        const singleBannedFilters = {
+          banned: dummyEditor[0].banned.status,
+        };
+
+        Object.keys(singleBannedFilters).map((field) =>
+          it('returns matched user', (done) => {
+            request()
+              [method](`${endpoint}?${field}=${singleBannedFilters[field]}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 1,
+                  total: 1,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0].banned.status).to.be.eql(singleBannedFilters[field]);
+                done();
+              });
+          }),
+        );
+
+        const singleVendorFilters = {
+          verified: dummyVendor1.vendor.verified,
+          certified: dummyVendor1.vendor.certified,
+          companyName: dummyVendor1.vendor.companyName,
+          entity: dummyVendor1.vendor.entity,
+          redanNumber: dummyVendor1.vendor.redanNumber,
+        };
+
+        Object.keys(singleVendorFilters).map((field) =>
+          it('returns matched user', (done) => {
+            request()
+              [method](`${endpoint}?${field}=${singleVendorFilters[field]}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 1,
+                  total: 1,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0].vendor[field]).to.be.eql(singleVendorFilters[field]);
+                done();
+              });
+          }),
+        );
+
+        const singleAddressFilters = {
+          city: dummyEditor[0].address.city,
+          country: dummyEditor[0].address.country,
+          state: dummyEditor[0].address.state,
+          street1: dummyEditor[0].address.street1,
+          street2: dummyEditor[0].address.street2,
+        };
+
+        Object.keys(singleAddressFilters).map((field) =>
+          it('returns matched user', (done) => {
+            request()
+              [method](`${endpoint}?${field}=${singleAddressFilters[field]}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 1,
+                  total: 1,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0].address[field]).to.be.eql(singleAddressFilters[field]);
                 done();
               });
           }),

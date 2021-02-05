@@ -269,19 +269,31 @@ export const getAllUsers = async ({ page = 1, limit = 10, ...query }) => {
   const vendorBooleanKeys = ['verified', 'certified'];
   const vendorStringKeys = ['companyName', 'entity', 'redanNumber'];
   const addressStringkeys = ['city', 'country', 'state', 'street1', 'street2'];
-  const dateKeys = ['createdAt'];
-  const vendorDateKeys = ['verifiedOn'];
+  const dateKeys = ['createdAt', 'activationDate'];
+  const vendorDateKeys = ['verifiedOn', 'certifiedOn'];
+  const bannedBooleanKeys = ['status'];
 
   const filterQuery = [
     ...buildFilterQuery(booleanKeys, query, FILTER_TYPE.BOOLEAN),
+    ...buildFilterQuery(dateKeys, query, FILTER_TYPE.DATE),
     ...buildFilterQuery(integerKeys, query, FILTER_TYPE.INTEGER),
     ...buildFilterQuery(stringKeys, query, FILTER_TYPE.STRING),
-    ...buildFilterQuery(dateKeys, query, FILTER_TYPE.DATE),
     ...buildFilterQuery(addressStringkeys, query, FILTER_TYPE.STRING, 'address'),
     ...buildFilterQuery(vendorBooleanKeys, query, FILTER_TYPE.BOOLEAN, 'vendor'),
-    ...buildFilterQuery(vendorStringKeys, query, FILTER_TYPE.STRING, 'vendor'),
     ...buildFilterQuery(vendorDateKeys, query, FILTER_TYPE.DATE, 'vendor'),
+    ...buildFilterQuery(vendorStringKeys, query, FILTER_TYPE.STRING, 'vendor'),
   ];
+
+  if ('banned' in query) {
+    filterQuery.push(
+      ...buildFilterQuery(
+        bannedBooleanKeys,
+        { status: query.banned },
+        FILTER_TYPE.BOOLEAN,
+        'banned',
+      ),
+    );
+  }
 
   const userOptions = [
     { $match: { $and: filterQuery } },
