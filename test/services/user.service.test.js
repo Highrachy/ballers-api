@@ -681,7 +681,7 @@ describe('User Service', () => {
     context('when user added is valid', async () => {
       it('returns total users', async () => {
         countedUsers = await User.countDocuments({});
-        const users = await getAllUsers({});
+        const users = await getAllUsers();
         expect(users.pagination.total).to.be.eql(countedUsers);
         expect(users.pagination.currentPage).to.be.eql(1);
         expect(users.pagination.limit).to.be.eql(10);
@@ -695,7 +695,7 @@ describe('User Service', () => {
         await addUser(UserFactory.build());
       });
       it('returns total users plus one', async () => {
-        const users = await getAllUsers({});
+        const users = await getAllUsers();
         expect(users.pagination.total).to.be.eql(countedUsers + 1);
         expect(users.pagination.currentPage).to.be.eql(1);
         expect(users.pagination.limit).to.be.eql(10);

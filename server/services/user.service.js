@@ -262,7 +262,7 @@ export const updateUser = async (updatedUser) => {
   }
 };
 
-export const getAllUsers = async ({ page = 1, limit = 10, ...query }) => {
+export const getAllUsers = async ({ page = 1, limit = 10, ...query } = {}) => {
   const filterQuery = buildFilterQuery(USER_FILTERS, query);
 
   const userOptions = [

@@ -3100,32 +3100,31 @@ describe('User Controller', () => {
       referralCode: 'ab1234',
       address: { country: 'Nigeria' },
     });
-    const dummyEditor = UserFactory.buildList(1, {
-      firstName: 'editor',
-      lastName: 'doe',
+    const dummyEditors = UserFactory.buildList(2, {
       role: USER_ROLE.EDITOR,
       activated: true,
-      email: 'dummyeditor@mail.com',
-      referralCode: 'ed1234',
-      phone: '08023054226',
-      phone2: '08132139448',
-      address: {
-        country: 'france',
-        city: 'marsielle',
-        state: 'paris',
-        street1: 'napoleon st',
-        street2: 'CDG street',
-      },
-      banned: {
-        status: true,
-      },
     });
-    const dummyVendor1 = UserFactory.build(
+    const dummyVendors = UserFactory.buildList(
+      1,
       {
         role: USER_ROLE.VENDOR,
         activated: false,
         firstName: 'vendor1',
-        address: { country: 'Ghana' },
+        lastName: 'doe',
+        email: 'dummyevendor@mail.com',
+        referralCode: 'ed1234',
+        phone: '08023054226',
+        phone2: '08132139448',
+        address: {
+          country: 'france',
+          city: 'marsielle',
+          state: 'Ghana',
+          street1: 'napoleon st',
+          street2: 'CDG street',
+        },
+        banned: {
+          status: true,
+        },
         vendor: {
           companyName: 'Dangote PLC',
           verified: true,
@@ -3150,16 +3149,6 @@ describe('User Controller', () => {
       },
       { generateId: true },
     );
-    const dummyVendor2 = UserFactory.build({
-      role: USER_ROLE.VENDOR,
-      activated: true,
-      address: { country: 'Nigeria' },
-      vendor: {
-        companyName: 'Google Nigeria',
-        verified: false,
-        certified: false,
-      },
-    });
     const dummyAdmin = UserFactory.build({
       role: USER_ROLE.ADMIN,
       activated: true,
@@ -3168,11 +3157,11 @@ describe('User Controller', () => {
     const method = 'get';
 
     beforeEach(async () => {
-      await User.insertMany([...dummyUsers, ...dummyEditor]);
+      await User.insertMany([...dummyUsers, ...dummyEditors, ...dummyVendors]);
       adminToken = await addUser(dummyAdmin);
-      await addUser(dummyVendor1);
-      await addUser(dummyVendor2);
     });
+
+    const dummyVendor1 = dummyVendors[0];
 
     describe('User pagination', () => {
       itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
@@ -3199,7 +3188,7 @@ describe('User Controller', () => {
       });
 
       context('when single filter satisfies multiple users', () => {
-        [USER_ROLE.VENDOR, USER_ROLE.ADMIN].map((user) =>
+        [USER_ROLE.EDITOR, USER_ROLE.ADMIN].map((user) =>
           it('returns matched users', (done) => {
             request()
               [method](`${endpoint}?role=${user}`)
@@ -3274,16 +3263,12 @@ describe('User Controller', () => {
                 currentPage: 1,
                 limit: 10,
                 offset: 0,
-                result: 2,
-                total: 2,
+                result: 1,
+                total: 1,
                 totalPage: 1,
               });
               expect(res.body.result[0].role).to.be.eql(filterToReturnTwoResults.role);
               expect(res.body.result[0].vendor.companyName.toLowerCase()).to.have.string(
-                filterToReturnTwoResults.companyName,
-              );
-              expect(res.body.result[1].role).to.be.eql(filterToReturnTwoResults.role);
-              expect(res.body.result[1].vendor.companyName.toLowerCase()).to.have.string(
                 filterToReturnTwoResults.companyName,
               );
               done();
@@ -3347,13 +3332,13 @@ describe('User Controller', () => {
       context('when sending single parameter', () => {
         context('when root parameters are sent', () => {
           const singleParameterFilters = {
-            firstName: dummyEditor[0].firstName,
-            lastName: dummyEditor[0].lastName,
-            email: dummyEditor[0].email,
-            phone: dummyEditor[0].phone,
-            phone2: dummyEditor[0].phone2,
-            referralCode: dummyEditor[0].referralCode,
-            role: dummyEditor[0].role,
+            firstName: dummyVendor1.firstName,
+            lastName: dummyVendor1.lastName,
+            email: dummyVendor1.email,
+            phone: dummyVendor1.phone,
+            phone2: dummyVendor1.phone2,
+            referralCode: dummyVendor1.referralCode,
+            role: dummyVendor1.role,
             activated: dummyVendor1.activated,
           };
 
@@ -3380,7 +3365,7 @@ describe('User Controller', () => {
 
         context('when banned parameters are sent', () => {
           const singleBannedFilters = {
-            banned: dummyEditor[0].banned.status,
+            banned: dummyVendor1.banned.status,
           };
 
           Object.keys(singleBannedFilters).map((field) =>
@@ -3436,11 +3421,11 @@ describe('User Controller', () => {
 
         context('when address parameters are sent', () => {
           const singleAddressFilters = {
-            city: dummyEditor[0].address.city,
-            country: dummyEditor[0].address.country,
-            state: dummyEditor[0].address.state,
-            street1: dummyEditor[0].address.street1,
-            street2: dummyEditor[0].address.street2,
+            city: dummyVendor1.address.city,
+            country: dummyVendor1.address.country,
+            state: dummyVendor1.address.state,
+            street1: dummyVendor1.address.street1,
+            street2: dummyVendor1.address.street2,
           };
 
           Object.keys(singleAddressFilters).map((field) =>
