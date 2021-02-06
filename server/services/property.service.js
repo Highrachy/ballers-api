@@ -162,7 +162,7 @@ export const getOneProperty = async (propertyId, user = {}) => {
     },
   ];
 
-  if (user && user.role === USER_ROLE.USER) {
+  if (user?.role === USER_ROLE.USER) {
     propertyOptions.splice(
       1,
       0,
@@ -181,7 +181,6 @@ export const getOneProperty = async (propertyId, user = {}) => {
                 },
               },
             },
-            { $project: { propertyId: 0, _id: 0 } },
           ],
           as: 'enquiryInfo',
         },
@@ -201,15 +200,16 @@ export const getOneProperty = async (propertyId, user = {}) => {
                 },
               },
             },
-            { $project: { propertyId: 0, _id: 0 } },
           ],
           as: 'visitationInfo',
         },
       },
     );
     propertyOptions.splice(propertyOptions.length - 1, 0, {
-      $unwind: '$enquiryInfo',
-      preserveNullAndEmptyArrays: true,
+      $unwind: {
+        path: '$enquiryInfo',
+        preserveNullAndEmptyArrays: true,
+      },
     });
     propertyOptions[propertyOptions.length - 1].$project = {
       ...propertyOptions[propertyOptions.length - 1].$project,
