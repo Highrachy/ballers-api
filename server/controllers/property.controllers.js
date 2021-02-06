@@ -63,7 +63,8 @@ const PropertyController = {
 
   getOneProperty(req, res, next) {
     const propertId = req.params.id;
-    getOneProperty(propertId)
+    const { user } = req;
+    getOneProperty(propertId, user)
       .then((property) => {
         if (property.length > 0) {
           res.status(httpStatus.OK).json({ success: true, property: property[0] });

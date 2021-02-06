@@ -23,6 +23,8 @@ import {
 } from '../helpers';
 import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
+import VisitationFactory from '../factories/visitation.factory';
+import { scheduleVisitation } from '../../server/services/visitation.service';
 
 useDatabase();
 
@@ -1122,22 +1124,90 @@ describe('Property Controller', () => {
     });
 
     context('with a valid token & id', () => {
-      [...new Array(3)].map((_, index) =>
+      [...new Array(2)].map((_, index) =>
         it('successfully returns property', (done) => {
           request()
             .get(`/api/v1/property/${property._id}`)
-            .set('authorization', [vendorToken, adminToken, userToken][index])
+            .set('authorization', [vendorToken, adminToken][index])
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('property');
+              expect(res.body.property._id).to.be.eql(property._id.toString());
               expect(res.body.property).to.not.have.property('assignedTo');
+              expect(res.body.property).to.not.have.property('enquiryInfo');
+              expect(res.body.property).to.not.have.property('visitationInfo');
               expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
               expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
               done();
             });
         }),
       );
+    });
+
+    context('when request is made by a user', () => {
+      const visitation = VisitationFactory.build(
+        {
+          propertyId: property._id,
+          userId: regularUser._id,
+        },
+        { generateId: true },
+      );
+      const enquiry = EnquiryFactory.build(
+        {
+          propertyId: property._id,
+          userId: regularUser._id,
+        },
+        { generateId: true },
+      );
+      context('with an enquiry and visitation for the property', () => {
+        beforeEach(async () => {
+          await scheduleVisitation(visitation);
+          await addEnquiry(enquiry);
+        });
+        it('returns property with enquiry and visitation info', (done) => {
+          request()
+            .get(`/api/v1/property/${property._id}`)
+            .set('authorization', userToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.property._id).to.be.eql(property._id.toString());
+              expect(res.body.property.enquiryInfo._id).to.be.eql(enquiry._id.toString());
+              expect(res.body.property.enquiryInfo.propertyId).to.be.eql(property._id.toString());
+              expect(res.body.property.enquiryInfo.userId).to.be.eql(regularUser._id.toString());
+              expect(res.body.property.visitationInfo[0]._id).to.be.eql(visitation._id.toString());
+              expect(res.body.property.visitationInfo[0].userId).to.be.eql(
+                regularUser._id.toString(),
+              );
+              expect(res.body.property.visitationInfo[0].propertyId).to.be.eql(
+                property._id.toString(),
+              );
+              expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
+              done();
+            });
+        });
+      });
+
+      context('without an enquiry and visitation for the property', () => {
+        it('returns property without enquiry and visitation info', (done) => {
+          request()
+            .get(`/api/v1/property/${property._id}`)
+            .set('authorization', userToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.property._id).to.be.eql(property._id.toString());
+              expect(res.body.property).to.not.have.property('enquiryInfo');
+              expect(res.body.property.visitationInfo.length).to.be.eql(0);
+              expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
+              done();
+            });
+        });
+      });
     });
 
     context('when token is invalid', () => {
