@@ -384,3 +384,13 @@ export const expectResponseToContainNecessaryVendorData = (data) => {
   expect(data.vendor.directors[0]).to.not.have.property('phone');
   expect(data).to.have.property('address');
 };
+
+export const expectResponseToContainNecessaryPropertyData = (data) => {
+  expect(data).to.have.property('name');
+  expect(data).to.have.property('address');
+  expect(data).to.have.property('mainImage');
+  expect(data).to.have.property('gallery');
+  expect(data).to.have.property('price');
+  expect(data).to.have.property('houseType');
+  expect(data).to.have.property('description');
+};

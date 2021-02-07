@@ -20,6 +20,14 @@ import {
   itReturnsErrorForUnverifiedVendor,
   expectResponseToExcludeSensitiveVendorData,
   expectResponseToContainNecessaryVendorData,
+  itReturnsForbiddenForNoToken,
+  itReturnsForbiddenForTokenWithInvalidAccess,
+  itReturnsTheRightPaginationValue,
+  itReturnsEmptyValuesWhenNoItemExistInDatabase,
+  expectsPaginationToReturnTheRightValues,
+  defaultPaginationResult,
+  expectResponseToContainNecessaryPropertyData,
+  itReturnsNotFoundForInvalidToken,
 } from '../helpers';
 import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
@@ -1270,38 +1278,46 @@ describe('Property Controller', () => {
   });
 
   describe('Get all properties', () => {
+    const endpoint = '/api/v1/property/all';
+    const method = 'get';
+
     const vendorUser2 = UserFactory.build(
       { role: USER_ROLE.VENDOR, activated: true },
       { generateId: true },
     );
-    const properties1 = PropertyFactory.buildList(13, {
+    const vendorProperties = PropertyFactory.buildList(13, {
       addedBy: vendorUser._id,
       updatedBy: vendorUser._id,
     });
-    const properties2 = PropertyFactory.buildList(5, {
+    const vendor2Properties = PropertyFactory.buildList(5, {
       addedBy: vendorUser2._id,
       updatedBy: vendorUser2._id,
     });
+    const editorUser = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
 
-    context('when no property is found', () => {
-      it('returns not found', (done) => {
-        request()
-          .get('/api/v1/property/all')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.properties.length).to.be.eql(0);
-            done();
-          });
-      });
+    context('when no property exists in db', () => {
+      [adminUser, vendorUser].map((user) =>
+        itReturnsEmptyValuesWhenNoItemExistInDatabase({
+          endpoint,
+          method,
+          user,
+          useExistingUser: true,
+        }),
+      );
     });
 
     describe('when properties exist in db', () => {
       beforeEach(async () => {
         await addUser(vendorUser2);
-        await Property.insertMany(properties1);
-        await Property.insertMany(properties2);
+        await addUser(editorUser);
+        await Property.insertMany([...vendorProperties, ...vendor2Properties]);
+      });
+
+      itReturnsTheRightPaginationValue({
+        endpoint,
+        method,
+        user: adminUser,
+        useExistingUser: true,
       });
 
       context('with a admin token & id', () => {
@@ -1310,50 +1326,30 @@ describe('Property Controller', () => {
             .get('/api/v1/property/all')
             .set('authorization', adminToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(18);
-              expect(res.body.properties[0]).to.have.property('name');
-              expect(res.body.properties[0]).to.have.property('address');
-              expect(res.body.properties[0]).to.have.property('mainImage');
-              expect(res.body.properties[0]).to.have.property('gallery');
-              expect(res.body.properties[0]).to.have.property('price');
-              expect(res.body.properties[0]).to.have.property('houseType');
-              expect(res.body.properties[0]).to.have.property('description');
-              expectResponseToExcludeSensitiveVendorData(res.body.properties[0].vendorInfo);
-              expectResponseToContainNecessaryVendorData(res.body.properties[0].vendorInfo);
+              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+              expectResponseToContainNecessaryPropertyData(res.body.result[0]);
+              expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
               done();
             });
         });
       });
 
-      const endpoint = '/api/v1/property/all';
-      const method = 'get';
-      itReturnsErrorForUnverifiedVendor({
-        endpoint,
-        method,
-        user: vendorUser,
-        useExistingUser: true,
-      });
-
-      context('with a vendor token & id', () => {
+      context('with vendor 1 token & id', () => {
         it('returns all properties', (done) => {
           request()
             .get('/api/v1/property/all')
             .set('authorization', vendorToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(13);
-              expect(res.body.properties[0]).to.have.property('name');
-              expect(res.body.properties[0]).to.have.property('address');
-              expect(res.body.properties[0]).to.have.property('mainImage');
-              expect(res.body.properties[0]).to.have.property('gallery');
-              expect(res.body.properties[0]).to.have.property('price');
-              expect(res.body.properties[0]).to.have.property('houseType');
-              expect(res.body.properties[0]).to.have.property('description');
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                total: 13,
+                result: 10,
+                totalPage: 2,
+              });
+              expectResponseToContainNecessaryPropertyData(res.body.result[0]);
+              expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
               done();
             });
         });
@@ -1365,43 +1361,43 @@ describe('Property Controller', () => {
             .get('/api/v1/property/all')
             .set('authorization', invalidVendorToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(0);
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                total: 0,
+                result: 0,
+                totalPage: 0,
+              });
               done();
             });
         });
       });
 
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/property/all')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
+      itReturnsErrorForUnverifiedVendor({
+        endpoint,
+        method,
+        user: vendorUser,
+        useExistingUser: true,
       });
 
-      context('when token is invalid', () => {
-        beforeEach(async () => {
-          await User.findByIdAndDelete(adminUser._id);
-        });
-        it('returns token error', (done) => {
-          request()
-            .get('/api/v1/property/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(404);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Invalid token');
-              done();
-            });
-        });
+      context('when user has invalid access token', () => {
+        [regularUser, editorUser].map((user) =>
+          itReturnsForbiddenForTokenWithInvalidAccess({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        userId: adminUser._id,
+        useExistingUser: true,
       });
 
       context('when getAllUserProperties service fails', () => {
