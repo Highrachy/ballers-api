@@ -34,6 +34,7 @@ import {
 } from '../../server/helpers/constants';
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
+import { USER_FILTERS } from '../../server/helpers/filters';
 
 useDatabase();
 
@@ -3330,36 +3331,39 @@ describe('User Controller', () => {
       });
 
       context('when sending single parameter', () => {
-        context('when root parameters are sent', () => {
-          const singleParameterFilters = {
-            firstName: dummyVendor1.firstName,
-            lastName: dummyVendor1.lastName,
-            email: dummyVendor1.email,
-            phone: dummyVendor1.phone,
-            phone2: dummyVendor1.phone2,
-            referralCode: dummyVendor1.referralCode,
-            role: dummyVendor1.role,
-            activated: dummyVendor1.activated,
-          };
-
-          Object.keys(singleParameterFilters).map((field) =>
-            it('returns matched user', (done) => {
-              request()
-                [method](`${endpoint}?${field}=${singleParameterFilters[field]}`)
-                .set('authorization', adminToken)
-                .end((err, res) => {
-                  expectsPaginationToReturnTheRightValues(res, {
-                    currentPage: 1,
-                    limit: 10,
-                    offset: 0,
-                    result: 1,
-                    total: 1,
-                    totalPage: 1,
+        const flatVendor = Object.assign(
+          {},
+          ...(function _flatten(o) {
+            return [].concat(
+              ...Object.keys(o).map((k) =>
+                typeof o[k] === 'object' ? _flatten(o[k]) : { [k]: o[k] },
+              ),
+            );
+          })(dummyVendor1),
+        );
+        context.only('when root parameters are sent', () => {
+          Object.fromEntries(
+            Object.entries(USER_FILTERS).map(([key, val]) =>
+              it('returns matched user', (done) => {
+                request()
+                  [method](`${endpoint}?${key}`)
+                  .set('authorization', adminToken)
+                  .end((err, res) => {
+                    console.log(key);
+                    console.log(val.key ? val.key : key);
+                    console.log(`${flatVendor[key]}`);
+                    expectsPaginationToReturnTheRightValues(res, {
+                      currentPage: 1,
+                      limit: 10,
+                      offset: 0,
+                      result: 1,
+                      total: 1,
+                      totalPage: 1,
+                    });
+                    done();
                   });
-                  expect(res.body.result[0][field]).to.be.eql(singleParameterFilters[field]);
-                  done();
-                });
-            }),
+              }),
+            ),
           );
         });
 
