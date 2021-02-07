@@ -19,6 +19,7 @@ import {
 } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
+import { buildFilterQuery, USER_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -261,16 +262,11 @@ export const updateUser = async (updatedUser) => {
   }
 };
 
-export const getAllRegisteredUsers = async (page = 1, limit = 10) => {
-  const users = await User.aggregate([
-    {
-      $lookup: {
-        from: 'properties',
-        localField: '_id',
-        foreignField: 'assignedTo',
-        as: 'assignedProperties',
-      },
-    },
+export const getAllUsers = async ({ page = 1, limit = 10, ...query } = {}) => {
+  const filterQuery = buildFilterQuery(USER_FILTERS, query);
+
+  const userOptions = [
+    { $match: { $and: filterQuery } },
     {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
@@ -278,7 +274,13 @@ export const getAllRegisteredUsers = async (page = 1, limit = 10) => {
       },
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },
-  ]);
+  ];
+
+  if (filterQuery.length < 1) {
+    userOptions.shift();
+  }
+
+  const users = await User.aggregate(userOptions);
   const total = getPaginationTotal(users);
   const pagination = generatePagination(page, limit, total);
   const result = users[0].data;
@@ -361,24 +363,6 @@ export const downgradeEditorToUser = async (userId) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error downgrading user', error);
   }
-};
-
-export const getAllVendors = async (page = 1, limit = 10) => {
-  const vendors = await User.aggregate([
-    { $match: { role: USER_ROLE.VENDOR } },
-    { $sort: { 'vendor.verified': 1, 'vendor.companyName': 1 } },
-    {
-      $facet: {
-        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
-        data: generateFacetData(page, limit),
-      },
-    },
-    { $project: { preferences: 0, password: 0, notifications: 0 } },
-  ]);
-  const total = getPaginationTotal(vendors);
-  const pagination = generatePagination(page, limit, total);
-  const result = vendors[0].data;
-  return { pagination, result };
 };
 
 export const verifyVendorStep = async ({ vendorId, adminId, step }) => {

@@ -1,8 +1,16 @@
+import { add } from 'date-fns';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import querystring from 'querystring';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
-import { addUser, banUser, generateLog } from '../../server/services/user.service';
+import {
+  addUser,
+  banUser,
+  generateLog,
+  generateToken,
+  getUserByEmail,
+} from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
@@ -23,6 +31,7 @@ import {
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
   itReturnsNotFoundForInvalidToken,
+  expectsPaginationToReturnTheRightValues,
 } from '../helpers';
 import {
   USER_ROLE,
@@ -32,13 +41,20 @@ import {
 } from '../../server/helpers/constants';
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
+import { USER_FILTERS } from '../../server/helpers/filters';
 
 useDatabase();
 
 let adminToken;
 let userToken;
+const futureDate = add(new Date(), { days: 5 });
 const adminUser = UserFactory.build(
-  { role: USER_ROLE.ADMIN, activated: true },
+  {
+    role: USER_ROLE.ADMIN,
+    activated: true,
+    address: { country: 'Nigeria' },
+    createdAt: futureDate,
+  },
   { generateId: true },
 );
 const regularUser = UserFactory.build(
@@ -3092,15 +3108,92 @@ describe('User Controller', () => {
 
   describe('Get all users', () => {
     const endpoint = '/api/v1/user/all';
-    const dummyUsers = UserFactory.buildList(17);
+    const dummyUsers = UserFactory.buildList(13, {
+      role: USER_ROLE.USER,
+      activated: true,
+      referralCode: 'ab1234',
+      address: { country: 'Nigeria' },
+      activationDate: futureDate,
+      createdAt: futureDate,
+    });
+    const dummyEditors = UserFactory.buildList(2, {
+      role: USER_ROLE.EDITOR,
+      activated: true,
+      activationDate: futureDate,
+      createdAt: futureDate,
+    });
+    const dummyVendor = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: false,
+        activationDate: new Date(),
+        createdAt: new Date(),
+        firstName: 'vendor1',
+        lastName: 'doe',
+        email: 'dummyevendor@mail.com',
+        referralCode: 'ed1234',
+        phone: '08023054226',
+        phone2: '08132139448',
+        address: {
+          country: 'france',
+          city: 'marsielle',
+          state: 'Ghana',
+          street1: 'napoleon st',
+          street2: 'CDG street',
+        },
+        banned: {
+          status: true,
+        },
+        vendor: {
+          companyName: 'Dangote PLC',
+          verified: true,
+          certified: true,
+          certifiedOn: new Date(),
+          verifiedOn: new Date(),
+          entity: 'Coporation',
+          redanNumber: '0123456789',
+          verification: {
+            companyInfo: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+            bankDetails: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+            directorInfo: {
+              status: VENDOR_INFO_STATUS.IN_REVIEW,
+            },
+            documentUpload: {
+              status: VENDOR_INFO_STATUS.IN_REVIEW,
+            },
+          },
+        },
+      },
+      { generateId: true },
+    );
+    const dummyAdmin = UserFactory.build(
+      {
+        role: USER_ROLE.ADMIN,
+        activated: true,
+        address: { country: 'Nigeria' },
+        activationDate: futureDate,
+        createdAt: futureDate,
+      },
+      { generateId: true },
+    );
     const method = 'get';
 
     beforeEach(async () => {
-      await User.insertMany(dummyUsers);
+      await User.insertMany([dummyAdmin, dummyVendor, ...dummyUsers, ...dummyEditors]);
+      const adminInfo = await getUserByEmail(dummyAdmin.email);
+      adminToken = generateToken(adminInfo._id);
     });
 
     describe('User pagination', () => {
-      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
+      itReturnsTheRightPaginationValue({
+        endpoint,
+        method,
+        user: adminUser,
+      });
       itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
       itReturnsAnErrorWhenServiceFails({
@@ -3117,36 +3210,177 @@ describe('User Controller', () => {
         userId: adminUser._id,
       });
     });
-  });
 
-  describe('Get all vendors', () => {
-    const endpoint = '/api/v1/user/vendor/all';
-    const method = 'get';
-    const dummyVendors = UserFactory.buildList(18, {
-      vendor: { companyName: 'Google', verified: false },
-      role: USER_ROLE.VENDOR,
-    });
-
-    beforeEach(async () => {
-      await User.insertMany(dummyVendors);
-    });
-
-    describe('Vendor pagination', () => {
-      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
-      itReturnsForbiddenForNoToken({ endpoint, method });
-      itReturnsAnErrorWhenServiceFails({
-        endpoint,
-        method,
-        user: adminUser,
-        model: User,
-        modelMethod: 'aggregate',
+    describe('User filters', () => {
+      beforeEach(async () => {
+        adminToken = await addUser(adminUser);
       });
-      itReturnsNotFoundForInvalidToken({
-        endpoint,
-        method,
-        user: adminUser,
-        userId: adminUser._id,
+
+      context('when single filter satisfies multiple users', () => {
+        [USER_ROLE.EDITOR, USER_ROLE.ADMIN].map((user) =>
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?role=${user}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0].role).to.be.eql(user);
+                done();
+              });
+          }),
+        );
+      });
+
+      context('when multiple filters are used', () => {
+        const dummyVendorDetails = {
+          firstName: dummyVendor.firstName,
+          role: dummyVendor.role,
+          activated: dummyVendor.activated,
+          verified: dummyVendor.vendor.verified,
+          companyName: dummyVendor.vendor.companyName,
+          country: dummyVendor.address.country,
+        };
+        const filteredParams = querystring.stringify(dummyVendorDetails);
+
+        it('returns matched user', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(dummyVendor._id.toString());
+              expect(res.body.result[0].firstName).to.be.eql(dummyVendorDetails.firstName);
+              expect(res.body.result[0].role).to.be.eql(dummyVendorDetails.role);
+              expect(res.body.result[0].activated).to.be.eql(dummyVendorDetails.activated);
+              expect(res.body.result[0].vendor.verified).to.be.eql(dummyVendorDetails.verified);
+              expect(res.body.result[0].vendor.companyName).to.be.eql(
+                dummyVendorDetails.companyName,
+              );
+              expect(res.body.result[0].address.country).to.be.eql(dummyVendorDetails.country);
+              done();
+            });
+        });
+      });
+
+      context('when multiple filters are used', () => {
+        const filterToReturnTwoResults = {
+          role: 2,
+          companyName: 'go',
+        };
+        const filteredParams = querystring.stringify(filterToReturnTwoResults);
+
+        it('returns matched users', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0].role).to.be.eql(filterToReturnTwoResults.role);
+              expect(res.body.result[0].vendor.companyName.toLowerCase()).to.have.string(
+                filterToReturnTwoResults.companyName,
+              );
+              done();
+            });
+        });
+      });
+
+      context('when no parameter is matched', () => {
+        const filterToReturnEmptyResult = {
+          role: 2,
+          verified: false,
+          firstName: 'John',
+          activated: true,
+          companyName: 'Highrachy',
+          country: 'Ghana',
+        };
+        const filteredParams = querystring.stringify(filterToReturnEmptyResult);
+
+        it('returns empty result', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 0,
+                total: 0,
+                totalPage: 0,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when unknown filter is used', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+        const filteredParams = querystring.stringify(unknownFilter);
+
+        it('returns all users', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 10,
+                total: 18,
+                totalPage: 2,
+              });
+              done();
+            });
+        });
+      });
+
+      context('when sending single parameter', () => {
+        Object.entries(USER_FILTERS).map(([queryKey, { key }]) => {
+          const processNestedObject = (parentObject, objPath) =>
+            objPath.split('.').reduce((acc, value) => acc[value], parentObject);
+          const filterKey = key || queryKey;
+          return it(`returns matched user for ${queryKey}`, (done) => {
+            request()
+              [method](`${endpoint}?${queryKey}=${processNestedObject(dummyVendor, filterKey)}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id.toString()).to.be.eql(dummyVendor._id.toString());
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 1,
+                  total: 1,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
       });
     });
   });

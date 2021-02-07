@@ -18,7 +18,7 @@ import {
   generateReferralCode,
   generateCode,
   assignPropertyToUser,
-  getAllRegisteredUsers,
+  getAllUsers,
   addPropertyToFavorites,
   removePropertyFromFavorites,
   getAccountOverview,
@@ -671,7 +671,7 @@ describe('User Service', () => {
     });
   });
 
-  describe('#getAllRegisteredUsers', async () => {
+  describe('#getAllUsers', async () => {
     let countedUsers;
 
     beforeEach(async () => {
@@ -681,7 +681,7 @@ describe('User Service', () => {
     context('when user added is valid', async () => {
       it('returns total users', async () => {
         countedUsers = await User.countDocuments({});
-        const users = await getAllRegisteredUsers();
+        const users = await getAllUsers();
         expect(users.pagination.total).to.be.eql(countedUsers);
         expect(users.pagination.currentPage).to.be.eql(1);
         expect(users.pagination.limit).to.be.eql(10);
@@ -692,10 +692,10 @@ describe('User Service', () => {
     });
     context('when new user is added', async () => {
       before(async () => {
-        await User.create(UserFactory.build());
+        await addUser(UserFactory.build());
       });
       it('returns total users plus one', async () => {
-        const users = await getAllRegisteredUsers();
+        const users = await getAllUsers();
         expect(users.pagination.total).to.be.eql(countedUsers + 1);
         expect(users.pagination.currentPage).to.be.eql(1);
         expect(users.pagination.limit).to.be.eql(10);

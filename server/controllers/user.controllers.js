@@ -6,7 +6,7 @@ import {
   resetPasswordViaToken,
   updateUser,
   assignPropertyToUser,
-  getAllRegisteredUsers,
+  getAllUsers,
   getUserInfo,
   addPropertyToFavorites,
   removePropertyFromFavorites,
@@ -14,7 +14,6 @@ import {
   upgradeUserToEditor,
   downgradeEditorToUser,
   verifyVendorStep,
-  getAllVendors,
   updateVendor,
   addCommentToVerificationStep,
   verifyVendor,
@@ -133,9 +132,8 @@ const UserController = {
       .catch((error) => next(error));
   },
 
-  getAllRegisteredUsers(req, res, next) {
-    const { page, limit } = req.query;
-    getAllRegisteredUsers(page, limit)
+  getAllUsers(req, res, next) {
+    getAllUsers(req.query)
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,
@@ -198,19 +196,6 @@ const UserController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Content Editor is now a User', user });
-      })
-      .catch((error) => next(error));
-  },
-
-  getAllVendors(req, res, next) {
-    const { page, limit } = req.query;
-    getAllVendors(page, limit)
-      .then(({ pagination, result }) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          pagination,
-          result,
-        });
       })
       .catch((error) => next(error));
   },
