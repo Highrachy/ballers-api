@@ -1,9 +1,16 @@
+import { add } from 'date-fns';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import querystring from 'querystring';
 import { expect, request, sinon, useDatabase } from '../config';
 import User from '../../server/models/user.model';
-import { addUser, banUser, generateLog } from '../../server/services/user.service';
+import {
+  addUser,
+  banUser,
+  generateLog,
+  generateToken,
+  getUserByEmail,
+} from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
@@ -40,8 +47,14 @@ useDatabase();
 
 let adminToken;
 let userToken;
+const futureDate = add(new Date(), { days: 5 });
 const adminUser = UserFactory.build(
-  { role: USER_ROLE.ADMIN, activated: true, address: { country: 'Nigeria' } },
+  {
+    role: USER_ROLE.ADMIN,
+    activated: true,
+    address: { country: 'Nigeria' },
+    createdAt: futureDate,
+  },
   { generateId: true },
 );
 const regularUser = UserFactory.build(
@@ -3100,16 +3113,21 @@ describe('User Controller', () => {
       activated: true,
       referralCode: 'ab1234',
       address: { country: 'Nigeria' },
+      activationDate: futureDate,
+      createdAt: futureDate,
     });
     const dummyEditors = UserFactory.buildList(2, {
       role: USER_ROLE.EDITOR,
       activated: true,
+      activationDate: futureDate,
+      createdAt: futureDate,
     });
-    const dummyVendors = UserFactory.buildList(
-      1,
+    const dummyVendor = UserFactory.build(
       {
         role: USER_ROLE.VENDOR,
         activated: false,
+        activationDate: new Date(),
+        createdAt: new Date(),
         firstName: 'vendor1',
         lastName: 'doe',
         email: 'dummyevendor@mail.com',
@@ -3130,6 +3148,8 @@ describe('User Controller', () => {
           companyName: 'Dangote PLC',
           verified: true,
           certified: true,
+          certifiedOn: new Date(),
+          verifiedOn: new Date(),
           entity: 'Coporation',
           redanNumber: '0123456789',
           verification: {
@@ -3150,22 +3170,30 @@ describe('User Controller', () => {
       },
       { generateId: true },
     );
-    const dummyAdmin = UserFactory.build({
-      role: USER_ROLE.ADMIN,
-      activated: true,
-      address: { country: 'Nigeria' },
-    });
+    const dummyAdmin = UserFactory.build(
+      {
+        role: USER_ROLE.ADMIN,
+        activated: true,
+        address: { country: 'Nigeria' },
+        activationDate: futureDate,
+        createdAt: futureDate,
+      },
+      { generateId: true },
+    );
     const method = 'get';
 
     beforeEach(async () => {
-      await User.insertMany([...dummyUsers, ...dummyEditors, ...dummyVendors]);
-      adminToken = await addUser(dummyAdmin);
+      await User.insertMany([dummyAdmin, dummyVendor, ...dummyUsers, ...dummyEditors]);
+      const adminInfo = await getUserByEmail(dummyAdmin.email);
+      adminToken = generateToken(adminInfo._id);
     });
 
-    const dummyVendor1 = dummyVendors[0];
-
     describe('User pagination', () => {
-      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
+      itReturnsTheRightPaginationValue({
+        endpoint,
+        method,
+        user: adminUser,
+      });
       itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
       itReturnsAnErrorWhenServiceFails({
@@ -3211,15 +3239,15 @@ describe('User Controller', () => {
       });
 
       context('when multiple filters are used', () => {
-        const dummyVendor1Details = {
-          firstName: dummyVendor1.firstName,
-          role: dummyVendor1.role,
-          activated: dummyVendor1.activated,
-          verified: dummyVendor1.vendor.verified,
-          companyName: dummyVendor1.vendor.companyName,
-          country: dummyVendor1.address.country,
+        const dummyVendorDetails = {
+          firstName: dummyVendor.firstName,
+          role: dummyVendor.role,
+          activated: dummyVendor.activated,
+          verified: dummyVendor.vendor.verified,
+          companyName: dummyVendor.vendor.companyName,
+          country: dummyVendor.address.country,
         };
-        const filteredParams = querystring.stringify(dummyVendor1Details);
+        const filteredParams = querystring.stringify(dummyVendorDetails);
 
         it('returns matched user', (done) => {
           request()
@@ -3234,15 +3262,15 @@ describe('User Controller', () => {
                 total: 1,
                 totalPage: 1,
               });
-              expect(res.body.result[0]._id).to.be.eql(dummyVendor1._id.toString());
-              expect(res.body.result[0].firstName).to.be.eql(dummyVendor1Details.firstName);
-              expect(res.body.result[0].role).to.be.eql(dummyVendor1Details.role);
-              expect(res.body.result[0].activated).to.be.eql(dummyVendor1Details.activated);
-              expect(res.body.result[0].vendor.verified).to.be.eql(dummyVendor1Details.verified);
+              expect(res.body.result[0]._id).to.be.eql(dummyVendor._id.toString());
+              expect(res.body.result[0].firstName).to.be.eql(dummyVendorDetails.firstName);
+              expect(res.body.result[0].role).to.be.eql(dummyVendorDetails.role);
+              expect(res.body.result[0].activated).to.be.eql(dummyVendorDetails.activated);
+              expect(res.body.result[0].vendor.verified).to.be.eql(dummyVendorDetails.verified);
               expect(res.body.result[0].vendor.companyName).to.be.eql(
-                dummyVendor1Details.companyName,
+                dummyVendorDetails.companyName,
               );
-              expect(res.body.result[0].address.country).to.be.eql(dummyVendor1Details.country);
+              expect(res.body.result[0].address.country).to.be.eql(dummyVendorDetails.country);
               done();
             });
         });
@@ -3331,157 +3359,27 @@ describe('User Controller', () => {
       });
 
       context('when sending single parameter', () => {
-        const flatVendor = Object.assign(
-          {},
-          ...(function _flatten(o) {
-            return [].concat(
-              ...Object.keys(o).map((k) =>
-                typeof o[k] === 'object' ? _flatten(o[k]) : { [k]: o[k] },
-              ),
-            );
-          })(dummyVendor1),
-        );
-        context.only('when root parameters are sent', () => {
-          Object.fromEntries(
-            Object.entries(USER_FILTERS).map(([key, val]) =>
-              it('returns matched user', (done) => {
-                request()
-                  [method](`${endpoint}?${key}`)
-                  .set('authorization', adminToken)
-                  .end((err, res) => {
-                    console.log(key);
-                    console.log(val.key ? val.key : key);
-                    console.log(`${flatVendor[key]}`);
-                    expectsPaginationToReturnTheRightValues(res, {
-                      currentPage: 1,
-                      limit: 10,
-                      offset: 0,
-                      result: 1,
-                      total: 1,
-                      totalPage: 1,
-                    });
-                    done();
-                  });
-              }),
-            ),
-          );
-        });
-
-        context('when banned parameters are sent', () => {
-          const singleBannedFilters = {
-            banned: dummyVendor1.banned.status,
-          };
-
-          Object.keys(singleBannedFilters).map((field) =>
-            it('returns matched user', (done) => {
-              request()
-                [method](`${endpoint}?${field}=${singleBannedFilters[field]}`)
-                .set('authorization', adminToken)
-                .end((err, res) => {
-                  expectsPaginationToReturnTheRightValues(res, {
-                    currentPage: 1,
-                    limit: 10,
-                    offset: 0,
-                    result: 1,
-                    total: 1,
-                    totalPage: 1,
-                  });
-                  expect(res.body.result[0].banned.status).to.be.eql(singleBannedFilters[field]);
-                  done();
+        Object.entries(USER_FILTERS).map(([queryKey, { key }]) => {
+          const processNestedObject = (parentObject, objPath) =>
+            objPath.split('.').reduce((acc, value) => acc[value], parentObject);
+          const filterKey = key || queryKey;
+          return it(`returns matched user for ${queryKey}`, (done) => {
+            request()
+              [method](`${endpoint}?${queryKey}=${processNestedObject(dummyVendor, filterKey)}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id.toString()).to.be.eql(dummyVendor._id.toString());
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 1,
+                  total: 1,
+                  totalPage: 1,
                 });
-            }),
-          );
-        });
-
-        context('when vendor parameters are sent', () => {
-          const singleVendorFilters = {
-            verified: dummyVendor1.vendor.verified,
-            certified: dummyVendor1.vendor.certified,
-            companyName: dummyVendor1.vendor.companyName,
-            entity: dummyVendor1.vendor.entity,
-            redanNumber: dummyVendor1.vendor.redanNumber,
-          };
-
-          Object.keys(singleVendorFilters).map((field) =>
-            it('returns matched user', (done) => {
-              request()
-                [method](`${endpoint}?${field}=${singleVendorFilters[field]}`)
-                .set('authorization', adminToken)
-                .end((err, res) => {
-                  expectsPaginationToReturnTheRightValues(res, {
-                    currentPage: 1,
-                    limit: 10,
-                    offset: 0,
-                    result: 1,
-                    total: 1,
-                    totalPage: 1,
-                  });
-                  expect(res.body.result[0].vendor[field]).to.be.eql(singleVendorFilters[field]);
-                  done();
-                });
-            }),
-          );
-        });
-
-        context('when address parameters are sent', () => {
-          const singleAddressFilters = {
-            city: dummyVendor1.address.city,
-            country: dummyVendor1.address.country,
-            state: dummyVendor1.address.state,
-            street1: dummyVendor1.address.street1,
-            street2: dummyVendor1.address.street2,
-          };
-
-          Object.keys(singleAddressFilters).map((field) =>
-            it('returns matched user', (done) => {
-              request()
-                [method](`${endpoint}?${field}=${singleAddressFilters[field]}`)
-                .set('authorization', adminToken)
-                .end((err, res) => {
-                  expectsPaginationToReturnTheRightValues(res, {
-                    currentPage: 1,
-                    limit: 10,
-                    offset: 0,
-                    result: 1,
-                    total: 1,
-                    totalPage: 1,
-                  });
-                  expect(res.body.result[0].address[field]).to.be.eql(singleAddressFilters[field]);
-                  done();
-                });
-            }),
-          );
-        });
-
-        context('when vendor verification parameters are sent', () => {
-          const singleVendorVerificationFilters = {
-            bankDetails: dummyVendor1.vendor.verification.bankDetails.status,
-            companyInfo: dummyVendor1.vendor.verification.companyInfo.status,
-            directorInfo: dummyVendor1.vendor.verification.directorInfo.status,
-            documentUpload: dummyVendor1.vendor.verification.documentUpload.status,
-          };
-
-          Object.keys(singleVendorVerificationFilters).map((field) =>
-            it('returns matched user', (done) => {
-              request()
-                [method](`${endpoint}?${field}=${singleVendorVerificationFilters[field]}`)
-                .set('authorization', adminToken)
-                .end((err, res) => {
-                  expectsPaginationToReturnTheRightValues(res, {
-                    currentPage: 1,
-                    limit: 10,
-                    offset: 0,
-                    result: 1,
-                    total: 1,
-                    totalPage: 1,
-                  });
-                  expect(res.body.result[0].vendor.verification[field].status).to.be.eql(
-                    singleVendorVerificationFilters[field],
-                  );
-                  done();
-                });
-            }),
-          );
+                done();
+              });
+          });
         });
       });
     });
