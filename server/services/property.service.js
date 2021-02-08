@@ -13,6 +13,7 @@ import {
   PROJECTED_ASSIGNED_USER_INFO,
 } from '../helpers/projectedSchemaInfo';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { buildFilterQuery, PROPERTY_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -86,8 +87,11 @@ export const getAllPropertiesAddedByVendor = async (vendorId) =>
     },
   ]);
 
-export const getAllProperties = async (user, page = 1, limit = 10) => {
+export const getAllProperties = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const filterQuery = buildFilterQuery(PROPERTY_FILTERS, query);
+
   const propertiesOptions = [
+    { $match: { $and: filterQuery } },
     {
       $lookup: {
         from: 'users',
@@ -129,6 +133,10 @@ export const getAllProperties = async (user, page = 1, limit = 10) => {
       },
     },
   ];
+
+  if (filterQuery.length < 1) {
+    propertiesOptions.shift();
+  }
 
   if (user.role === USER_ROLE.VENDOR) {
     propertiesOptions.unshift({ $match: { addedBy: ObjectId(user._id) } });

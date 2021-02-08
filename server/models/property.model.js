@@ -17,6 +17,7 @@ import { addressSchema } from '../helpers/constants';
  *          - houseType
  *          - bedrooms
  *          - toilets
+ *          - bathrooms
  *          - description
  *          - floorPlans
  *          - mapLocation
@@ -40,6 +41,8 @@ import { addressSchema } from '../helpers/constants';
  *            type: number
  *          toilets:
  *            type: number
+ *          bathrooms:
+ *            type: number
  *          description:
  *            type: string
  *          floorPlans:
@@ -60,6 +63,7 @@ import { addressSchema } from '../helpers/constants';
  *           units: 15
  *           houseType: 3 bedroom semi-detached duplex
  *           bedrooms: 3
+ *           bathrooms: 3
  *           toilets: 4
  *           description: Newly built 3 bedroom semi-detached duplex
  *           floorPlans: http://linktoplan.ng
@@ -98,6 +102,10 @@ const PropertySchema = new mongoose.Schema(
       required: true,
     },
     toilets: {
+      type: Number,
+      required: true,
+    },
+    bathrooms: {
       type: Number,
       required: true,
     },

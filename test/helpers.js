@@ -1,3 +1,4 @@
+import { add } from 'date-fns';
 import { addUser, loginUser } from '../server/services/user.service';
 import { expect, request, sinon } from './config';
 import User from '../server/models/user.model';
@@ -394,3 +395,5 @@ export const expectResponseToContainNecessaryPropertyData = (data) => {
   expect(data).to.have.property('houseType');
   expect(data).to.have.property('description');
 };
+
+export const futureDate = add(new Date(), { days: 5 });

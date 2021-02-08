@@ -1,9 +1,13 @@
 import { parse, add } from 'date-fns';
+import mongoose from 'mongoose';
+
+const { ObjectId } = mongoose.Types.ObjectId;
 
 export const FILTER_TYPE = {
   BOOLEAN: 'boolean',
   DATE: 'date',
   INTEGER: 'integer',
+  OBJECT_ID: 'objectId',
   STRING: 'string',
 };
 
@@ -28,6 +32,10 @@ export const buildFilterQuery = (allFilters, query) => {
 
         case FILTER_TYPE.INTEGER:
           acc.push({ [filterKey]: parseInt(query[queryKey], 10) });
+          break;
+
+        case FILTER_TYPE.OBJECT_ID:
+          acc.push({ [filterKey]: ObjectId(query[queryKey]) });
           break;
 
         case FILTER_TYPE.STRING:
@@ -77,4 +85,17 @@ export const USER_FILTERS = {
   role: { type: FILTER_TYPE.INTEGER },
   verified: { key: 'vendor.verified', type: FILTER_TYPE.BOOLEAN },
   verifiedOn: { key: 'vendor.verifiedOn', type: FILTER_TYPE.DATE },
+};
+
+export const PROPERTY_FILTERS = {
+  ...ADDRESS_FILTERS,
+  addedBy: { type: FILTER_TYPE.OBJECT_ID },
+  bathrooms: { type: FILTER_TYPE.INTEGER },
+  bedrooms: { type: FILTER_TYPE.INTEGER },
+  createdAt: { type: FILTER_TYPE.DATE },
+  houseType: { type: FILTER_TYPE.STRING },
+  name: { type: FILTER_TYPE.STRING },
+  price: { type: FILTER_TYPE.INTEGER },
+  toilets: { type: FILTER_TYPE.INTEGER },
+  units: { type: FILTER_TYPE.INTEGER },
 };

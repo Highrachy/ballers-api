@@ -53,9 +53,8 @@ const PropertyController = {
   },
 
   getAllProperties(req, res, next) {
-    const { page, limit } = req.query;
     const { user } = req;
-    getAllProperties(user, page, limit)
+    getAllProperties(user, req.query)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
       })

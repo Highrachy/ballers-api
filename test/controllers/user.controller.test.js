@@ -1,4 +1,3 @@
-import { add } from 'date-fns';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import querystring from 'querystring';
@@ -32,6 +31,7 @@ import {
   itReturnsAnErrorWhenServiceFails,
   itReturnsNotFoundForInvalidToken,
   expectsPaginationToReturnTheRightValues,
+  futureDate,
 } from '../helpers';
 import {
   USER_ROLE,
@@ -47,7 +47,6 @@ useDatabase();
 
 let adminToken;
 let userToken;
-const futureDate = add(new Date(), { days: 5 });
 const adminUser = UserFactory.build(
   {
     role: USER_ROLE.ADMIN,
