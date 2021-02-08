@@ -16,7 +16,7 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'ballers-profile',
-    allowedFormats: ['jpg', 'png'],
+    allowedFormats: ['jpg', 'jpeg', 'gif', 'png'],
     transformation: [{ width: 256, height: 256, crop: 'limit' }],
   },
 });
@@ -26,7 +26,7 @@ const largeStorage = new CloudinaryStorage({
   params: async () => {
     return {
       folder: 'ballers-upload',
-      allowedFormats: ['jpg', 'jpeg', 'png'],
+      allowedFormats: ['jpg', 'jpeg', 'gif', 'png', 'pdf'],
     };
   },
 });
