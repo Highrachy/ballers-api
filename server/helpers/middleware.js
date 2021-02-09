@@ -155,6 +155,19 @@ export const isAdminOrUserOrVendor = async (req, res, next) => {
   return null;
 };
 
+export const isUserOrVendor = async (req, res, next) => {
+  const { user } = req;
+  if (isValidUser(user) || isVerifiedVendor(user)) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
+
 export const hasValidObjectId = async (req, res, next) => {
   const { id } = req.params;
   const { ObjectId } = mongoose.Types;

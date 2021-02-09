@@ -57,6 +57,11 @@ const EMAIL_CONTENT = {
     contentBottom: `Click on the link below to accept their invitation`,
     buttonText: 'Join BALLERS',
   },
+  RESCHEDULE_VISIT: {
+    subject: 'Visitation Rescheduled',
+    contentTop:
+      'Your visitation for property [property name], has been recheduled for [new date]. Visit your dashboard for more information.',
+  },
   RESOLVE_CONCERN: {
     subject: 'Concern Resolved',
     contentTop: `Your raised concern has been resolved. Details below <br /> <strong>Question: </strong> [Question]<br /> <strong>Response: </strong>[Response]`,
@@ -69,6 +74,10 @@ const EMAIL_CONTENT = {
       "You (or someone pretending to be you) requested a password reset for your account. If you didn't made this request you can ignore this email.",
     subject: 'Password Reset',
   },
+  SCHEDULE_VISIT: {
+    subject: 'You have a new inspection request',
+    contentTop: 'A new propery visit has been requested',
+  },
   UNBAN_USER: {
     subject: 'Account Unlocked',
     contentTop:
@@ -78,10 +87,6 @@ const EMAIL_CONTENT = {
     subject: 'Account Verified',
     contentTop:
       'Congratulaions, your information has been reviewed and your account verified. Your dashboard is now fully accessible.',
-  },
-  SCHEDULE_VISIT: {
-    subject: 'You have a new inspection request',
-    contentTop: 'A new propery visit has been requested',
   },
   WELCOME_MESSAGE: {
     subject: 'Welcome to BALLERS',

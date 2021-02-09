@@ -1,6 +1,16 @@
 import express from 'express';
-import propertyVisitationSchema from '../schemas/visitation.schema';
-import { schemaValidation, authenticate, isVendorOrAdmin } from '../helpers/middleware';
+import {
+  propertyVisitationSchema,
+  resolveVisitationSchema,
+  rescheduleVisitationSchema,
+} from '../schemas/visitation.schema';
+import {
+  schemaValidation,
+  authenticate,
+  isVendorOrAdmin,
+  isUserOrVendor,
+  isVendor,
+} from '../helpers/middleware';
 import VisitationController from '../controllers/visitation.controllers';
 
 const router = express.Router();
@@ -56,5 +66,77 @@ router.post(
  *          description: Internal server error
  */
 router.get('/all', authenticate, isVendorOrAdmin, VisitationController.getAll);
+
+/**
+ * @swagger
+ * /visitation/resolve:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows a vendor resolve a completed visitation
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              visitationId:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Visitation resolved
+ *      '404':
+ *        description: Visitation not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/resolve',
+  authenticate,
+  isVendor,
+  schemaValidation(resolveVisitationSchema),
+  VisitationController.resolveVisitation,
+);
+
+/**
+ * @swagger
+ * /visitation/reschedule:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows a vendor or a user reschedule a visitation
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              visitationId:
+ *                  type: string
+ *              step:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Visitation resolved
+ *      '404':
+ *        description: Visitation not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/reschedule',
+  authenticate,
+  isUserOrVendor,
+  schemaValidation(rescheduleVisitationSchema),
+  VisitationController.rescheduleVisitation,
+);
 
 module.exports = router;

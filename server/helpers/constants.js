@@ -62,3 +62,8 @@ export const COMMENT_STATUS = {
   RESOLVED: 'Resolved',
   PENDING: 'Pending',
 };
+
+export const VISITATION_STATUS = {
+  PENDING: 'Pending',
+  RESOLVED: 'Resolved',
+};

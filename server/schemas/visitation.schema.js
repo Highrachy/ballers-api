@@ -7,7 +7,7 @@ import {
   nonRequiredEmail,
 } from './helper.schema';
 
-const propertyVisitationSchema = Joi.object({
+export const propertyVisitationSchema = Joi.object({
   propertyId: requiredObjectId('Property id'),
   visitorName: requiredString('Name'),
   visitorEmail: nonRequiredEmail('Email address'),
@@ -15,4 +15,11 @@ const propertyVisitationSchema = Joi.object({
   visitDate: requiredFutureDate('Visit Date'),
 });
 
-export default propertyVisitationSchema;
+export const resolveVisitationSchema = Joi.object({
+  visitationId: requiredObjectId('Visitation id'),
+});
+
+export const rescheduleVisitationSchema = Joi.object({
+  visitationId: requiredObjectId('Visitation id'),
+  visitDate: requiredFutureDate('New Visit Date'),
+});

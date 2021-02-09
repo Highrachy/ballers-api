@@ -1,4 +1,9 @@
-import { scheduleVisitation, getAllVisitations } from '../services/visitation.service';
+import {
+  scheduleVisitation,
+  getAllVisitations,
+  rescheduleVisitation,
+  resolveVisitation,
+} from '../services/visitation.service';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
 import httpStatus from '../helpers/httpStatus';
@@ -30,6 +35,32 @@ const VisitationController = {
     getAllVisitations(user, page, limit)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
+      })
+      .catch((error) => next(error));
+  },
+
+  resolveVisitation(req, res, next) {
+    const { visitationId } = req.locals;
+    const vendorId = req.user._id;
+    resolveVisitation({ visitationId, vendorId })
+      .then((visitation) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Visitation resolved', visitation });
+      })
+      .catch((error) => next(error));
+  },
+
+  rescheduleVisitation(req, res, next) {
+    const visitationInfo = req.locals;
+    const { user } = req;
+    rescheduleVisitation({ user, visitationInfo })
+      .then(({ visitation, response }) => {
+        const contentTop = `Your visitation for property ${response.property.name}, has been recheduled for ${visitation.visitDate}. Visit your dashboard for more information.`;
+        sendMail(EMAIL_CONTENT.RESCHEDULE_VISIT, response.mailDetails, { contentTop });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Visitation rescheduled', visitation });
       })
       .catch((error) => next(error));
   },

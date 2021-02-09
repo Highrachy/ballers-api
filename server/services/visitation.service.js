@@ -4,10 +4,12 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById } from './property.service';
 import { getUserById } from './user.service';
-import { USER_ROLE } from '../helpers/constants';
+import { USER_ROLE, VISITATION_STATUS } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 
 const { ObjectId } = mongoose.Types.ObjectId;
+
+export const getVisitationById = async (id) => Visitation.findById(id).select();
 
 export const scheduleVisitation = async (schedule) => {
   const property = await getPropertyById(schedule.propertyId).catch((error) => {
@@ -58,4 +60,65 @@ export const getAllVisitations = async (user, page = 1, limit = 10) => {
   const pagination = generatePagination(page, limit, total);
   const result = schedules[0].data;
   return { pagination, result };
+};
+
+export const resolveVisitation = async ({ visitationId, vendorId }) => {
+  const visitation = await getVisitationById(visitationId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!visitation) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Visitation not found');
+  }
+  if (visitation.vendorId.toString() !== vendorId.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    return Visitation.findByIdAndUpdate(
+      visitation.id,
+      { $set: { status: VISITATION_STATUS.RESOLVED } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving visitation', error);
+  }
+};
+
+export const rescheduleVisitation = async ({ user, visitationInfo }) => {
+  let mailDetails;
+  const visitation = await getVisitationById(visitationInfo.visitationId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!visitation) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Visitation not found');
+  }
+  if (
+    (user.role === USER_ROLE.VENDOR && visitation.vendorId.toString() !== user._id.toString()) ||
+    (user.role === USER_ROLE.USER && visitation.userId.toString() !== user._id.toString())
+  ) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  if (user.role === USER_ROLE.VENDOR) {
+    mailDetails = await getUserById(visitation.userId);
+  } else {
+    mailDetails = await getUserById(visitation.vendorId);
+  }
+  const property = await getPropertyById(visitation.propertyId);
+
+  const response = { mailDetails, property };
+
+  try {
+    const rescheduledVisitation = await Visitation.findByIdAndUpdate(
+      visitation.id,
+      { $set: { visitDate: visitationInfo.visitDate } },
+      { new: true },
+    );
+
+    return { visitation: rescheduledVisitation, response };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error rescheduling visitation', error);
+  }
 };
