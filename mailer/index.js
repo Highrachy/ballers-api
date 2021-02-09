@@ -60,7 +60,7 @@ const EMAIL_CONTENT = {
   RESCHEDULE_VISIT: {
     subject: 'Visitation Rescheduled',
     contentTop:
-      'Your visitation for property [property name], has been recheduled for [new date]. Visit your dashboard for more information.',
+      'The visitation to [property name] on [previous visitation date], has been rescheduled for [new date] by [user that rescheduled]. [Reason]. Visit your dashboard for more information.',
   },
   RESOLVE_CONCERN: {
     subject: 'Concern Resolved',

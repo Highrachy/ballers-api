@@ -39,6 +39,15 @@ const VisitationSchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
+    rescheduleLog: [
+      {
+        reason: String,
+        rescheduleFrom: Date,
+        rescheduleTo: Date,
+        date: Date,
+        rescheduleBy: ObjectId,
+      },
+    ],
     status: {
       type: String,
       default: VISITATION_STATUS.PENDING,

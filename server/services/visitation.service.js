@@ -6,6 +6,7 @@ import { getPropertyById } from './property.service';
 import { getUserById } from './user.service';
 import { USER_ROLE, VISITATION_STATUS } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { getDateWithTimestamp } from '../helpers/dates';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -101,6 +102,13 @@ export const rescheduleVisitation = async ({ user, visitationInfo }) => {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
+  if (visitation.status === VISITATION_STATUS.RESOLVED) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'You cannot reschedule a resolved visitation',
+    );
+  }
+
   if (user.role === USER_ROLE.VENDOR) {
     mailDetails = await getUserById(visitation.userId);
   } else {
@@ -108,16 +116,25 @@ export const rescheduleVisitation = async ({ user, visitationInfo }) => {
   }
   const property = await getPropertyById(visitation.propertyId);
 
-  const response = { mailDetails, property };
+  const rescheduleLog = [
+    {
+      reason: visitationInfo.reason,
+      rescheduleFrom: visitation.visitDate,
+      rescheduleTo: visitationInfo.visitDate,
+      date: getDateWithTimestamp(),
+      rescheduleBy: user._id,
+    },
+    ...visitation.rescheduleLog,
+  ];
 
   try {
     const rescheduledVisitation = await Visitation.findByIdAndUpdate(
       visitation.id,
-      { $set: { visitDate: visitationInfo.visitDate } },
+      { $set: { visitDate: visitationInfo.visitDate, rescheduleLog } },
       { new: true },
     );
 
-    return { visitation: rescheduledVisitation, response };
+    return { visitation: rescheduledVisitation, mailDetails, property };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error rescheduling visitation', error);
   }

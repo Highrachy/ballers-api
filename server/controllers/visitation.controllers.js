@@ -55,9 +55,16 @@ const VisitationController = {
     const visitationInfo = req.locals;
     const { user } = req;
     rescheduleVisitation({ user, visitationInfo })
-      .then(({ visitation, response }) => {
-        const contentTop = `Your visitation for property ${response.property.name}, has been recheduled for ${visitation.visitDate}. Visit your dashboard for more information.`;
-        sendMail(EMAIL_CONTENT.RESCHEDULE_VISIT, response.mailDetails, { contentTop });
+      .then(({ visitation, mailDetails, property }) => {
+        const contentTop = `The visitation to ${property.name} on ${
+          visitation.rescheduleLog[0].rescheduleFrom
+        }, has been rescheduled for ${visitation.visitDate} by ${
+          user.vendor.companyName ? user.vendor.companyName : `${user.lastName} ${user.firstName}`
+        }. Reason: ${
+          visitation.rescheduleLog[0].reason
+        }. Visit your dashboard for more information.`;
+
+        sendMail(EMAIL_CONTENT.RESCHEDULE_VISIT, mailDetails, { contentTop });
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Visitation rescheduled', visitation });

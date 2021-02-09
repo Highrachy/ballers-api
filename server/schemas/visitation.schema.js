@@ -22,4 +22,5 @@ export const resolveVisitationSchema = Joi.object({
 export const rescheduleVisitationSchema = Joi.object({
   visitationId: requiredObjectId('Visitation id'),
   visitDate: requiredFutureDate('New Visit Date'),
+  reason: requiredString('Reason'),
 });
