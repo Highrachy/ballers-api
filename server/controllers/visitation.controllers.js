@@ -3,6 +3,7 @@ import {
   getAllVisitations,
   rescheduleVisitation,
   resolveVisitation,
+  cancelVisitation,
 } from '../services/visitation.service';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
@@ -68,6 +69,21 @@ const VisitationController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Visitation rescheduled', visitation });
+      })
+      .catch((error) => next(error));
+  },
+
+  cancelVisitation(req, res, next) {
+    const visitationInfo = req.locals;
+    const { user } = req;
+    cancelVisitation({ visitationInfo, userId: user._id })
+      .then(({ visitation, mailDetails, property }) => {
+        const contentTop = `The visitation to ${property.name} on ${visitation.visitDate}, has been cancelled by ${user.lastName} ${user.firstName}. Reason: ${visitation.rescheduleLog[0].reason}. Visit your dashboard for more information.`;
+
+        sendMail(EMAIL_CONTENT.CANCEL_VISIT, mailDetails, { contentTop });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Visitation cancelled', visitation });
       })
       .catch((error) => next(error));
   },

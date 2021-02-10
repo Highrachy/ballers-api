@@ -3,6 +3,7 @@ import {
   propertyVisitationSchema,
   resolveVisitationSchema,
   rescheduleVisitationSchema,
+  cancelVisitationSchema,
 } from '../schemas/visitation.schema';
 import {
   schemaValidation,
@@ -10,6 +11,7 @@ import {
   isVendorOrAdmin,
   isUserOrVendor,
   isVendor,
+  isUser,
 } from '../helpers/middleware';
 import VisitationController from '../controllers/visitation.controllers';
 
@@ -72,7 +74,7 @@ router.get('/all', authenticate, isVendorOrAdmin, VisitationController.getAll);
  * /visitation/resolve:
  *   put:
  *     tags:
- *       - User
+ *       - Visitation
  *     description: Allows a vendor resolve a completed visitation
  *     produces:
  *       - application/json
@@ -107,7 +109,7 @@ router.put(
  * /visitation/reschedule:
  *   put:
  *     tags:
- *       - User
+ *       - Visitation
  *     description: Allows a vendor or a user reschedule a visitation
  *     produces:
  *       - application/json
@@ -119,7 +121,9 @@ router.put(
  *            properties:
  *              visitationId:
  *                  type: string
- *              step:
+ *              visitDate:
+ *                  type: date
+ *              reason:
  *                  type: string
  *     responses:
  *      '200':
@@ -137,6 +141,43 @@ router.put(
   isUserOrVendor,
   schemaValidation(rescheduleVisitationSchema),
   VisitationController.rescheduleVisitation,
+);
+
+/**
+ * @swagger
+ * /visitation/cancel:
+ *   put:
+ *     tags:
+ *       - Visitation
+ *     description: Allows a user cancel a visitation
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              visitationId:
+ *                  type: string
+ *              reason:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Visitation cancelled
+ *      '404':
+ *        description: Visitation not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/cancel',
+  authenticate,
+  isUser,
+  schemaValidation(cancelVisitationSchema),
+  VisitationController.cancelVisitation,
 );
 
 module.exports = router;

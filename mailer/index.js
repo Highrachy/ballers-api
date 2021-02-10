@@ -10,6 +10,11 @@ const EMAIL_CONTENT = {
     contentTop:
       'Your account has been locked for security reasons. Kindly contact Ballers Support for more information.',
   },
+  CANCEL_VISIT: {
+    subject: 'Visitation Cancelled',
+    contentTop:
+      'The visitation to [property name] on [previous visitation date], has been cancelled by [user that rescheduled]. [Reason]. Visit your dashboard for more information.',
+  },
   CERTIFY_VENDOR: {
     subject: 'Account Certified',
     contentTop:

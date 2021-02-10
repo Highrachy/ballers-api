@@ -64,6 +64,7 @@ export const COMMENT_STATUS = {
 };
 
 export const VISITATION_STATUS = {
+  CANCELLED: 'Cancelled',
   PENDING: 'Pending',
   RESOLVED: 'Resolved',
 };

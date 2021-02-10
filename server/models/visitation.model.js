@@ -45,7 +45,7 @@ const VisitationSchema = new mongoose.Schema(
         rescheduleFrom: Date,
         rescheduleTo: Date,
         date: Date,
-        rescheduleBy: ObjectId,
+        rescheduleBy: String,
       },
     ],
     status: {

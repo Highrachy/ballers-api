@@ -529,8 +529,8 @@ describe('Visitation Controller', () => {
       await scheduleVisitation(visitation);
     });
 
-    context('when valid token is sent', () => {
-      const returnsExpectedResponse = (res) => {
+    context('with valid token', () => {
+      const returnsExpectedRescheduleResponse = (res) => {
         expect(res).to.have.status(200);
         expect(res.body.success).to.be.eql(true);
         expect(res.body.message).to.be.eql('Visitation rescheduled');
@@ -551,10 +551,8 @@ describe('Visitation Controller', () => {
             .set('authorization', vendorToken)
             .send(body)
             .end((err, res) => {
-              expect(res.body.visitation.rescheduleLog[0].rescheduleBy).to.be.eql(
-                vendor._id.toString(),
-              );
-              returnsExpectedResponse(res);
+              expect(res.body.visitation.rescheduleLog[0].rescheduleBy).to.be.eql('Vendor');
+              returnsExpectedRescheduleResponse(res);
               done();
             });
         });
@@ -567,10 +565,8 @@ describe('Visitation Controller', () => {
             .set('authorization', userToken)
             .send(body)
             .end((err, res) => {
-              expect(res.body.visitation.rescheduleLog[0].rescheduleBy).to.be.eql(
-                user._id.toString(),
-              );
-              returnsExpectedResponse(res);
+              expect(res.body.visitation.rescheduleLog[0].rescheduleBy).to.be.eql('User');
+              returnsExpectedRescheduleResponse(res);
               done();
             });
         });
@@ -590,7 +586,28 @@ describe('Visitation Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('You cannot reschedule a resolved visitation');
+              expect(res.body.message).to.be.eql('The visitation has already been resolved');
+
+              done();
+            });
+        });
+      });
+
+      context('when visitation has been cancelled', () => {
+        beforeEach(async () => {
+          await Visitation.findByIdAndUpdate(visitation._id, {
+            status: VISITATION_STATUS.CANCELLED,
+          });
+        });
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send(body)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('The visitation has already been cancelled');
 
               done();
             });
@@ -631,6 +648,115 @@ describe('Visitation Controller', () => {
           request()
             [method](endpoint)
             .set('authorization', vendorToken)
+            .send(body)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              Visitation.findByIdAndUpdate.restore();
+            });
+        });
+      });
+    });
+  });
+
+  describe('Cancel Visitation', () => {
+    const method = 'put';
+    const endpoint = '/api/v1/visitation/cancel';
+    const visitation = VisitationFactory.build(
+      {
+        propertyId: demoProperty._id,
+        userId: user._id,
+        vendorId: vendor._id,
+        status: VISITATION_STATUS.PENDING,
+        visitDate: '2021-12-11',
+      },
+      { generateId: true },
+    );
+    const body = {
+      visitationId: visitation._id,
+      reason: 'family emergency',
+    };
+
+    beforeEach(async () => {
+      await scheduleVisitation(visitation);
+    });
+
+    context('with valid token', () => {
+      context('when request is sent by valid user', () => {
+        it('returns updated visitation', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', userToken)
+            .send(body)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Visitation cancelled');
+              expect(res.body.visitation._id).to.be.eql(visitation._id.toString());
+              expect(res.body.visitation.rescheduleLog[0].rescheduleBy).to.be.eql('User');
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.CANCEL_VISIT);
+              done();
+            });
+        });
+      });
+
+      context('when visitation has been resolved', () => {
+        beforeEach(async () => {
+          await Visitation.findByIdAndUpdate(visitation._id, {
+            status: VISITATION_STATUS.RESOLVED,
+          });
+        });
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', userToken)
+            .send(body)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('The visitation has already been resolved');
+
+              done();
+            });
+        });
+      });
+
+      context('with unauthorized token', () => {
+        [...new Array(3)].map((_, index) =>
+          it('returns error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', [adminToken, vendorToken, vendor2Token][index])
+              .send(body)
+              .end((err, res) => {
+                expect(res).to.have.status(403);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+                done();
+              });
+          }),
+        );
+      });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user,
+        userId: user._id,
+        data: body,
+        useExistingUser: true,
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      context('when cancel service returns an error', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Visitation, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', userToken)
             .send(body)
             .end((err, res) => {
               expect(res).to.have.status(400);
