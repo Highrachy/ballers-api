@@ -572,6 +572,23 @@ describe('Visitation Controller', () => {
         });
       });
 
+      context('when visitation id is invalid', () => {
+        const invalidVisitationId = mongoose.Types.ObjectId();
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', userToken)
+            .send({ ...body, visitationId: invalidVisitationId })
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Visitation not found');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
       context('when visitation has been resolved', () => {
         beforeEach(async () => {
           await Visitation.findByIdAndUpdate(visitation._id, {
@@ -587,7 +604,7 @@ describe('Visitation Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('The visitation has already been resolved');
-
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -608,7 +625,7 @@ describe('Visitation Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('The visitation has already been cancelled');
-
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -694,9 +711,27 @@ describe('Visitation Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Visitation cancelled');
               expect(res.body.visitation._id).to.be.eql(visitation._id.toString());
+              expect(res.body.visitation.status).to.be.eql('Cancelled');
               expect(res.body.visitation.rescheduleLog[0].rescheduleBy).to.be.eql('User');
               expect(sendMailStub.callCount).to.eq(1);
               expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.CANCEL_VISIT);
+              done();
+            });
+        });
+      });
+
+      context('when visitation id is invalid', () => {
+        const invalidVisitationId = mongoose.Types.ObjectId();
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', userToken)
+            .send({ ...body, visitationId: invalidVisitationId })
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Visitation not found');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -717,7 +752,7 @@ describe('Visitation Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('The visitation has already been resolved');
-
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });

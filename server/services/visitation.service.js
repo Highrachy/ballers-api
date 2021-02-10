@@ -86,8 +86,9 @@ export const resolveVisitation = async ({ visitationId, vendorId }) => {
   }
 };
 
-export const rescheduleVisitation = async ({ user, visitationInfo }) => {
+export const processVisitation = async ({ user, visitationInfo, action }) => {
   let mailDetails;
+  let update;
   const visitation = await getVisitationById(visitationInfo.visitationId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -126,68 +127,33 @@ export const rescheduleVisitation = async ({ user, visitationInfo }) => {
   const rescheduleLog = [
     {
       reason: visitationInfo.reason,
-      rescheduleFrom: visitation.visitDate,
-      rescheduleTo: visitationInfo.visitDate,
+      rescheduleFrom: action === 'reschedule' ? visitation.visitDate : null,
+      rescheduleTo: visitationInfo?.visitDate,
       date: getDateWithTimestamp(),
       rescheduleBy: user.role === USER_ROLE.VENDOR ? 'Vendor' : 'User',
     },
     ...visitation.rescheduleLog,
   ];
 
+  if (action === 'reschedule') {
+    update = { visitDate: visitationInfo.visitDate, rescheduleLog };
+  } else {
+    update = { status: VISITATION_STATUS.CANCELLED, rescheduleLog };
+  }
+
   try {
-    const rescheduledVisitation = await Visitation.findByIdAndUpdate(
+    const updatedVisitation = await Visitation.findByIdAndUpdate(
       visitation.id,
-      { $set: { visitDate: visitationInfo.visitDate, rescheduleLog } },
+      { $set: update },
       { new: true },
     );
 
-    return { visitation: rescheduledVisitation, mailDetails, property };
+    return { visitation: updatedVisitation, mailDetails, property };
   } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error rescheduling visitation', error);
-  }
-};
-
-export const cancelVisitation = async ({ userId, visitationInfo }) => {
-  const visitation = await getVisitationById(visitationInfo.visitationId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (!visitation) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Visitation not found');
-  }
-  if (visitation.userId.toString() !== userId.toString()) {
-    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
-  }
-
-  if (visitation.status === VISITATION_STATUS.RESOLVED) {
     throw new ErrorHandler(
-      httpStatus.PRECONDITION_FAILED,
-      'The visitation has already been resolved',
+      httpStatus.BAD_REQUEST,
+      `Error ${action === 'cancel' ? 'cancelling' : 'rescheduling'} visitation`,
+      error,
     );
-  }
-
-  const mailDetails = await getUserById(visitation.vendorId);
-
-  const property = await getPropertyById(visitation.propertyId);
-
-  const rescheduleLog = [
-    {
-      reason: visitationInfo.reason,
-      date: getDateWithTimestamp(),
-      rescheduleBy: 'User',
-    },
-    ...visitation.rescheduleLog,
-  ];
-
-  try {
-    const cancelledVisitation = await Visitation.findByIdAndUpdate(
-      visitation.id,
-      { $set: { status: VISITATION_STATUS.CANCELLED, rescheduleLog } },
-      { new: true },
-    );
-
-    return { visitation: cancelledVisitation, mailDetails, property };
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error cancelling visitation', error);
   }
 };

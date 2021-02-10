@@ -1,13 +1,13 @@
 import {
   scheduleVisitation,
   getAllVisitations,
-  rescheduleVisitation,
   resolveVisitation,
-  cancelVisitation,
+  processVisitation,
 } from '../services/visitation.service';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
 import httpStatus from '../helpers/httpStatus';
+import { convertDateToWords } from '../helpers/dates';
 
 const VisitationController = {
   book(req, res, next) {
@@ -55,12 +55,13 @@ const VisitationController = {
   rescheduleVisitation(req, res, next) {
     const visitationInfo = req.locals;
     const { user } = req;
-    rescheduleVisitation({ user, visitationInfo })
+    const action = 'reschedule';
+    processVisitation({ user, visitationInfo, action })
       .then(({ visitation, mailDetails, property }) => {
-        const contentTop = `The visitation to ${property.name} on ${
-          visitation.rescheduleLog[0].rescheduleFrom
-        }, has been rescheduled for ${visitation.visitDate} by ${
-          user.vendor.companyName ? user.vendor.companyName : `${user.lastName} ${user.firstName}`
+        const contentTop = `The visitation to ${property.name} on ${convertDateToWords(
+          visitation.rescheduleLog[0].rescheduleFrom,
+        )}, has been rescheduled for ${convertDateToWords(visitation.visitDate)} by ${
+          user.vendor.companyName ? user.vendor.companyName : `${user.firstName} ${user.lastName}`
         }. Reason: ${
           visitation.rescheduleLog[0].reason
         }. Visit your dashboard for more information.`;
@@ -76,9 +77,14 @@ const VisitationController = {
   cancelVisitation(req, res, next) {
     const visitationInfo = req.locals;
     const { user } = req;
-    cancelVisitation({ visitationInfo, userId: user._id })
+    const action = 'cancel';
+    processVisitation({ user, visitationInfo, action })
       .then(({ visitation, mailDetails, property }) => {
-        const contentTop = `The visitation to ${property.name} on ${visitation.visitDate}, has been cancelled by ${user.lastName} ${user.firstName}. Reason: ${visitation.rescheduleLog[0].reason}. Visit your dashboard for more information.`;
+        const contentTop = `The visitation to ${property.name} on ${convertDateToWords(
+          visitation.visitDate,
+        )}, has been cancelled by ${user.firstName} ${user.lastName}. Reason: ${
+          visitation.rescheduleLog[0].reason
+        }. Visit your dashboard for more information.`;
 
         sendMail(EMAIL_CONTENT.CANCEL_VISIT, mailDetails, { contentTop });
         res

@@ -13,7 +13,7 @@ const EMAIL_CONTENT = {
   CANCEL_VISIT: {
     subject: 'Visitation Cancelled',
     contentTop:
-      'The visitation to [property name] on [previous visitation date], has been cancelled by [user that rescheduled]. [Reason]. Visit your dashboard for more information.',
+      'The visitation to [property name] on [previous visitation date], has been cancelled by [user]. [Reason]. Visit your dashboard for more information.',
   },
   CERTIFY_VENDOR: {
     subject: 'Account Certified',
