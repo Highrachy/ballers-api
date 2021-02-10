@@ -386,14 +386,66 @@ export const expectResponseToContainNecessaryVendorData = (data) => {
   expect(data).to.have.property('address');
 };
 
-export const expectResponseToContainNecessaryPropertyData = (data) => {
-  expect(data).to.have.property('name');
-  expect(data).to.have.property('address');
-  expect(data).to.have.property('mainImage');
-  expect(data).to.have.property('gallery');
-  expect(data).to.have.property('price');
-  expect(data).to.have.property('houseType');
-  expect(data).to.have.property('description');
+export const expectResponseToContainNecessaryPropertyData = (data, object) => {
+  expect(data.name).to.be.eql(object.name);
+  expect(data.address).to.be.eql(object.address);
+  expect(data.mainImage).to.be.eql(object.mainImage);
+  expect(data.gallery).to.be.eql(object.gallery);
+  expect(data.price).to.be.eql(object.price);
+  expect(data.houseType).to.be.eql(object.houseType);
+  expect(data.description).to.be.eql(object.description);
+  expect(data.units).to.be.eql(object.units);
+  expect(data.bedrooms).to.be.eql(object.bedrooms);
+  expect(data.bathrooms).to.be.eql(object.bathrooms);
+  expect(data.toilets).to.be.eql(object.toilets);
+  expect(data.titleDocument).to.be.eql(object.titleDocument);
+  expect(data.neighborhood).to.be.eql(object.neighborhood);
+  expect(data.mainImage).to.be.eql(object.mainImage);
 };
 
 export const futureDate = add(new Date(), { days: 5 });
+
+export const filterTestForSingleParameter = ({
+  filter,
+  method,
+  endpoint,
+  user,
+  dataObject,
+  useExistingUser = false,
+}) => {
+  let token;
+
+  beforeEach(async () => {
+    if (useExistingUser) {
+      const loggedInUser = await loginUser(user);
+      token = loggedInUser.token;
+    } else {
+      token = await addUser({ ...user, vendor: { ...user.vendor, verified: false } });
+    }
+  });
+
+  context('when sending single parameter', () => {
+    Object.entries(filter).map(([queryKey, { key }]) => {
+      const processNestedObject = (parentObject, objPath) =>
+        objPath.split('.').reduce((acc, value) => acc[value], parentObject);
+      const filterKey = key || queryKey;
+      return it(`returns matched user for ${queryKey}`, (done) => {
+        request()
+          [method](`${endpoint}?${queryKey}=${processNestedObject(dataObject, filterKey)}`)
+          .set('authorization', token)
+          .end((err, res) => {
+            expect(res.body.result[0]._id.toString()).to.be.eql(dataObject._id.toString());
+            expectsPaginationToReturnTheRightValues(res, {
+              currentPage: 1,
+              limit: 10,
+              offset: 0,
+              result: 1,
+              total: 1,
+              totalPage: 1,
+            });
+            done();
+          });
+      });
+    });
+  });
+};

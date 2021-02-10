@@ -29,7 +29,7 @@ import {
   defaultPaginationResult,
   expectResponseToContainNecessaryPropertyData,
   itReturnsNotFoundForInvalidToken,
-  futureDate,
+  filterTestForSingleParameter,
 } from '../helpers';
 import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
@@ -42,7 +42,7 @@ useDatabase();
 let adminToken;
 let vendorToken;
 let userToken;
-let invalidVendorToken;
+let newVendorToken;
 
 const adminUser = UserFactory.build(
   { role: USER_ROLE.ADMIN, activated: true },
@@ -85,7 +85,7 @@ describe('Property Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     vendorToken = await addUser(vendorUser);
-    invalidVendorToken = await addUser(invalidVendorUser);
+    newVendorToken = await addUser(invalidVendorUser);
     userToken = await addUser(regularUser);
   });
 
@@ -386,6 +386,22 @@ describe('Property Controller', () => {
             });
         });
       });
+      context('when bathrooms is empty', () => {
+        it('returns an error', (done) => {
+          const property = PropertyFactory.build({ bathrooms: '' });
+          request()
+            .post('/api/v1/property/add')
+            .set('authorization', vendorToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Bathroom number" must be a number');
+              done();
+            });
+        });
+      });
       context('when description is empty', () => {
         it('returns an error', (done) => {
           const property = PropertyFactory.build({ description: '' });
@@ -581,7 +597,7 @@ describe('Property Controller', () => {
       it('returns forbidden', (done) => {
         request()
           .put('/api/v1/property/update')
-          .set('authorization', invalidVendorToken)
+          .set('authorization', newVendorToken)
           .send(newProperty)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -864,6 +880,22 @@ describe('Property Controller', () => {
             });
         });
       });
+      context('when bathrooms is empty', () => {
+        it('returns an error', (done) => {
+          const invalidProperty = PropertyFactory.build({ id: property._id, bathrooms: '' });
+          request()
+            .put('/api/v1/property/update')
+            .set('authorization', vendorToken)
+            .send(invalidProperty)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Bathroom number" must be a number');
+              done();
+            });
+        });
+      });
       context('when description is empty', () => {
         it('returns an error', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, description: '' });
@@ -1058,7 +1090,7 @@ describe('Property Controller', () => {
       it('returns forbidden', (done) => {
         request()
           .delete(`/api/v1/property/delete/${property._id}`)
-          .set('authorization', invalidVendorToken)
+          .set('authorization', newVendorToken)
           .end((err, res) => {
             expect(res).to.have.status(400);
             expect(res.body.success).to.be.eql(false);
@@ -1292,16 +1324,18 @@ describe('Property Controller', () => {
     const vendorProperties = PropertyFactory.buildList(12, {
       addedBy: vendorUser._id,
       updatedBy: vendorUser._id,
+      createdAt: new Date(),
     });
     const vendor2Properties = PropertyFactory.buildList(5, {
       addedBy: vendorUser2._id,
       updatedBy: vendorUser2._id,
+      createdAt: new Date(),
     });
     const vendorProperty = PropertyFactory.build(
       {
         address: {
           street1: 'miracle street',
-          street2: 'miracle street',
+          street2: 'sesame street',
           city: 'ilorin',
           state: 'kwara',
           country: 'ghana',
@@ -1309,7 +1343,7 @@ describe('Property Controller', () => {
         addedBy: vendorUser._id,
         bathrooms: 1,
         bedrooms: 1,
-        createdAt: futureDate,
+        createdAt: '2021-12-21',
         houseType: 'penthouse apartment',
         name: 'penthouse apartment',
         price: 12500000,
@@ -1355,7 +1389,10 @@ describe('Property Controller', () => {
               .set('authorization', adminToken)
               .end((err, res) => {
                 expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
-                expectResponseToContainNecessaryPropertyData(res.body.result[0]);
+                expectResponseToContainNecessaryPropertyData(
+                  res.body.result[0],
+                  vendorProperties[0],
+                );
                 expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
                 expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
                 done();
@@ -1363,7 +1400,7 @@ describe('Property Controller', () => {
           });
         });
 
-        context('with vendor 1 token & id', () => {
+        context('with vendor1 token & id', () => {
           it('returns all properties', (done) => {
             request()
               [method](endpoint)
@@ -1375,7 +1412,10 @@ describe('Property Controller', () => {
                   result: 10,
                   totalPage: 2,
                 });
-                expectResponseToContainNecessaryPropertyData(res.body.result[0]);
+                expectResponseToContainNecessaryPropertyData(
+                  res.body.result[0],
+                  vendorProperties[0],
+                );
                 expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
                 expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
                 done();
@@ -1387,7 +1427,7 @@ describe('Property Controller', () => {
           it('returns no property', (done) => {
             request()
               [method](endpoint)
-              .set('authorization', invalidVendorToken)
+              .set('authorization', newVendorToken)
               .end((err, res) => {
                 expectsPaginationToReturnTheRightValues(res, {
                   ...defaultPaginationResult,
@@ -1452,7 +1492,7 @@ describe('Property Controller', () => {
         await addProperty(vendorProperty);
       });
 
-      context('when unknown filter is used', () => {
+      context('Unknown Filters', () => {
         const unknownFilter = {
           dob: '1993-02-01',
         };
@@ -1555,29 +1595,13 @@ describe('Property Controller', () => {
         });
       });
 
-      context('when sending single parameter', () => {
-        Object.entries(PROPERTY_FILTERS).map(([queryKey, { key }]) => {
-          const processNestedObject = (parentObject, objPath) =>
-            objPath.split('.').reduce((acc, value) => acc[value], parentObject);
-          const filterKey = key || queryKey;
-          return it(`returns matched user for ${queryKey}`, (done) => {
-            request()
-              [method](`${endpoint}?${queryKey}=${processNestedObject(vendorProperty, filterKey)}`)
-              .set('authorization', adminToken)
-              .end((err, res) => {
-                expect(res.body.result[0]._id.toString()).to.be.eql(vendorProperty._id.toString());
-                expectsPaginationToReturnTheRightValues(res, {
-                  currentPage: 1,
-                  limit: 10,
-                  offset: 0,
-                  result: 1,
-                  total: 1,
-                  totalPage: 1,
-                });
-                done();
-              });
-          });
-        });
+      filterTestForSingleParameter({
+        filter: PROPERTY_FILTERS,
+        method,
+        endpoint,
+        user: adminUser,
+        dataObject: vendorProperty,
+        useExistingUser: true,
       });
     });
   });

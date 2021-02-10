@@ -18,9 +18,9 @@ export default new Factory()
     country: 'nigeria',
   })
   .sequence('houseType', (i) => `${i} bedroom apartment`)
-  .sequence('bedrooms', (i) => `${i}`)
-  .sequence('bathrooms', (i) => `${i}`)
-  .sequence('toilets', (i) => `${i + 1}`)
+  .sequence('bedrooms', (i) => i)
+  .sequence('bathrooms', (i) => i)
+  .sequence('toilets', (i) => i + 1)
   .sequence('description', (i) => `Newly built ${i} bedroom apartment`)
   .attr('floorPlans', 'http://linktoplan.ng')
   .attr('mapLocation', {
