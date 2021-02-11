@@ -10,10 +10,13 @@ export const PROJECTED_PROPERTY_INFO = {
   units: 1,
   houseType: 1,
   bedrooms: 1,
+  bathrooms: 1,
   toilets: 1,
   description: 1,
   paymentPlan: 1,
   floorPlans: 1,
+  createdAt: 1,
+  addedBy: 1,
 };
 
 export const PROJECTED_VENDOR_INFO = {

@@ -12,6 +12,8 @@ import {
   PROJECTED_PROPERTY_INFO,
   PROJECTED_ASSIGNED_USER_INFO,
 } from '../helpers/projectedSchemaInfo';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { buildFilterQuery, PROPERTY_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -85,8 +87,11 @@ export const getAllPropertiesAddedByVendor = async (vendorId) =>
     },
   ]);
 
-export const getAllProperties = async (user) => {
+export const getAllProperties = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const filterQuery = buildFilterQuery(PROPERTY_FILTERS, query);
+
   const propertiesOptions = [
+    { $match: { $and: filterQuery } },
     {
       $lookup: {
         from: 'users',
@@ -121,7 +126,17 @@ export const getAllProperties = async (user) => {
         ...PROJECTED_ASSIGNED_USER_INFO,
       },
     },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
   ];
+
+  if (filterQuery.length < 1) {
+    propertiesOptions.shift();
+  }
 
   if (user.role === USER_ROLE.VENDOR) {
     propertiesOptions.unshift({ $match: { addedBy: ObjectId(user._id) } });
@@ -129,7 +144,10 @@ export const getAllProperties = async (user) => {
 
   const properties = await Property.aggregate(propertiesOptions);
 
-  return properties;
+  const total = getPaginationTotal(properties);
+  const pagination = generatePagination(page, limit, total);
+  const result = properties[0].data;
+  return { pagination, result };
 };
 
 export const getOneProperty = async (propertyId, user = {}) => {
