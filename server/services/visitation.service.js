@@ -4,7 +4,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById } from './property.service';
 import { getUserById } from './user.service';
-import { USER_ROLE, VISITATION_STATUS } from '../helpers/constants';
+import { USER_ROLE, VISITATION_STATUS, PROCESS_VISITATION_ACTION } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
 
@@ -88,7 +88,7 @@ export const resolveVisitation = async ({ visitationId, vendorId }) => {
 
 export const processVisitation = async ({ user, visitationInfo, action }) => {
   let mailDetails;
-  let update;
+  let processedVisitation;
   const visitation = await getVisitationById(visitationInfo.visitationId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -127,7 +127,7 @@ export const processVisitation = async ({ user, visitationInfo, action }) => {
   const rescheduleLog = [
     {
       reason: visitationInfo.reason,
-      rescheduleFrom: action === 'reschedule' ? visitation.visitDate : null,
+      rescheduleFrom: action === PROCESS_VISITATION_ACTION.RESCHEDULE ? visitation.visitDate : null,
       rescheduleTo: visitationInfo?.visitDate,
       date: getDateWithTimestamp(),
       rescheduleBy: user.role === USER_ROLE.VENDOR ? 'Vendor' : 'User',
@@ -135,16 +135,16 @@ export const processVisitation = async ({ user, visitationInfo, action }) => {
     ...visitation.rescheduleLog,
   ];
 
-  if (action === 'reschedule') {
-    update = { visitDate: visitationInfo.visitDate, rescheduleLog };
+  if (action === PROCESS_VISITATION_ACTION.RESCHEDULE) {
+    processedVisitation = { visitDate: visitationInfo.visitDate, rescheduleLog };
   } else {
-    update = { status: VISITATION_STATUS.CANCELLED, rescheduleLog };
+    processedVisitation = { status: VISITATION_STATUS.CANCELLED, rescheduleLog };
   }
 
   try {
     const updatedVisitation = await Visitation.findByIdAndUpdate(
       visitation.id,
-      { $set: update },
+      { $set: processedVisitation },
       { new: true },
     );
 
@@ -152,7 +152,9 @@ export const processVisitation = async ({ user, visitationInfo, action }) => {
   } catch (error) {
     throw new ErrorHandler(
       httpStatus.BAD_REQUEST,
-      `Error ${action === 'cancel' ? 'cancelling' : 'rescheduling'} visitation`,
+      `Error ${
+        action === PROCESS_VISITATION_ACTION.CANCEL ? 'cancelling' : 'rescheduling'
+      } visitation`,
       error,
     );
   }

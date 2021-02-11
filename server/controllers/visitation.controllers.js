@@ -7,7 +7,9 @@ import {
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
 import httpStatus from '../helpers/httpStatus';
-import { convertDateToWords } from '../helpers/dates';
+import { convertDateToLongHumanFormat } from '../helpers/dates';
+import getUserName from '../helpers/funtions';
+import { PROCESS_VISITATION_ACTION } from '../helpers/constants';
 
 const VisitationController = {
   book(req, res, next) {
@@ -55,14 +57,14 @@ const VisitationController = {
   rescheduleVisitation(req, res, next) {
     const visitationInfo = req.locals;
     const { user } = req;
-    const action = 'reschedule';
+    const action = PROCESS_VISITATION_ACTION.RESCHEDULE;
     processVisitation({ user, visitationInfo, action })
       .then(({ visitation, mailDetails, property }) => {
-        const contentTop = `The visitation to ${property.name} on ${convertDateToWords(
+        const contentTop = `The visitation to ${property.name} on ${convertDateToLongHumanFormat(
           visitation.rescheduleLog[0].rescheduleFrom,
-        )}, has been rescheduled for ${convertDateToWords(visitation.visitDate)} by ${
-          user.vendor.companyName ? user.vendor.companyName : `${user.firstName} ${user.lastName}`
-        }. Reason: ${
+        )}, has been rescheduled for ${convertDateToLongHumanFormat(
+          visitation.visitDate,
+        )} by ${getUserName(user)}. Reason: ${
           visitation.rescheduleLog[0].reason
         }. Visit your dashboard for more information.`;
 
@@ -77,12 +79,12 @@ const VisitationController = {
   cancelVisitation(req, res, next) {
     const visitationInfo = req.locals;
     const { user } = req;
-    const action = 'cancel';
+    const action = PROCESS_VISITATION_ACTION.CANCEL;
     processVisitation({ user, visitationInfo, action })
       .then(({ visitation, mailDetails, property }) => {
-        const contentTop = `The visitation to ${property.name} on ${convertDateToWords(
+        const contentTop = `The visitation to ${property.name} on ${convertDateToLongHumanFormat(
           visitation.visitDate,
-        )}, has been cancelled by ${user.firstName} ${user.lastName}. Reason: ${
+        )}, has been cancelled by ${getUserName(user)}. Reason: ${
           visitation.rescheduleLog[0].reason
         }. Visit your dashboard for more information.`;
 

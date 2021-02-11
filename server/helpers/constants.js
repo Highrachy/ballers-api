@@ -68,3 +68,8 @@ export const VISITATION_STATUS = {
   PENDING: 'Pending',
   RESOLVED: 'Resolved',
 };
+
+export const PROCESS_VISITATION_ACTION = {
+  CANCEL: 0,
+  RESCHEDULE: 1,
+};

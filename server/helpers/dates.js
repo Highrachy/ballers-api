@@ -9,4 +9,6 @@ export const getTodaysDateStandard = () => format(new Date(), 'yyyy-MM-dd');
 
 export const getDateWithTimestamp = () => formatISO(new Date());
 
-export const convertDateToWords = (date) => format(date, 'd MMM yyyy');
+export const convertDateToLongHumanFormat = (date) => format(date, `EEEE, do 'of' MMMM yyyy`);
+
+export const convertDateToShortHumanFormat = (date) => format(date, 'EEE MMM d, yyyy');
