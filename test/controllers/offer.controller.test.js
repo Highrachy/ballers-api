@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import querystring from 'querystring';
 import { expect, request, sinon, useDatabase } from '../config';
 import Offer from '../../server/models/offer.model';
 import Enquiry from '../../server/models/enquiry.model';
@@ -28,10 +29,15 @@ import {
   itReturnsErrorForUnverifiedVendor,
   expectResponseToExcludeSensitiveVendorData,
   expectResponseToContainNecessaryVendorData,
+  expectsPaginationToReturnTheRightValues,
+  defaultPaginationResult,
+  futureDate,
+  filterTestForSingleParameter,
 } from '../helpers';
 import Property from '../../server/models/property.model';
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
+import { OFFER_FILTERS } from '../../server/helpers/filters';
 
 useDatabase();
 
@@ -1395,7 +1401,12 @@ describe('Offer Controller', () => {
     const editorUser = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
 
     const userProperties = PropertyFactory.buildList(
-      18,
+      17,
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { generateId: true },
+    );
+
+    const userProperty = PropertyFactory.build(
       { addedBy: vendorUser._id, updatedBy: vendorUser._id },
       { generateId: true },
     );
@@ -1415,6 +1426,15 @@ describe('Offer Controller', () => {
         },
         { generateId: true },
       ),
+    );
+
+    const userEnquiry = EnquiryFactory.build(
+      {
+        propertyId: userProperty._id,
+        userId: regularUser._id,
+        vendorId: userProperty.addedBy,
+      },
+      { generateId: true },
     );
 
     const user2Enquiries = user2Properties.map((_, index) =>
@@ -1441,6 +1461,30 @@ describe('Offer Controller', () => {
       ),
     );
 
+    const singleUserOffer = OfferFactory.buildList(
+      1,
+      {
+        propertyId: userProperty._id,
+        enquiryId: userEnquiry._id,
+        userId: regularUser._id,
+        vendorId: vendorUser._id,
+        referenceCode: 'DCBA1234',
+        allocationInPercentage: 10,
+        contributionReward: 12,
+        createdAt: futureDate,
+        deliveryState: 'incomplete',
+        expires: futureDate,
+        handOverDate: futureDate,
+        initialPayment: 10000,
+        monthlyPayment: 5000,
+        paymentFrequency: 4,
+        status: OFFER_STATUS.ASSIGNED,
+        title: 'User offer',
+        totalAmountPayable: 12309870,
+      },
+      { generateId: true },
+    );
+
     const user2Offers = user2Properties.map((_, index) =>
       OfferFactory.build(
         {
@@ -1462,95 +1506,245 @@ describe('Offer Controller', () => {
       vendor2Token = await addUser(vendor2);
     });
 
-    context('when no offers exists in db', () => {
-      [adminUser, regularUser, vendorUser].map((user) =>
-        itReturnsEmptyValuesWhenNoItemExistInDatabase({
+    describe('Offer Pagination', () => {
+      context('when no offers exists in db', () => {
+        [adminUser, regularUser, vendorUser].map((user) =>
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
+      describe('when offers exist in db', () => {
+        beforeEach(async () => {
+          await Property.insertMany([...userProperties, ...user2Properties]);
+          await Enquiry.insertMany([...userEnquiries, ...user2Enquiries]);
+          await addProperty(userProperty);
+          await addEnquiry(userEnquiry);
+          await Offer.insertMany([...userOffers, ...user2Offers, ...singleUserOffer]);
+        });
+
+        itReturnsTheRightPaginationValue({
           endpoint,
           method,
-          user,
+          user: regularUser,
           useExistingUser: true,
-        }),
-      );
+        });
+
+        itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: editorUser });
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        context('when request is sent by admin token', () => {
+          it('returns 26 offers', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.pagination.currentPage).to.be.eql(1);
+                expect(res.body.pagination.limit).to.be.eql(10);
+                expect(res.body.pagination.total).to.be.eql(26);
+                expect(res.body.pagination.offset).to.be.eql(0);
+                expect(res.body.result.length).to.be.eql(10);
+                expect(res.body.result[0]._id).to.be.eql(userOffers[0]._id.toString());
+                expect(res.body.result[0].enquiryId).to.be.eql(userEnquiries[0]._id.toString());
+                expect(res.body.result[0].propertyId).to.be.eql(userProperties[0]._id.toString());
+                expect(res.body.result[0].vendorId).to.be.eql(vendorUser._id.toString());
+                expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
+                expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
+                expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+                expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
+                done();
+              });
+          });
+        });
+
+        context('when request is sent by vendor2 token', () => {
+          it('returns vendor2 offers', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendor2Token)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.pagination.currentPage).to.be.eql(1);
+                expect(res.body.pagination.limit).to.be.eql(10);
+                expect(res.body.pagination.total).to.be.eql(8);
+                expect(res.body.pagination.offset).to.be.eql(0);
+                expect(res.body.result.length).to.be.eql(8);
+                done();
+              });
+          });
+        });
+
+        context('when request is sent by user2', () => {
+          it('returns user2 offers', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', user2Token)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.pagination.currentPage).to.be.eql(1);
+                expect(res.body.pagination.limit).to.be.eql(10);
+                expect(res.body.pagination.total).to.be.eql(user2Offers.length);
+                expect(res.body.pagination.offset).to.be.eql(0);
+                expect(res.body.result.length).to.be.eql(8);
+                done();
+              });
+          });
+        });
+      });
     });
 
-    describe('when offers exist in db', () => {
+    describe('Offer Filter', () => {
       beforeEach(async () => {
-        await Property.insertMany([...userProperties, ...user2Properties]);
-        await Enquiry.insertMany([...userEnquiries, ...user2Enquiries]);
-        await Offer.insertMany([...userOffers, ...user2Offers]);
+        await Property.insertMany(user2Properties);
+        await Enquiry.insertMany(user2Enquiries);
+        await addProperty(userProperty);
+        await addEnquiry(userEnquiry);
+        await Offer.insertMany([...user2Offers, ...singleUserOffer]);
       });
 
-      itReturnsTheRightPaginationValue({
-        endpoint,
-        method,
-        user: regularUser,
-        useExistingUser: true,
+      const userOffer = singleUserOffer[0];
+
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+        const filteredParams = querystring.stringify(unknownFilter);
+
+        context('with admin token', () => {
+          it('returns all offers', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 9,
+                  result: 9,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('with vendor2 token', () => {
+          it('returns all vendor offers', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', vendor2Token)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 8,
+                  result: 8,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('with vendor token', () => {
+          [...new Array(2)].map((_, index) =>
+            it('returns all vendor offers', (done) => {
+              request()
+                [method](`${endpoint}?${filteredParams}`)
+                .set('authorization', [userToken, vendorToken][index])
+                .end((err, res) => {
+                  expectsPaginationToReturnTheRightValues(res, {
+                    ...defaultPaginationResult,
+                    total: 1,
+                    result: 1,
+                    totalPage: 1,
+                  });
+                  done();
+                });
+            }),
+          );
+        });
       });
 
-      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: editorUser });
+      context('when multiple filters are used', () => {
+        const multipleOfferDetails = {
+          title: userOffer.title,
+          referenceCode: userOffer.referenceCode,
+          expires: userOffer.expires,
+          monthlyPayment: userOffer.monthlyPayment,
+          status: userOffer.status,
+        };
+        const filteredParams = querystring.stringify(multipleOfferDetails);
 
-      itReturnsForbiddenForNoToken({ endpoint, method });
-
-      context('when request is sent by admin token', () => {
-        it('returns 26 offers', (done) => {
+        it('returns matched user', (done) => {
           request()
-            [method](endpoint)
+            [method](`${endpoint}?${filteredParams}`)
             .set('authorization', adminToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.pagination.currentPage).to.be.eql(1);
-              expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(26);
-              expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.result.length).to.be.eql(10);
-              expect(res.body.result[0]._id).to.be.eql(userOffers[0]._id.toString());
-              expect(res.body.result[0].enquiryId).to.be.eql(userEnquiries[0]._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(userProperties[0]._id.toString());
-              expect(res.body.result[0].vendorId).to.be.eql(vendorUser._id.toString());
-              expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
-              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
-              expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
-              expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(userOffer._id.toString());
+              expect(res.body.result[0].status).to.be.eql(multipleOfferDetails.status);
+              expect(res.body.result[0].monthlyPayment).to.be.eql(
+                multipleOfferDetails.monthlyPayment,
+              );
+              expect(res.body.result[0].expires).to.have.string(multipleOfferDetails.expires);
+              expect(res.body.result[0].title).to.be.eql(multipleOfferDetails.title);
+              expect(res.body.result[0].referenceCode).to.be.eql(
+                multipleOfferDetails.referenceCode,
+              );
               done();
             });
         });
       });
 
-      context('when request is sent by vendor2 token', () => {
-        it('returns vendor2 offers', (done) => {
+      context('when no parameter is matched', () => {
+        const multipleOfferDetails = {
+          title: 'old title',
+          referenceCode: 'QWERTY',
+          expires: '2001-11-12',
+          monthlyPayment: 1,
+          status: 'Upgraded',
+        };
+        const filteredParams = querystring.stringify(multipleOfferDetails);
+
+        it('returns  empty result', (done) => {
           request()
-            [method](endpoint)
-            .set('authorization', vendor2Token)
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.pagination.currentPage).to.be.eql(1);
-              expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(8);
-              expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.result.length).to.be.eql(8);
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 0,
+                total: 0,
+                totalPage: 0,
+              });
               done();
             });
         });
       });
 
-      context('when request is sent by user2', () => {
-        it('returns user2 offers', (done) => {
-          request()
-            [method](endpoint)
-            .set('authorization', user2Token)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.pagination.currentPage).to.be.eql(1);
-              expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(user2Offers.length);
-              expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.result.length).to.be.eql(8);
-              done();
-            });
-        });
+      filterTestForSingleParameter({
+        filter: OFFER_FILTERS,
+        method,
+        endpoint,
+        user: adminUser,
+        dataObject: userOffer,
+        useExistingUser: true,
       });
     });
   });
