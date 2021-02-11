@@ -1,4 +1,4 @@
-import { add } from 'date-fns';
+import { format, add } from 'date-fns';
 import { addUser, loginUser } from '../server/services/user.service';
 import { expect, request, sinon } from './config';
 import User from '../server/models/user.model';
@@ -386,24 +386,24 @@ export const expectResponseToContainNecessaryVendorData = (data) => {
   expect(data).to.have.property('address');
 };
 
-export const expectResponseToContainNecessaryPropertyData = (data, object) => {
-  expect(data.name).to.be.eql(object.name);
-  expect(data.address).to.be.eql(object.address);
-  expect(data.mainImage).to.be.eql(object.mainImage);
-  expect(data.gallery).to.be.eql(object.gallery);
-  expect(data.price).to.be.eql(object.price);
-  expect(data.houseType).to.be.eql(object.houseType);
-  expect(data.description).to.be.eql(object.description);
-  expect(data.units).to.be.eql(object.units);
-  expect(data.bedrooms).to.be.eql(object.bedrooms);
-  expect(data.bathrooms).to.be.eql(object.bathrooms);
-  expect(data.toilets).to.be.eql(object.toilets);
-  expect(data.titleDocument).to.be.eql(object.titleDocument);
-  expect(data.neighborhood).to.be.eql(object.neighborhood);
-  expect(data.mainImage).to.be.eql(object.mainImage);
+export const expectResponseToContainNecessaryPropertyData = (response, property) => {
+  expect(response.name).to.be.eql(property.name);
+  expect(response.address).to.be.eql(property.address);
+  expect(response.mainImage).to.be.eql(property.mainImage);
+  expect(response.gallery).to.be.eql(property.gallery);
+  expect(response.price).to.be.eql(property.price);
+  expect(response.houseType).to.be.eql(property.houseType);
+  expect(response.description).to.be.eql(property.description);
+  expect(response.units).to.be.eql(property.units);
+  expect(response.bedrooms).to.be.eql(property.bedrooms);
+  expect(response.bathrooms).to.be.eql(property.bathrooms);
+  expect(response.toilets).to.be.eql(property.toilets);
+  expect(response.titleDocument).to.be.eql(property.titleDocument);
+  expect(response.neighborhood).to.be.eql(property.neighborhood);
+  expect(response.mainImage).to.be.eql(property.mainImage);
 };
 
-export const futureDate = add(new Date(), { days: 5 });
+export const futureDate = format(add(new Date(), { days: 5 }), 'yyyy-MM-dd');
 
 export const filterTestForSingleParameter = ({
   filter,
@@ -420,7 +420,7 @@ export const filterTestForSingleParameter = ({
       const loggedInUser = await loginUser(user);
       token = loggedInUser.token;
     } else {
-      token = await addUser({ ...user, vendor: { ...user.vendor, verified: false } });
+      token = await addUser(user);
     }
   });
 

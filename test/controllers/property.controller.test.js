@@ -30,6 +30,7 @@ import {
   expectResponseToContainNecessaryPropertyData,
   itReturnsNotFoundForInvalidToken,
   filterTestForSingleParameter,
+  futureDate,
 } from '../helpers';
 import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
@@ -1343,7 +1344,7 @@ describe('Property Controller', () => {
         addedBy: vendorUser._id,
         bathrooms: 1,
         bedrooms: 1,
-        createdAt: '2021-12-21',
+        createdAt: futureDate,
         houseType: 'penthouse apartment',
         name: 'penthouse apartment',
         price: 12500000,
@@ -1492,7 +1493,7 @@ describe('Property Controller', () => {
         await addProperty(vendorProperty);
       });
 
-      context('Unknown Filters', () => {
+      describe('Unknown Filters', () => {
         const unknownFilter = {
           dob: '1993-02-01',
         };
