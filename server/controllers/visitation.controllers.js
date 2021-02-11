@@ -1,7 +1,15 @@
-import { scheduleVisitation, getAllVisitations } from '../services/visitation.service';
+import {
+  scheduleVisitation,
+  getAllVisitations,
+  resolveVisitation,
+  processVisitation,
+} from '../services/visitation.service';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
 import httpStatus from '../helpers/httpStatus';
+import { convertDateToLongHumanFormat } from '../helpers/dates';
+import getUserName from '../helpers/funtions';
+import { PROCESS_VISITATION_ACTION } from '../helpers/constants';
 
 const VisitationController = {
   book(req, res, next) {
@@ -30,6 +38,60 @@ const VisitationController = {
     getAllVisitations(user, page, limit)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
+      })
+      .catch((error) => next(error));
+  },
+
+  resolveVisitation(req, res, next) {
+    const { visitationId } = req.locals;
+    const vendorId = req.user._id;
+    resolveVisitation({ visitationId, vendorId })
+      .then((visitation) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Visitation resolved', visitation });
+      })
+      .catch((error) => next(error));
+  },
+
+  rescheduleVisitation(req, res, next) {
+    const visitationInfo = req.locals;
+    const { user } = req;
+    const action = PROCESS_VISITATION_ACTION.RESCHEDULE;
+    processVisitation({ user, visitationInfo, action })
+      .then(({ visitation, mailDetails, property }) => {
+        const contentTop = `The visitation to ${property.name} on ${convertDateToLongHumanFormat(
+          visitation.rescheduleLog[0].rescheduleFrom,
+        )}, has been rescheduled for ${convertDateToLongHumanFormat(
+          visitation.visitDate,
+        )} by ${getUserName(user)}. Reason: ${
+          visitation.rescheduleLog[0].reason
+        }. Visit your dashboard for more information.`;
+
+        sendMail(EMAIL_CONTENT.RESCHEDULE_VISIT, mailDetails, { contentTop });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Visitation rescheduled', visitation });
+      })
+      .catch((error) => next(error));
+  },
+
+  cancelVisitation(req, res, next) {
+    const visitationInfo = req.locals;
+    const { user } = req;
+    const action = PROCESS_VISITATION_ACTION.CANCEL;
+    processVisitation({ user, visitationInfo, action })
+      .then(({ visitation, mailDetails, property }) => {
+        const contentTop = `The visitation to ${property.name} on ${convertDateToLongHumanFormat(
+          visitation.visitDate,
+        )}, has been cancelled by ${getUserName(user)}. Reason: ${
+          visitation.rescheduleLog[0].reason
+        }. Visit your dashboard for more information.`;
+
+        sendMail(EMAIL_CONTENT.CANCEL_VISIT, mailDetails, { contentTop });
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Visitation cancelled', visitation });
       })
       .catch((error) => next(error));
   },

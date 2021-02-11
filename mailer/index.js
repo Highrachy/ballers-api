@@ -10,6 +10,11 @@ const EMAIL_CONTENT = {
     contentTop:
       'Your account has been locked for security reasons. Kindly contact Ballers Support for more information.',
   },
+  CANCEL_VISIT: {
+    subject: 'Visitation Cancelled',
+    contentTop:
+      'The visitation to [property name] on [previous visitation date], has been cancelled by [user]. [Reason]. Visit your dashboard for more information.',
+  },
   CERTIFY_VENDOR: {
     subject: 'Account Certified',
     contentTop:
@@ -57,6 +62,11 @@ const EMAIL_CONTENT = {
     contentBottom: `Click on the link below to accept their invitation`,
     buttonText: 'Join BALLERS',
   },
+  RESCHEDULE_VISIT: {
+    subject: 'Visitation Rescheduled',
+    contentTop:
+      'The visitation to [property name] on [previous visitation date], has been rescheduled for [new date] by [user that rescheduled]. [Reason]. Visit your dashboard for more information.',
+  },
   RESOLVE_CONCERN: {
     subject: 'Concern Resolved',
     contentTop: `Your raised concern has been resolved. Details below <br /> <strong>Question: </strong> [Question]<br /> <strong>Response: </strong>[Response]`,
@@ -69,6 +79,10 @@ const EMAIL_CONTENT = {
       "You (or someone pretending to be you) requested a password reset for your account. If you didn't made this request you can ignore this email.",
     subject: 'Password Reset',
   },
+  SCHEDULE_VISIT: {
+    subject: 'You have a new inspection request',
+    contentTop: 'A new propery visit has been requested',
+  },
   UNBAN_USER: {
     subject: 'Account Unlocked',
     contentTop:
@@ -78,10 +92,6 @@ const EMAIL_CONTENT = {
     subject: 'Account Verified',
     contentTop:
       'Congratulaions, your information has been reviewed and your account verified. Your dashboard is now fully accessible.',
-  },
-  SCHEDULE_VISIT: {
-    subject: 'You have a new inspection request',
-    contentTop: 'A new propery visit has been requested',
   },
   WELCOME_MESSAGE: {
     subject: 'Welcome to BALLERS',
