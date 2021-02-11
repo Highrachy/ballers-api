@@ -13,6 +13,7 @@ import { getOneProperty } from './property.service';
 import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
+import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -39,7 +40,9 @@ export const generateReferenceCode = async (propertyId) => {
   return referenceCode;
 };
 
-export const getAllOffers = async (accountId, page = 1, limit = 10) => {
+export const getAllOffers = async (accountId, { page = 1, limit = 10, ...query } = {}) => {
+  const filterQuery = buildFilterQuery(OFFER_FILTERS, query);
+
   let accountType;
   const user = await getUserById(accountId);
 
@@ -60,6 +63,7 @@ export const getAllOffers = async (accountId, page = 1, limit = 10) => {
   }
 
   const offerOptions = [
+    { $match: { $and: filterQuery } },
     {
       $lookup: {
         from: 'users',
@@ -106,6 +110,10 @@ export const getAllOffers = async (accountId, page = 1, limit = 10) => {
       },
     },
   ];
+
+  if (filterQuery.length < 1) {
+    offerOptions.shift();
+  }
 
   if (user.role === USER_ROLE.ADMIN) {
     offerOptions.unshift(

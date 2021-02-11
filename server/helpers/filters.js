@@ -99,3 +99,22 @@ export const PROPERTY_FILTERS = {
   toilets: { type: FILTER_TYPE.INTEGER },
   units: { type: FILTER_TYPE.INTEGER },
 };
+
+export const OFFER_FILTERS = {
+  allocationInPercentage: { type: FILTER_TYPE.INTEGER },
+  contributionReward: { type: FILTER_TYPE.INTEGER },
+  createdAt: { type: FILTER_TYPE.DATE },
+  deliveryState: { type: FILTER_TYPE.STRING },
+  expires: { type: FILTER_TYPE.DATE },
+  handOverDate: { type: FILTER_TYPE.DATE },
+  initialPayment: { type: FILTER_TYPE.INTEGER },
+  monthlyPayment: { type: FILTER_TYPE.INTEGER },
+  paymentFrequency: { type: FILTER_TYPE.INTEGER },
+  propertyId: { type: FILTER_TYPE.OBJECT_ID },
+  referenceCode: { type: FILTER_TYPE.STRING },
+  status: { type: FILTER_TYPE.STRING },
+  title: { type: FILTER_TYPE.STRING },
+  totalAmountPayable: { type: FILTER_TYPE.INTEGER },
+  userId: { type: FILTER_TYPE.OBJECT_ID },
+  vendorId: { type: FILTER_TYPE.OBJECT_ID },
+};
