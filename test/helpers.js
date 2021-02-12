@@ -1,4 +1,5 @@
 import { format, add } from 'date-fns';
+import querystring from 'querystring';
 import { addUser, loginUser } from '../server/services/user.service';
 import { expect, request, sinon } from './config';
 import User from '../server/models/user.model';
@@ -446,6 +447,80 @@ export const filterTestForSingleParameter = ({
             done();
           });
       });
+    });
+  });
+};
+
+export const whenNoFilterParameterIsMatched = ({
+  filter,
+  method,
+  endpoint,
+  user,
+  useExistingUser = false,
+}) => {
+  let token;
+
+  beforeEach(async () => {
+    if (useExistingUser) {
+      const loggedInUser = await loginUser(user);
+      token = loggedInUser.token;
+    } else {
+      token = await addUser(user);
+    }
+  });
+
+  context('when no parameter is matched', () => {
+    const filteredParams = querystring.stringify(filter);
+
+    it('returns empty result', (done) => {
+      request()
+        [method](`${endpoint}?${filteredParams}`)
+        .set('authorization', token)
+        .end((err, res) => {
+          expectsPaginationToReturnTheRightValues(res, {
+            currentPage: 1,
+            limit: 10,
+            offset: 0,
+            result: 0,
+            total: 0,
+            totalPage: 0,
+          });
+          done();
+        });
+    });
+  });
+};
+
+export const whenUnknownFilterIsUsed = ({
+  filter,
+  method,
+  endpoint,
+  user,
+  expectedPagination,
+  useExistingUser = false,
+}) => {
+  let token;
+
+  beforeEach(async () => {
+    if (useExistingUser) {
+      const loggedInUser = await loginUser(user);
+      token = loggedInUser.token;
+    } else {
+      token = await addUser(user);
+    }
+  });
+
+  context('with valid token', () => {
+    const filteredParams = querystring.stringify(filter);
+
+    it('returns all items', (done) => {
+      request()
+        [method](`${endpoint}?${filteredParams}`)
+        .set('authorization', token)
+        .end((err, res) => {
+          expectsPaginationToReturnTheRightValues(res, expectedPagination);
+          done();
+        });
     });
   });
 };

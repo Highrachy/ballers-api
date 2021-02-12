@@ -33,6 +33,8 @@ import {
   defaultPaginationResult,
   futureDate,
   filterTestForSingleParameter,
+  whenNoFilterParameterIsMatched,
+  whenUnknownFilterIsUsed,
 } from '../helpers';
 import Property from '../../server/models/property.model';
 import AddressFactory from '../factories/address.factory';
@@ -1455,20 +1457,19 @@ describe('Offer Controller', () => {
           enquiryId: userEnquiries[index]._id,
           userId: regularUser._id,
           vendorId: vendorUser._id,
-          referenceCode: '123456XXX',
+          referenceCode: 'GOO/123/456/XXX',
         },
         { generateId: true },
       ),
     );
 
-    const singleUserOffer = OfferFactory.buildList(
-      1,
+    const userOffer = OfferFactory.build(
       {
         propertyId: userProperty._id,
         enquiryId: userEnquiry._id,
         userId: regularUser._id,
         vendorId: vendorUser._id,
-        referenceCode: 'DCBA1234',
+        referenceCode: 'HIG/DCB/A1/234',
         allocationInPercentage: 10,
         contributionReward: 12,
         createdAt: futureDate,
@@ -1523,7 +1524,7 @@ describe('Offer Controller', () => {
           await Enquiry.insertMany([...userEnquiries, ...user2Enquiries]);
           await addProperty(userProperty);
           await addEnquiry(userEnquiry);
-          await Offer.insertMany([...userOffers, ...user2Offers, ...singleUserOffer]);
+          await Offer.insertMany([...userOffers, ...user2Offers, userOffer]);
         });
 
         itReturnsTheRightPaginationValue({
@@ -1607,69 +1608,57 @@ describe('Offer Controller', () => {
         await Enquiry.insertMany(user2Enquiries);
         await addProperty(userProperty);
         await addEnquiry(userEnquiry);
-        await Offer.insertMany([...user2Offers, ...singleUserOffer]);
+        await Offer.insertMany([...user2Offers, userOffer]);
       });
-
-      const userOffer = singleUserOffer[0];
 
       describe('Unknown Filters', () => {
         const unknownFilter = {
           dob: '1993-02-01',
         };
-        const filteredParams = querystring.stringify(unknownFilter);
 
-        context('with admin token', () => {
-          it('returns all offers', (done) => {
-            request()
-              [method](`${endpoint}?${filteredParams}`)
-              .set('authorization', adminToken)
-              .end((err, res) => {
-                expectsPaginationToReturnTheRightValues(res, {
-                  ...defaultPaginationResult,
-                  total: 9,
-                  result: 9,
-                  totalPage: 1,
-                });
-                done();
-              });
-          });
+        whenUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 9,
+            result: 9,
+            totalPage: 1,
+          },
+          useExistingUser: true,
         });
 
-        context('with vendor2 token', () => {
-          it('returns all vendor offers', (done) => {
-            request()
-              [method](`${endpoint}?${filteredParams}`)
-              .set('authorization', vendor2Token)
-              .end((err, res) => {
-                expectsPaginationToReturnTheRightValues(res, {
-                  ...defaultPaginationResult,
-                  total: 8,
-                  result: 8,
-                  totalPage: 1,
-                });
-                done();
-              });
-          });
+        whenUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 9,
+            result: 9,
+            totalPage: 1,
+          },
+          useExistingUser: true,
         });
 
-        context('with vendor token', () => {
-          [...new Array(2)].map((_, index) =>
-            it('returns all vendor offers', (done) => {
-              request()
-                [method](`${endpoint}?${filteredParams}`)
-                .set('authorization', [userToken, vendorToken][index])
-                .end((err, res) => {
-                  expectsPaginationToReturnTheRightValues(res, {
-                    ...defaultPaginationResult,
-                    total: 1,
-                    result: 1,
-                    totalPage: 1,
-                  });
-                  done();
-                });
-            }),
-          );
-        });
+        [regularUser, vendorUser].map((user) =>
+          whenUnknownFilterIsUsed({
+            filter: unknownFilter,
+            method,
+            endpoint,
+            user,
+            expectedPagination: {
+              ...defaultPaginationResult,
+              total: 1,
+              result: 1,
+              totalPage: 1,
+            },
+            useExistingUser: true,
+          }),
+        );
       });
 
       context('when multiple filters are used', () => {
@@ -1711,30 +1700,20 @@ describe('Offer Controller', () => {
       });
 
       context('when no parameter is matched', () => {
-        const multipleOfferDetails = {
+        const nonMatchingOfferFilters = {
           title: 'old title',
           referenceCode: 'QWERTY',
           expires: '2001-11-12',
           monthlyPayment: 1,
           status: 'Upgraded',
         };
-        const filteredParams = querystring.stringify(multipleOfferDetails);
 
-        it('returns  empty result', (done) => {
-          request()
-            [method](`${endpoint}?${filteredParams}`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                currentPage: 1,
-                limit: 10,
-                offset: 0,
-                result: 0,
-                total: 0,
-                totalPage: 0,
-              });
-              done();
-            });
+        whenNoFilterParameterIsMatched({
+          filter: nonMatchingOfferFilters,
+          method,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
         });
       });
 
