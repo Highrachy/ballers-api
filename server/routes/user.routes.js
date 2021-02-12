@@ -292,6 +292,36 @@ router.post('/upload-image', authenticate, Upload.uploadImage, UploadController.
 
 /**
  * @swagger
+ * /user/upload:
+ *   get:
+ *     tags:
+ *       - User
+ *     description: gets AWS S3 signed URL
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *        - in: query
+ *          name: type
+ *          schema:
+ *            type: string
+ *          description: type of the file to sign
+ *        - in: query
+ *          name: extension
+ *          schema:
+ *            type: string
+ *          description: extension of the file to sign
+ *     responses:
+ *      '200':
+ *        description: Signed URL generated
+ *      '400':
+ *        description: Error getting signed url
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/upload', authenticate, UploadController.uploadToS3);
+
+/**
+ * @swagger
  * /user/all:
  *   get:
  *     tags:
