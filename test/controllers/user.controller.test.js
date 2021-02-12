@@ -32,6 +32,10 @@ import {
   itReturnsNotFoundForInvalidToken,
   expectsPaginationToReturnTheRightValues,
   futureDate,
+  defaultPaginationResult,
+  filterTestForSingleParameter,
+  whenNoFilterParameterIsMatched,
+  whenUnknownFilterIsUsed,
 } from '../helpers';
 import {
   USER_ROLE,
@@ -3304,8 +3308,28 @@ describe('User Controller', () => {
         });
       });
 
+      context('when unknown filter is used', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+
+        whenUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            result: 10,
+            total: 18,
+            totalPage: 2,
+          },
+          useExistingUser: true,
+        });
+      });
+
       context('when no parameter is matched', () => {
-        const filterToReturnEmptyResult = {
+        const nonMatchingOfferFilters = {
           role: 2,
           verified: false,
           firstName: 'John',
@@ -3313,73 +3337,23 @@ describe('User Controller', () => {
           companyName: 'Highrachy',
           country: 'Ghana',
         };
-        const filteredParams = querystring.stringify(filterToReturnEmptyResult);
 
-        it('returns empty result', (done) => {
-          request()
-            [method](`${endpoint}?${filteredParams}`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                currentPage: 1,
-                limit: 10,
-                offset: 0,
-                result: 0,
-                total: 0,
-                totalPage: 0,
-              });
-              done();
-            });
+        whenNoFilterParameterIsMatched({
+          filter: nonMatchingOfferFilters,
+          method,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
         });
       });
 
-      context('when unknown filter is used', () => {
-        const unknownFilter = {
-          dob: '1993-02-01',
-        };
-        const filteredParams = querystring.stringify(unknownFilter);
-
-        it('returns all users', (done) => {
-          request()
-            [method](`${endpoint}?${filteredParams}`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                currentPage: 1,
-                limit: 10,
-                offset: 0,
-                result: 10,
-                total: 18,
-                totalPage: 2,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when sending single parameter', () => {
-        Object.entries(USER_FILTERS).map(([queryKey, { key }]) => {
-          const processNestedObject = (parentObject, objPath) =>
-            objPath.split('.').reduce((acc, value) => acc[value], parentObject);
-          const filterKey = key || queryKey;
-          return it(`returns matched user for ${queryKey}`, (done) => {
-            request()
-              [method](`${endpoint}?${queryKey}=${processNestedObject(dummyVendor, filterKey)}`)
-              .set('authorization', adminToken)
-              .end((err, res) => {
-                expect(res.body.result[0]._id.toString()).to.be.eql(dummyVendor._id.toString());
-                expectsPaginationToReturnTheRightValues(res, {
-                  currentPage: 1,
-                  limit: 10,
-                  offset: 0,
-                  result: 1,
-                  total: 1,
-                  totalPage: 1,
-                });
-                done();
-              });
-          });
-        });
+      filterTestForSingleParameter({
+        filter: USER_FILTERS,
+        method,
+        endpoint,
+        user: adminUser,
+        dataObject: dummyVendor,
+        useExistingUser: true,
       });
     });
   });

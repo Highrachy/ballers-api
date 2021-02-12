@@ -31,6 +31,8 @@ import {
   itReturnsNotFoundForInvalidToken,
   filterTestForSingleParameter,
   futureDate,
+  whenNoFilterParameterIsMatched,
+  whenUnknownFilterIsUsed,
 } from '../helpers';
 import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
@@ -1314,7 +1316,6 @@ describe('Property Controller', () => {
   });
 
   describe('Get all properties', () => {
-    let vendor2Token;
     const endpoint = '/api/v1/property/all';
     const method = 'get';
 
@@ -1487,7 +1488,7 @@ describe('Property Controller', () => {
 
     describe('Property Filter', () => {
       beforeEach(async () => {
-        vendor2Token = await addUser(vendorUser2);
+        await addUser(vendorUser2);
         await addUser(editorUser);
         await Property.insertMany(vendor2Properties);
         await addProperty(vendorProperty);
@@ -1497,40 +1498,33 @@ describe('Property Controller', () => {
         const unknownFilter = {
           dob: '1993-02-01',
         };
-        const filteredParams = querystring.stringify(unknownFilter);
 
-        context('with admin token', () => {
-          it('returns all properties', (done) => {
-            request()
-              [method](`${endpoint}?${filteredParams}`)
-              .set('authorization', adminToken)
-              .end((err, res) => {
-                expectsPaginationToReturnTheRightValues(res, {
-                  ...defaultPaginationResult,
-                  total: 6,
-                  result: 6,
-                  totalPage: 1,
-                });
-                done();
-              });
-          });
+        whenUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 6,
+            result: 6,
+            totalPage: 1,
+          },
+          useExistingUser: true,
         });
 
-        context('with vendor token', () => {
-          it('returns all vendor properties', (done) => {
-            request()
-              [method](`${endpoint}?${filteredParams}`)
-              .set('authorization', vendor2Token)
-              .end((err, res) => {
-                expectsPaginationToReturnTheRightValues(res, {
-                  ...defaultPaginationResult,
-                  total: 5,
-                  result: 5,
-                  totalPage: 1,
-                });
-                done();
-              });
-          });
+        whenUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: vendorUser2,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 5,
+            result: 5,
+            totalPage: 1,
+          },
+          useExistingUser: true,
         });
       });
 
@@ -1569,30 +1563,20 @@ describe('Property Controller', () => {
       });
 
       context('when no parameter is matched', () => {
-        const multiplePropertyDetails = {
+        const nonMatchingOfferFilters = {
           bathrooms: 13,
           bedrooms: 1,
           price: 1500,
           units: 22,
           country: 'italy',
         };
-        const filteredParams = querystring.stringify(multiplePropertyDetails);
 
-        it('returns  empty result', (done) => {
-          request()
-            [method](`${endpoint}?${filteredParams}`)
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                currentPage: 1,
-                limit: 10,
-                offset: 0,
-                result: 0,
-                total: 0,
-                totalPage: 0,
-              });
-              done();
-            });
+        whenNoFilterParameterIsMatched({
+          filter: nonMatchingOfferFilters,
+          method,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
         });
       });
 
