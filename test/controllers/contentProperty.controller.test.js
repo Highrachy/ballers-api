@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, request, useDatabase, sinon } from '../config';
+import { expect, request, sinon } from '../config';
 import ContentProperty from '../../server/models/contentProperty.model';
 import ContentPropertyFactory from '../factories/contentProperty.factory';
 import AreaFactory from '../factories/area.factory';
@@ -9,8 +9,6 @@ import { addArea } from '../../server/services/area.service';
 import { addContentProperty } from '../../server/services/contentProperty.service';
 import { USER_ROLE } from '../../server/helpers/constants';
 import { expectsPaginationToReturnTheRightValues, defaultPaginationResult } from '../helpers';
-
-useDatabase();
 
 let userToken;
 let adminToken;

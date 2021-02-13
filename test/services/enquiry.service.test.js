@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, sinon, useDatabase } from '../config';
+import { expect, sinon } from '../config';
 import {
   getEnquiryById,
   addEnquiry,
@@ -14,8 +14,6 @@ import Enquiry from '../../server/models/enquiry.model';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_ROLE } from '../../server/helpers/constants';
-
-useDatabase();
 
 describe('Enquiry Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, request, sinon, useDatabase } from '../config';
+import { expect, request, sinon } from '../config';
 import Referral from '../../server/models/referral.model';
 import User from '../../server/models/user.model';
 import ReferralFactory from '../factories/referral.factory';
@@ -9,8 +9,6 @@ import { addReferral, sendReferralInvite } from '../../server/services/referral.
 import { REFERRAL_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
-
-useDatabase();
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();

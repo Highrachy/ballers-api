@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, sinon, useDatabase } from '../config';
+import { expect, sinon } from '../config';
 import { scheduleVisitation, getAllVisitations } from '../../server/services/visitation.service';
 import VisitationFactory from '../factories/visitation.factory';
 import PropertyFactory from '../factories/property.factory';
@@ -9,8 +9,6 @@ import Property from '../../server/models/property.model';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { USER_ROLE } from '../../server/helpers/constants';
-
-useDatabase();
 
 describe('Visitation Service', () => {
   const vendor = UserFactory.build(

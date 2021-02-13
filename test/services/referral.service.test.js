@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, sinon, useDatabase } from '../config';
+import { expect, sinon } from '../config';
 import {
   addReferral,
   getAllUserReferrals,
@@ -15,8 +15,6 @@ import UserFactory from '../factories/user.factory';
 import Referral from '../../server/models/referral.model';
 import User from '../../server/models/user.model';
 import { REFERRAL_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
-
-useDatabase();
 
 describe('Referral Service', () => {
   describe('#addReferral', () => {

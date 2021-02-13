@@ -1,4 +1,4 @@
-import { expect, useDatabase, sinon } from '../config';
+import { expect, sinon } from '../config';
 import {
   getTransactionById,
   addTransaction,
@@ -18,8 +18,6 @@ import { addUser } from '../../server/services/user.service';
 import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { USER_ROLE } from '../../server/helpers/constants';
-
-useDatabase();
 
 describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });

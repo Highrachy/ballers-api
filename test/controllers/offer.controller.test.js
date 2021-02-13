@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import querystring from 'querystring';
-import { expect, request, sinon, useDatabase } from '../config';
+import { expect, request, sinon } from '../config';
 import Offer from '../../server/models/offer.model';
 import Enquiry from '../../server/models/enquiry.model';
 import OfferFactory from '../factories/offer.factory';
@@ -40,8 +40,6 @@ import Property from '../../server/models/property.model';
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
 import { OFFER_FILTERS } from '../../server/helpers/filters';
-
-useDatabase();
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();
