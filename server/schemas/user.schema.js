@@ -108,6 +108,7 @@ export const updateUserSchema = Joi.object({
   phone: requiredPhoneNumber('Phone'),
   phone2: nonRequiredPhoneNumber('Phone 2'),
   address: optionalAddress,
+  profileImage: optionalString('Profile Image'),
   preferences,
 });
 

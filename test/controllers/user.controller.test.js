@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import querystring from 'querystring';
-import { expect, request, sinon, useDatabase } from '../config';
+import { expect, request, sinon } from '../config';
 import User from '../../server/models/user.model';
 import {
   addUser,
@@ -46,8 +46,6 @@ import {
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
 import { USER_FILTERS } from '../../server/helpers/filters';
-
-useDatabase();
 
 let adminToken;
 let userToken;
@@ -785,6 +783,7 @@ describe('User Controller', () => {
         firstName: 'John',
         lastName: 'Doe',
         phone: '08012345678',
+        profileImage: 'https://ballers.ng/image.png',
       };
 
       context('with valid token', () => {
@@ -861,6 +860,23 @@ describe('User Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"First Name" is not allowed to be empty');
+                done();
+              });
+          });
+        });
+
+        context('when profile image is empty', () => {
+          it('returns an error', (done) => {
+            const invalidUser = UserFactory.build({ profileImage: '' });
+            request()
+              .put('/api/v1/user/update')
+              .set('authorization', userToken)
+              .send(invalidUser)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Profile Image" is not allowed to be empty');
                 done();
               });
           });

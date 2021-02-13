@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, request, sinon, useDatabase } from '../config';
+import { expect, request, sinon } from '../config';
 import Enquiry from '../../server/models/enquiry.model';
 import User from '../../server/models/user.model';
 import Property from '../../server/models/property.model';
@@ -15,8 +15,6 @@ import {
   itReturnsTheRightPaginationValue,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
 } from '../helpers';
-
-useDatabase();
 
 let adminToken;
 let userToken;

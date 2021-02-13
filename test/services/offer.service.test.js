@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, sinon, useDatabase } from '../config';
+import { expect, sinon } from '../config';
 import Offer from '../../server/models/offer.model';
 import Enquiry from '../../server/models/enquiry.model';
 import Property from '../../server/models/property.model';
@@ -24,8 +24,6 @@ import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
-
-useDatabase();
 
 describe('Offer Service', () => {
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });

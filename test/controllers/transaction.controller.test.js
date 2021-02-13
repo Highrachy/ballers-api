@@ -1,4 +1,4 @@
-import { expect, request, sinon, useDatabase } from '../config';
+import { expect, request, sinon } from '../config';
 import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
 import User from '../../server/models/user.model';
@@ -16,8 +16,6 @@ import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addReferral } from '../../server/services/referral.service';
 import { OFFER_STATUS, REWARD_STATUS, USER_ROLE } from '../../server/helpers/constants';
-
-useDatabase();
 
 let adminToken;
 let userToken;

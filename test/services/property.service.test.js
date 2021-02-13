@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, sinon, useDatabase } from '../config';
+import { expect, sinon } from '../config';
 import {
   getPropertyById,
   addProperty,
@@ -12,8 +12,6 @@ import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
 import Property from '../../server/models/property.model';
 import { USER_ROLE } from '../../server/helpers/constants';
-
-useDatabase();
 
 describe('Property Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
