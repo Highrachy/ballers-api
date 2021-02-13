@@ -119,20 +119,6 @@ describe('Offer Service', () => {
         expect(referenceCode).to.eql(`HIG/LVE/OLM/02/${getTodaysDateShortCode()}`);
       });
     });
-
-    context('when date class fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Date, 'now').throws(new Error('Date Error'));
-        try {
-          await createOffer(offer);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        Date.now.restore();
-      });
-    });
   });
 
   describe('#createOffer', () => {

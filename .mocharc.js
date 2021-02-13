@@ -1,6 +1,6 @@
 module.exports = {
   exit: true,
-  require: '@babel/register',
+  require: ['@babel/register', './test/hooks.js'],
   reporter: 'spec',
   spec: ['./test/**/*.test.js'],
   slow: 75,
