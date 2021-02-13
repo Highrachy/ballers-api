@@ -20,7 +20,14 @@ import {
   itReturnsNotFoundForInvalidToken,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
   itReturnsErrorForUnverifiedVendor,
+  defaultPaginationResult,
+  futureDate,
+  whenNoFilterParameterIsMatched,
+  whenUnknownFilterIsUsed,
+  expectsPaginationToReturnTheRightValues,
+  filterTestForSingleParameter,
 } from '../helpers';
+import { VISITATION_FILTERS } from '../../server/helpers/filters';
 
 useDatabase();
 
@@ -313,13 +320,6 @@ describe('Visitation Controller', () => {
     const endpoint = '/api/v1/visitation/all';
     const method = 'get';
 
-    const adminUser = UserFactory.build(
-      { role: USER_ROLE.ADMIN, activated: true },
-      { generateId: true },
-    );
-
-    const regularUser = UserFactory.build({ role: USER_ROLE.USER, activated: true });
-
     const vendorProperties = PropertyFactory.buildList(
       13,
       {
@@ -350,77 +350,202 @@ describe('Visitation Controller', () => {
         { generateId: true },
       ),
     );
+    const vendor3 = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        email: 'vendor3@mail.com',
+        vendor: {
+          verified: true,
+        },
+      },
+      { generateId: true },
+    );
+    const vendor3Property = PropertyFactory.build(
+      {
+        addedBy: vendor3._id,
+        updatedBy: vendor3._id,
+      },
+      { generateId: true },
+    );
+    const vendor3Visitation = VisitationFactory.build(
+      {
+        propertyId: vendor3Property._id,
+        userId: admin._id,
+        vendorId: vendor3Property.addedBy,
+        visitorName: 'Haruna Ijei',
+        visitorEmail: 'hj@mail.com',
+        visitorPhone: '08012343221',
+        createdAt: futureDate,
+        visitDate: futureDate,
+        status: VISITATION_STATUS.RESOLVED,
+      },
+      { generateId: true },
+    );
 
-    itReturnsEmptyValuesWhenNoItemExistInDatabase({ endpoint, method, user: adminUser });
+    describe('Visitation Pagination', () => {
+      itReturnsEmptyValuesWhenNoItemExistInDatabase({
+        endpoint,
+        method,
+        user: admin,
+        useExistingUser: true,
+      });
 
-    describe('when schedules exist in the db', () => {
+      describe('when schedules exist in the db', () => {
+        beforeEach(async () => {
+          await Property.insertMany(dummyProperties);
+          await Visitation.insertMany(dummyVisitations);
+        });
+
+        context('when vendor 1 token is used', () => {
+          it('returns all visitations', (done) => {
+            request()
+              .get(endpoint)
+              .set('authorization', vendorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 13,
+                  result: 10,
+                  totalPage: 2,
+                });
+                done();
+              });
+          });
+        });
+
+        context('when vendor 2 token is used', () => {
+          it('returns all visitations', (done) => {
+            request()
+              .get(endpoint)
+              .set('authorization', vendor2Token)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 5,
+                  result: 5,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        itReturnsTheRightPaginationValue({ endpoint, method, user: admin, useExistingUser: true });
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          useExistingUser: true,
+        });
+        itReturnsForbiddenForNoToken({ endpoint, method });
+        itReturnsAnErrorWhenServiceFails({
+          endpoint,
+          method,
+          user: admin,
+          model: Visitation,
+          modelMethod: 'aggregate',
+          useExistingUser: true,
+        });
+
+        itReturnsNotFoundForInvalidToken({
+          endpoint,
+          method,
+          user: admin,
+          userId: admin._id,
+          useExistingUser: true,
+        });
+
+        itReturnsErrorForUnverifiedVendor({
+          endpoint,
+          method,
+          user: vendor,
+          useExistingUser: true,
+        });
+      });
+    });
+
+    describe('Visitation Filters', () => {
       beforeEach(async () => {
-        await Property.insertMany(dummyProperties);
-        await Visitation.insertMany(dummyVisitations);
+        await addUser(vendor3);
+        await Property.insertMany([...dummyProperties, vendor3Property]);
+        await Visitation.insertMany([...dummyVisitations, vendor3Visitation]);
       });
 
-      context('when an admin token is used', () => {
-        it('returns all visitations', (done) => {
-          request()
-            .get('/api/v1/visitation/all?limit=100')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.result.length).to.be.eql(18);
-              done();
-            });
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+
+        whenUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: admin,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 19,
+            result: 10,
+            totalPage: 2,
+          },
+          useExistingUser: true,
+        });
+
+        whenUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: vendor,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 13,
+            result: 10,
+            totalPage: 2,
+          },
+          useExistingUser: true,
+        });
+
+        whenUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: vendor2,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 5,
+            result: 5,
+            totalPage: 1,
+          },
+          useExistingUser: true,
         });
       });
 
-      context('when vendor 1 token is used', () => {
-        it('returns all visitations', (done) => {
-          request()
-            .get('/api/v1/visitation/all?limit=100')
-            .set('authorization', vendorToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.result.length).to.be.eql(vendorProperties.length);
+      context('when no parameter is matched', () => {
+        const nonMatchingFilters = {
+          propertyId: mongoose.Types.ObjectId(),
+          visitorName: 'Segun Otedola',
+          visitorEmail: 'shegs@mail.com',
+          visitorPhone: '09012000000',
+          userId: mongoose.Types.ObjectId(),
+        };
 
-              done();
-            });
+        whenNoFilterParameterIsMatched({
+          filter: nonMatchingFilters,
+          method,
+          endpoint,
+          user: admin,
+          useExistingUser: true,
         });
       });
 
-      context('when vendor 2 token is used', () => {
-        it('returns all visitations', (done) => {
-          request()
-            .get('/api/v1/visitation/all?limit=100')
-            .set('authorization', vendor2Token)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.result.length).to.be.eql(vendor2Properties.length);
-              done();
-            });
-        });
-      });
-
-      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
-      itReturnsForbiddenForNoToken({ endpoint, method });
-      itReturnsAnErrorWhenServiceFails({
-        endpoint,
+      filterTestForSingleParameter({
+        filter: VISITATION_FILTERS,
         method,
-        user: adminUser,
-        model: Visitation,
-        modelMethod: 'aggregate',
-      });
-
-      itReturnsNotFoundForInvalidToken({
         endpoint,
-        method,
-        user: adminUser,
-        userId: adminUser._id,
+        user: admin,
+        dataObject: vendor3Visitation,
+        useExistingUser: true,
       });
-
-      itReturnsErrorForUnverifiedVendor({ endpoint, method, user: vendor, useExistingUser: true });
     });
   });
 

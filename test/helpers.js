@@ -510,7 +510,7 @@ export const whenUnknownFilterIsUsed = ({
     }
   });
 
-  context('with valid token', () => {
+  context('when unknown filter is used', () => {
     const filteredParams = querystring.stringify(filter);
 
     it('returns all items', (done) => {

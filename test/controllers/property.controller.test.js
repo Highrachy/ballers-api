@@ -1563,7 +1563,7 @@ describe('Property Controller', () => {
       });
 
       context('when no parameter is matched', () => {
-        const nonMatchingOfferFilters = {
+        const nonMatchingFilters = {
           bathrooms: 13,
           bedrooms: 1,
           price: 1500,
@@ -1572,7 +1572,7 @@ describe('Property Controller', () => {
         };
 
         whenNoFilterParameterIsMatched({
-          filter: nonMatchingOfferFilters,
+          filter: nonMatchingFilters,
           method,
           endpoint,
           user: adminUser,
