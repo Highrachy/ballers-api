@@ -9,6 +9,7 @@ chai.use(sinonChai);
 const { expect } = chai;
 const request = () => chai.request(app);
 
+// TODO: deprecated, to be removed later
 const useDatabase = () => {};
 
 export { chai, expect, request, sinon, useDatabase };
