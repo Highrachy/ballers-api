@@ -118,3 +118,37 @@ export const OFFER_FILTERS = {
   userId: { type: FILTER_TYPE.OBJECT_ID },
   vendorId: { type: FILTER_TYPE.OBJECT_ID },
 };
+
+export const ENQUIRY_FILTERS = {
+  ...ADDRESS_FILTERS,
+  approved: { type: FILTER_TYPE.BOOLEAN },
+  approvalDate: { type: FILTER_TYPE.DATE },
+  createdAt: { type: FILTER_TYPE.DATE },
+  email: { type: FILTER_TYPE.STRING },
+  firstName: { type: FILTER_TYPE.STRING },
+  initialInvestmentAmount: { type: FILTER_TYPE.INTEGER },
+  investmentFrequency: { type: FILTER_TYPE.STRING },
+  investmentStartDate: { type: FILTER_TYPE.DATE },
+  lastName: { type: FILTER_TYPE.STRING },
+  nameOnTitleDocument: { type: FILTER_TYPE.STRING },
+  occupation: { type: FILTER_TYPE.STRING },
+  periodicInvestmentAmount: { type: FILTER_TYPE.INTEGER },
+  phone: { type: FILTER_TYPE.STRING },
+  phone2: { type: FILTER_TYPE.STRING },
+  propertyId: { type: FILTER_TYPE.OBJECT_ID },
+  title: { type: FILTER_TYPE.STRING },
+  userId: { type: FILTER_TYPE.OBJECT_ID },
+  vendorId: { type: FILTER_TYPE.OBJECT_ID },
+};
+
+export const VISITATION_FILTERS = {
+  createdAt: { type: FILTER_TYPE.DATE },
+  vendorId: { type: FILTER_TYPE.OBJECT_ID },
+  propertyId: { type: FILTER_TYPE.OBJECT_ID },
+  status: { type: FILTER_TYPE.STRING },
+  userId: { type: FILTER_TYPE.OBJECT_ID },
+  visitDate: { type: FILTER_TYPE.DATE },
+  visitorEmail: { type: FILTER_TYPE.STRING },
+  visitorName: { type: FILTER_TYPE.STRING },
+  visitorPhone: { type: FILTER_TYPE.STRING },
+};

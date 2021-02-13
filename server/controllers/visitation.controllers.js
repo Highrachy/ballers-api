@@ -33,9 +33,9 @@ const VisitationController = {
   },
 
   getAll(req, res, next) {
-    const { page, limit } = req.query;
+    const { query } = req;
     const { user } = req;
-    getAllVisitations(user, page, limit)
+    getAllVisitations(user, query)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
