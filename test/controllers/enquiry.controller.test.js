@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import querystring from 'querystring';
 import { expect, request, sinon } from '../config';
 import Enquiry from '../../server/models/enquiry.model';
 import User from '../../server/models/user.model';
@@ -14,7 +15,14 @@ import {
   itReturnsForbiddenForNoToken,
   itReturnsTheRightPaginationValue,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
+  filterTestForSingleParameter,
+  defaultPaginationResult,
+  futureDate,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
+  expectsPaginationToReturnTheRightValues,
 } from '../helpers';
+import { ENQUIRY_FILTERS } from '../../server/helpers/filters';
 
 let adminToken;
 let userToken;
@@ -844,11 +852,29 @@ describe('Enquiry Controller', () => {
       },
       { generateId: true },
     );
+    const vendor3 = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        email: 'vendor3@mail.com',
+        vendor: {
+          verified: true,
+        },
+      },
+      { generateId: true },
+    );
     const vendorProperties = PropertyFactory.buildList(
       13,
       {
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const vendor3Property = PropertyFactory.build(
+      {
+        addedBy: vendor3._id,
+        updatedBy: vendor3._id,
       },
       { generateId: true },
     );
@@ -868,119 +894,275 @@ describe('Enquiry Controller', () => {
           propertyId: dummyProperties[index]._id,
           userId: regularUser._id,
           vendorId: dummyProperties[index].addedBy,
+          approved: false,
         },
         { generateId: true },
       ),
     );
     const enquiry = EnquiryFactory.build(
       {
+        address: {
+          street1: 'miracle street',
+          street2: 'agege street',
+          city: 'ilorin',
+          state: 'kwara',
+          country: 'ghana',
+        },
+        approved: true,
+        approvalDate: futureDate,
+        approvedBy: vendorUser._id,
+        createdAt: futureDate,
+        email: 'aj@gmail.com',
+        firstName: 'Anthony',
+        investmentFrequency: 'bi-annualy',
+        initialInvestmentAmount: 1230000,
+        investmentStartDate: futureDate,
+        lastName: 'Joshua',
+        nameOnTitleDocument: 'Anthony Joshua',
+        occupation: 'soldier',
+        periodicInvestmentAmount: 334000,
+        phone: '08023054223',
+        phone2: '09023134332',
+        propertyId: vendor3Property._id,
+        title: 'Lt',
         userId: adminUser._id,
-        propertyId: vendorProperties[0]._id,
+        vendorId: vendor3._id,
       },
       { generateId: true },
     );
 
     beforeEach(async () => {
       vendor2Token = await addUser(vendor2);
+      await addUser(vendor3);
     });
 
-    context('when no offers exists in db', () => {
-      [adminUser, regularUser, vendorUser].map((user) =>
-        itReturnsEmptyValuesWhenNoItemExistInDatabase({
+    describe('Enquiry Pagination', () => {
+      context('when no offers exists in db', () => {
+        [adminUser, regularUser, vendorUser].map((user) =>
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
+      describe('when enquiries exist in db', () => {
+        beforeEach(async () => {
+          await Property.insertMany([...dummyProperties, vendor3Property]);
+          await Enquiry.insertMany(userEnquiries);
+          await addEnquiry(enquiry);
+        });
+
+        itReturnsTheRightPaginationValue({
           endpoint,
           method,
-          user,
+          user: regularUser,
           useExistingUser: true,
-        }),
-      );
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        context('when request is sent by admin token', () => {
+          it('returns all enquiries', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 19,
+                  result: 10,
+                  totalPage: 2,
+                });
+                expect(res.body.result[0]._id).to.be.eql(userEnquiries[0]._id.toString());
+                expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
+                expect(res.body.result[0].propertyId).to.be.eql(
+                  res.body.result[0].propertyInfo._id,
+                );
+                expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
+                expect(res.body.result[0].firstName).to.be.eql(userEnquiries[0].firstName);
+                expect(res.body.result[0].otherName).to.be.eql(userEnquiries[0].otherName);
+                done();
+              });
+          });
+        });
+
+        context('when request is sent by vendor2 token', () => {
+          it('returns vendor2 enquiries', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendor2Token)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 5,
+                  result: 5,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(userEnquiries[13]._id.toString());
+                expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
+                expect(res.body.result[0].propertyId).to.be.eql(
+                  res.body.result[0].propertyInfo._id,
+                );
+                expect(res.body.result[0].vendorInfo._id).to.be.eql(vendor2._id.toString());
+                expect(res.body.result[0].firstName).to.be.eql(userEnquiries[13].firstName);
+                expect(res.body.result[0].otherName).to.be.eql(userEnquiries[13].otherName);
+                done();
+              });
+          });
+        });
+
+        context('when request is sent by vendor', () => {
+          it('returns vendor enquiries', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 13,
+                  result: 10,
+                  totalPage: 2,
+                });
+                expect(res.body.result[0]._id).to.be.eql(userEnquiries[0]._id.toString());
+                expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
+                expect(res.body.result[0].propertyId).to.be.eql(
+                  res.body.result[0].propertyInfo._id,
+                );
+                expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
+                expect(res.body.result[0].firstName).to.be.eql(userEnquiries[0].firstName);
+                expect(res.body.result[0].otherName).to.be.eql(userEnquiries[0].otherName);
+                done();
+              });
+          });
+        });
+      });
     });
 
-    describe('when enquiries exist in db', () => {
+    describe('Enquiry Filter', () => {
       beforeEach(async () => {
-        await Property.insertMany(dummyProperties);
+        await Property.insertMany([...dummyProperties, vendor3Property]);
         await Enquiry.insertMany(userEnquiries);
         await addEnquiry(enquiry);
       });
 
-      itReturnsTheRightPaginationValue({
-        endpoint,
-        method,
-        user: regularUser,
-        useExistingUser: true,
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+        context('when admin makes a request', () => {
+          itReturnAllResultsWhenAnUnknownFilterIsUsed({
+            filter: unknownFilter,
+            method,
+            endpoint,
+            user: adminUser,
+            expectedPagination: {
+              ...defaultPaginationResult,
+              total: 19,
+              result: 10,
+              totalPage: 2,
+            },
+            useExistingUser: true,
+          });
+        });
+
+        context('when vendor1 makes a request', () => {
+          itReturnAllResultsWhenAnUnknownFilterIsUsed({
+            filter: unknownFilter,
+            method,
+            endpoint,
+            user: vendorUser,
+            expectedPagination: {
+              ...defaultPaginationResult,
+              total: 13,
+              result: 10,
+              totalPage: 2,
+            },
+            useExistingUser: true,
+          });
+        });
+
+        context('when vendor2 makes a request', () => {
+          itReturnAllResultsWhenAnUnknownFilterIsUsed({
+            filter: unknownFilter,
+            method,
+            endpoint,
+            user: vendor2,
+            expectedPagination: {
+              ...defaultPaginationResult,
+              total: 5,
+              result: 5,
+              totalPage: 1,
+            },
+            useExistingUser: true,
+          });
+        });
       });
 
-      itReturnsForbiddenForNoToken({ endpoint, method });
+      context('when multiple filters are used', () => {
+        const multipleFilterDetails = {
+          approved: enquiry.approved,
+          firstName: enquiry.firstName,
+          initialInvestmentAmount: enquiry.initialInvestmentAmount,
+          approvalDate: enquiry.approvalDate,
+          country: enquiry.address.country,
+        };
+        const filteredParams = querystring.stringify(multipleFilterDetails);
 
-      context('when request is sent by admin token', () => {
-        it('returns all enquiries', (done) => {
+        it('returns matched user', (done) => {
           request()
-            [method](endpoint)
+            [method](`${endpoint}?${filteredParams}`)
             .set('authorization', adminToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.pagination.currentPage).to.be.eql(1);
-              expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(19);
-              expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.result.length).to.be.eql(10);
-              expect(res.body.result[0]._id).to.be.eql(userEnquiries[0]._id.toString());
-              expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(res.body.result[0].propertyInfo._id);
-              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
-              expect(res.body.result[0].firstName).to.be.eql(userEnquiries[0].firstName);
-              expect(res.body.result[0].otherName).to.be.eql(userEnquiries[0].otherName);
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(enquiry._id.toString());
+              expect(res.body.result[0].approved).to.be.eql(multipleFilterDetails.approved);
+              expect(res.body.result[0].firstName).to.be.eql(multipleFilterDetails.firstName);
+              expect(res.body.result[0].initialInvestmentAmount).to.be.eql(
+                multipleFilterDetails.initialInvestmentAmount,
+              );
+              expect(res.body.result[0].approvalDate).to.have.string(
+                multipleFilterDetails.approvalDate,
+              );
+              expect(res.body.result[0].address.country).to.be.eql(multipleFilterDetails.country);
               done();
             });
         });
       });
 
-      context('when request is sent by vendor2 token', () => {
-        it('returns vendor2 enquiries', (done) => {
-          request()
-            [method](endpoint)
-            .set('authorization', vendor2Token)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.pagination.currentPage).to.be.eql(1);
-              expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(5);
-              expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.result.length).to.be.eql(5);
-              expect(res.body.result[0]._id).to.be.eql(userEnquiries[13]._id.toString());
-              expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(res.body.result[0].propertyInfo._id);
-              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendor2._id.toString());
-              expect(res.body.result[0].firstName).to.be.eql(userEnquiries[13].firstName);
-              expect(res.body.result[0].otherName).to.be.eql(userEnquiries[13].otherName);
-              done();
-            });
+      context('when no parameter is matched', () => {
+        const nonMatchingFilters = {
+          approved: true,
+          firstName: 'Segun',
+          initialInvestmentAmount: 1500,
+          approvalDate: '2020-12-11',
+          country: 'italy',
+        };
+
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
+          filter: nonMatchingFilters,
+          method,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
         });
       });
 
-      context('when request is sent by vendor', () => {
-        it('returns vendor enquiries', (done) => {
-          request()
-            [method](endpoint)
-            .set('authorization', vendorToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.pagination.currentPage).to.be.eql(1);
-              expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(14);
-              expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.result.length).to.be.eql(10);
-              expect(res.body.result[0]._id).to.be.eql(userEnquiries[0]._id.toString());
-              expect(res.body.result[0].userId).to.be.eql(regularUser._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(res.body.result[0].propertyInfo._id);
-              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
-              expect(res.body.result[0].firstName).to.be.eql(userEnquiries[0].firstName);
-              expect(res.body.result[0].otherName).to.be.eql(userEnquiries[0].otherName);
-              done();
-            });
-        });
+      filterTestForSingleParameter({
+        filter: ENQUIRY_FILTERS,
+        method,
+        endpoint,
+        user: adminUser,
+        dataObject: enquiry,
+        useExistingUser: true,
       });
     });
   });

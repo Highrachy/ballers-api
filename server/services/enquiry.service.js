@@ -7,6 +7,7 @@ import { getPropertyById } from './property.service';
 import { USER_ROLE } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
+import { buildFilterQuery, ENQUIRY_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -57,8 +58,11 @@ export const approveEnquiry = async ({ enquiryId, vendor }) => {
   }
 };
 
-export const getAllEnquiries = async (user, page = 1, limit = 10) => {
+export const getAllEnquiries = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const filterQuery = buildFilterQuery(ENQUIRY_FILTERS, query);
+
   const enquiryOptions = [
+    { $match: { $and: filterQuery } },
     {
       $lookup: {
         from: 'properties',
@@ -91,6 +95,10 @@ export const getAllEnquiries = async (user, page = 1, limit = 10) => {
       },
     },
   ];
+
+  if (filterQuery.length < 1) {
+    enquiryOptions.shift();
+  }
   if (user.role === USER_ROLE.VENDOR) {
     enquiryOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
   }

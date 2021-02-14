@@ -33,8 +33,8 @@ import {
   defaultPaginationResult,
   futureDate,
   filterTestForSingleParameter,
-  whenNoFilterParameterIsMatched,
-  whenUnknownFilterIsUsed,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
 } from '../helpers';
 import Property from '../../server/models/property.model';
 import AddressFactory from '../factories/address.factory';
@@ -1614,7 +1614,7 @@ describe('Offer Controller', () => {
           dob: '1993-02-01',
         };
 
-        whenUnknownFilterIsUsed({
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
           filter: unknownFilter,
           method,
           endpoint,
@@ -1628,7 +1628,7 @@ describe('Offer Controller', () => {
           useExistingUser: true,
         });
 
-        whenUnknownFilterIsUsed({
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
           filter: unknownFilter,
           method,
           endpoint,
@@ -1643,7 +1643,7 @@ describe('Offer Controller', () => {
         });
 
         [regularUser, vendorUser].map((user) =>
-          whenUnknownFilterIsUsed({
+          itReturnAllResultsWhenAnUnknownFilterIsUsed({
             filter: unknownFilter,
             method,
             endpoint,
@@ -1706,7 +1706,7 @@ describe('Offer Controller', () => {
           status: 'Upgraded',
         };
 
-        whenNoFilterParameterIsMatched({
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
           filter: nonMatchingOfferFilters,
           method,
           endpoint,

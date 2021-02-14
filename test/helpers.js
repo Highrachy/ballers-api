@@ -451,7 +451,7 @@ export const filterTestForSingleParameter = ({
   });
 };
 
-export const whenNoFilterParameterIsMatched = ({
+export const itReturnsNoResultWhenNoFilterParameterIsMatched = ({
   filter,
   method,
   endpoint,
@@ -491,7 +491,7 @@ export const whenNoFilterParameterIsMatched = ({
   });
 };
 
-export const whenUnknownFilterIsUsed = ({
+export const itReturnAllResultsWhenAnUnknownFilterIsUsed = ({
   filter,
   method,
   endpoint,
@@ -510,7 +510,7 @@ export const whenUnknownFilterIsUsed = ({
     }
   });
 
-  context('with valid token', () => {
+  context('when unknown filter is used', () => {
     const filteredParams = querystring.stringify(filter);
 
     it('returns all items', (done) => {

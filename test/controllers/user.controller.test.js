@@ -34,8 +34,8 @@ import {
   futureDate,
   defaultPaginationResult,
   filterTestForSingleParameter,
-  whenNoFilterParameterIsMatched,
-  whenUnknownFilterIsUsed,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
 } from '../helpers';
 import {
   USER_ROLE,
@@ -3329,7 +3329,7 @@ describe('User Controller', () => {
           dob: '1993-02-01',
         };
 
-        whenUnknownFilterIsUsed({
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
           filter: unknownFilter,
           method,
           endpoint,
@@ -3354,7 +3354,7 @@ describe('User Controller', () => {
           country: 'Ghana',
         };
 
-        whenNoFilterParameterIsMatched({
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
           filter: nonMatchingOfferFilters,
           method,
           endpoint,

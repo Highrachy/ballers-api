@@ -7,6 +7,7 @@ import { getUserById } from './user.service';
 import { USER_ROLE, VISITATION_STATUS, PROCESS_VISITATION_ACTION } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
+import { buildFilterQuery, VISITATION_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -33,8 +34,11 @@ export const scheduleVisitation = async (schedule) => {
   }
 };
 
-export const getAllVisitations = async (user, page = 1, limit = 10) => {
+export const getAllVisitations = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const filterQuery = buildFilterQuery(VISITATION_FILTERS, query);
+
   const scheduleOptions = [
+    { $match: { $and: filterQuery } },
     {
       $lookup: {
         from: 'properties',
@@ -50,6 +54,10 @@ export const getAllVisitations = async (user, page = 1, limit = 10) => {
       },
     },
   ];
+
+  if (filterQuery.length < 1) {
+    scheduleOptions.shift();
+  }
 
   if (user.role === USER_ROLE.VENDOR) {
     scheduleOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
