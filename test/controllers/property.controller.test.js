@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import querystring from 'querystring';
-import { expect, request, sinon, useDatabase } from '../config';
+import { expect, request, sinon } from '../config';
 import Property from '../../server/models/property.model';
 import User from '../../server/models/user.model';
 import Transaction from '../../server/models/transaction.model';
@@ -39,8 +39,6 @@ import AddressFactory from '../factories/address.factory';
 import VisitationFactory from '../factories/visitation.factory';
 import { scheduleVisitation } from '../../server/services/visitation.service';
 import { PROPERTY_FILTERS } from '../../server/helpers/filters';
-
-useDatabase();
 
 let adminToken;
 let vendorToken;

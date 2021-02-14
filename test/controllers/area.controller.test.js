@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, request, useDatabase, sinon } from '../config';
+import { expect, request, sinon } from '../config';
 import Area from '../../server/models/area.model';
 import ContentProperty from '../../server/models/contentProperty.model';
 import AreaFactory from '../factories/area.factory';
@@ -9,8 +9,6 @@ import { addUser } from '../../server/services/user.service';
 import { addArea } from '../../server/services/area.service';
 import { addContentProperty } from '../../server/services/contentProperty.service';
 import { USER_ROLE } from '../../server/helpers/constants';
-
-useDatabase();
 
 let userToken;
 let adminToken;

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import querystring from 'querystring';
-import { expect, request, sinon, useDatabase } from '../config';
+import { expect, request, sinon } from '../config';
 import Enquiry from '../../server/models/enquiry.model';
 import User from '../../server/models/user.model';
 import Property from '../../server/models/property.model';
@@ -23,8 +23,6 @@ import {
   expectsPaginationToReturnTheRightValues,
 } from '../helpers';
 import { ENQUIRY_FILTERS } from '../../server/helpers/filters';
-
-useDatabase();
 
 let adminToken;
 let userToken;

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, sinon, useDatabase } from '../config';
+import { expect, sinon } from '../config';
 import Offer from '../../server/models/offer.model';
 import Enquiry from '../../server/models/enquiry.model';
 import Property from '../../server/models/property.model';
@@ -24,8 +24,6 @@ import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
-
-useDatabase();
 
 describe('Offer Service', () => {
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
@@ -117,20 +115,6 @@ describe('Offer Service', () => {
         await createOffer(offer);
         const referenceCode = await generateReferenceCode(property._id);
         expect(referenceCode).to.eql(`HIG/LVE/OLM/02/${getTodaysDateShortCode()}`);
-      });
-    });
-
-    context('when date class fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Date, 'now').throws(new Error('Date Error'));
-        try {
-          await createOffer(offer);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        Date.now.restore();
       });
     });
   });

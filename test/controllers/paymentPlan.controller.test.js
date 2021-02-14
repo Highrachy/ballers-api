@@ -1,13 +1,11 @@
 import mongoose from 'mongoose';
-import { expect, request, sinon, useDatabase } from '../config';
+import { expect, request, sinon } from '../config';
 import PaymentPlan from '../../server/models/paymentPlan.model';
 import User from '../../server/models/user.model';
 import PaymentPlanFactory from '../factories/paymentPlan.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
 import { addPaymentPlan } from '../../server/services/paymentPlan.service';
-
-useDatabase();
 
 let adminToken;
 let userToken;

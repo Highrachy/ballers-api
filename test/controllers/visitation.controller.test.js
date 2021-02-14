@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, request, useDatabase, sinon } from '../config';
+import { expect, request, sinon } from '../config';
 import User from '../../server/models/user.model';
 import Visitation from '../../server/models/visitation.model';
 import Property from '../../server/models/property.model';
@@ -28,8 +28,6 @@ import {
   filterTestForSingleParameter,
 } from '../helpers';
 import { VISITATION_FILTERS } from '../../server/helpers/filters';
-
-useDatabase();
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();
