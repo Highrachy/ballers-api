@@ -31,8 +31,8 @@ import {
   itReturnsNotFoundForInvalidToken,
   filterTestForSingleParameter,
   futureDate,
-  whenNoFilterParameterIsMatched,
-  whenUnknownFilterIsUsed,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
 } from '../helpers';
 import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
@@ -1497,7 +1497,7 @@ describe('Property Controller', () => {
           dob: '1993-02-01',
         };
 
-        whenUnknownFilterIsUsed({
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
           filter: unknownFilter,
           method,
           endpoint,
@@ -1511,7 +1511,7 @@ describe('Property Controller', () => {
           useExistingUser: true,
         });
 
-        whenUnknownFilterIsUsed({
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
           filter: unknownFilter,
           method,
           endpoint,
@@ -1569,7 +1569,7 @@ describe('Property Controller', () => {
           country: 'italy',
         };
 
-        whenNoFilterParameterIsMatched({
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
           filter: nonMatchingFilters,
           method,
           endpoint,

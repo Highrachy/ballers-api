@@ -451,7 +451,7 @@ export const filterTestForSingleParameter = ({
   });
 };
 
-export const whenNoFilterParameterIsMatched = ({
+export const itReturnsNoResultWhenNoFilterParameterIsMatched = ({
   filter,
   method,
   endpoint,
@@ -491,7 +491,7 @@ export const whenNoFilterParameterIsMatched = ({
   });
 };
 
-export const whenUnknownFilterIsUsed = ({
+export const itReturnAllResultsWhenAnUnknownFilterIsUsed = ({
   filter,
   method,
   endpoint,

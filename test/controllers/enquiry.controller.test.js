@@ -18,8 +18,8 @@ import {
   filterTestForSingleParameter,
   defaultPaginationResult,
   futureDate,
-  whenNoFilterParameterIsMatched,
-  whenUnknownFilterIsUsed,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
   expectsPaginationToReturnTheRightValues,
 } from '../helpers';
 import { ENQUIRY_FILTERS } from '../../server/helpers/filters';
@@ -1051,47 +1051,52 @@ describe('Enquiry Controller', () => {
         const unknownFilter = {
           dob: '1993-02-01',
         };
-
-        whenUnknownFilterIsUsed({
-          filter: unknownFilter,
-          method,
-          endpoint,
-          user: adminUser,
-          expectedPagination: {
-            ...defaultPaginationResult,
-            total: 19,
-            result: 10,
-            totalPage: 2,
-          },
-          useExistingUser: true,
+        context('when admin makes a request', () => {
+          itReturnAllResultsWhenAnUnknownFilterIsUsed({
+            filter: unknownFilter,
+            method,
+            endpoint,
+            user: adminUser,
+            expectedPagination: {
+              ...defaultPaginationResult,
+              total: 19,
+              result: 10,
+              totalPage: 2,
+            },
+            useExistingUser: true,
+          });
         });
 
-        whenUnknownFilterIsUsed({
-          filter: unknownFilter,
-          method,
-          endpoint,
-          user: vendorUser,
-          expectedPagination: {
-            ...defaultPaginationResult,
-            total: 13,
-            result: 10,
-            totalPage: 2,
-          },
-          useExistingUser: true,
+        context('when vendor1 makes a request', () => {
+          itReturnAllResultsWhenAnUnknownFilterIsUsed({
+            filter: unknownFilter,
+            method,
+            endpoint,
+            user: vendorUser,
+            expectedPagination: {
+              ...defaultPaginationResult,
+              total: 13,
+              result: 10,
+              totalPage: 2,
+            },
+            useExistingUser: true,
+          });
         });
 
-        whenUnknownFilterIsUsed({
-          filter: unknownFilter,
-          method,
-          endpoint,
-          user: vendor2,
-          expectedPagination: {
-            ...defaultPaginationResult,
-            total: 5,
-            result: 5,
-            totalPage: 1,
-          },
-          useExistingUser: true,
+        context('when vendor2 makes a request', () => {
+          itReturnAllResultsWhenAnUnknownFilterIsUsed({
+            filter: unknownFilter,
+            method,
+            endpoint,
+            user: vendor2,
+            expectedPagination: {
+              ...defaultPaginationResult,
+              total: 5,
+              result: 5,
+              totalPage: 1,
+            },
+            useExistingUser: true,
+          });
         });
       });
 
@@ -1142,7 +1147,7 @@ describe('Enquiry Controller', () => {
           country: 'italy',
         };
 
-        whenNoFilterParameterIsMatched({
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
           filter: nonMatchingFilters,
           method,
           endpoint,

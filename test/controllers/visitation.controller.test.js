@@ -22,8 +22,8 @@ import {
   itReturnsErrorForUnverifiedVendor,
   defaultPaginationResult,
   futureDate,
-  whenNoFilterParameterIsMatched,
-  whenUnknownFilterIsUsed,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
   expectsPaginationToReturnTheRightValues,
   filterTestForSingleParameter,
 } from '../helpers';
@@ -407,6 +407,14 @@ describe('Visitation Controller', () => {
                   result: 10,
                   totalPage: 2,
                 });
+                expect(res.body.result[0]._id).to.be.eql(dummyVisitations[0]._id.toString());
+                expect(res.body.result[0].visitorName).to.be.eql(dummyVisitations[0].visitorName);
+                expect(res.body.result[0].visitorEmail).to.be.eql(dummyVisitations[0].visitorEmail);
+                expect(res.body.result[0].userId).to.be.eql(dummyVisitations[0].userId.toString());
+                expect(res.body.result[0].propertyId).to.be.eql(
+                  dummyVisitations[0].propertyId.toString(),
+                );
+                expect(res.body.result[0].visitorName).to.be.eql(dummyVisitations[0].visitorName);
                 done();
               });
           });
@@ -424,6 +432,16 @@ describe('Visitation Controller', () => {
                   result: 5,
                   totalPage: 1,
                 });
+                expect(res.body.result[0]._id).to.be.eql(dummyVisitations[13]._id.toString());
+                expect(res.body.result[0].visitorName).to.be.eql(dummyVisitations[13].visitorName);
+                expect(res.body.result[0].visitorEmail).to.be.eql(
+                  dummyVisitations[13].visitorEmail,
+                );
+                expect(res.body.result[0].userId).to.be.eql(dummyVisitations[13].userId.toString());
+                expect(res.body.result[0].propertyId).to.be.eql(
+                  dummyVisitations[13].propertyId.toString(),
+                );
+                expect(res.body.result[0].visitorName).to.be.eql(dummyVisitations[13].visitorName);
                 done();
               });
           });
@@ -475,7 +493,7 @@ describe('Visitation Controller', () => {
           dob: '1993-02-01',
         };
 
-        whenUnknownFilterIsUsed({
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
           filter: unknownFilter,
           method,
           endpoint,
@@ -489,7 +507,7 @@ describe('Visitation Controller', () => {
           useExistingUser: true,
         });
 
-        whenUnknownFilterIsUsed({
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
           filter: unknownFilter,
           method,
           endpoint,
@@ -503,7 +521,7 @@ describe('Visitation Controller', () => {
           useExistingUser: true,
         });
 
-        whenUnknownFilterIsUsed({
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
           filter: unknownFilter,
           method,
           endpoint,
@@ -527,7 +545,7 @@ describe('Visitation Controller', () => {
           userId: mongoose.Types.ObjectId(),
         };
 
-        whenNoFilterParameterIsMatched({
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
           filter: nonMatchingFilters,
           method,
           endpoint,
