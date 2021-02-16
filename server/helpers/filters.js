@@ -55,12 +55,12 @@ export const buildFilterQuery = (allFilters, query) => {
   }, []);
 };
 
-export const buildSortQuery = (sortFilter, query) => {
+export const buildSortQuery = (sortFilter, modelFilter, query) => {
   return Object.entries(sortFilter).reduce((acc, [queryKey, { type }]) => {
     if (query[queryKey]) {
       switch (type) {
         case 'key':
-          acc.key = query[queryKey];
+          acc.key = modelFilter[query[queryKey]].key || query[queryKey];
           break;
 
         case 'value':

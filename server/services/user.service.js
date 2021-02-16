@@ -264,9 +264,14 @@ export const updateUser = async (updatedUser) => {
 
 export const getAllUsers = async ({ page = 1, limit = 10, ...query } = {}) => {
   const filterQuery = buildFilterQuery(USER_FILTERS, query);
+  let sortQuery;
 
-  const sortKeys = buildSortQuery(SORT_FILTERS, query);
-  const sortQuery = { [sortKeys.key]: sortKeys.value };
+  const sortKeys = buildSortQuery(SORT_FILTERS, USER_FILTERS, query);
+  if (Object.keys(sortKeys).length === 0) {
+    sortQuery = {};
+  } else {
+    sortQuery = { [sortKeys.key]: sortKeys.value };
+  }
 
   const userOptions = [
     { $match: { $and: filterQuery } },
@@ -280,7 +285,7 @@ export const getAllUsers = async ({ page = 1, limit = 10, ...query } = {}) => {
     { $project: { preferences: 0, password: 0, notifications: 0 } },
   ];
 
-  if (Object.keys(sortQuery)[undefined] === undefined) {
+  if (Object.keys(sortQuery).length === 0) {
     userOptions.splice(1, 1);
   }
 
