@@ -11,6 +11,11 @@ export const FILTER_TYPE = {
   STRING: 'string',
 };
 
+const SORT_DIRECTION = {
+  ASC: 1,
+  DES: -1,
+};
+
 export const buildFilterQuery = (allFilters, query) => {
   return Object.entries(allFilters).reduce((acc, [queryKey, { key, type }]) => {
     const filterKey = key || queryKey;
@@ -48,6 +53,26 @@ export const buildFilterQuery = (allFilters, query) => {
     }
     return acc;
   }, []);
+};
+
+export const buildSortQuery = (sortFilter, query) => {
+  return Object.entries(sortFilter).reduce((acc, [queryKey, { type }]) => {
+    if (query[queryKey]) {
+      switch (type) {
+        case 'key':
+          acc.key = query[queryKey];
+          break;
+
+        case 'value':
+          acc.value = SORT_DIRECTION[query[queryKey].toUpperCase()];
+          break;
+
+        default:
+          break;
+      }
+    }
+    return acc;
+  }, {});
 };
 
 export const ADDRESS_FILTERS = {
@@ -151,4 +176,9 @@ export const VISITATION_FILTERS = {
   visitorEmail: { type: FILTER_TYPE.STRING },
   visitorName: { type: FILTER_TYPE.STRING },
   visitorPhone: { type: FILTER_TYPE.STRING },
+};
+
+export const SORT_FILTERS = {
+  sortBy: { type: 'key' },
+  sortDirection: { type: 'value' },
 };

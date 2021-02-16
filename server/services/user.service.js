@@ -19,7 +19,7 @@ import {
 } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
-import { buildFilterQuery, USER_FILTERS } from '../helpers/filters';
+import { buildFilterQuery, USER_FILTERS, buildSortQuery, SORT_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -265,8 +265,12 @@ export const updateUser = async (updatedUser) => {
 export const getAllUsers = async ({ page = 1, limit = 10, ...query } = {}) => {
   const filterQuery = buildFilterQuery(USER_FILTERS, query);
 
+  const sortKeys = buildSortQuery(SORT_FILTERS, query);
+  const sortQuery = { [sortKeys.key]: sortKeys.value };
+
   const userOptions = [
     { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
@@ -275,6 +279,10 @@ export const getAllUsers = async ({ page = 1, limit = 10, ...query } = {}) => {
     },
     { $project: { preferences: 0, password: 0, notifications: 0 } },
   ];
+
+  if (Object.keys(sortQuery)[undefined] === undefined) {
+    userOptions.splice(1, 1);
+  }
 
   if (filterQuery.length < 1) {
     userOptions.shift();
