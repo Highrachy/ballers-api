@@ -1,4 +1,4 @@
-import { parse, add } from 'date-fns';
+import { add } from 'date-fns';
 import mongoose from 'mongoose';
 
 const { ObjectId } = mongoose.Types.ObjectId;
@@ -16,22 +16,61 @@ export const buildFilterQuery = (allFilters, query) => {
     const filterKey = key || queryKey;
 
     if (query[queryKey]) {
+      const shouldSort = query[queryKey].includes('_:_');
+      const rangeFrom = query[queryKey].split('_:_')[0];
+      const rangeTo = query[queryKey].split('_:_')[1];
+
       switch (type) {
         case FILTER_TYPE.BOOLEAN:
           acc.push({ [filterKey]: query[queryKey] === 'true' });
           break;
 
         case FILTER_TYPE.DATE:
-          acc.push({
-            [filterKey]: {
-              $gte: parse(query[queryKey], 'yyyy-MM-dd', new Date()),
+          {
+            let dateQueryValue = {
+              $gte: add(new Date(query[queryKey]), { days: 0 }),
               $lt: add(new Date(query[queryKey]), { days: 1 }),
-            },
-          });
+            };
+
+            if (shouldSort) {
+              if (parseInt(rangeFrom, 10) === 0) {
+                dateQueryValue = {
+                  $lt: add(new Date(rangeTo), { days: 1 }),
+                };
+              } else if (parseInt(rangeTo, 10) === 0) {
+                dateQueryValue = {
+                  $gte: add(new Date(rangeFrom), { days: 0 }),
+                };
+              } else {
+                dateQueryValue = {
+                  $gte: add(new Date(rangeFrom), { days: 0 }),
+                  $lt: add(new Date(rangeTo), { days: 1 }),
+                };
+              }
+            }
+            acc.push({
+              [filterKey]: dateQueryValue,
+            });
+          }
           break;
 
         case FILTER_TYPE.INTEGER:
-          acc.push({ [filterKey]: parseInt(query[queryKey], 10) });
+          {
+            let integerQueryValue = parseInt(query[queryKey], 10);
+            if (shouldSort) {
+              if (parseInt(rangeTo, 10) === 0) {
+                integerQueryValue = {
+                  $gte: parseInt(rangeFrom, 10),
+                };
+              } else {
+                integerQueryValue = {
+                  $gte: parseInt(rangeFrom, 10),
+                  $lte: parseInt(rangeTo, 10),
+                };
+              }
+            }
+            acc.push({ [filterKey]: integerQueryValue });
+          }
           break;
 
         case FILTER_TYPE.OBJECT_ID:

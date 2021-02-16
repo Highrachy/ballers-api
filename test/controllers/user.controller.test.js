@@ -32,6 +32,7 @@ import {
   itReturnsNotFoundForInvalidToken,
   expectsPaginationToReturnTheRightValues,
   futureDate,
+  currentDate,
   defaultPaginationResult,
   filterTestForSingleParameter,
   itReturnsNoResultWhenNoFilterParameterIsMatched,
@@ -54,7 +55,7 @@ const adminUser = UserFactory.build(
     role: USER_ROLE.ADMIN,
     activated: true,
     address: { country: 'Nigeria' },
-    createdAt: futureDate,
+    createdAt: currentDate,
   },
   { generateId: true },
 );
@@ -3132,21 +3133,21 @@ describe('User Controller', () => {
       activated: true,
       referralCode: 'ab1234',
       address: { country: 'Nigeria' },
-      activationDate: futureDate,
-      createdAt: futureDate,
+      activationDate: currentDate,
+      createdAt: currentDate,
     });
     const dummyEditors = UserFactory.buildList(2, {
       role: USER_ROLE.EDITOR,
       activated: true,
-      activationDate: futureDate,
-      createdAt: futureDate,
+      activationDate: currentDate,
+      createdAt: currentDate,
     });
     const dummyVendor = UserFactory.build(
       {
         role: USER_ROLE.VENDOR,
         activated: false,
-        activationDate: new Date(),
-        createdAt: new Date(),
+        activationDate: futureDate,
+        createdAt: futureDate,
         firstName: 'vendor1',
         lastName: 'doe',
         email: 'dummyevendor@mail.com',
@@ -3167,8 +3168,8 @@ describe('User Controller', () => {
           companyName: 'Dangote PLC',
           verified: true,
           certified: true,
-          certifiedOn: new Date(),
-          verifiedOn: new Date(),
+          certifiedOn: futureDate,
+          verifiedOn: futureDate,
           entity: 'Coporation',
           redanNumber: '0123456789',
           verification: {
@@ -3194,8 +3195,8 @@ describe('User Controller', () => {
         role: USER_ROLE.ADMIN,
         activated: true,
         address: { country: 'Nigeria' },
-        activationDate: futureDate,
-        createdAt: futureDate,
+        activationDate: currentDate,
+        createdAt: currentDate,
       },
       { generateId: true },
     );
