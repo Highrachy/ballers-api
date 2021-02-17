@@ -3202,13 +3202,11 @@ describe('User Controller', () => {
     );
     const method = 'get';
 
-    beforeEach(async () => {
-      await User.insertMany([dummyAdmin, dummyVendor, ...dummyUsers, ...dummyEditors]);
-      const adminInfo = await getUserByEmail(dummyAdmin.email);
-      adminToken = generateToken(adminInfo._id);
-    });
-
     describe('User pagination', () => {
+      beforeEach(async () => {
+        await User.insertMany([dummyAdmin, dummyVendor, ...dummyUsers, ...dummyEditors]);
+      });
+
       itReturnsTheRightPaginationValue({
         endpoint,
         method,
@@ -3232,6 +3230,12 @@ describe('User Controller', () => {
     });
 
     describe('User filters', () => {
+      beforeEach(async () => {
+        await User.insertMany([dummyAdmin, dummyVendor, ...dummyUsers, ...dummyEditors]);
+        const adminInfo = await getUserByEmail(dummyAdmin.email);
+        adminToken = generateToken(adminInfo._id);
+      });
+
       beforeEach(async () => {
         adminToken = await addUser(adminUser);
       });
@@ -3371,6 +3375,212 @@ describe('User Controller', () => {
         user: adminUser,
         dataObject: dummyVendor,
         useExistingUser: true,
+      });
+    });
+
+    describe('User Sorting', () => {
+      const user1 = UserFactory.build(
+        {
+          role: USER_ROLE.USER,
+          activated: true,
+          address: { country: 'Nigeria' },
+          activationDate: '2020-12-11',
+        },
+        { generateId: true },
+      );
+      const user2 = UserFactory.build(
+        {
+          role: USER_ROLE.ADMIN,
+          activated: false,
+          address: { country: 'France' },
+          activationDate: '1997-05-11',
+        },
+        { generateId: true },
+      );
+      const user3 = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          address: { country: 'China' },
+          activationDate: '2003-03-29',
+        },
+        { generateId: true },
+      );
+
+      beforeEach(async () => {
+        await addUser(user1);
+        adminToken = await addUser(user2);
+        await addUser(user3);
+      });
+
+      context('when an unknown filter is used', () => {
+        const sortQuery = {
+          sortBy: 'dob',
+        };
+        const filteredParams = querystring.stringify(sortQuery);
+        it('returns all users', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res.body.result[0]._id).to.be.eql(user1._id.toString());
+              expect(res.body.result[1]._id).to.be.eql(user2._id.toString());
+              expect(res.body.result[2]._id).to.be.eql(user3._id.toString());
+              done();
+            });
+        });
+      });
+
+      context('when sorted by role', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'role',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user3._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'role',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user2._id.toString());
+                done();
+              });
+          });
+        });
+      });
+
+      context('when sorted by activated', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'activated',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user3._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'activated',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user2._id.toString());
+                done();
+              });
+          });
+        });
+      });
+
+      context('when sorted by country', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'country',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user1._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'country',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user3._id.toString());
+                done();
+              });
+          });
+        });
+      });
+
+      context('when sorted by activationDate', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'activationDate',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user1._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'activationDate',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user2._id.toString());
+                done();
+              });
+          });
+        });
       });
     });
   });
