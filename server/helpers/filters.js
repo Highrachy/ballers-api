@@ -11,6 +11,11 @@ export const FILTER_TYPE = {
   STRING: 'string',
 };
 
+const SORT_DIRECTION = {
+  ASC: 1,
+  DESC: -1,
+};
+
 export const buildFilterQuery = (allFilters, query) => {
   return Object.entries(allFilters).reduce((acc, [queryKey, { key, type }]) => {
     const filterKey = key || queryKey;
@@ -49,6 +54,24 @@ export const buildFilterQuery = (allFilters, query) => {
     return acc;
   }, []);
 };
+
+export const buildSortQuery = (modelFilter, query) => {
+  const { sortBy, sortDirection } = query;
+
+  if (sortBy && Object.keys(modelFilter).includes(sortBy)) {
+    const direction =
+      sortDirection?.toUpperCase() === 'DESC' ? SORT_DIRECTION.DESC : SORT_DIRECTION.ASC;
+
+    const key = modelFilter[sortBy].key || sortBy;
+    return { [key]: direction };
+  }
+  return {};
+};
+
+export const buildFilterAndSortQuery = (allFilters, query) => ({
+  filterQuery: buildFilterQuery(allFilters, query),
+  sortQuery: buildSortQuery(allFilters, query),
+});
 
 export const ADDRESS_FILTERS = {
   city: { key: 'address.city', type: FILTER_TYPE.STRING },
