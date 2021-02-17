@@ -3583,5 +3583,215 @@ describe('User Controller', () => {
         });
       });
     });
+
+    describe('Range Filter', () => {
+      const user1 = UserFactory.build(
+        {
+          role: USER_ROLE.ADMIN,
+          activationDate: '2021-11-03',
+        },
+        { generateId: true },
+      );
+      const user2 = UserFactory.build(
+        {
+          role: USER_ROLE.USER,
+          activationDate: '2001-11-11',
+        },
+        { generateId: true },
+      );
+      const user3 = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activationDate: '2011-01-03',
+        },
+        { generateId: true },
+      );
+      const user4 = UserFactory.build(
+        {
+          role: USER_ROLE.EDITOR,
+          activationDate: '1998-08-15',
+        },
+        { generateId: true },
+      );
+
+      beforeEach(async () => {
+        adminToken = await addUser(user1);
+        await addUser(user2);
+        await addUser(user3);
+        await addUser(user4);
+      });
+
+      context('when unknown parameter is used', () => {
+        const unknownFilter = {
+          dob: '1997-12-15:2001-10-29',
+        };
+        const filteredParams = querystring.stringify(unknownFilter);
+
+        it('returns all users', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 4,
+                total: 4,
+                totalPage: 1,
+              });
+              done();
+            });
+        });
+      });
+
+      describe('when parameter is a number', () => {
+        context('when the value is range', () => {
+          const queryFilter = {
+            role: '1:3',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('when the value is from', () => {
+          const queryFilter = {
+            role: '2:0',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('when the value is to', () => {
+          const queryFilter = {
+            role: '0:1',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+      });
+
+      describe('when parameter is a date', () => {
+        context('when the value is range', () => {
+          const queryFilter = {
+            activationDate: '1998-01-01:2011-12-31',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('when the value is from', () => {
+          const queryFilter = {
+            activationDate: '2011-01-01:0',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('when the value is to', () => {
+          const queryFilter = {
+            activationDate: '0:2021-12-03',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 4,
+                  total: 4,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+      });
+    });
   });
 });

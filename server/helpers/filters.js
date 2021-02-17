@@ -32,11 +32,11 @@ const processRangeSeparator = (key) => {
       return RANGE_TYPE.RANGE;
     }
 
-    if (parseInt(rangeTo, 10) === 0) {
+    if (parseInt(rangeFrom, 10) === 0) {
       return RANGE_TYPE.TO;
     }
 
-    if (parseInt(rangeFrom, 10) === 0) {
+    if (parseInt(rangeTo, 10) === 0) {
       return RANGE_TYPE.FROM;
     }
   }
@@ -120,7 +120,7 @@ export const buildFilterQuery = (allFilters, query) => {
 
               case RANGE_TYPE.TO:
                 integerQueryValue = {
-                  $gte: parseInt(rangeTo, 10),
+                  $lte: parseInt(rangeTo, 10),
                 };
                 break;
 
