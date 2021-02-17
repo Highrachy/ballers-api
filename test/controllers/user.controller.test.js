@@ -3372,5 +3372,91 @@ describe('User Controller', () => {
         useExistingUser: true,
       });
     });
+
+    describe('User Sorting', () => {
+      context('when sorted by role', () => {
+        context('in ascending order', () => {
+          const sortFilters = {
+            limit: 100,
+            sortBy: 'role',
+            sortDirection: 'asc',
+          };
+          const filteredParams = querystring.stringify(sortFilters);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0].role).to.be.eql(0);
+                expect(res.body.result[res.body.result.length - 1].role).to.be.eql(3);
+                done();
+              });
+          });
+        });
+
+        context('in descending order', () => {
+          const sortFilters = {
+            limit: 100,
+            sortBy: 'role',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortFilters);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0].role).to.be.eql(3);
+                expect(res.body.result[res.body.result.length - 1].role).to.be.eql(0);
+                done();
+              });
+          });
+        });
+      });
+
+      context('when sorted by activated', () => {
+        context('in ascending order', () => {
+          const sortFilters = {
+            limit: 100,
+            sortBy: 'activated',
+            sortDirection: 'asc',
+          };
+          const filteredParams = querystring.stringify(sortFilters);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0].activated).to.be.eql(false);
+                expect(res.body.result[res.body.result.length - 1].activated).to.be.eql(true);
+                done();
+              });
+          });
+        });
+
+        context('in descending order', () => {
+          const sortFilters = {
+            limit: 100,
+            sortBy: 'activated',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortFilters);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0].activated).to.be.eql(true);
+                expect(res.body.result[res.body.result.length - 1].activated).to.be.eql(false);
+                done();
+              });
+          });
+        });
+      });
+    });
   });
 });
