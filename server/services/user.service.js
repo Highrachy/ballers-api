@@ -19,7 +19,7 @@ import {
 } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
-import { buildFilterQuery, USER_FILTERS, buildSortQuery, SORT_FILTERS } from '../helpers/filters';
+import { buildFilterAndSortQuery, USER_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -263,15 +263,7 @@ export const updateUser = async (updatedUser) => {
 };
 
 export const getAllUsers = async ({ page = 1, limit = 10, ...query } = {}) => {
-  const filterQuery = buildFilterQuery(USER_FILTERS, query);
-  let sortQuery;
-
-  const sortKeys = buildSortQuery(SORT_FILTERS, USER_FILTERS, query);
-  if (Object.keys(sortKeys).length === 0) {
-    sortQuery = {};
-  } else {
-    sortQuery = { [sortKeys.key]: sortKeys.value };
-  }
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(USER_FILTERS, query);
 
   const userOptions = [
     { $match: { $and: filterQuery } },

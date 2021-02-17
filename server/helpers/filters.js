@@ -13,7 +13,7 @@ export const FILTER_TYPE = {
 
 const SORT_DIRECTION = {
   ASC: 1,
-  DES: -1,
+  DESC: -1,
 };
 
 export const buildFilterQuery = (allFilters, query) => {
@@ -55,25 +55,23 @@ export const buildFilterQuery = (allFilters, query) => {
   }, []);
 };
 
-export const buildSortQuery = (sortFilter, modelFilter, query) => {
-  return Object.entries(sortFilter).reduce((acc, [queryKey, { type }]) => {
-    if (query[queryKey]) {
-      switch (type) {
-        case 'key':
-          acc.key = modelFilter[query[queryKey]].key || query[queryKey];
-          break;
+export const buildSortQuery = (modelFilter, query) => {
+  const { sortBy, sortDirection } = query;
 
-        case 'value':
-          acc.value = SORT_DIRECTION[query[queryKey].toUpperCase()];
-          break;
+  if (sortBy && Object.keys(modelFilter).includes(sortBy)) {
+    const direction =
+      sortDirection?.toUpperCase() === 'DESC' ? SORT_DIRECTION.DESC : SORT_DIRECTION.ASC;
 
-        default:
-          break;
-      }
-    }
-    return acc;
-  }, {});
+    const key = modelFilter[sortBy].key || sortBy;
+    return { [key]: direction };
+  }
+  return {};
 };
+
+export const buildFilterAndSortQuery = (allFilters, query) => ({
+  filterQuery: buildFilterQuery(allFilters, query),
+  sortQuery: buildSortQuery(allFilters, query),
+});
 
 export const ADDRESS_FILTERS = {
   city: { key: 'address.city', type: FILTER_TYPE.STRING },
@@ -176,9 +174,4 @@ export const VISITATION_FILTERS = {
   visitorEmail: { type: FILTER_TYPE.STRING },
   visitorName: { type: FILTER_TYPE.STRING },
   visitorPhone: { type: FILTER_TYPE.STRING },
-};
-
-export const SORT_FILTERS = {
-  sortBy: { type: 'key' },
-  sortDirection: { type: 'value' },
 };
