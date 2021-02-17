@@ -405,6 +405,7 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
 };
 
 export const futureDate = format(add(new Date(), { days: 5 }), 'yyyy-MM-dd');
+export const currentDate = format(new Date(), 'yyyy-MM-dd');
 
 export const filterTestForSingleParameter = ({
   filter,

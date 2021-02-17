@@ -1,7 +1,8 @@
-import { parse, add } from 'date-fns';
+import { add } from 'date-fns';
 import mongoose from 'mongoose';
 
 const { ObjectId } = mongoose.Types.ObjectId;
+const RANGE_SEPARATOR = ':';
 
 export const FILTER_TYPE = {
   BOOLEAN: 'boolean',
@@ -16,27 +17,118 @@ const SORT_DIRECTION = {
   DESC: -1,
 };
 
+const RANGE_TYPE = {
+  EQUALS: 1,
+  TO: 2,
+  FROM: 3,
+  RANGE: 4,
+};
+
+const processRangeSeparator = (key) => {
+  if (key.includes(RANGE_SEPARATOR)) {
+    const [rangeFrom = 0, rangeTo = 0] = key.split(RANGE_SEPARATOR);
+
+    if (parseInt(rangeFrom, 10) !== 0 && parseInt(rangeTo, 10) !== 0) {
+      return RANGE_TYPE.RANGE;
+    }
+
+    if (parseInt(rangeFrom, 10) === 0) {
+      return RANGE_TYPE.TO;
+    }
+
+    if (parseInt(rangeTo, 10) === 0) {
+      return RANGE_TYPE.FROM;
+    }
+  }
+
+  return RANGE_TYPE.EQUALS;
+};
+
 export const buildFilterQuery = (allFilters, query) => {
   return Object.entries(allFilters).reduce((acc, [queryKey, { key, type }]) => {
     const filterKey = key || queryKey;
 
     if (query[queryKey]) {
+      const [rangeFrom = 0, rangeTo = 0] = query[queryKey].split(RANGE_SEPARATOR);
+
       switch (type) {
         case FILTER_TYPE.BOOLEAN:
           acc.push({ [filterKey]: query[queryKey] === 'true' });
           break;
 
         case FILTER_TYPE.DATE:
-          acc.push({
-            [filterKey]: {
-              $gte: parse(query[queryKey], 'yyyy-MM-dd', new Date()),
-              $lt: add(new Date(query[queryKey]), { days: 1 }),
-            },
-          });
+          {
+            let dateQueryValue;
+            const rangeType = processRangeSeparator(query[queryKey]);
+
+            switch (rangeType) {
+              case RANGE_TYPE.EQUALS:
+                dateQueryValue = {
+                  $gte: add(new Date(query[queryKey]), { days: 0 }),
+                  $lt: add(new Date(query[queryKey]), { days: 1 }),
+                };
+                break;
+
+              case RANGE_TYPE.RANGE:
+                dateQueryValue = {
+                  $gte: add(new Date(rangeFrom), { days: 0 }),
+                  $lt: add(new Date(rangeTo), { days: 1 }),
+                };
+                break;
+
+              case RANGE_TYPE.FROM:
+                dateQueryValue = {
+                  $gte: add(new Date(rangeFrom), { days: 0 }),
+                };
+                break;
+
+              case RANGE_TYPE.TO:
+                dateQueryValue = {
+                  $lt: add(new Date(rangeTo), { days: 1 }),
+                };
+                break;
+
+              default:
+                break;
+            }
+            acc.push({ [filterKey]: dateQueryValue });
+          }
           break;
 
         case FILTER_TYPE.INTEGER:
-          acc.push({ [filterKey]: parseInt(query[queryKey], 10) });
+          {
+            let integerQueryValue;
+            const rangeType = processRangeSeparator(query[queryKey]);
+
+            switch (rangeType) {
+              case RANGE_TYPE.EQUALS:
+                integerQueryValue = parseInt(query[queryKey], 10);
+                break;
+
+              case RANGE_TYPE.RANGE:
+                integerQueryValue = {
+                  $gte: parseInt(rangeFrom, 10),
+                  $lte: parseInt(rangeTo, 10),
+                };
+                break;
+
+              case RANGE_TYPE.FROM:
+                integerQueryValue = {
+                  $gte: parseInt(rangeFrom, 10),
+                };
+                break;
+
+              case RANGE_TYPE.TO:
+                integerQueryValue = {
+                  $lte: parseInt(rangeTo, 10),
+                };
+                break;
+
+              default:
+                break;
+            }
+            acc.push({ [filterKey]: integerQueryValue });
+          }
           break;
 
         case FILTER_TYPE.OBJECT_ID:
