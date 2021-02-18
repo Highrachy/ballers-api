@@ -21,7 +21,7 @@ import { OFFER_STATUS, CONCERN_STATUS } from '../helpers/constants';
  *          - expires
  *          - dateAccepted
  *          - initialPayment
- *          - monthlyPayment
+ *          - periodicPayment
  *          - paymentFrequency
  *        properties:
  *          userId:
@@ -52,7 +52,7 @@ import { OFFER_STATUS, CONCERN_STATUS } from '../helpers/constants';
  *            type: date
  *          initialPayment:
  *            type: number
- *          monthlyPayment:
+ *          periodicPayment:
  *            type: number
  *          paymentFrequency:
  *            type: number
@@ -71,7 +71,7 @@ import { OFFER_STATUS, CONCERN_STATUS } from '../helpers/constants';
  *           signature: http://www.ballers.ng/signature.png
  *           dateAccepted: 2020-01-01
  *           initialPayment: 10000000
- *           monthlyPayment: 500000
+ *           periodicPayment: 500000
  *           paymentFrequency: 1
  */
 
@@ -143,7 +143,7 @@ const OfferSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    monthlyPayment: {
+    periodicPayment: {
       type: Number,
       required: true,
     },
@@ -171,6 +171,7 @@ const OfferSchema = new mongoose.Schema(
         },
       },
     ],
+    paymentDates: [Date],
   },
   { timestamps: true },
 );

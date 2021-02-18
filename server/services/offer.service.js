@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { format, add } from 'date-fns';
 import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
@@ -270,6 +271,25 @@ export const getOffer = async (offerId, user) => {
   return offer;
 };
 
+const generatePaymentDates = (offer) => {
+  const paymentDates = [];
+
+  const numberOfPaymentsToBeMade =
+    (offer.totalAmountPayable - offer.initialPayment) / offer.periodicPayment;
+
+  const { paymentFrequency } = offer;
+
+  for (let i = 0; i < numberOfPaymentsToBeMade; i += 1) {
+    const paymentDate = format(
+      add(offer.handOverDate, { days: paymentFrequency * i }),
+      'yyyy-MM-dd',
+    );
+    paymentDates.push(paymentDate);
+  }
+
+  return paymentDates;
+};
+
 export const createOffer = async (offer) => {
   const enquiry = await getEnquiryById(offer.enquiryId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -291,6 +311,8 @@ export const createOffer = async (offer) => {
   });
 
   const referenceCode = await generateReferenceCode(enquiry.propertyId);
+  const paymentDates = generatePaymentDates(offer);
+
   const user = await getUserById(enquiry.userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -305,6 +327,7 @@ export const createOffer = async (offer) => {
       userId: enquiry.userId,
       propertyId: enquiry.propertyId,
       referenceCode,
+      paymentDates,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, vendor });
     const offerInfo = await getOffer(newOffer._id, user);

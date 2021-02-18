@@ -14,5 +14,5 @@ export default new Factory()
   .attr('title', 'Test offer')
   .attr('expires', '2090-09-08')
   .attr('initialPayment', 20000000)
-  .attr('monthlyPayment', 1000000)
-  .attr('paymentFrequency', 1);
+  .attr('periodicPayment', 1000000)
+  .attr('paymentFrequency', 30);

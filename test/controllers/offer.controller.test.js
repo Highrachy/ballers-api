@@ -190,7 +190,7 @@ describe('Offer Controller', () => {
           title: '"Title" is not allowed to be empty',
           expires: '"Expiry Date" must be a valid date',
           initialPayment: '"Initial Payment" must be a number',
-          monthlyPayment: '"Monthly Payment" must be a number',
+          periodicPayment: '"Periodic Payment" must be a number',
           paymentFrequency: '"Payment Frequency" must be a number',
         };
 
@@ -1475,7 +1475,7 @@ describe('Offer Controller', () => {
         expires: futureDate,
         handOverDate: futureDate,
         initialPayment: 10000,
-        monthlyPayment: 5000,
+        periodicPayment: 5000,
         paymentFrequency: 4,
         status: OFFER_STATUS.ASSIGNED,
         title: 'User offer',
@@ -1664,7 +1664,7 @@ describe('Offer Controller', () => {
           title: userOffer.title,
           referenceCode: userOffer.referenceCode,
           expires: userOffer.expires,
-          monthlyPayment: userOffer.monthlyPayment,
+          periodicPayment: userOffer.periodicPayment,
           status: userOffer.status,
         };
         const filteredParams = querystring.stringify(multipleOfferDetails);
@@ -1684,8 +1684,8 @@ describe('Offer Controller', () => {
               });
               expect(res.body.result[0]._id).to.be.eql(userOffer._id.toString());
               expect(res.body.result[0].status).to.be.eql(multipleOfferDetails.status);
-              expect(res.body.result[0].monthlyPayment).to.be.eql(
-                multipleOfferDetails.monthlyPayment,
+              expect(res.body.result[0].periodicPayment).to.be.eql(
+                multipleOfferDetails.periodicPayment,
               );
               expect(res.body.result[0].expires).to.have.string(multipleOfferDetails.expires);
               expect(res.body.result[0].title).to.be.eql(multipleOfferDetails.title);
@@ -1702,7 +1702,7 @@ describe('Offer Controller', () => {
           title: 'old title',
           referenceCode: 'QWERTY',
           expires: '2001-11-12',
-          monthlyPayment: 1,
+          periodicPayment: 1,
           status: 'Upgraded',
         };
 
