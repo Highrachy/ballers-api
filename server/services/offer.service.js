@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { format, add } from 'date-fns';
+import { format, add, parseISO } from 'date-fns';
 import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
@@ -273,17 +273,14 @@ export const getOffer = async (offerId, user) => {
 
 const generatePaymentDates = (offer) => {
   const paymentDates = [];
+  const { totalAmountPayable, initialPayment, periodicPayment, paymentFrequency } = offer;
 
-  const numberOfPaymentsToBeMade =
-    (offer.totalAmountPayable - offer.initialPayment) / offer.periodicPayment;
-
-  const { paymentFrequency } = offer;
+  const numberOfPaymentsToBeMade = (totalAmountPayable - initialPayment) / periodicPayment;
 
   for (let i = 0; i < numberOfPaymentsToBeMade; i += 1) {
-    const paymentDate = format(
-      add(offer.handOverDate, { days: paymentFrequency * i }),
-      'yyyy-MM-dd',
-    );
+    const handOverDate =
+      offer.handOverDate === 'string' ? parseISO(offer.handOverDate) : offer.handOverDate;
+    const paymentDate = format(add(handOverDate, { days: paymentFrequency * i }), 'yyyy-MM-dd');
     paymentDates.push(paymentDate);
   }
 

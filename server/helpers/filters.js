@@ -223,7 +223,7 @@ export const OFFER_FILTERS = {
   expires: { type: FILTER_TYPE.DATE },
   handOverDate: { type: FILTER_TYPE.DATE },
   initialPayment: { type: FILTER_TYPE.INTEGER },
-  monthlyPayment: { type: FILTER_TYPE.INTEGER },
+  periodicPayment: { type: FILTER_TYPE.INTEGER },
   paymentFrequency: { type: FILTER_TYPE.INTEGER },
   propertyId: { type: FILTER_TYPE.OBJECT_ID },
   referenceCode: { type: FILTER_TYPE.STRING },
