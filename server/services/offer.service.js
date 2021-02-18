@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { format, add, parseISO } from 'date-fns';
+import { format, add } from 'date-fns';
 import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
@@ -271,17 +271,26 @@ export const getOffer = async (offerId, user) => {
   return offer;
 };
 
-const generatePaymentDates = (offer) => {
-  const paymentDates = [];
-  const { totalAmountPayable, initialPayment, periodicPayment, paymentFrequency } = offer;
+export const generatePaymentSchedules = (offer) => {
+  const {
+    totalAmountPayable,
+    initialPayment,
+    periodicPayment,
+    paymentFrequency,
+    handOverDate,
+  } = offer;
+  const paymentDates = [{ date: format(offer.handOverDate, 'yyyy-MM-dd'), amount: initialPayment }];
 
   const numberOfPaymentsToBeMade = (totalAmountPayable - initialPayment) / periodicPayment;
 
-  for (let i = 0; i < numberOfPaymentsToBeMade; i += 1) {
-    const handOverDate =
-      offer.handOverDate === 'string' ? parseISO(offer.handOverDate) : offer.handOverDate;
-    const paymentDate = format(add(handOverDate, { days: paymentFrequency * i }), 'yyyy-MM-dd');
-    paymentDates.push(paymentDate);
+  if (numberOfPaymentsToBeMade > 0 && numberOfPaymentsToBeMade < 1) {
+    const paymentDate = format(add(handOverDate, { days: paymentFrequency }), 'yyyy-MM-dd');
+    paymentDates.push({ date: paymentDate, amount: totalAmountPayable - initialPayment });
+  } else {
+    for (let i = 1; i <= numberOfPaymentsToBeMade; i += 1) {
+      const paymentDate = format(add(handOverDate, { days: paymentFrequency * i }), 'yyyy-MM-dd');
+      paymentDates.push({ date: paymentDate, amount: periodicPayment });
+    }
   }
 
   return paymentDates;
@@ -308,7 +317,6 @@ export const createOffer = async (offer) => {
   });
 
   const referenceCode = await generateReferenceCode(enquiry.propertyId);
-  const paymentDates = generatePaymentDates(offer);
 
   const user = await getUserById(enquiry.userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -324,7 +332,6 @@ export const createOffer = async (offer) => {
       userId: enquiry.userId,
       propertyId: enquiry.propertyId,
       referenceCode,
-      paymentDates,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, vendor });
     const offerInfo = await getOffer(newOffer._id, user);
@@ -353,12 +360,15 @@ export const acceptOffer = async (offerToAccept) => {
   const offerPrice = offer[0].totalAmountPayable;
   const contributionReward = propertyPrice - offerPrice < 0 ? 0 : propertyPrice - offerPrice;
 
-  const expiryDate = new Date(offer.expires);
+  const expiryDate = new Date(offer[0].expires);
   if (Date.now() > expiryDate) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
   }
 
   const vendor = await getUserById(offer[0].vendorId);
+
+  // const paymentDates = generatePaymentSchedules(offer[0]);
+  // code to add dates to payment schema
 
   try {
     await assignPropertyToUser({
