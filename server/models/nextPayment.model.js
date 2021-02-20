@@ -11,9 +11,9 @@ import mongoose from 'mongoose';
  *          - expiresOn
  *          - offerId
  *          - propertyId
+ *          - resolved
  *          - resolvedDate
  *          - resolvedViaTransaction
- *          - resolved
  *          - transactionId
  *          - vendorId
  *        properties:
@@ -25,11 +25,11 @@ import mongoose from 'mongoose';
  *            type: string
  *          propertyId:
  *            type: string
+ *          resolved:
+ *            type: boolean
  *          resolvedDate:
  *            type: date
  *          resolvedViaTransaction:
- *            type: boolean
- *          resolved:
  *            type: boolean
  *          transactionId:
  *            type: string
@@ -40,9 +40,9 @@ import mongoose from 'mongoose';
  *           expiresOn: 2020-01-01
  *           offerId: 5f22f7f8c790039da1242381
  *           propertyId: 5f22f8aec790039da1242382
+ *           resolved: false
  *           resolvedDate: 2020-01-01
  *           resolvedViaTransaction: true
- *           resolved: false
  *           transactionId: 5f2b39035a086cfc4b7fa722
  *           userId: 5f2b39035a086cfc4b7fa7f6
  *           vendorId: 5f22f7f8c790039da1242381
