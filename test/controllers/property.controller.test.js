@@ -420,17 +420,17 @@ describe('Property Controller', () => {
         });
       });
       context('when floorPlans is empty', () => {
-        it('returns added property', (done) => {
+        it('returns an error', (done) => {
           const property = PropertyFactory.build({ floorPlans: '' });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
-              expect(res).to.have.status(201);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('Property added');
-              expect(res.body).to.have.property('property');
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Property floor plans" must be an array');
               done();
             });
         });
@@ -914,16 +914,17 @@ describe('Property Controller', () => {
         });
       });
       context('when floorPlans is empty', () => {
-        it('returns updated property', (done) => {
+        it('returns an error', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, floorPlans: '' });
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('property');
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Property floor plans" must be an array');
               done();
             });
         });
