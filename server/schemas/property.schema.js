@@ -17,6 +17,22 @@ const mapLocation = Joi.object().keys({
   latitude: nonRequiredNumber('Map location latitude'),
 });
 
+const neighbourhoodInfo = Joi.array().items(
+  Joi.object().keys({
+    distance: optionalNumber('Distance'),
+    name: optionalString('Name'),
+    mapLocation,
+  }),
+);
+
+const neighborhood = Joi.object().label('Property neighborhood').keys({
+  gyms: neighbourhoodInfo,
+  hospitals: neighbourhoodInfo,
+  restaurants: neighbourhoodInfo,
+  schools: neighbourhoodInfo,
+  shopping: neighbourhoodInfo,
+});
+
 export const addPropertySchema = Joi.object({
   name: requiredString('Property name'),
   titleDocument: nonRequiredString('Property title document'),
@@ -30,7 +46,7 @@ export const addPropertySchema = Joi.object({
   description: requiredString('Property description'),
   floorPlans: nonRequiredString('Property floor plans'),
   mapLocation,
-  neighborhood: optionalArray('Property neighborhood'),
+  neighborhood,
   mainImage: nonRequiredString('Property main image'),
   gallery: optionalArray('Property gallery'),
   paymentPlan: optionalArray('Payment plan'),
@@ -50,7 +66,7 @@ export const updatePropertySchema = Joi.object({
   description: optionalString('Property description'),
   floorPlans: nonRequiredString('Property floor plans'),
   mapLocation,
-  neighborhood: optionalArray('Property neighborhood'),
+  neighborhood,
   mainImage: nonRequiredString('Property main image'),
   gallery: optionalArray('Property gallery'),
   paymentPlan: optionalArray('Payment plan'),

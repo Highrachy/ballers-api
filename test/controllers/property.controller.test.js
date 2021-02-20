@@ -446,14 +446,14 @@ describe('Property Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property neighborhood" must be an array');
+              expect(res.body.error).to.be.eql('"Property neighborhood" must be of type object');
               done();
             });
         });
       });
-      context('when neighborhood is an empty array', () => {
+      context('when neighborhood is an empty object', () => {
         it('returns successful property', (done) => {
-          const property = PropertyFactory.build({ neighborhood: [] });
+          const property = PropertyFactory.build({ neighborhood: {} });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
@@ -939,14 +939,14 @@ describe('Property Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property neighborhood" must be an array');
+              expect(res.body.error).to.be.eql('"Property neighborhood" must be of type object');
               done();
             });
         });
       });
-      context('when neighborhood is empty array', () => {
+      context('when neighborhood is empty object', () => {
         it('returns updated property', (done) => {
-          const invalidProperty = PropertyFactory.build({ id: property._id, neighborhood: [] });
+          const invalidProperty = PropertyFactory.build({ id: property._id, neighborhood: {} });
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
@@ -955,7 +955,13 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('property');
-              expect(res.body.property.neighborhood).to.be.eql(invalidProperty.neighborhood);
+              expect(res.body.property.neighborhood).to.be.eql({
+                gyms: [],
+                hospitals: [],
+                restaurants: [],
+                schools: [],
+                shopping: [],
+              });
               done();
             });
         });
@@ -1002,7 +1008,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('property');
-              expect(res.body.property.neighborhood).to.be.eql(invalidProperty.neighborhood);
+              expect(res.body.property.gallery).to.be.eql(invalidProperty.gallery);
               done();
             });
         });

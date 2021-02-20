@@ -27,7 +27,58 @@ export default new Factory()
     longitude: '1.23456',
     latitude: '2.34567',
   })
-  .attr('neighborhood', ['Lekki Phase 1'])
+  .attr('neighborhood', {
+    gyms: [
+      {
+        name: 'iFitness',
+        distance: 1000,
+        mapLocation: {
+          longitude: 1.234555,
+          latitude: 1.234555,
+        },
+      },
+    ],
+    hospitals: [
+      {
+        name: 'Reddington Hospital',
+        distance: 1000,
+        mapLocation: {
+          longitude: 1.234555,
+          latitude: 1.234555,
+        },
+      },
+    ],
+    restaurants: [
+      {
+        name: 'Cut steak house',
+        distance: 1000,
+        mapLocation: {
+          longitude: 1.234555,
+          latitude: 1.234555,
+        },
+      },
+    ],
+    schools: [
+      {
+        name: 'British International School',
+        distance: 1000,
+        mapLocation: {
+          longitude: 1.234555,
+          latitude: 1.234555,
+        },
+      },
+    ],
+    shopping: [
+      {
+        name: 'Shoprite',
+        distance: 1000,
+        mapLocation: {
+          longitude: 1.234555,
+          latitude: 1.234555,
+        },
+      },
+    ],
+  })
   .attr('mainImage', 'https://picsum.photos/200')
   .attr('gallery', [
     'https://picsum.photos/200',
