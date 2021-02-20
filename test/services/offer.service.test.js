@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { parseISO } from 'date-fns';
 import { expect, sinon } from '../config';
 import Offer from '../../server/models/offer.model';
 import Enquiry from '../../server/models/enquiry.model';
@@ -635,44 +634,6 @@ describe('Offer Service', () => {
       { userId: demoUser._id, propertyId: property._id },
       { generateId: true },
     );
-    const offer1 = OfferFactory.build(
-      {
-        enquiryId: enquiry._id,
-        vendorId: vendor._id,
-        totalAmountPayable: 100000,
-        initialPayment: 50000,
-        periodicPayment: 10000,
-        paymentFrequency: 30,
-        handOverDate: parseISO('2020-12-11'),
-      },
-      { generateId: true },
-    );
-
-    const offer2 = OfferFactory.build(
-      {
-        enquiryId: enquiry._id,
-        vendorId: vendor._id,
-        totalAmountPayable: 100000,
-        initialPayment: 100000,
-        periodicPayment: 10000,
-        paymentFrequency: 30,
-        handOverDate: parseISO('2020-12-11'),
-      },
-      { generateId: true },
-    );
-
-    const offer3 = OfferFactory.build(
-      {
-        enquiryId: enquiry._id,
-        vendorId: vendor._id,
-        totalAmountPayable: 100000,
-        initialPayment: 95000,
-        periodicPayment: 10000,
-        paymentFrequency: 14,
-        handOverDate: parseISO('2020-12-11'),
-      },
-      { generateId: true },
-    );
 
     beforeEach(async () => {
       await addUser(demoUser);
@@ -681,11 +642,23 @@ describe('Offer Service', () => {
     });
 
     context('when totalAmountPayable is greater than initial payment', () => {
+      const offer = OfferFactory.build(
+        {
+          enquiryId: enquiry._id,
+          vendorId: vendor._id,
+          totalAmountPayable: 100000,
+          initialPayment: 50000,
+          periodicPayment: 10000,
+          paymentFrequency: 30,
+          handOverDate: new Date('2021-03-01'),
+        },
+        { generateId: true },
+      );
       beforeEach(async () => {
-        await createOffer(offer1);
+        await createOffer(offer);
       });
       it('returns a valid accepted offer', async () => {
-        const paymentDates = generatePaymentSchedules(offer1);
+        const paymentDates = generatePaymentSchedules(offer);
         expect(paymentDates.length).to.eql(6);
         expect(paymentDates[0].amount).to.eql(50000);
         expect(paymentDates[1].amount).to.eql(10000);
@@ -693,38 +666,67 @@ describe('Offer Service', () => {
         expect(paymentDates[3].amount).to.eql(10000);
         expect(paymentDates[4].amount).to.eql(10000);
         expect(paymentDates[5].amount).to.eql(10000);
-        expect(paymentDates[0].date).to.have.string('2020-12-11');
-        expect(paymentDates[1].date).to.have.string('2021-01-10');
-        expect(paymentDates[2].date).to.have.string('2021-02-09');
-        expect(paymentDates[3].date).to.have.string('2021-03-11');
-        expect(paymentDates[4].date).to.have.string('2021-04-10');
-        expect(paymentDates[5].date).to.have.string('2021-05-10');
+        expect(paymentDates[0].date).to.eql(new Date('2021-03-01T00:00:00.000Z'));
+        expect(paymentDates[1].date).to.eql(new Date('2021-03-31T00:00:00.000Z'));
+        expect(paymentDates[2].date).to.eql(new Date('2021-04-30T00:00:00.000Z'));
+        expect(paymentDates[3].date).to.eql(new Date('2021-05-30T00:00:00.000Z'));
+        expect(paymentDates[4].date).to.eql(new Date('2021-06-29T00:00:00.000Z'));
+        expect(paymentDates[5].date).to.eql(new Date('2021-07-29T00:00:00.000Z'));
       });
     });
 
     context('when totalAmountPayable is equal to initial payment', () => {
+      const offer = OfferFactory.build(
+        {
+          enquiryId: enquiry._id,
+          vendorId: vendor._id,
+          totalAmountPayable: 100000,
+          initialPayment: 100000,
+          periodicPayment: 10000,
+          paymentFrequency: 30,
+          handOverDate: new Date('2021-03-01'),
+        },
+        { generateId: true },
+      );
       beforeEach(async () => {
-        await createOffer(offer2);
+        await createOffer(offer);
       });
       it('returns a valid accepted offer', async () => {
-        const paymentDates = generatePaymentSchedules(offer2);
+        const paymentDates = generatePaymentSchedules(offer);
         expect(paymentDates.length).to.eql(1);
         expect(paymentDates[0].amount).to.eql(100000);
-        expect(paymentDates[0].date).to.have.string('2020-12-11');
+        expect(paymentDates[0].date).to.eql(new Date('2021-03-01T00:00:00.000Z'));
       });
     });
 
     context('when  totalAmountPayable is slightly bigger than initial payment', () => {
+      const offer = OfferFactory.build(
+        {
+          enquiryId: enquiry._id,
+          vendorId: vendor._id,
+          totalAmountPayable: 100000,
+          initialPayment: 75000,
+          periodicPayment: 10000,
+          paymentFrequency: 14,
+          handOverDate: new Date('2021-03-01'),
+        },
+        { generateId: true },
+      );
       beforeEach(async () => {
-        await createOffer(offer3);
+        await createOffer(offer);
       });
+
       it('returns a valid accepted offer', async () => {
-        const paymentDates = generatePaymentSchedules(offer3);
-        expect(paymentDates.length).to.eql(2);
-        expect(paymentDates[0].amount).to.eql(95000);
-        expect(paymentDates[1].amount).to.eql(5000);
-        expect(paymentDates[0].date).to.have.string('2020-12-11');
-        expect(paymentDates[1].date).to.have.string('2020-12-25');
+        const paymentDates = generatePaymentSchedules(offer);
+        expect(paymentDates.length).to.eql(4);
+        expect(paymentDates[0].amount).to.eql(75000);
+        expect(paymentDates[1].amount).to.eql(10000);
+        expect(paymentDates[2].amount).to.eql(10000);
+        expect(paymentDates[3].amount).to.eql(5000);
+        expect(paymentDates[0].date).to.eql(new Date('2021-03-01T00:00:00.000Z'));
+        expect(paymentDates[1].date).to.eql(new Date('2021-03-15T00:00:00.000Z'));
+        expect(paymentDates[2].date).to.eql(new Date('2021-03-29T00:00:00.000Z'));
+        expect(paymentDates[3].date).to.eql(new Date('2021-04-12T00:00:00.000Z'));
       });
     });
   });

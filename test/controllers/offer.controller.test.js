@@ -300,104 +300,135 @@ describe('Offer Controller', () => {
         signature: 'http://ballers.ng/signature.png',
       };
 
-      beforeEach(async () => {
-        await addEnquiry(enquiry);
-        await createOffer(offer);
-      });
+      context('when offer is valid', () => {
+        beforeEach(async () => {
+          await addEnquiry(enquiry);
+          await createOffer(offer);
+        });
 
-      context('with valid data & token', () => {
-        it('returns accepted offer', (done) => {
-          request()
-            .put('/api/v1/offer/accept')
-            .set('authorization', userToken)
-            .send(acceptanceInfo)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('Offer accepted');
-              expect(res.body).to.have.property('offer');
-              expect(res.body.offer._id).to.be.eql(offer._id.toString());
-              expect(res.body.offer.status).to.be.eql('Interested');
-              expect(res.body.offer.signature).to.be.eql(acceptanceInfo.signature);
-              expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiry._id.toString());
-              expect(res.body.offer.propertyInfo._id).to.be.eql(properties[0]._id.toString());
-              expect(sendMailStub.callCount).to.eq(2);
-              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_VENDOR);
-              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_USER);
-              done();
+        context('with valid data & token', () => {
+          it('returns accepted offer', (done) => {
+            request()
+              .put('/api/v1/offer/accept')
+              .set('authorization', userToken)
+              .send(acceptanceInfo)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.message).to.be.eql('Offer accepted');
+                expect(res.body).to.have.property('offer');
+                expect(res.body.offer._id).to.be.eql(offer._id.toString());
+                expect(res.body.offer.status).to.be.eql('Interested');
+                expect(res.body.offer.signature).to.be.eql(acceptanceInfo.signature);
+                expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiry._id.toString());
+                expect(res.body.offer.propertyInfo._id).to.be.eql(properties[0]._id.toString());
+                expect(sendMailStub.callCount).to.eq(2);
+                expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_VENDOR);
+                expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_USER);
+                done();
+              });
+          });
+        });
+
+        context('when offer is accepted by another user ', () => {
+          it('returns error', (done) => {
+            request()
+              .put('/api/v1/offer/accept')
+              .set('authorization', adminToken)
+              .send(acceptanceInfo)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('You cannot accept offer of another user');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method, data: acceptanceInfo });
+
+        context('when accept service returns an error', () => {
+          it('returns the error', (done) => {
+            sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
+            request()
+              .put('/api/v1/offer/accept')
+              .set('authorization', userToken)
+              .send(acceptanceInfo)
+              .end((err, res) => {
+                expect(res).to.have.status(400);
+                expect(res.body.success).to.be.eql(false);
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+                Offer.findByIdAndUpdate.restore();
+              });
+          });
+        });
+
+        context('with invalid data', () => {
+          context('when offer id is empty', () => {
+            it('returns an error', (done) => {
+              const invalidData = { offerId: '', signature: 'http://ballers.ng/signature.png' };
+              request()
+                .put('/api/v1/offer/accept')
+                .set('authorization', userToken)
+                .send(invalidData)
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
+                  expect(sendMailStub.callCount).to.eq(0);
+                  done();
+                });
             });
+          });
+          context('when signature is empty', () => {
+            it('returns an error', (done) => {
+              const invalidData = { offerId: offer._id, signature: '' };
+              request()
+                .put('/api/v1/offer/accept')
+                .set('authorization', userToken)
+                .send(invalidData)
+                .end((err, res) => {
+                  expect(res).to.have.status(412);
+                  expect(res.body.success).to.be.eql(false);
+                  expect(res.body.message).to.be.eql('Validation Error');
+                  expect(res.body.error).to.be.eql('"Signature" is not allowed to be empty');
+                  expect(sendMailStub.callCount).to.eq(0);
+                  done();
+                });
+            });
+          });
         });
       });
 
-      context('when offer is accepted by another user ', () => {
-        it('returns error', (done) => {
+      context('when offer is expired', () => {
+        const expiredOffer = OfferFactory.build(
+          { enquiryId: enquiry._id, vendorId: vendorUser._id, expires: '2003-10-11' },
+          { generateId: true },
+        );
+        beforeEach(async () => {
+          await addEnquiry(enquiry);
+          await createOffer(expiredOffer);
+        });
+
+        it('returns an error', (done) => {
+          const invalidData = {
+            offerId: expiredOffer._id,
+            signature: 'http://ballers.ng/signature.png',
+          };
           request()
             .put('/api/v1/offer/accept')
-            .set('authorization', adminToken)
-            .send(acceptanceInfo)
+            .set('authorization', userToken)
+            .send(invalidData)
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('You cannot accept offer of another user');
+              expect(res.body.message).to.be.eql('Offer has expired');
               expect(sendMailStub.callCount).to.eq(0);
               done();
             });
-        });
-      });
-
-      itReturnsForbiddenForNoToken({ endpoint, method, data: acceptanceInfo });
-
-      context('when accept service returns an error', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
-          request()
-            .put('/api/v1/offer/accept')
-            .set('authorization', userToken)
-            .send(acceptanceInfo)
-            .end((err, res) => {
-              expect(res).to.have.status(400);
-              expect(res.body.success).to.be.eql(false);
-              expect(sendMailStub.callCount).to.eq(0);
-              done();
-              Offer.findByIdAndUpdate.restore();
-            });
-        });
-      });
-
-      context('with invalid data', () => {
-        context('when offer id is empty', () => {
-          it('returns an error', (done) => {
-            const invalidData = { offerId: '', signature: 'http://ballers.ng/signature.png' };
-            request()
-              .put('/api/v1/offer/accept')
-              .set('authorization', userToken)
-              .send(invalidData)
-              .end((err, res) => {
-                expect(res).to.have.status(412);
-                expect(res.body.success).to.be.eql(false);
-                expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
-                expect(sendMailStub.callCount).to.eq(0);
-                done();
-              });
-          });
-        });
-        context('when signature is empty', () => {
-          it('returns an error', (done) => {
-            const invalidData = { offerId: offer._id, signature: '' };
-            request()
-              .put('/api/v1/offer/accept')
-              .set('authorization', userToken)
-              .send(invalidData)
-              .end((err, res) => {
-                expect(res).to.have.status(412);
-                expect(res.body.success).to.be.eql(false);
-                expect(res.body.message).to.be.eql('Validation Error');
-                expect(res.body.error).to.be.eql('"Signature" is not allowed to be empty');
-                expect(sendMailStub.callCount).to.eq(0);
-                done();
-              });
-          });
         });
       });
     });

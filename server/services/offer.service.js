@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { format, add } from 'date-fns';
+import { add } from 'date-fns';
 import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
@@ -279,20 +279,23 @@ export const generatePaymentSchedules = (offer) => {
     paymentFrequency,
     handOverDate,
   } = offer;
-  const paymentDates = [{ date: format(offer.handOverDate, 'yyyy-MM-dd'), amount: initialPayment }];
+  const paymentDates = [{ date: offer.handOverDate, amount: initialPayment }];
 
   const numberOfPaymentsToBeMade = (totalAmountPayable - initialPayment) / periodicPayment;
 
-  if (numberOfPaymentsToBeMade > 0 && numberOfPaymentsToBeMade < 1) {
-    const paymentDate = format(add(handOverDate, { days: paymentFrequency }), 'yyyy-MM-dd');
-    paymentDates.push({ date: paymentDate, amount: totalAmountPayable - initialPayment });
-  } else {
-    for (let i = 1; i <= numberOfPaymentsToBeMade; i += 1) {
-      const paymentDate = format(add(handOverDate, { days: paymentFrequency * i }), 'yyyy-MM-dd');
-      paymentDates.push({ date: paymentDate, amount: periodicPayment });
-    }
+  const fractionPayment = (totalAmountPayable - initialPayment) % periodicPayment;
+
+  for (let i = 1; i <= numberOfPaymentsToBeMade; i += 1) {
+    const paymentDate = add(handOverDate, { days: paymentFrequency * i });
+    paymentDates.push({ date: paymentDate, amount: periodicPayment });
   }
 
+  if (fractionPayment > 0) {
+    const paymentDate = add(paymentDates[paymentDates.length - 1].date, {
+      days: paymentFrequency,
+    });
+    paymentDates.push({ date: paymentDate, amount: fractionPayment });
+  }
   return paymentDates;
 };
 
@@ -366,9 +369,6 @@ export const acceptOffer = async (offerToAccept) => {
   }
 
   const vendor = await getUserById(offer[0].vendorId);
-
-  // const paymentDates = generatePaymentSchedules(offer[0]);
-  // code to add dates to payment schema
 
   try {
     await assignPropertyToUser({
