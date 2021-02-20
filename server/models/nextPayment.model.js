@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { PAYMENT_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -14,7 +13,7 @@ import { PAYMENT_STATUS } from '../helpers/constants';
  *          - propertyId
  *          - resolvedDate
  *          - resolvedViaTransaction
- *          - status
+ *          - resolved
  *          - transactionId
  *          - vendorId
  *        properties:
@@ -29,9 +28,9 @@ import { PAYMENT_STATUS } from '../helpers/constants';
  *          resolvedDate:
  *            type: date
  *          resolvedViaTransaction:
- *            type: string
- *          status:
- *            type: string
+ *            type: boolean
+ *          resolved:
+ *            type: boolean
  *          transactionId:
  *            type: string
  *          vendorId:
@@ -42,8 +41,8 @@ import { PAYMENT_STATUS } from '../helpers/constants';
  *           offerId: 5f22f7f8c790039da1242381
  *           propertyId: 5f22f8aec790039da1242382
  *           resolvedDate: 2020-01-01
- *           resolvedViaTransaction: Automatic
- *           status: Open
+ *           resolvedViaTransaction: true
+ *           resolved: false
  *           transactionId: 5f2b39035a086cfc4b7fa722
  *           userId: 5f2b39035a086cfc4b7fa7f6
  *           vendorId: 5f22f7f8c790039da1242381
@@ -72,11 +71,11 @@ const NextPaymentSchema = new mongoose.Schema(
       type: Date,
     },
     resolvedViaTransaction: {
-      type: String,
+      type: Boolean,
     },
-    status: {
-      type: String,
-      default: PAYMENT_STATUS.OPEN,
+    resolved: {
+      type: Boolean,
+      default: false,
     },
     transactionId: {
       type: ObjectId,

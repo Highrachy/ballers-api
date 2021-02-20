@@ -73,8 +73,3 @@ export const PROCESS_VISITATION_ACTION = {
   CANCEL: 0,
   RESCHEDULE: 1,
 };
-
-export const PAYMENT_STATUS = {
-  OPEN: 'Open',
-  CLOSE: 'Closed',
-};
