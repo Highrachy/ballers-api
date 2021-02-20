@@ -22,7 +22,7 @@ export default new Factory()
   .sequence('bathrooms', (i) => i)
   .sequence('toilets', (i) => i + 1)
   .sequence('description', (i) => `Newly built ${i} bedroom apartment`)
-  .attr('floorPlans', ['http://linktoplan.ng'])
+  .attr('floorPlans', [{ name: 'ground floor', plan: 'http://linktoplan.ng' }])
   .attr('mapLocation', {
     longitude: '1.23456',
     latitude: '2.34567',

@@ -17,6 +17,15 @@ const mapLocation = Joi.object().keys({
   latitude: nonRequiredNumber('Map location latitude'),
 });
 
+const floorPlans = Joi.array()
+  .label('Property floor plans')
+  .items(
+    Joi.object().keys({
+      name: optionalString('Floor Plan Name'),
+      plan: optionalString('Floor Plan URL'),
+    }),
+  );
+
 export const addPropertySchema = Joi.object({
   name: requiredString('Property name'),
   titleDocument: nonRequiredString('Property title document'),
@@ -28,7 +37,7 @@ export const addPropertySchema = Joi.object({
   toilets: requiredNumber('Toilet number'),
   bathrooms: requiredNumber('Bathroom number'),
   description: requiredString('Property description'),
-  floorPlans: optionalArray('Property floor plans'),
+  floorPlans,
   mapLocation,
   neighborhood: optionalArray('Property neighborhood'),
   mainImage: nonRequiredString('Property main image'),
@@ -48,7 +57,7 @@ export const updatePropertySchema = Joi.object({
   toilets: optionalNumber('Toilet number'),
   bathrooms: optionalNumber('Bathroom number'),
   description: optionalString('Property description'),
-  floorPlans: optionalArray('Property floor plans'),
+  floorPlans,
   mapLocation,
   neighborhood: optionalArray('Property neighborhood'),
   mainImage: nonRequiredString('Property main image'),

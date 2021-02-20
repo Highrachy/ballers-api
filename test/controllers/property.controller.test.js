@@ -562,6 +562,12 @@ describe('Property Controller', () => {
       id: property._id,
       price: 30200000,
       units: 87,
+      floorPlans: [
+        {
+          name: 'ground floor',
+          plan: 'http://linktoplan.ng',
+        },
+      ],
     };
 
     beforeEach(async () => {
@@ -589,6 +595,8 @@ describe('Property Controller', () => {
             expect(res.body).to.have.property('property');
             expect(res.body.property.price).to.be.eql(newProperty.price);
             expect(res.body.property.units).to.be.eql(newProperty.units);
+            expect(res.body.property.floorPlans[0].name).to.be.eql(newProperty.floorPlans[0].name);
+            expect(res.body.property.floorPlans[0].plan).to.be.eql(newProperty.floorPlans[0].plan);
             done();
           });
       });

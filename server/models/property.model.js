@@ -113,9 +113,16 @@ const PropertySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    floorPlans: {
-      type: [String],
-    },
+    floorPlans: [
+      {
+        name: {
+          type: String,
+        },
+        plan: {
+          type: String,
+        },
+      },
+    ],
     mapLocation: {
       longitude: {
         type: Number,
