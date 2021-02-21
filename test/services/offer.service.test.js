@@ -14,6 +14,7 @@ import {
   getActiveOffers,
   cancelOffer,
   getPropertyInitials,
+  generatePaymentSchedules,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -615,6 +616,81 @@ describe('Offer Service', () => {
         const validOffers = await getActiveOffers(user._id);
         expect(validOffers).to.be.an('array');
         expect(validOffers.length).to.be.eql(3);
+      });
+    });
+  });
+
+  describe('#generatePaymentSchedules', () => {
+    context('when totalAmountPayable is greater than initial payment', () => {
+      const offer = OfferFactory.build(
+        {
+          totalAmountPayable: 100000,
+          initialPayment: 50000,
+          periodicPayment: 10000,
+          paymentFrequency: 30,
+          handOverDate: new Date('2021-03-01'),
+        },
+        { generateId: true },
+      );
+      it('returns a valid accepted offer', async () => {
+        const paymentDates = generatePaymentSchedules(offer);
+        expect(paymentDates.length).to.eql(6);
+        expect(paymentDates[0].amount).to.eql(50000);
+        expect(paymentDates[1].amount).to.eql(10000);
+        expect(paymentDates[2].amount).to.eql(10000);
+        expect(paymentDates[3].amount).to.eql(10000);
+        expect(paymentDates[4].amount).to.eql(10000);
+        expect(paymentDates[5].amount).to.eql(10000);
+        expect(paymentDates[0].date).to.eql(new Date('2021-03-01'));
+        expect(paymentDates[1].date).to.eql(new Date('2021-03-31'));
+        expect(paymentDates[2].date).to.eql(new Date('2021-04-30'));
+        expect(paymentDates[3].date).to.eql(new Date('2021-05-30'));
+        expect(paymentDates[4].date).to.eql(new Date('2021-06-29'));
+        expect(paymentDates[5].date).to.eql(new Date('2021-07-29'));
+      });
+    });
+
+    context('when totalAmountPayable is equal to initial payment', () => {
+      const offer = OfferFactory.build(
+        {
+          totalAmountPayable: 100000,
+          initialPayment: 100000,
+          periodicPayment: 10000,
+          paymentFrequency: 30,
+          handOverDate: new Date('2021-03-01'),
+        },
+        { generateId: true },
+      );
+      it('returns a valid accepted offer', async () => {
+        const paymentDates = generatePaymentSchedules(offer);
+        expect(paymentDates.length).to.eql(1);
+        expect(paymentDates[0].amount).to.eql(100000);
+        expect(paymentDates[0].date).to.eql(new Date('2021-03-01'));
+      });
+    });
+
+    context('when  totalAmountPayable is slightly bigger than initial payment', () => {
+      const offer = OfferFactory.build(
+        {
+          totalAmountPayable: 100000,
+          initialPayment: 75000,
+          periodicPayment: 10000,
+          paymentFrequency: 14,
+          handOverDate: new Date('2021-03-01'),
+        },
+        { generateId: true },
+      );
+      it('returns a valid accepted offer', async () => {
+        const paymentDates = generatePaymentSchedules(offer);
+        expect(paymentDates.length).to.eql(4);
+        expect(paymentDates[0].amount).to.eql(75000);
+        expect(paymentDates[1].amount).to.eql(10000);
+        expect(paymentDates[2].amount).to.eql(10000);
+        expect(paymentDates[3].amount).to.eql(5000);
+        expect(paymentDates[0].date).to.eql(new Date('2021-03-01'));
+        expect(paymentDates[1].date).to.eql(new Date('2021-03-15'));
+        expect(paymentDates[2].date).to.eql(new Date('2021-03-29'));
+        expect(paymentDates[3].date).to.eql(new Date('2021-04-12'));
       });
     });
   });

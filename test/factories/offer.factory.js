@@ -1,5 +1,6 @@
 import { Factory } from 'rosie';
 import mongoose from 'mongoose';
+import { parseISO } from 'date-fns';
 
 export default new Factory()
   .option('generateId', false)
@@ -7,12 +8,12 @@ export default new Factory()
     options.generateId ? { _id: mongoose.Types.ObjectId(), ...offer } : offer,
   )
   .attr('enquiryId', '5f31e1a5580ea36150920130')
-  .attr('handOverDate', '2090-09-08')
+  .attr('handOverDate', parseISO('2090-09-08'))
   .attr('deliveryState', 'new')
-  .attr('totalAmountPayable', 50000000)
+  .attr('totalAmountPayable', 100000)
   .sequence('allocationInPercentage', (i) => (i <= 100 ? i : 99))
   .attr('title', 'Test offer')
-  .attr('expires', '2090-09-08')
-  .attr('initialPayment', 20000000)
-  .attr('monthlyPayment', 1000000)
-  .attr('paymentFrequency', 1);
+  .attr('expires', parseISO('2090-09-08'))
+  .attr('initialPayment', 50000)
+  .attr('periodicPayment', 10000)
+  .attr('paymentFrequency', 30);
