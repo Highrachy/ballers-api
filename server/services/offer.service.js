@@ -15,6 +15,7 @@ import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates'
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
+import { addNextPayment } from './nextpayment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -277,16 +278,16 @@ export const generatePaymentSchedules = (offer) => {
     initialPayment,
     periodicPayment,
     paymentFrequency,
-    handOverDate,
+    responseDate,
   } = offer;
-  const paymentDates = [{ date: offer.handOverDate, amount: initialPayment }];
+  const paymentDates = [{ date: responseDate, amount: initialPayment }];
 
   const numberOfPaymentsToBeMade = (totalAmountPayable - initialPayment) / periodicPayment;
 
   const fractionPayment = (totalAmountPayable - initialPayment) % periodicPayment;
 
   for (let i = 1; i <= numberOfPaymentsToBeMade; i += 1) {
-    const paymentDate = add(handOverDate, { days: paymentFrequency * i });
+    const paymentDate = add(responseDate, { days: paymentFrequency * i });
     paymentDates.push({ date: paymentDate, amount: periodicPayment });
   }
 
@@ -368,6 +369,20 @@ export const acceptOffer = async (offerToAccept) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
   }
 
+  const paymentSchedule = generatePaymentSchedules({
+    ...offer[0],
+    responseDate: add(Date.now(), { days: 0 }),
+  });
+
+  const nextPayment = {
+    expectedAmount: paymentSchedule[0].amount,
+    expiresOn: paymentSchedule[0].date,
+    offerId: offer[0]._id,
+    propertyId: offer[0].propertyId,
+    userId: offer[0].userId,
+    vendorId: offer[0].vendorId,
+  };
+
   const vendor = await getUserById(offer[0].vendorId);
 
   try {
@@ -376,6 +391,7 @@ export const acceptOffer = async (offerToAccept) => {
       userId: offer[0].userId,
       vendor,
     });
+    await addNextPayment(nextPayment);
     await Offer.findByIdAndUpdate(
       offer[0]._id,
       {
@@ -384,6 +400,7 @@ export const acceptOffer = async (offerToAccept) => {
           signature: offerToAccept.signature,
           contributionReward,
           responseDate: Date.now(),
+          paymentSchedule,
         },
       },
       { new: true },

@@ -171,6 +171,16 @@ const OfferSchema = new mongoose.Schema(
         },
       },
     ],
+    paymentSchedule: [
+      {
+        amount: {
+          type: Number,
+        },
+        date: {
+          type: Date,
+        },
+      },
+    ],
   },
   { timestamps: true },
 );

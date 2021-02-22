@@ -628,7 +628,7 @@ describe('Offer Service', () => {
           initialPayment: 50000,
           periodicPayment: 10000,
           paymentFrequency: 30,
-          handOverDate: new Date('2021-03-01'),
+          responseDate: new Date('2021-03-01'),
         },
         { generateId: true },
       );
@@ -657,7 +657,7 @@ describe('Offer Service', () => {
           initialPayment: 100000,
           periodicPayment: 10000,
           paymentFrequency: 30,
-          handOverDate: new Date('2021-03-01'),
+          responseDate: new Date('2021-03-01'),
         },
         { generateId: true },
       );
@@ -676,7 +676,7 @@ describe('Offer Service', () => {
           initialPayment: 75000,
           periodicPayment: 10000,
           paymentFrequency: 14,
-          handOverDate: new Date('2021-03-01'),
+          responseDate: new Date('2021-03-01'),
         },
         { generateId: true },
       );
