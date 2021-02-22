@@ -456,18 +456,18 @@ describe('Offer Service', () => {
     context('when all is valid', () => {
       it('returns a valid accepted offer', async () => {
         const acceptedOffer = await acceptOffer(toAcceptValid);
-        expect(acceptedOffer[0].status).to.eql('Interested');
-        expect(acceptedOffer[0].contributionReward).to.eql(2000000);
-        expect(acceptedOffer[0].signature).to.eql(toAcceptValid.signature);
+        expect(acceptedOffer.status).to.eql('Interested');
+        expect(acceptedOffer.contributionReward).to.eql(2000000);
+        expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
       });
     });
 
     context('when offer price is higher than property price', () => {
       it('returns a valid accepted offer', async () => {
         const acceptedOffer = await acceptOffer(toAcceptInvalid);
-        expect(acceptedOffer[0].status).to.eql('Interested');
-        expect(acceptedOffer[0].contributionReward).to.eql(0);
-        expect(acceptedOffer[0].signature).to.eql(toAcceptInvalid.signature);
+        expect(acceptedOffer.status).to.eql('Interested');
+        expect(acceptedOffer.contributionReward).to.eql(0);
+        expect(acceptedOffer.signature).to.eql(toAcceptInvalid.signature);
       });
     });
   });
@@ -628,7 +628,7 @@ describe('Offer Service', () => {
           initialPayment: 50000,
           periodicPayment: 10000,
           paymentFrequency: 30,
-          handOverDate: new Date('2021-03-01'),
+          initialPaymentDate: new Date('2021-03-01'),
         },
         { generateId: true },
       );
@@ -657,7 +657,7 @@ describe('Offer Service', () => {
           initialPayment: 100000,
           periodicPayment: 10000,
           paymentFrequency: 30,
-          handOverDate: new Date('2021-03-01'),
+          initialPaymentDate: new Date('2021-03-01'),
         },
         { generateId: true },
       );
@@ -676,7 +676,7 @@ describe('Offer Service', () => {
           initialPayment: 75000,
           periodicPayment: 10000,
           paymentFrequency: 14,
-          handOverDate: new Date('2021-03-01'),
+          initialPaymentDate: new Date('2021-03-01'),
         },
         { generateId: true },
       );

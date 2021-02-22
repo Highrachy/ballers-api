@@ -40,6 +40,7 @@ import Property from '../../server/models/property.model';
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
 import { OFFER_FILTERS } from '../../server/helpers/filters';
+import NextPayment from '../../server/models/nextPayment.model';
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();
@@ -292,7 +293,15 @@ describe('Offer Controller', () => {
         { generateId: true },
       );
       const offer = OfferFactory.build(
-        { enquiryId: enquiry._id, vendorId: vendorUser._id },
+        {
+          enquiryId: enquiry._id,
+          vendorId: vendorUser._id,
+          totalAmountPayable: 100000,
+          initialPayment: 50000,
+          periodicPayment: 10000,
+          paymentFrequency: 30,
+          initialPaymentDate: new Date('2021-03-01'),
+        },
         { generateId: true },
       );
       const acceptanceInfo = {
@@ -309,7 +318,7 @@ describe('Offer Controller', () => {
         context('with valid data & token', () => {
           it('returns accepted offer', (done) => {
             request()
-              .put('/api/v1/offer/accept')
+              .put(endpoint)
               .set('authorization', userToken)
               .send(acceptanceInfo)
               .end((err, res) => {
@@ -322,6 +331,15 @@ describe('Offer Controller', () => {
                 expect(res.body.offer.signature).to.be.eql(acceptanceInfo.signature);
                 expect(res.body.offer.enquiryInfo._id).to.be.eql(enquiry._id.toString());
                 expect(res.body.offer.propertyInfo._id).to.be.eql(properties[0]._id.toString());
+                expect(res.body.offer.paymentSchedule.length).to.be.eql(6);
+                expect(res.body.offer.paymentSchedule[0].amount).to.be.eql(offer.initialPayment);
+                expect(res.body.offer.paymentSchedule[0].date).to.be.eql(
+                  '2021-03-01T00:00:00.000Z',
+                );
+                expect(res.body.offer.paymentSchedule[1].amount).to.be.eql(offer.periodicPayment);
+                expect(res.body.offer.paymentSchedule[1].date).to.be.eql(
+                  '2021-03-31T00:00:00.000Z',
+                );
                 expect(sendMailStub.callCount).to.eq(2);
                 expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_VENDOR);
                 expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_RESPONSE_USER);
@@ -330,10 +348,28 @@ describe('Offer Controller', () => {
           });
         });
 
+        context('when next payment fails to save', () => {
+          it('returns the error', (done) => {
+            sinon.stub(NextPayment.prototype, 'save').throws(new Error('Type Error'));
+            request()
+              .put(endpoint)
+              .set('authorization', userToken)
+              .send(acceptanceInfo)
+              .end((err, res) => {
+                expect(res).to.have.status(400);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.error.message).to.be.eql('Error adding next payment');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+                NextPayment.prototype.save.restore();
+              });
+          });
+        });
+
         context('when offer is accepted by another user ', () => {
           it('returns error', (done) => {
             request()
-              .put('/api/v1/offer/accept')
+              .put(endpoint)
               .set('authorization', adminToken)
               .send(acceptanceInfo)
               .end((err, res) => {
@@ -352,7 +388,7 @@ describe('Offer Controller', () => {
           it('returns the error', (done) => {
             sinon.stub(Offer, 'findByIdAndUpdate').throws(new Error('Type Error'));
             request()
-              .put('/api/v1/offer/accept')
+              .put(endpoint)
               .set('authorization', userToken)
               .send(acceptanceInfo)
               .end((err, res) => {
@@ -370,7 +406,7 @@ describe('Offer Controller', () => {
             it('returns an error', (done) => {
               const invalidData = { offerId: '', signature: 'http://ballers.ng/signature.png' };
               request()
-                .put('/api/v1/offer/accept')
+                .put(endpoint)
                 .set('authorization', userToken)
                 .send(invalidData)
                 .end((err, res) => {
@@ -387,7 +423,7 @@ describe('Offer Controller', () => {
             it('returns an error', (done) => {
               const invalidData = { offerId: offer._id, signature: '' };
               request()
-                .put('/api/v1/offer/accept')
+                .put(endpoint)
                 .set('authorization', userToken)
                 .send(invalidData)
                 .end((err, res) => {
@@ -419,7 +455,7 @@ describe('Offer Controller', () => {
             signature: 'http://ballers.ng/signature.png',
           };
           request()
-            .put('/api/v1/offer/accept')
+            .put(endpoint)
             .set('authorization', userToken)
             .send(invalidData)
             .end((err, res) => {

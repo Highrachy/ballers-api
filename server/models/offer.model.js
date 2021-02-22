@@ -143,6 +143,10 @@ const OfferSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    initialPaymentDate: {
+      type: Date,
+      required: true,
+    },
     periodicPayment: {
       type: Number,
       required: true,

@@ -13,6 +13,7 @@ export const createOfferSchema = Joi.object({
   totalAmountPayable: requiredNumber('Total Amount Payable'),
   title: requiredString('Title'),
   initialPayment: requiredNumber('Initial Payment'),
+  initialPaymentDate: requiredFutureDate('Initial Payment Date'),
   periodicPayment: requiredNumber('Periodic Payment'),
   paymentFrequency: requiredNumber('Payment Frequency'),
   allocationInPercentage: requiredPercentage('Allocation'),
