@@ -143,6 +143,10 @@ const OfferSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    initialPaymentDate: {
+      type: Date,
+      required: true,
+    },
     periodicPayment: {
       type: Number,
       required: true,
@@ -168,16 +172,6 @@ const OfferSchema = new mongoose.Schema(
         status: {
           type: String,
           default: CONCERN_STATUS.PENDING,
-        },
-      },
-    ],
-    paymentSchedule: [
-      {
-        amount: {
-          type: Number,
-        },
-        date: {
-          type: Date,
         },
       },
     ],

@@ -278,16 +278,16 @@ export const generatePaymentSchedules = (offer) => {
     initialPayment,
     periodicPayment,
     paymentFrequency,
-    responseDate,
+    initialPaymentDate,
   } = offer;
-  const paymentDates = [{ date: responseDate, amount: initialPayment }];
+  const paymentDates = [{ date: initialPaymentDate, amount: initialPayment }];
 
   const numberOfPaymentsToBeMade = (totalAmountPayable - initialPayment) / periodicPayment;
 
   const fractionPayment = (totalAmountPayable - initialPayment) % periodicPayment;
 
   for (let i = 1; i <= numberOfPaymentsToBeMade; i += 1) {
-    const paymentDate = add(responseDate, { days: paymentFrequency * i });
+    const paymentDate = add(initialPaymentDate, { days: paymentFrequency * i });
     paymentDates.push({ date: paymentDate, amount: periodicPayment });
   }
 
@@ -369,10 +369,7 @@ export const acceptOffer = async (offerToAccept) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
   }
 
-  const paymentSchedule = generatePaymentSchedules({
-    ...offer[0],
-    responseDate: add(Date.now(), { days: 0 }),
-  });
+  const paymentSchedule = generatePaymentSchedules(offer[0]);
 
   const nextPayment = {
     expectedAmount: paymentSchedule[0].amount,
@@ -400,12 +397,12 @@ export const acceptOffer = async (offerToAccept) => {
           signature: offerToAccept.signature,
           contributionReward,
           responseDate: Date.now(),
-          paymentSchedule,
         },
       },
       { new: true },
     );
-    return await getOffer(offerToAccept.offerId, offerToAccept.user);
+    const acceptedoffer = await getOffer(offerToAccept.offerId, offerToAccept.user);
+    return { ...acceptedoffer[0], paymentSchedule };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error accepting offer', error);
   }

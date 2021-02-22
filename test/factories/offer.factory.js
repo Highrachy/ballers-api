@@ -15,5 +15,6 @@ export default new Factory()
   .attr('title', 'Test offer')
   .attr('expires', parseISO('2090-09-08'))
   .attr('initialPayment', 50000)
+  .attr('initialPaymentDate', parseISO('2090-09-08'))
   .attr('periodicPayment', 10000)
   .attr('paymentFrequency', 30);

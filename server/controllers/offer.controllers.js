@@ -39,7 +39,7 @@ const OfferController = {
     const { user } = req;
     acceptOffer({ ...offerInfo, user })
       .then((offer) => {
-        const offerResponse = offer[0];
+        const offerResponse = offer;
         const vendor = offerResponse.vendorInfo;
         vendor.firstName = `${vendor.firstName}'s team`;
         const { userInfo } = offerResponse;
