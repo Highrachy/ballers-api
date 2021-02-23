@@ -73,3 +73,12 @@ export const PROCESS_VISITATION_ACTION = {
   CANCEL: 0,
   RESCHEDULE: 1,
 };
+
+export const NEIGHBORHOOD_STEPS = [
+  'entertainment',
+  'hospitals',
+  'pointsOfInterest',
+  'restaurantsAndBars',
+  'schools',
+  'shoppingMall',
+];

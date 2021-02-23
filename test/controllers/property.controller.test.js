@@ -956,11 +956,12 @@ describe('Property Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('property');
               expect(res.body.property.neighborhood).to.be.eql({
-                gyms: [],
+                entertainment: [],
                 hospitals: [],
-                restaurants: [],
+                restaurantsAndBars: [],
                 schools: [],
-                shopping: [],
+                shoppingMall: [],
+                pointsOfInterest: [],
               });
               done();
             });

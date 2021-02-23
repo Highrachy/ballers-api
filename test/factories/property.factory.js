@@ -28,10 +28,10 @@ export default new Factory()
     latitude: '2.34567',
   })
   .attr('neighborhood', {
-    gyms: [
+    entertainment: [
       {
         name: 'iFitness',
-        distance: 1000,
+        timeAwayFromProperty: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,
@@ -41,17 +41,27 @@ export default new Factory()
     hospitals: [
       {
         name: 'Reddington Hospital',
-        distance: 1000,
+        timeAwayFromProperty: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,
         },
       },
     ],
-    restaurants: [
+    pointsOfInterest: [
+      {
+        name: 'Genesis Cinema',
+        timeAwayFromProperty: 10,
+        mapLocation: {
+          longitude: 1.234555,
+          latitude: 1.234555,
+        },
+      },
+    ],
+    restaurantsAndBars: [
       {
         name: 'Cut steak house',
-        distance: 1000,
+        timeAwayFromProperty: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,
@@ -61,17 +71,17 @@ export default new Factory()
     schools: [
       {
         name: 'British International School',
-        distance: 1000,
+        timeAwayFromProperty: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,
         },
       },
     ],
-    shopping: [
+    shoppingMall: [
       {
         name: 'Shoprite',
-        distance: 1000,
+        timeAwayFromProperty: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,

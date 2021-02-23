@@ -11,6 +11,7 @@ import {
   addPropertySchema,
   updatePropertySchema,
   searchPropertySchema,
+  updateNeighborhoodSchema,
 } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -277,5 +278,36 @@ router.get('/assigned/', authenticate, PropertyController.getAssignedProperties)
  *          description: Internal server error
  */
 router.get('/:id', authenticate, hasValidObjectId, PropertyController.getOneProperty);
+
+/**
+ * @swagger
+ * /property/neighborhood/update:
+ *   put:
+ *     tags:
+ *       - Property
+ *     description: Updates existing property neighborhood
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Updates existing property neighborhood
+ *     responses:
+ *      '200':
+ *        description: Neighborhood updated
+ *      '400':
+ *        description: Error updating neighborhood
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/neighborhood/update',
+  authenticate,
+  isVendor,
+  schemaValidation(updateNeighborhoodSchema),
+  PropertyController.updateNeighborhood,
+);
 
 module.exports = router;

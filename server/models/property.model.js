@@ -77,7 +77,7 @@ const { ObjectId } = mongoose.Schema.Types;
 
 const neighbourhoodInfoSchema = [
   {
-    distance: {
+    timeAwayFromProperty: {
       type: Number,
     },
     mapLocation: {
@@ -144,11 +144,12 @@ const PropertySchema = new mongoose.Schema(
       },
     },
     neighborhood: {
-      gyms: neighbourhoodInfoSchema,
+      entertainment: neighbourhoodInfoSchema,
       hospitals: neighbourhoodInfoSchema,
-      restaurants: neighbourhoodInfoSchema,
+      pointsOfInterest: neighbourhoodInfoSchema,
+      restaurantsAndBars: neighbourhoodInfoSchema,
       schools: neighbourhoodInfoSchema,
-      shopping: neighbourhoodInfoSchema,
+      shoppingMall: neighbourhoodInfoSchema,
     },
     mainImage: {
       type: String,

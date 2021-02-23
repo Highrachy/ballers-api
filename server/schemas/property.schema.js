@@ -11,27 +11,34 @@ import {
   nonRequiredNumber,
   nonRequiredString,
 } from './helper.schema';
+import { NEIGHBORHOOD_STEPS } from '../helpers/constants';
 
 const mapLocation = Joi.object().keys({
   longitude: nonRequiredNumber('Map location longitude'),
   latitude: nonRequiredNumber('Map location latitude'),
 });
 
-const neighbourhoodInfo = Joi.array().items(
-  Joi.object().keys({
-    distance: optionalNumber('Distance'),
-    name: optionalString('Name'),
-    mapLocation,
-  }),
-);
+const neighbourhoodInfoDetails = Joi.object().keys({
+  timeAwayFromProperty: optionalNumber('Time Away From Property'),
+  name: optionalString('Name'),
+  mapLocation,
+});
+
+const neighbourhoodInfo = Joi.array().items(neighbourhoodInfoDetails);
 
 const neighborhood = Joi.object().label('Property neighborhood').keys({
-  gyms: neighbourhoodInfo,
+  entertainment: neighbourhoodInfo,
   hospitals: neighbourhoodInfo,
-  restaurants: neighbourhoodInfo,
+  restaurantsAndBars: neighbourhoodInfo,
   schools: neighbourhoodInfo,
-  shopping: neighbourhoodInfo,
+  shoppingMall: neighbourhoodInfo,
+  pointsOfInterest: neighbourhoodInfo,
 });
+
+const neighborhoodType = Joi.string()
+  .label('Neighborhood Type')
+  .valid(...NEIGHBORHOOD_STEPS)
+  .required();
 
 export const addPropertySchema = Joi.object({
   name: requiredString('Property name'),
@@ -78,4 +85,11 @@ export const searchPropertySchema = Joi.object({
   houseType: optionalString('Property Type'),
   minPrice: optionalNumber('Property Minimum Price'),
   maxPrice: optionalNumber('Property Maximum Price'),
+});
+
+export const updateNeighborhoodSchema = Joi.object({
+  propertyId: requiredObjectId('Property id'),
+  type: neighborhoodType,
+  typeId: requiredObjectId('Neighborhood Type id'),
+  neighbourhood: neighbourhoodInfoDetails,
 });

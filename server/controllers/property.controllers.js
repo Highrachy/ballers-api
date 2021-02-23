@@ -9,6 +9,7 @@ import {
   getAvailablePropertyOptions,
   getAssignedPropertyByOfferId,
   getAssignedProperties,
+  updateNeighborhood,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -118,6 +119,18 @@ const PropertyController = {
           success: true,
           properties,
         });
+      })
+      .catch((error) => next(error));
+  },
+
+  updateNeighborhood(req, res, next) {
+    const updatedNeighborhood = req.locals;
+    const vendorId = req.user._id;
+    updateNeighborhood({ ...updatedNeighborhood, vendorId })
+      .then((property) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Neighborhood updated', property });
       })
       .catch((error) => next(error));
   },
