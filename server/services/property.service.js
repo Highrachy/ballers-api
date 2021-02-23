@@ -366,6 +366,35 @@ export const getAssignedProperties = async (userId) =>
     },
   ]);
 
+export const addNeighborhood = async (neighborhoodInfo) => {
+  const property = await getPropertyById(neighborhoodInfo.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (neighborhoodInfo.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  const neighborhood = [
+    ...property.neighborhood[neighborhoodInfo.type],
+    ...neighborhoodInfo.neighborhood,
+  ];
+
+  try {
+    return Property.findByIdAndUpdate(
+      property._id,
+      { $set: { [`neighborhood.${neighborhoodInfo.type}`]: neighborhood } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error addding neighborhood', error);
+  }
+};
+
 export const updateNeighborhood = async (updatedNeighborhood) => {
   const property = await getPropertyById(updatedNeighborhood.propertyId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -384,19 +413,49 @@ export const updateNeighborhood = async (updatedNeighborhood) => {
       { [`neighborhood.${updatedNeighborhood.type}._id`]: updatedNeighborhood.typeId },
       {
         $set: {
-          [`neighborhood.${updatedNeighborhood.type}.$.name`]: updatedNeighborhood.neighbourhood
+          [`neighborhood.${updatedNeighborhood.type}.$.name`]: updatedNeighborhood.neighborhood
             .name,
           [`neighborhood.${updatedNeighborhood.type}.$.timeAwayFromProperty`]: updatedNeighborhood
-            .neighbourhood.timeAwayFromProperty,
+            .neighborhood.timeAwayFromProperty,
           [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.latitude`]: updatedNeighborhood
-            .neighbourhood.mapLocation.latitude,
+            .neighborhood.mapLocation.latitude,
           [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.longitude`]: updatedNeighborhood
-            .neighbourhood.mapLocation.longitude,
+            .neighborhood.mapLocation.longitude,
         },
       },
       { new: true },
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating neighborhood', error);
+  }
+};
+
+export const deleteNeighborhood = async (neighborhoodInfo) => {
+  const property = await getPropertyById(neighborhoodInfo.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (neighborhoodInfo.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  let neighborhood = property.neighborhood[neighborhoodInfo.type];
+
+  neighborhood = neighborhood.filter(
+    (n) => n._id.toString() !== neighborhoodInfo.typeId.toString(),
+  );
+
+  try {
+    return Property.findByIdAndUpdate(
+      property._id,
+      { $set: { [`neighborhood.${neighborhoodInfo.type}`]: neighborhood } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting neighborhood', error);
   }
 };

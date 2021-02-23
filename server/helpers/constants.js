@@ -75,10 +75,10 @@ export const PROCESS_VISITATION_ACTION = {
 };
 
 export const NEIGHBORHOOD_STEPS = [
-  'entertainment',
+  'entertainments',
   'hospitals',
   'pointsOfInterest',
   'restaurantsAndBars',
   'schools',
-  'shoppingMall',
+  'shoppingMalls',
 ];

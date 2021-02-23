@@ -75,7 +75,7 @@ import { addressSchema } from '../helpers/constants';
 
 const { ObjectId } = mongoose.Schema.Types;
 
-const neighbourhoodInfoSchema = [
+const neighborhoodInfoSchema = [
   {
     timeAwayFromProperty: {
       type: Number,
@@ -144,12 +144,12 @@ const PropertySchema = new mongoose.Schema(
       },
     },
     neighborhood: {
-      entertainment: neighbourhoodInfoSchema,
-      hospitals: neighbourhoodInfoSchema,
-      pointsOfInterest: neighbourhoodInfoSchema,
-      restaurantsAndBars: neighbourhoodInfoSchema,
-      schools: neighbourhoodInfoSchema,
-      shoppingMall: neighbourhoodInfoSchema,
+      entertainments: neighborhoodInfoSchema,
+      hospitals: neighborhoodInfoSchema,
+      pointsOfInterest: neighborhoodInfoSchema,
+      restaurantsAndBars: neighborhoodInfoSchema,
+      schools: neighborhoodInfoSchema,
+      shoppingMalls: neighborhoodInfoSchema,
     },
     mainImage: {
       type: String,

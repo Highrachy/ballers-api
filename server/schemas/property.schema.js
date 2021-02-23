@@ -18,21 +18,21 @@ const mapLocation = Joi.object().keys({
   latitude: nonRequiredNumber('Map location latitude'),
 });
 
-const neighbourhoodInfoDetails = Joi.object().keys({
+const neighborhoodInfoDetails = Joi.object().keys({
   timeAwayFromProperty: optionalNumber('Time Away From Property'),
   name: optionalString('Name'),
   mapLocation,
 });
 
-const neighbourhoodInfo = Joi.array().items(neighbourhoodInfoDetails);
+const neighborhoodInfo = Joi.array().items(neighborhoodInfoDetails);
 
 const neighborhood = Joi.object().label('Property neighborhood').keys({
-  entertainment: neighbourhoodInfo,
-  hospitals: neighbourhoodInfo,
-  restaurantsAndBars: neighbourhoodInfo,
-  schools: neighbourhoodInfo,
-  shoppingMall: neighbourhoodInfo,
-  pointsOfInterest: neighbourhoodInfo,
+  entertainments: neighborhoodInfo,
+  hospitals: neighborhoodInfo,
+  restaurantsAndBars: neighborhoodInfo,
+  schools: neighborhoodInfo,
+  shoppingMalls: neighborhoodInfo,
+  pointsOfInterest: neighborhoodInfo,
 });
 
 const neighborhoodType = Joi.string()
@@ -87,9 +87,18 @@ export const searchPropertySchema = Joi.object({
   maxPrice: optionalNumber('Property Maximum Price'),
 });
 
+export const addNeighborhoodSchema = Joi.object({
+  type: neighborhoodType,
+  neighborhood: neighborhoodInfo,
+});
+
 export const updateNeighborhoodSchema = Joi.object({
-  propertyId: requiredObjectId('Property id'),
   type: neighborhoodType,
   typeId: requiredObjectId('Neighborhood Type id'),
-  neighbourhood: neighbourhoodInfoDetails,
+  neighborhood: neighborhoodInfoDetails,
+});
+
+export const deleteNeighborhoodSchema = Joi.object({
+  type: neighborhoodType,
+  typeId: requiredObjectId('Neighborhood Type id'),
 });

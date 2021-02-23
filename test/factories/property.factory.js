@@ -28,7 +28,7 @@ export default new Factory()
     latitude: '2.34567',
   })
   .attr('neighborhood', {
-    entertainment: [
+    entertainments: [
       {
         name: 'iFitness',
         timeAwayFromProperty: 10,
@@ -78,7 +78,7 @@ export default new Factory()
         },
       },
     ],
-    shoppingMall: [
+    shoppingMalls: [
       {
         name: 'Shoprite',
         timeAwayFromProperty: 10,
