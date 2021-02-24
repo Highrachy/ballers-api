@@ -50,7 +50,7 @@ import { addressSchema } from '../helpers/constants';
  *          mapLocation:
  *            type: object
  *          neighborhood:
- *            type: string
+ *            type: array
  *          mainImage:
  *            type: string
  *          gallery:
@@ -68,12 +68,31 @@ import { addressSchema } from '../helpers/constants';
  *           description: Newly built 3 bedroom semi-detached duplex
  *           floorPlans: http://linktoplan.ng
  *           mapLocation: {longitude: 1.23456, latitude: 2.34567}
- *           neighborhood: ['Lekki Phase 1']
+ *           neighborhood: {schools: [{name: British International,distance: 1500m, mapLocation: {longitude: 1.23456, latitude: 2.34567}}]}
  *           mainImage: https://picsum.photos/200
  *           gallery: ['https://picsum.photos/200', 'https://picsum.photos/200', 'https://picsum.photos/200']
  */
 
 const { ObjectId } = mongoose.Schema.Types;
+
+const neighborhoodInfoSchema = [
+  {
+    timeAwayFromProperty: {
+      type: Number,
+    },
+    mapLocation: {
+      longitude: {
+        type: Number,
+      },
+      latitude: {
+        type: Number,
+      },
+    },
+    name: {
+      type: String,
+    },
+  },
+];
 
 const PropertySchema = new mongoose.Schema(
   {
@@ -125,7 +144,12 @@ const PropertySchema = new mongoose.Schema(
       },
     },
     neighborhood: {
-      type: [String],
+      entertainments: neighborhoodInfoSchema,
+      hospitals: neighborhoodInfoSchema,
+      pointsOfInterest: neighborhoodInfoSchema,
+      restaurantsAndBars: neighborhoodInfoSchema,
+      schools: neighborhoodInfoSchema,
+      shoppingMalls: neighborhoodInfoSchema,
     },
     mainImage: {
       type: String,

@@ -11,11 +11,34 @@ import {
   nonRequiredNumber,
   nonRequiredString,
 } from './helper.schema';
+import { NEIGHBORHOOD_STEPS } from '../helpers/constants';
 
 const mapLocation = Joi.object().keys({
   longitude: nonRequiredNumber('Map location longitude'),
   latitude: nonRequiredNumber('Map location latitude'),
 });
+
+const neighborhoodInfoDetails = Joi.object().keys({
+  timeAwayFromProperty: optionalNumber('Time Away From Property'),
+  name: optionalString('Name'),
+  mapLocation,
+});
+
+const neighborhoodInfo = Joi.array().items(neighborhoodInfoDetails);
+
+const neighborhood = Joi.object().label('Property neighborhood').keys({
+  entertainments: neighborhoodInfo,
+  hospitals: neighborhoodInfo,
+  restaurantsAndBars: neighborhoodInfo,
+  schools: neighborhoodInfo,
+  shoppingMalls: neighborhoodInfo,
+  pointsOfInterest: neighborhoodInfo,
+});
+
+const neighborhoodType = Joi.string()
+  .label('Neighborhood Type')
+  .valid(...NEIGHBORHOOD_STEPS)
+  .required();
 
 export const addPropertySchema = Joi.object({
   name: requiredString('Property name'),
@@ -30,7 +53,7 @@ export const addPropertySchema = Joi.object({
   description: requiredString('Property description'),
   floorPlans: nonRequiredString('Property floor plans'),
   mapLocation,
-  neighborhood: optionalArray('Property neighborhood'),
+  neighborhood,
   mainImage: nonRequiredString('Property main image'),
   gallery: optionalArray('Property gallery'),
   paymentPlan: optionalArray('Payment plan'),
@@ -50,7 +73,7 @@ export const updatePropertySchema = Joi.object({
   description: optionalString('Property description'),
   floorPlans: nonRequiredString('Property floor plans'),
   mapLocation,
-  neighborhood: optionalArray('Property neighborhood'),
+  neighborhood,
   mainImage: nonRequiredString('Property main image'),
   gallery: optionalArray('Property gallery'),
   paymentPlan: optionalArray('Payment plan'),
@@ -62,4 +85,20 @@ export const searchPropertySchema = Joi.object({
   houseType: optionalString('Property Type'),
   minPrice: optionalNumber('Property Minimum Price'),
   maxPrice: optionalNumber('Property Maximum Price'),
+});
+
+export const addNeighborhoodSchema = Joi.object({
+  type: neighborhoodType,
+  neighborhood: neighborhoodInfoDetails,
+});
+
+export const updateNeighborhoodSchema = Joi.object({
+  type: neighborhoodType,
+  typeId: requiredObjectId('Neighborhood Type id'),
+  neighborhood: neighborhoodInfoDetails,
+});
+
+export const deleteNeighborhoodSchema = Joi.object({
+  type: neighborhoodType,
+  typeId: requiredObjectId('Neighborhood Type id'),
 });
