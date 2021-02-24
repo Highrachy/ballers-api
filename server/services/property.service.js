@@ -379,15 +379,10 @@ export const addNeighborhood = async (neighborhoodInfo) => {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
-  const neighborhood = [
-    ...property.neighborhood[neighborhoodInfo.type],
-    ...neighborhoodInfo.neighborhood,
-  ];
-
   try {
     return Property.findByIdAndUpdate(
       property._id,
-      { $set: { [`neighborhood.${neighborhoodInfo.type}`]: neighborhood } },
+      { $push: { [`neighborhood.${neighborhoodInfo.type}`]: neighborhoodInfo.neighborhood } },
       { new: true },
     );
   } catch (error) {
@@ -443,16 +438,10 @@ export const deleteNeighborhood = async (neighborhoodInfo) => {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
-  let neighborhood = property.neighborhood[neighborhoodInfo.type];
-
-  neighborhood = neighborhood.filter(
-    (n) => n._id.toString() !== neighborhoodInfo.typeId.toString(),
-  );
-
   try {
     return Property.findByIdAndUpdate(
       property._id,
-      { $set: { [`neighborhood.${neighborhoodInfo.type}`]: neighborhood } },
+      { $pull: { [`neighborhood.${neighborhoodInfo.type}`]: { _id: neighborhoodInfo.typeId } } },
       { new: true },
     );
   } catch (error) {

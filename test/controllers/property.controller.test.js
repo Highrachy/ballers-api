@@ -2320,6 +2320,26 @@ describe('Property Controller', () => {
   describe('Add Neighborhood to property', () => {
     const property = PropertyFactory.build(
       {
+        neighborhood: {
+          schools: [
+            {
+              name: 'covenant university',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              name: 'babcock university',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
+        },
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
       },
@@ -2330,32 +2350,14 @@ describe('Property Controller', () => {
 
     const data = {
       type: 'schools',
-      neighborhood: [
-        {
-          name: 'covenant university',
-          timeAwayFromProperty: 5,
-          mapLocation: {
-            longitude: 123.22,
-            latitude: 123.11,
-          },
+      neighborhood: {
+        name: 'bingham university',
+        timeAwayFromProperty: 5,
+        mapLocation: {
+          longitude: 123.22,
+          latitude: 123.11,
         },
-        {
-          name: 'babcock university',
-          timeAwayFromProperty: 15,
-          mapLocation: {
-            longitude: 123.22,
-            latitude: 123.11,
-          },
-        },
-        {
-          name: 'bingham university',
-          timeAwayFromProperty: 5,
-          mapLocation: {
-            longitude: 123.22,
-            latitude: 123.11,
-          },
-        },
-      ],
+      },
     };
 
     beforeEach(async () => {
@@ -2372,18 +2374,15 @@ describe('Property Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Neighborhood added');
-            expect(res.body.property.neighborhood.schools.length).to.be.eql(4);
+            expect(res.body.property.neighborhood.schools.length).to.be.eql(3);
             expect(res.body.property.neighborhood.schools[0].name).to.be.eql(
-              'British International School',
+              property.neighborhood.schools[0].name,
             );
             expect(res.body.property.neighborhood.schools[1].name).to.be.eql(
-              data.neighborhood[0].name,
+              property.neighborhood.schools[1].name,
             );
             expect(res.body.property.neighborhood.schools[2].name).to.be.eql(
-              data.neighborhood[1].name,
-            );
-            expect(res.body.property.neighborhood.schools[3].name).to.be.eql(
-              data.neighborhood[2].name,
+              data.neighborhood.name,
             );
             done();
           });
@@ -2494,6 +2493,26 @@ describe('Property Controller', () => {
               },
             },
           ],
+          hospitals: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Reddington Hospital',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Primrose General',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
         },
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
@@ -2545,6 +2564,12 @@ describe('Property Controller', () => {
             );
             expect(res.body.property.neighborhood.schools[2].name).to.be.eql(
               property.neighborhood.schools[2].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[0].name).to.be.eql(
+              property.neighborhood.hospitals[0].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[1].name).to.be.eql(
+              property.neighborhood.hospitals[1].name,
             );
             done();
           });

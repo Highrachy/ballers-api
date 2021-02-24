@@ -89,7 +89,7 @@ export const searchPropertySchema = Joi.object({
 
 export const addNeighborhoodSchema = Joi.object({
   type: neighborhoodType,
-  neighborhood: neighborhoodInfo,
+  neighborhood: neighborhoodInfoDetails,
 });
 
 export const updateNeighborhoodSchema = Joi.object({
