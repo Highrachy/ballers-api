@@ -400,14 +400,14 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.bathrooms).to.be.eql(property.bathrooms);
   expect(response.toilets).to.be.eql(property.toilets);
   expect(response.titleDocument).to.be.eql(property.titleDocument);
-  expect(response.neighborhood.entertainment[0].name).to.be.eql(
-    property.neighborhood.entertainment[0].name,
+  expect(response.neighborhood.entertainments[0].name).to.be.eql(
+    property.neighborhood.entertainments[0].name,
   );
-  expect(response.neighborhood.entertainment[0].timeAwayFromProperty).to.be.eql(
-    property.neighborhood.entertainment[0].timeAwayFromProperty,
+  expect(response.neighborhood.entertainments[0].timeAwayFromProperty).to.be.eql(
+    property.neighborhood.entertainments[0].timeAwayFromProperty,
   );
-  expect(response.neighborhood.entertainment[0].mapLocation).to.be.eql(
-    property.neighborhood.entertainment[0].mapLocation,
+  expect(response.neighborhood.entertainments[0].mapLocation).to.be.eql(
+    property.neighborhood.entertainments[0].mapLocation,
   );
   expect(response.neighborhood.hospitals[0].name).to.be.eql(
     property.neighborhood.hospitals[0].name,
@@ -443,14 +443,14 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.neighborhood.schools[0].mapLocation).to.be.eql(
     property.neighborhood.schools[0].mapLocation,
   );
-  expect(response.neighborhood.shoppingMall[0].name).to.be.eql(
-    property.neighborhood.shoppingMall[0].name,
+  expect(response.neighborhood.shoppingMalls[0].name).to.be.eql(
+    property.neighborhood.shoppingMalls[0].name,
   );
-  expect(response.neighborhood.shoppingMall[0].timeAwayFromProperty).to.be.eql(
-    property.neighborhood.shoppingMall[0].timeAwayFromProperty,
+  expect(response.neighborhood.shoppingMalls[0].timeAwayFromProperty).to.be.eql(
+    property.neighborhood.shoppingMalls[0].timeAwayFromProperty,
   );
-  expect(response.neighborhood.shoppingMall[0].mapLocation).to.be.eql(
-    property.neighborhood.shoppingMall[0].mapLocation,
+  expect(response.neighborhood.shoppingMalls[0].mapLocation).to.be.eql(
+    property.neighborhood.shoppingMalls[0].mapLocation,
   );
   expect(response.mainImage).to.be.eql(property.mainImage);
 };
