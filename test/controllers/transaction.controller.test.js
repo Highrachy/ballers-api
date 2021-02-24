@@ -92,7 +92,7 @@ const transactionBody = {
   userId: regularUser._id,
 };
 
-describe.only('Transaction Controller', () => {
+describe('Transaction Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
@@ -247,14 +247,14 @@ describe.only('Transaction Controller', () => {
     });
 
     describe('when transactions exist in db', () => {
-      before(async () => {
+      beforeEach(async () => {
         await Transaction.insertMany(dummyTransactions);
       });
 
       itReturnsTheRightPaginationValue({
         endpoint,
         method,
-        user: regularUser,
+        user: adminUser,
         useExistingUser: true,
       });
 
@@ -272,7 +272,6 @@ describe.only('Transaction Controller', () => {
           endpoint,
           method,
           user: testVendor,
-          useExistingUser: true,
         });
       });
 
@@ -302,7 +301,12 @@ describe.only('Transaction Controller', () => {
 
   describe('Update Transaction route', () => {
     const transaction = TransactionFactory.build(
-      { userId: regularUser._id, adminId: adminUser._id },
+      {
+        userId: regularUser._id,
+        propertyId: property._id,
+        offerId: offer._id,
+        vendorId: vendorUser._id,
+      },
       { generateId: true },
     );
 
@@ -418,9 +422,10 @@ describe.only('Transaction Controller', () => {
   describe('Get all transactions made by a user route', () => {
     const transaction = TransactionFactory.build(
       {
+        userId: regularUser._id,
         propertyId: property._id,
-        userId: adminUser._id,
-        adminId: adminUser._id,
+        offerId: offer._id,
+        vendorId: vendorUser._id,
       },
       { generateId: true },
     );
@@ -441,7 +446,7 @@ describe.only('Transaction Controller', () => {
     });
 
     describe('when transactions exist in db', () => {
-      before(async () => {
+      beforeEach(async () => {
         await addTransaction(transaction);
       });
 
@@ -449,7 +454,7 @@ describe.only('Transaction Controller', () => {
         it('returns successful payload', (done) => {
           request()
             .get('/api/v1/transaction/user')
-            .set('authorization', adminToken)
+            .set('authorization', userToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
@@ -458,7 +463,7 @@ describe.only('Transaction Controller', () => {
               expect(res.body.transactions[0]).to.have.property('userId');
               expect(res.body.transactions[0]).to.have.property('paymentSource');
               expect(res.body.transactions[0]).to.have.property('amount');
-              expect(res.body.transactions[0]).to.have.property('adminId');
+              expect(res.body.transactions[0]).to.have.property('vendorId');
               expect(res.body.transactions[0]._id).to.be.eql(transaction._id.toString());
               expect(res.body.transactions[0].propertyInfo._id).to.be.eql(property._id.toString());
               expect(res.body.transactions[0].propertyInfo).to.have.property('name');
@@ -513,9 +518,10 @@ describe.only('Transaction Controller', () => {
   describe('Get User Transactions By Property route', () => {
     const transaction = TransactionFactory.build(
       {
+        userId: regularUser._id,
         propertyId: property._id,
-        userId: adminUser._id,
-        adminId: adminUser._id,
+        offerId: offer._id,
+        vendorId: vendorUser._id,
       },
       { generateId: true },
     );
@@ -535,7 +541,7 @@ describe.only('Transaction Controller', () => {
             expect(res.body).to.have.property('transactions');
             expect(res.body.transactions[0]._id).to.be.eql(transaction._id.toString());
             expect(res.body.transactions[0].propertyInfo._id).to.be.eql(property._id.toString());
-            expect(res.body.transactions[0].userInfo._id).to.be.eql(adminUser._id.toString());
+            expect(res.body.transactions[0].userInfo._id).to.be.eql(regularUser._id.toString());
             done();
           });
       });
@@ -584,9 +590,14 @@ describe.only('Transaction Controller', () => {
   });
 
   describe('Get User Contribution Rewards', () => {
+    let testUserToken;
+    const testUser = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
     const allocatedEnquiry = EnquiryFactory.build(
       {
-        userId: regularUser._id,
+        userId: testUser._id,
         propertyId: property1._id,
       },
       { generateId: true },
@@ -603,7 +614,7 @@ describe.only('Transaction Controller', () => {
 
     const neglectedEnquiry = EnquiryFactory.build(
       {
-        userId: regularUser._id,
+        userId: testUser._id,
         propertyId: property2._id,
       },
       { generateId: true },
@@ -619,7 +630,7 @@ describe.only('Transaction Controller', () => {
 
     const assignedEnquiry = EnquiryFactory.build(
       {
-        userId: regularUser._id,
+        userId: testUser._id,
         propertyId: property3._id,
       },
       { generateId: true },
@@ -634,11 +645,15 @@ describe.only('Transaction Controller', () => {
       { generateId: true },
     );
 
+    beforeEach(async () => {
+      testUserToken = await addUser(testUser);
+    });
+
     context('when no contribution reward is found', () => {
       it('returns empty array of contribution reward', (done) => {
         request()
           .get('/api/v1/transaction/user/contribution-rewards')
-          .set('authorization', userToken)
+          .set('authorization', testUserToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
@@ -666,7 +681,7 @@ describe.only('Transaction Controller', () => {
         it('returns all contribution rewards', (done) => {
           request()
             .get('/api/v1/transaction/user/contribution-rewards')
-            .set('authorization', userToken)
+            .set('authorization', testUserToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
@@ -697,7 +712,7 @@ describe.only('Transaction Controller', () => {
           sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
           request()
             .get('/api/v1/transaction/user/contribution-rewards')
-            .set('authorization', userToken)
+            .set('authorization', testUserToken)
             .end((err, res) => {
               expect(res).to.have.status(500);
               done();

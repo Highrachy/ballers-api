@@ -852,7 +852,8 @@ describe('User Service', () => {
       {
         propertyId: property._id,
         userId: user._id,
-        adminId: vendor._id,
+        vendorId: vendor._id,
+        offerId: offer._id,
         amount: 250000,
       },
       { generateId: true },
