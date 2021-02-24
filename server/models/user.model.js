@@ -184,8 +184,7 @@ const UserSchema = new mongoose.Schema(
       },
     },
     profileImage: {
-      id: String,
-      url: String,
+      type: String,
     },
     referralCode: {
       type: String,

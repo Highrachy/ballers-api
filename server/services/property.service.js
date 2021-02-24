@@ -12,6 +12,8 @@ import {
   PROJECTED_PROPERTY_INFO,
   PROJECTED_ASSIGNED_USER_INFO,
 } from '../helpers/projectedSchemaInfo';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { buildFilterQuery, PROPERTY_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -85,8 +87,11 @@ export const getAllPropertiesAddedByVendor = async (vendorId) =>
     },
   ]);
 
-export const getAllProperties = async (user) => {
+export const getAllProperties = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const filterQuery = buildFilterQuery(PROPERTY_FILTERS, query);
+
   const propertiesOptions = [
+    { $match: { $and: filterQuery } },
     {
       $lookup: {
         from: 'users',
@@ -121,7 +126,17 @@ export const getAllProperties = async (user) => {
         ...PROJECTED_ASSIGNED_USER_INFO,
       },
     },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
   ];
+
+  if (filterQuery.length < 1) {
+    propertiesOptions.shift();
+  }
 
   if (user.role === USER_ROLE.VENDOR) {
     propertiesOptions.unshift({ $match: { addedBy: ObjectId(user._id) } });
@@ -129,11 +144,14 @@ export const getAllProperties = async (user) => {
 
   const properties = await Property.aggregate(propertiesOptions);
 
-  return properties;
+  const total = getPaginationTotal(properties);
+  const pagination = generatePagination(page, limit, total);
+  const result = properties[0].data;
+  return { pagination, result };
 };
 
-export const getOneProperty = async (propertyId) =>
-  Property.aggregate([
+export const getOneProperty = async (propertyId, user = {}) => {
+  const propertyOptions = [
     { $match: { _id: ObjectId(propertyId) } },
     {
       $lookup: {
@@ -160,7 +178,67 @@ export const getOneProperty = async (propertyId) =>
         ...PROJECTED_VENDOR_INFO,
       },
     },
-  ]);
+  ];
+
+  if (user?.role === USER_ROLE.USER) {
+    propertyOptions.splice(
+      1,
+      0,
+      {
+        $lookup: {
+          from: 'enquiries',
+          let: { propPropertyId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$propertyId', '$$propPropertyId'] },
+                    { $eq: ['$userId', ObjectId(user._id)] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'enquiryInfo',
+        },
+      },
+      {
+        $lookup: {
+          from: 'visitations',
+          let: { propPropertyId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$propertyId', '$$propPropertyId'] },
+                    { $eq: ['$userId', ObjectId(user._id)] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'visitationInfo',
+        },
+      },
+    );
+    propertyOptions.splice(propertyOptions.length - 1, 0, {
+      $unwind: {
+        path: '$enquiryInfo',
+        preserveNullAndEmptyArrays: true,
+      },
+    });
+    propertyOptions[propertyOptions.length - 1].$project = {
+      ...propertyOptions[propertyOptions.length - 1].$project,
+      enquiryInfo: 1,
+      visitationInfo: 1,
+    };
+  }
+
+  const property = await Property.aggregate(propertyOptions);
+  return property;
+};
 
 export const searchThroughProperties = async ({
   userId,
@@ -287,3 +365,86 @@ export const getAssignedProperties = async (userId) =>
       $unwind: '$property',
     },
   ]);
+
+export const addNeighborhood = async (neighborhoodInfo) => {
+  const property = await getPropertyById(neighborhoodInfo.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (neighborhoodInfo.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    return Property.findByIdAndUpdate(
+      property._id,
+      { $push: { [`neighborhood.${neighborhoodInfo.type}`]: neighborhoodInfo.neighborhood } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error addding neighborhood', error);
+  }
+};
+
+export const updateNeighborhood = async (updatedNeighborhood) => {
+  const property = await getPropertyById(updatedNeighborhood.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (updatedNeighborhood.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    return Property.findOneAndUpdate(
+      { [`neighborhood.${updatedNeighborhood.type}._id`]: updatedNeighborhood.typeId },
+      {
+        $set: {
+          [`neighborhood.${updatedNeighborhood.type}.$.name`]: updatedNeighborhood.neighborhood
+            .name,
+          [`neighborhood.${updatedNeighborhood.type}.$.timeAwayFromProperty`]: updatedNeighborhood
+            .neighborhood.timeAwayFromProperty,
+          [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.latitude`]: updatedNeighborhood
+            .neighborhood.mapLocation.latitude,
+          [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.longitude`]: updatedNeighborhood
+            .neighborhood.mapLocation.longitude,
+        },
+      },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating neighborhood', error);
+  }
+};
+
+export const deleteNeighborhood = async (neighborhoodInfo) => {
+  const property = await getPropertyById(neighborhoodInfo.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (neighborhoodInfo.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    return Property.findByIdAndUpdate(
+      property._id,
+      { $pull: { [`neighborhood.${neighborhoodInfo.type}`]: { _id: neighborhoodInfo.typeId } } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting neighborhood', error);
+  }
+};

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
-import { expect, request, sinon, useDatabase } from '../config';
+import querystring from 'querystring';
+import { expect, request, sinon } from '../config';
 import Property from '../../server/models/property.model';
 import User from '../../server/models/user.model';
 import Transaction from '../../server/models/transaction.model';
@@ -19,14 +20,30 @@ import Enquiry from '../../server/models/enquiry.model';
 import {
   itReturnsErrorForUnverifiedVendor,
   expectResponseToExcludeSensitiveVendorData,
+  expectResponseToContainNecessaryVendorData,
+  itReturnsForbiddenForNoToken,
+  itReturnsForbiddenForTokenWithInvalidAccess,
+  itReturnsTheRightPaginationValue,
+  itReturnsEmptyValuesWhenNoItemExistInDatabase,
+  expectsPaginationToReturnTheRightValues,
+  defaultPaginationResult,
+  expectResponseToContainNecessaryPropertyData,
+  itReturnsNotFoundForInvalidToken,
+  filterTestForSingleParameter,
+  futureDate,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
 } from '../helpers';
-
-useDatabase();
+import VendorFactory from '../factories/vendor.factory';
+import AddressFactory from '../factories/address.factory';
+import VisitationFactory from '../factories/visitation.factory';
+import { scheduleVisitation } from '../../server/services/visitation.service';
+import { PROPERTY_FILTERS } from '../../server/helpers/filters';
 
 let adminToken;
 let vendorToken;
 let userToken;
-let invalidVendorToken;
+let newVendorToken;
 
 const adminUser = UserFactory.build(
   { role: USER_ROLE.ADMIN, activated: true },
@@ -36,9 +53,17 @@ const vendorUser = UserFactory.build(
   {
     role: USER_ROLE.VENDOR,
     activated: true,
-    vendor: {
-      verified: true,
-    },
+    address: AddressFactory.build(),
+    vendor: VendorFactory.build({
+      directors: [
+        {
+          name: 'John Doe',
+          isSignatory: true,
+          signature: 'signature.jpg',
+          phone: '08012345678',
+        },
+      ],
+    }),
   },
   { generateId: true },
 );
@@ -61,7 +86,7 @@ describe('Property Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     vendorToken = await addUser(vendorUser);
-    invalidVendorToken = await addUser(invalidVendorUser);
+    newVendorToken = await addUser(invalidVendorUser);
     userToken = await addUser(regularUser);
   });
 
@@ -362,6 +387,22 @@ describe('Property Controller', () => {
             });
         });
       });
+      context('when bathrooms is empty', () => {
+        it('returns an error', (done) => {
+          const property = PropertyFactory.build({ bathrooms: '' });
+          request()
+            .post('/api/v1/property/add')
+            .set('authorization', vendorToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Bathroom number" must be a number');
+              done();
+            });
+        });
+      });
       context('when description is empty', () => {
         it('returns an error', (done) => {
           const property = PropertyFactory.build({ description: '' });
@@ -405,14 +446,14 @@ describe('Property Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property neighborhood" must be an array');
+              expect(res.body.error).to.be.eql('"Property neighborhood" must be of type object');
               done();
             });
         });
       });
-      context('when neighborhood is an empty array', () => {
+      context('when neighborhood is an empty object', () => {
         it('returns successful property', (done) => {
-          const property = PropertyFactory.build({ neighborhood: [] });
+          const property = PropertyFactory.build({ neighborhood: {} });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
@@ -557,7 +598,7 @@ describe('Property Controller', () => {
       it('returns forbidden', (done) => {
         request()
           .put('/api/v1/property/update')
-          .set('authorization', invalidVendorToken)
+          .set('authorization', newVendorToken)
           .send(newProperty)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -840,6 +881,22 @@ describe('Property Controller', () => {
             });
         });
       });
+      context('when bathrooms is empty', () => {
+        it('returns an error', (done) => {
+          const invalidProperty = PropertyFactory.build({ id: property._id, bathrooms: '' });
+          request()
+            .put('/api/v1/property/update')
+            .set('authorization', vendorToken)
+            .send(invalidProperty)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Bathroom number" must be a number');
+              done();
+            });
+        });
+      });
       context('when description is empty', () => {
         it('returns an error', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, description: '' });
@@ -882,14 +939,14 @@ describe('Property Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property neighborhood" must be an array');
+              expect(res.body.error).to.be.eql('"Property neighborhood" must be of type object');
               done();
             });
         });
       });
-      context('when neighborhood is empty array', () => {
+      context('when neighborhood is empty object', () => {
         it('returns updated property', (done) => {
-          const invalidProperty = PropertyFactory.build({ id: property._id, neighborhood: [] });
+          const invalidProperty = PropertyFactory.build({ id: property._id, neighborhood: {} });
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
@@ -898,7 +955,14 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('property');
-              expect(res.body.property.neighborhood).to.be.eql(invalidProperty.neighborhood);
+              expect(res.body.property.neighborhood).to.be.eql({
+                entertainments: [],
+                hospitals: [],
+                restaurantsAndBars: [],
+                schools: [],
+                shoppingMalls: [],
+                pointsOfInterest: [],
+              });
               done();
             });
         });
@@ -945,7 +1009,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('property');
-              expect(res.body.property.neighborhood).to.be.eql(invalidProperty.neighborhood);
+              expect(res.body.property.gallery).to.be.eql(invalidProperty.gallery);
               done();
             });
         });
@@ -1034,7 +1098,7 @@ describe('Property Controller', () => {
       it('returns forbidden', (done) => {
         request()
           .delete(`/api/v1/property/delete/${property._id}`)
-          .set('authorization', invalidVendorToken)
+          .set('authorization', newVendorToken)
           .end((err, res) => {
             expect(res).to.have.status(400);
             expect(res.body.success).to.be.eql(false);
@@ -1111,21 +1175,90 @@ describe('Property Controller', () => {
     });
 
     context('with a valid token & id', () => {
-      [...new Array(3)].map((_, index) =>
+      [...new Array(2)].map((_, index) =>
         it('successfully returns property', (done) => {
           request()
             .get(`/api/v1/property/${property._id}`)
-            .set('authorization', [vendorToken, adminToken, userToken][index])
+            .set('authorization', [vendorToken, adminToken][index])
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('property');
+              expect(res.body.property._id).to.be.eql(property._id.toString());
               expect(res.body.property).to.not.have.property('assignedTo');
+              expect(res.body.property).to.not.have.property('enquiryInfo');
+              expect(res.body.property).to.not.have.property('visitationInfo');
               expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
               done();
             });
         }),
       );
+    });
+
+    context('when request is made by a user', () => {
+      const visitation = VisitationFactory.build(
+        {
+          propertyId: property._id,
+          userId: regularUser._id,
+        },
+        { generateId: true },
+      );
+      const enquiry = EnquiryFactory.build(
+        {
+          propertyId: property._id,
+          userId: regularUser._id,
+        },
+        { generateId: true },
+      );
+      context('with an enquiry and visitation for the property', () => {
+        beforeEach(async () => {
+          await scheduleVisitation(visitation);
+          await addEnquiry(enquiry);
+        });
+        it('returns property with enquiry and visitation info', (done) => {
+          request()
+            .get(`/api/v1/property/${property._id}`)
+            .set('authorization', userToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.property._id).to.be.eql(property._id.toString());
+              expect(res.body.property.enquiryInfo._id).to.be.eql(enquiry._id.toString());
+              expect(res.body.property.enquiryInfo.propertyId).to.be.eql(property._id.toString());
+              expect(res.body.property.enquiryInfo.userId).to.be.eql(regularUser._id.toString());
+              expect(res.body.property.visitationInfo[0]._id).to.be.eql(visitation._id.toString());
+              expect(res.body.property.visitationInfo[0].userId).to.be.eql(
+                regularUser._id.toString(),
+              );
+              expect(res.body.property.visitationInfo[0].propertyId).to.be.eql(
+                property._id.toString(),
+              );
+              expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
+              done();
+            });
+        });
+      });
+
+      context('without an enquiry and visitation for the property', () => {
+        it('returns property without enquiry and visitation info', (done) => {
+          request()
+            .get(`/api/v1/property/${property._id}`)
+            .set('authorization', userToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.property._id).to.be.eql(property._id.toString());
+              expect(res.body.property).to.not.have.property('enquiryInfo');
+              expect(res.body.property.visitationInfo.length).to.be.eql(0);
+              expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
+              done();
+            });
+        });
+      });
     });
 
     context('when token is invalid', () => {
@@ -1188,150 +1321,277 @@ describe('Property Controller', () => {
   });
 
   describe('Get all properties', () => {
+    const endpoint = '/api/v1/property/all';
+    const method = 'get';
+
     const vendorUser2 = UserFactory.build(
-      { role: USER_ROLE.VENDOR, activated: true },
+      { role: USER_ROLE.VENDOR, activated: true, vendor: VendorFactory.build() },
       { generateId: true },
     );
-    const properties1 = PropertyFactory.buildList(13, {
+    const vendorProperties = PropertyFactory.buildList(12, {
       addedBy: vendorUser._id,
       updatedBy: vendorUser._id,
+      createdAt: new Date(),
     });
-    const properties2 = PropertyFactory.buildList(5, {
+    const vendor2Properties = PropertyFactory.buildList(5, {
       addedBy: vendorUser2._id,
       updatedBy: vendorUser2._id,
+      createdAt: new Date(),
     });
+    const vendorProperty = PropertyFactory.build(
+      {
+        address: {
+          street1: 'miracle street',
+          street2: 'sesame street',
+          city: 'ilorin',
+          state: 'kwara',
+          country: 'ghana',
+        },
+        addedBy: vendorUser._id,
+        bathrooms: 1,
+        bedrooms: 1,
+        createdAt: futureDate,
+        houseType: 'penthouse apartment',
+        name: 'penthouse apartment',
+        price: 12500000,
+        toilets: 1,
+        units: 1,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const editorUser = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
 
-    context('when no property is found', () => {
-      it('returns not found', (done) => {
-        request()
-          .get('/api/v1/property/all')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.properties.length).to.be.eql(0);
-            done();
+    describe('Property Pagination', () => {
+      context('when no property exists in db', () => {
+        [adminUser, vendorUser].map((user) =>
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
+
+      describe('when properties exist in db', () => {
+        beforeEach(async () => {
+          await addUser(vendorUser2);
+          await addUser(editorUser);
+          await Property.insertMany([...vendorProperties, ...vendor2Properties]);
+          await addProperty(vendorProperty);
+        });
+
+        itReturnsTheRightPaginationValue({
+          endpoint,
+          method,
+          user: adminUser,
+          useExistingUser: true,
+        });
+
+        context('with a admin token & id', () => {
+          it('returns all properties', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+                expectResponseToContainNecessaryPropertyData(
+                  res.body.result[0],
+                  vendorProperties[0],
+                );
+                expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+                expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
+                done();
+              });
           });
+        });
+
+        context('with vendor1 token & id', () => {
+          it('returns all properties', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 13,
+                  result: 10,
+                  totalPage: 2,
+                });
+                expectResponseToContainNecessaryPropertyData(
+                  res.body.result[0],
+                  vendorProperties[0],
+                );
+                expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+                expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
+                done();
+              });
+          });
+        });
+
+        context('with a vendor token not attached to any property', () => {
+          it('returns no property', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', newVendorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 0,
+                  result: 0,
+                  totalPage: 0,
+                });
+                done();
+              });
+          });
+        });
+
+        itReturnsErrorForUnverifiedVendor({
+          endpoint,
+          method,
+          user: vendorUser,
+          useExistingUser: true,
+        });
+
+        context('when user has invalid access token', () => {
+          [regularUser, editorUser].map((user) =>
+            itReturnsForbiddenForTokenWithInvalidAccess({
+              endpoint,
+              method,
+              user,
+              useExistingUser: true,
+            }),
+          );
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        itReturnsNotFoundForInvalidToken({
+          endpoint,
+          method,
+          user: adminUser,
+          userId: adminUser._id,
+          useExistingUser: true,
+        });
+
+        context('when getAllUserProperties service fails', () => {
+          it('returns the error', (done) => {
+            sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res).to.have.status(500);
+                done();
+                Property.aggregate.restore();
+              });
+          });
+        });
       });
     });
 
-    describe('when properties exist in db', () => {
+    describe('Property Filter', () => {
       beforeEach(async () => {
         await addUser(vendorUser2);
-        await Property.insertMany(properties1);
-        await Property.insertMany(properties2);
+        await addUser(editorUser);
+        await Property.insertMany(vendor2Properties);
+        await addProperty(vendorProperty);
       });
 
-      context('with a admin token & id', () => {
-        it('returns all properties', (done) => {
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 6,
+            result: 6,
+            totalPage: 1,
+          },
+          useExistingUser: true,
+        });
+
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: vendorUser2,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 5,
+            result: 5,
+            totalPage: 1,
+          },
+          useExistingUser: true,
+        });
+      });
+
+      context('when multiple filters are used', () => {
+        const multiplePropertyDetails = {
+          bathrooms: vendorProperty.bathrooms,
+          bedrooms: vendorProperty.bedrooms,
+          price: vendorProperty.price,
+          units: vendorProperty.units,
+          country: vendorProperty.address.country,
+        };
+        const filteredParams = querystring.stringify(multiplePropertyDetails);
+
+        it('returns matched user', (done) => {
           request()
-            .get('/api/v1/property/all')
+            [method](`${endpoint}?${filteredParams}`)
             .set('authorization', adminToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(18);
-              expect(res.body.properties[0]).to.have.property('name');
-              expect(res.body.properties[0]).to.have.property('address');
-              expect(res.body.properties[0]).to.have.property('mainImage');
-              expect(res.body.properties[0]).to.have.property('gallery');
-              expect(res.body.properties[0]).to.have.property('price');
-              expect(res.body.properties[0]).to.have.property('houseType');
-              expect(res.body.properties[0]).to.have.property('description');
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(vendorProperty._id.toString());
+              expect(res.body.result[0].bathrooms).to.be.eql(multiplePropertyDetails.bathrooms);
+              expect(res.body.result[0].bedrooms).to.be.eql(multiplePropertyDetails.bedrooms);
+              expect(res.body.result[0].price).to.be.eql(multiplePropertyDetails.price);
+              expect(res.body.result[0].units).to.be.eql(multiplePropertyDetails.units);
+              expect(res.body.result[0].address.country).to.be.eql(multiplePropertyDetails.country);
               done();
             });
         });
       });
 
-      const endpoint = '/api/v1/property/all';
-      const method = 'get';
-      itReturnsErrorForUnverifiedVendor({
-        endpoint,
+      context('when no parameter is matched', () => {
+        const nonMatchingFilters = {
+          bathrooms: 13,
+          bedrooms: 1,
+          price: 1500,
+          units: 22,
+          country: 'italy',
+        };
+
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
+          filter: nonMatchingFilters,
+          method,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
+        });
+      });
+
+      filterTestForSingleParameter({
+        filter: PROPERTY_FILTERS,
         method,
-        user: vendorUser,
+        endpoint,
+        user: adminUser,
+        dataObject: vendorProperty,
         useExistingUser: true,
-      });
-
-      context('with a vendor token & id', () => {
-        it('returns all properties', (done) => {
-          request()
-            .get('/api/v1/property/all')
-            .set('authorization', vendorToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(13);
-              expect(res.body.properties[0]).to.have.property('name');
-              expect(res.body.properties[0]).to.have.property('address');
-              expect(res.body.properties[0]).to.have.property('mainImage');
-              expect(res.body.properties[0]).to.have.property('gallery');
-              expect(res.body.properties[0]).to.have.property('price');
-              expect(res.body.properties[0]).to.have.property('houseType');
-              expect(res.body.properties[0]).to.have.property('description');
-              done();
-            });
-        });
-      });
-
-      context('with a vendor token not attached to any property', () => {
-        it('returns no property', (done) => {
-          request()
-            .get('/api/v1/property/all')
-            .set('authorization', invalidVendorToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(0);
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/property/all')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when token is invalid', () => {
-        beforeEach(async () => {
-          await User.findByIdAndDelete(adminUser._id);
-        });
-        it('returns token error', (done) => {
-          request()
-            .get('/api/v1/property/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(404);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Invalid token');
-              done();
-            });
-        });
-      });
-
-      context('when getAllUserProperties service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/property/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Property.aggregate.restore();
-            });
-        });
       });
     });
   });
@@ -1542,6 +1802,8 @@ describe('Property Controller', () => {
               );
               expectResponseToExcludeSensitiveVendorData(res.body.properties[0].assignedUsers);
               expectResponseToExcludeSensitiveVendorData(res.body.properties[0].vendorInfo);
+              expectResponseToContainNecessaryVendorData(res.body.properties[0].vendorInfo);
+
               done();
             });
         });
@@ -2050,6 +2312,478 @@ describe('Property Controller', () => {
             expect(res).to.have.status(500);
             done();
             Offer.aggregate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Add Neighborhood to property', () => {
+    const property = PropertyFactory.build(
+      {
+        neighborhood: {
+          schools: [
+            {
+              name: 'covenant university',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              name: 'babcock university',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
+        },
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/neighborhood`;
+    const method = 'post';
+
+    const data = {
+      type: 'schools',
+      neighborhood: {
+        name: 'bingham university',
+        timeAwayFromProperty: 5,
+        mapLocation: {
+          longitude: 123.22,
+          latitude: 123.11,
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Neighborhood added');
+            expect(res.body.property.neighborhood.schools.length).to.be.eql(3);
+            expect(res.body.property.neighborhood.schools[0].name).to.be.eql(
+              property.neighborhood.schools[0].name,
+            );
+            expect(res.body.property.neighborhood.schools[1].name).to.be.eql(
+              property.neighborhood.schools[1].name,
+            );
+            expect(res.body.property.neighborhood.schools[2].name).to.be.eql(
+              data.neighborhood.name,
+            );
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/neighborhood`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Update Neighborhood', () => {
+    const property = PropertyFactory.build(
+      {
+        neighborhood: {
+          schools: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'covenant university',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'babcock university',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'bingham university',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
+          hospitals: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Reddington Hospital',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Primrose General',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
+        },
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/neighborhood`;
+    const method = 'put';
+
+    const data = {
+      type: 'schools',
+      typeId: property.neighborhood.schools[0]._id,
+      neighborhood: {
+        name: 'unilorin',
+        timeAwayFromProperty: 15,
+        mapLocation: {
+          longitude: 105.22,
+          latitude: 105.11,
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Neighborhood updated');
+            expect(res.body.property.neighborhood.schools[0]._id).to.be.eql(data.typeId.toString());
+            expect(res.body.property.neighborhood.schools[0].name).to.be.eql(
+              data.neighborhood.name,
+            );
+            expect(res.body.property.neighborhood.schools[0].timeAwayFromProperty).to.be.eql(
+              data.neighborhood.timeAwayFromProperty,
+            );
+            expect(res.body.property.neighborhood.schools[0].mapLocation).to.be.eql(
+              data.neighborhood.mapLocation,
+            );
+            expect(res.body.property.neighborhood.schools[1].name).to.be.eql(
+              property.neighborhood.schools[1].name,
+            );
+            expect(res.body.property.neighborhood.schools[2].name).to.be.eql(
+              property.neighborhood.schools[2].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[0].name).to.be.eql(
+              property.neighborhood.hospitals[0].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[1].name).to.be.eql(
+              property.neighborhood.hospitals[1].name,
+            );
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/neighborhood`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findOneAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findOneAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Delete Neighborhood', () => {
+    const property = PropertyFactory.build(
+      {
+        neighborhood: {
+          hospitals: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Reddington Hospital',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Primrose General',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
+        },
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/neighborhood`;
+    const method = 'delete';
+
+    const data = {
+      type: 'hospitals',
+      typeId: property.neighborhood.hospitals[1]._id,
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Neighborhood deleted');
+            expect(res.body.property.neighborhood.hospitals.length).to.be.eql(1);
+            expect(res.body.property.neighborhood.hospitals[0]._id).to.be.eql(
+              property.neighborhood.hospitals[0]._id.toString(),
+            );
+            expect(res.body.property.neighborhood.hospitals[0].name).to.be.eql(
+              property.neighborhood.hospitals[0].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[0].timeAwayFromProperty).to.be.eql(
+              property.neighborhood.hospitals[0].timeAwayFromProperty,
+            );
+            expect(res.body.property.neighborhood.hospitals[0].mapLocation).to.be.eql(
+              property.neighborhood.hospitals[0].mapLocation,
+            );
+
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/neighborhood`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findByIdAndUpdate.restore();
           });
       });
     });

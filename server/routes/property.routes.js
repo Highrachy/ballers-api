@@ -11,6 +11,9 @@ import {
   addPropertySchema,
   updatePropertySchema,
   searchPropertySchema,
+  updateNeighborhoodSchema,
+  addNeighborhoodSchema,
+  deleteNeighborhoodSchema,
 } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -277,5 +280,99 @@ router.get('/assigned/', authenticate, PropertyController.getAssignedProperties)
  *          description: Internal server error
  */
 router.get('/:id', authenticate, hasValidObjectId, PropertyController.getOneProperty);
+
+/**
+ * @swagger
+ * /property/:id/neighborhood:
+ *   post:
+ *     tags:
+ *       - Property
+ *     description: Adds to a property's neighborhood
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Adds to a property's neighborhood
+ *     responses:
+ *      '200':
+ *        description: Neigborhood added
+ *      '404':
+ *        description: Property not found
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/:id/neighborhood',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  schemaValidation(addNeighborhoodSchema),
+  PropertyController.addNeighborhood,
+);
+
+/**
+ * @swagger
+ * /property/:id/neighborhood:
+ *   put:
+ *     tags:
+ *       - Property
+ *     description: Updates existing property neighborhood
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Updates existing property neighborhood
+ *     responses:
+ *      '200':
+ *        description: Neighborhood updated
+ *      '400':
+ *        description: Error updating neighborhood
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/:id/neighborhood',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  schemaValidation(updateNeighborhoodSchema),
+  PropertyController.updateNeighborhood,
+);
+
+/**
+ * @swagger
+ * /property/:id/neighborhood:
+ *   delete:
+ *     tags:
+ *       - Property
+ *     description: Deletes from a property's neigborhood
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Deletes from a property's neigborhood
+ *     responses:
+ *      '200':
+ *        description: Neighborhood deleted
+ *      '500':
+ *       description: Internal server error
+ */
+router.delete(
+  '/:id/neighborhood',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  schemaValidation(deleteNeighborhoodSchema),
+  PropertyController.deleteNeighborhood,
+);
 
 module.exports = router;

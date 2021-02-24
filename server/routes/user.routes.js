@@ -292,11 +292,41 @@ router.post('/upload-image', authenticate, Upload.uploadImage, UploadController.
 
 /**
  * @swagger
+ * /user/upload:
+ *   get:
+ *     tags:
+ *       - User
+ *     description: gets AWS S3 signed URL
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *        - in: query
+ *          name: type
+ *          schema:
+ *            type: string
+ *          description: type of the file to sign
+ *        - in: query
+ *          name: extension
+ *          schema:
+ *            type: string
+ *          description: extension of the file to sign
+ *     responses:
+ *      '200':
+ *        description: Signed URL generated
+ *      '400':
+ *        description: Error getting signed url
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/upload', authenticate, UploadController.uploadToS3);
+
+/**
+ * @swagger
  * /user/all:
  *   get:
  *     tags:
  *       - User
- *     description: Get all registered users
+ *     description: Get all users in the db based on filters
  *     produces:
  *       - application/json
  *     requestBody:
@@ -304,14 +334,14 @@ router.post('/upload-image', authenticate, Upload.uploadImage, UploadController.
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/User'
- *      description: Get all registered users
+ *      description: Get all users in the db based on filters
  *     responses:
  *      '200':
  *        description: returns object of users
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, UserController.getAllRegisteredUsers);
+router.get('/all', authenticate, isAdmin, UserController.getAllUsers);
 
 /**
  * @swagger
@@ -475,27 +505,6 @@ router.put(
   schemaValidation(userEditorSchema),
   UserController.downgradeEditorToUser,
 );
-
-/**
- * @swagger
- * path:
- *  /user/vendor/all:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: the auto generated user token via jwt
- *      summary: Returns all vendors
- *      tags: [User]
- *      responses:
- *        '200':
- *          description: Returns array of vendors
- *        '500':
- *          description: Internal server error
- */
-router.get('/vendor/all', authenticate, isAdmin, UserController.getAllVendors);
 
 /**
  * @swagger

@@ -1,3 +1,6 @@
+import S3 from 'aws-sdk/clients/s3';
+import { v1 as uuid } from 'uuid';
+
 import { updateUser } from '../services/user.service';
 import httpStatus from './httpStatus';
 
@@ -16,7 +19,7 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'ballers-profile',
-    allowedFormats: ['jpg', 'png'],
+    allowedFormats: ['jpg', 'jpeg', 'gif', 'png'],
     transformation: [{ width: 256, height: 256, crop: 'limit' }],
   },
 });
@@ -26,7 +29,7 @@ const largeStorage = new CloudinaryStorage({
   params: async () => {
     return {
       folder: 'ballers-upload',
-      allowedFormats: ['jpg', 'jpeg', 'png'],
+      allowedFormats: ['jpg', 'jpeg', 'gif', 'png', 'pdf'],
     };
   },
 });
@@ -63,6 +66,11 @@ export default {
   },
 };
 
+const s3 = new S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+});
+
 export const UploadController = {
   uploadProfileImage(req, res, next) {
     const { user } = req;
@@ -93,5 +101,19 @@ export const UploadController = {
       message: 'Image cannot be uploaded',
       error: 'Image cannot be uploaded',
     });
+  },
+
+  uploadToS3(req, res) {
+    const { extension, type } = req.query;
+    const key = `${req.user._id}/${uuid()}.${extension}`;
+    s3.getSignedUrl(
+      'putObject',
+      {
+        Bucket: process.env.AWS_S3_BUCKET,
+        ContentType: type,
+        Key: key,
+      },
+      (err, url) => res.json({ key, url, query: req.query }),
+    );
   },
 };

@@ -1,3 +1,5 @@
+import { format, add } from 'date-fns';
+import querystring from 'querystring';
 import { addUser, loginUser } from '../server/services/user.service';
 import { expect, request, sinon } from './config';
 import User from '../server/models/user.model';
@@ -368,10 +370,209 @@ export const expectResponseToExcludeSensitiveVendorData = (data) => {
   expect(data).to.not.have.property('notifications');
   if (data.vendor) {
     expect(data.vendor).to.not.have.property('bankInfo');
-    expect(data.vendor).to.not.have.property('directors');
+    expect(data.vendor.directors).to.not.have.property('phone');
     expect(data.vendor).to.not.have.property('identification');
     expect(data.vendor).to.not.have.property('entity');
     expect(data.vendor).to.not.have.property('redanNumber');
     expect(data.vendor).to.not.have.property('taxCertificate');
   }
+};
+
+export const expectResponseToContainNecessaryVendorData = (data) => {
+  expect(data.vendor).to.have.property('companyLogo');
+  expect(data.vendor).to.have.property('companyName');
+  expect(data.vendor.directors[0]).to.have.property('name');
+  expect(data.vendor.directors[0]).to.have.property('signature');
+  expect(data.vendor.directors[0]).to.not.have.property('phone');
+  expect(data).to.have.property('address');
+};
+
+export const expectResponseToContainNecessaryPropertyData = (response, property) => {
+  expect(response.name).to.be.eql(property.name);
+  expect(response.address).to.be.eql(property.address);
+  expect(response.mainImage).to.be.eql(property.mainImage);
+  expect(response.gallery).to.be.eql(property.gallery);
+  expect(response.price).to.be.eql(property.price);
+  expect(response.houseType).to.be.eql(property.houseType);
+  expect(response.description).to.be.eql(property.description);
+  expect(response.units).to.be.eql(property.units);
+  expect(response.bedrooms).to.be.eql(property.bedrooms);
+  expect(response.bathrooms).to.be.eql(property.bathrooms);
+  expect(response.toilets).to.be.eql(property.toilets);
+  expect(response.titleDocument).to.be.eql(property.titleDocument);
+  expect(response.neighborhood.entertainments[0].name).to.be.eql(
+    property.neighborhood.entertainments[0].name,
+  );
+  expect(response.neighborhood.entertainments[0].timeAwayFromProperty).to.be.eql(
+    property.neighborhood.entertainments[0].timeAwayFromProperty,
+  );
+  expect(response.neighborhood.entertainments[0].mapLocation).to.be.eql(
+    property.neighborhood.entertainments[0].mapLocation,
+  );
+  expect(response.neighborhood.hospitals[0].name).to.be.eql(
+    property.neighborhood.hospitals[0].name,
+  );
+  expect(response.neighborhood.hospitals[0].timeAwayFromProperty).to.be.eql(
+    property.neighborhood.hospitals[0].timeAwayFromProperty,
+  );
+  expect(response.neighborhood.hospitals[0].mapLocation).to.be.eql(
+    property.neighborhood.hospitals[0].mapLocation,
+  );
+  expect(response.neighborhood.pointsOfInterest[0].name).to.be.eql(
+    property.neighborhood.pointsOfInterest[0].name,
+  );
+  expect(response.neighborhood.pointsOfInterest[0].timeAwayFromProperty).to.be.eql(
+    property.neighborhood.pointsOfInterest[0].timeAwayFromProperty,
+  );
+  expect(response.neighborhood.pointsOfInterest[0].mapLocation).to.be.eql(
+    property.neighborhood.pointsOfInterest[0].mapLocation,
+  );
+  expect(response.neighborhood.restaurantsAndBars[0].name).to.be.eql(
+    property.neighborhood.restaurantsAndBars[0].name,
+  );
+  expect(response.neighborhood.restaurantsAndBars[0].timeAwayFromProperty).to.be.eql(
+    property.neighborhood.restaurantsAndBars[0].timeAwayFromProperty,
+  );
+  expect(response.neighborhood.restaurantsAndBars[0].mapLocation).to.be.eql(
+    property.neighborhood.restaurantsAndBars[0].mapLocation,
+  );
+  expect(response.neighborhood.schools[0].name).to.be.eql(property.neighborhood.schools[0].name);
+  expect(response.neighborhood.schools[0].timeAwayFromProperty).to.be.eql(
+    property.neighborhood.schools[0].timeAwayFromProperty,
+  );
+  expect(response.neighborhood.schools[0].mapLocation).to.be.eql(
+    property.neighborhood.schools[0].mapLocation,
+  );
+  expect(response.neighborhood.shoppingMalls[0].name).to.be.eql(
+    property.neighborhood.shoppingMalls[0].name,
+  );
+  expect(response.neighborhood.shoppingMalls[0].timeAwayFromProperty).to.be.eql(
+    property.neighborhood.shoppingMalls[0].timeAwayFromProperty,
+  );
+  expect(response.neighborhood.shoppingMalls[0].mapLocation).to.be.eql(
+    property.neighborhood.shoppingMalls[0].mapLocation,
+  );
+  expect(response.mainImage).to.be.eql(property.mainImage);
+};
+
+export const futureDate = format(add(new Date(), { days: 5 }), 'yyyy-MM-dd');
+export const currentDate = format(new Date(), 'yyyy-MM-dd');
+
+export const filterTestForSingleParameter = ({
+  filter,
+  method,
+  endpoint,
+  user,
+  dataObject,
+  useExistingUser = false,
+}) => {
+  let token;
+
+  beforeEach(async () => {
+    if (useExistingUser) {
+      const loggedInUser = await loginUser(user);
+      token = loggedInUser.token;
+    } else {
+      token = await addUser(user);
+    }
+  });
+
+  context('when sending single parameter', () => {
+    Object.entries(filter).map(([queryKey, { key }]) => {
+      const processNestedObject = (parentObject, objPath) =>
+        objPath.split('.').reduce((acc, value) => acc[value], parentObject);
+      const filterKey = key || queryKey;
+      return it(`returns matched user for ${queryKey}`, (done) => {
+        request()
+          [method](`${endpoint}?${queryKey}=${processNestedObject(dataObject, filterKey)}`)
+          .set('authorization', token)
+          .end((err, res) => {
+            expect(res.body.result[0]._id.toString()).to.be.eql(dataObject._id.toString());
+            expectsPaginationToReturnTheRightValues(res, {
+              currentPage: 1,
+              limit: 10,
+              offset: 0,
+              result: 1,
+              total: 1,
+              totalPage: 1,
+            });
+            done();
+          });
+      });
+    });
+  });
+};
+
+export const itReturnsNoResultWhenNoFilterParameterIsMatched = ({
+  filter,
+  method,
+  endpoint,
+  user,
+  useExistingUser = false,
+}) => {
+  let token;
+
+  beforeEach(async () => {
+    if (useExistingUser) {
+      const loggedInUser = await loginUser(user);
+      token = loggedInUser.token;
+    } else {
+      token = await addUser(user);
+    }
+  });
+
+  context('when no parameter is matched', () => {
+    const filteredParams = querystring.stringify(filter);
+
+    it('returns empty result', (done) => {
+      request()
+        [method](`${endpoint}?${filteredParams}`)
+        .set('authorization', token)
+        .end((err, res) => {
+          expectsPaginationToReturnTheRightValues(res, {
+            currentPage: 1,
+            limit: 10,
+            offset: 0,
+            result: 0,
+            total: 0,
+            totalPage: 0,
+          });
+          done();
+        });
+    });
+  });
+};
+
+export const itReturnAllResultsWhenAnUnknownFilterIsUsed = ({
+  filter,
+  method,
+  endpoint,
+  user,
+  expectedPagination,
+  useExistingUser = false,
+}) => {
+  let token;
+
+  beforeEach(async () => {
+    if (useExistingUser) {
+      const loggedInUser = await loginUser(user);
+      token = loggedInUser.token;
+    } else {
+      token = await addUser(user);
+    }
+  });
+
+  context('when unknown filter is used', () => {
+    const filteredParams = querystring.stringify(filter);
+
+    it('returns all items', (done) => {
+      request()
+        [method](`${endpoint}?${filteredParams}`)
+        .set('authorization', token)
+        .end((err, res) => {
+          expectsPaginationToReturnTheRightValues(res, expectedPagination);
+          done();
+        });
+    });
+  });
 };

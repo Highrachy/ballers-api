@@ -39,7 +39,7 @@ const OfferController = {
     const { user } = req;
     acceptOffer({ ...offerInfo, user })
       .then((offer) => {
-        const offerResponse = offer[0];
+        const offerResponse = offer;
         const vendor = offerResponse.vendorInfo;
         vendor.firstName = `${vendor.firstName}'s team`;
         const { userInfo } = offerResponse;
@@ -96,8 +96,8 @@ const OfferController = {
 
   getAllOffers(req, res, next) {
     const userId = req.user._id;
-    const { page, limit } = req.query;
-    getAllOffers(userId, page, limit)
+    const { query } = req;
+    getAllOffers(userId, query)
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,

@@ -2,6 +2,7 @@ import { Factory } from 'rosie';
 
 export default new Factory()
   .attr('companyName', 'Highrachy Investment Limited')
+  .attr('companyLogo', 'logo.jpg')
   .attr('verified', true)
   .attr('phone', '08012345678')
   .attr('bankInfo', {

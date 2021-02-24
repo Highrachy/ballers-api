@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { VISITATION_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -37,6 +38,19 @@ const VisitationSchema = new mongoose.Schema(
     propertyId: {
       type: ObjectId,
       required: true,
+    },
+    rescheduleLog: [
+      {
+        reason: String,
+        rescheduleFrom: Date,
+        rescheduleTo: Date,
+        date: Date,
+        rescheduleBy: String,
+      },
+    ],
+    status: {
+      type: String,
+      default: VISITATION_STATUS.PENDING,
     },
     userId: {
       type: ObjectId,

@@ -6,7 +6,7 @@ import {
   resetPasswordViaToken,
   updateUser,
   assignPropertyToUser,
-  getAllRegisteredUsers,
+  getAllUsers,
   getUserInfo,
   addPropertyToFavorites,
   removePropertyFromFavorites,
@@ -14,7 +14,6 @@ import {
   upgradeUserToEditor,
   downgradeEditorToUser,
   verifyVendorStep,
-  getAllVendors,
   updateVendor,
   addCommentToVerificationStep,
   verifyVendor,
@@ -133,9 +132,8 @@ const UserController = {
       .catch((error) => next(error));
   },
 
-  getAllRegisteredUsers(req, res, next) {
-    const { page, limit } = req.query;
-    getAllRegisteredUsers(page, limit)
+  getAllUsers(req, res, next) {
+    getAllUsers(req.query)
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,
@@ -202,19 +200,6 @@ const UserController = {
       .catch((error) => next(error));
   },
 
-  getAllVendors(req, res, next) {
-    const { page, limit } = req.query;
-    getAllVendors(page, limit)
-      .then(({ pagination, result }) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          pagination,
-          result,
-        });
-      })
-      .catch((error) => next(error));
-  },
-
   verifyVendorStep(req, res, next) {
     const verificationInfo = req.locals;
     const adminId = req.user._id;
@@ -242,6 +227,7 @@ const UserController = {
     const adminId = req.user._id;
     verifyVendor({ vendorId, adminId })
       .then((vendor) => {
+        sendMail(EMAIL_CONTENT.VERIFY_VENDOR, vendor, {});
         res.status(httpStatus.OK).json({ success: true, message: 'Vendor verified', vendor });
       })
       .catch((error) => next(error));
@@ -303,6 +289,7 @@ const UserController = {
     const adminId = req.user._id;
     certifyVendor({ vendorId, adminId })
       .then((vendor) => {
+        sendMail(EMAIL_CONTENT.CERTIFY_VENDOR, vendor, {});
         res.status(httpStatus.OK).json({ success: true, message: 'Vendor certified', vendor });
       })
       .catch((error) => next(error));

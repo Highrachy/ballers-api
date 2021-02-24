@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { expect, sinon, useDatabase } from '../config';
+import { expect, sinon } from '../config';
 import {
   hashPassword,
   getUserByEmail,
@@ -18,7 +18,7 @@ import {
   generateReferralCode,
   generateCode,
   assignPropertyToUser,
-  getAllRegisteredUsers,
+  getAllUsers,
   addPropertyToFavorites,
   removePropertyFromFavorites,
   getAccountOverview,
@@ -39,8 +39,6 @@ import { addTransaction } from '../../server/services/transaction.service';
 import { addReferral } from '../../server/services/referral.service';
 import Referral from '../../server/models/referral.model';
 import { USER_ROLE } from '../../server/helpers/constants';
-
-useDatabase();
 
 const expectsReturnedTokenToBeValid = (token, id) => {
   const decodedToken = jwt.verify(token, USER_SECRET);
@@ -671,7 +669,7 @@ describe('User Service', () => {
     });
   });
 
-  describe('#getAllRegisteredUsers', async () => {
+  describe('#getAllUsers', async () => {
     let countedUsers;
 
     beforeEach(async () => {
@@ -681,7 +679,7 @@ describe('User Service', () => {
     context('when user added is valid', async () => {
       it('returns total users', async () => {
         countedUsers = await User.countDocuments({});
-        const users = await getAllRegisteredUsers();
+        const users = await getAllUsers();
         expect(users.pagination.total).to.be.eql(countedUsers);
         expect(users.pagination.currentPage).to.be.eql(1);
         expect(users.pagination.limit).to.be.eql(10);
@@ -692,10 +690,10 @@ describe('User Service', () => {
     });
     context('when new user is added', async () => {
       before(async () => {
-        await User.create(UserFactory.build());
+        await addUser(UserFactory.build());
       });
       it('returns total users plus one', async () => {
-        const users = await getAllRegisteredUsers();
+        const users = await getAllUsers();
         expect(users.pagination.total).to.be.eql(countedUsers + 1);
         expect(users.pagination.currentPage).to.be.eql(1);
         expect(users.pagination.limit).to.be.eql(10);

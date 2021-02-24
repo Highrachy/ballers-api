@@ -1,4 +1,4 @@
-import { expect, request, sinon, useDatabase } from '../config';
+import { expect, request, sinon } from '../config';
 import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
 import User from '../../server/models/user.model';
@@ -23,8 +23,6 @@ import {
   itReturnsTheRightPaginationValue,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
 } from '../helpers';
-
-useDatabase();
 
 let adminToken;
 let userToken;

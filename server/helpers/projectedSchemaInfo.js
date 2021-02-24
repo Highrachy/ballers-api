@@ -10,10 +10,13 @@ export const PROJECTED_PROPERTY_INFO = {
   units: 1,
   houseType: 1,
   bedrooms: 1,
+  bathrooms: 1,
   toilets: 1,
   description: 1,
   paymentPlan: 1,
   floorPlans: 1,
+  createdAt: 1,
+  addedBy: 1,
 };
 
 export const PROJECTED_VENDOR_INFO = {
@@ -22,6 +25,7 @@ export const PROJECTED_VENDOR_INFO = {
   'vendorInfo.lastName': 1,
   'vendorInfo.email': 1,
   'vendorInfo.phone': 1,
+  'vendorInfo.address': 1,
   'vendorInfo.vendor.companyLogo': 1,
   'vendorInfo.vendor.companyName': 1,
   'vendorInfo.vendor.socialMedia': 1,
@@ -29,6 +33,10 @@ export const PROJECTED_VENDOR_INFO = {
   'vendorInfo.vendor.verified': 1,
   'vendorInfo.vendor.website': 1,
   'vendorInfo.vendor.vendorCode': 1,
+  'vendorInfo.vendor.directors': {
+    name: 1,
+    signature: 1,
+  },
 };
 
 export const PROJECTED_ASSIGNED_USER_INFO = {
@@ -49,7 +57,8 @@ export const NON_PROJECTED_USER_INFO = (infoType) => {
     [`${infoType}.role`]: 0,
     [`${infoType}.notifications`]: 0,
     [`${infoType}.vendor.bankInfo`]: 0,
-    [`${infoType}.vendor.directors`]: 0,
+    [`${infoType}.vendor.logs`]: 0,
+    [`${infoType}.vendor.directors`]: { phone: 0 },
     [`${infoType}.vendor.identification`]: 0,
     [`${infoType}.vendor.verification`]: 0,
     [`${infoType}.vendor.entity`]: 0,

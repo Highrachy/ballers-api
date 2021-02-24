@@ -9,6 +9,9 @@ import {
   getAvailablePropertyOptions,
   getAssignedPropertyByOfferId,
   getAssignedProperties,
+  addNeighborhood,
+  updateNeighborhood,
+  deleteNeighborhood,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -53,17 +56,18 @@ const PropertyController = {
   },
 
   getAllProperties(req, res, next) {
-    const { user } = req;
-    getAllProperties(user)
-      .then((properties) => {
-        res.status(httpStatus.OK).json({ success: true, properties });
+    const { user, query } = req;
+    getAllProperties(user, query)
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },
 
   getOneProperty(req, res, next) {
     const propertId = req.params.id;
-    getOneProperty(propertId)
+    const { user } = req;
+    getOneProperty(propertId, user)
       .then((property) => {
         if (property.length > 0) {
           res.status(httpStatus.OK).json({ success: true, property: property[0] });
@@ -117,6 +121,43 @@ const PropertyController = {
           success: true,
           properties,
         });
+      })
+      .catch((error) => next(error));
+  },
+
+  addNeighborhood(req, res, next) {
+    const neighborhood = req.locals;
+    const propertyId = req.params.id;
+    const vendorId = req.user._id;
+    addNeighborhood({ ...neighborhood, propertyId, vendorId })
+      .then((property) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Neighborhood added', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  updateNeighborhood(req, res, next) {
+    const updatedNeighborhood = req.locals;
+    const propertyId = req.params.id;
+    const vendorId = req.user._id;
+    updateNeighborhood({ ...updatedNeighborhood, propertyId, vendorId })
+      .then((property) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Neighborhood updated', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  deleteNeighborhood(req, res, next) {
+    const neighborhood = req.locals;
+    const propertyId = req.params.id;
+    const vendorId = req.user._id;
+    deleteNeighborhood({ ...neighborhood, propertyId, vendorId })
+      .then((property) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Neighborhood deleted', property });
       })
       .catch((error) => next(error));
   },

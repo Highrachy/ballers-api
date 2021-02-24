@@ -1,8 +1,15 @@
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
-import { expect, request, sinon, useDatabase } from '../config';
+import querystring from 'querystring';
+import { expect, request, sinon } from '../config';
 import User from '../../server/models/user.model';
-import { addUser, banUser, generateLog } from '../../server/services/user.service';
+import {
+  addUser,
+  banUser,
+  generateLog,
+  generateToken,
+  getUserByEmail,
+} from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import UserFactory from '../factories/user.factory';
 import PropertyFactory from '../factories/property.factory';
@@ -23,6 +30,13 @@ import {
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
   itReturnsNotFoundForInvalidToken,
+  expectsPaginationToReturnTheRightValues,
+  futureDate,
+  currentDate,
+  defaultPaginationResult,
+  filterTestForSingleParameter,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
 } from '../helpers';
 import {
   USER_ROLE,
@@ -32,13 +46,17 @@ import {
 } from '../../server/helpers/constants';
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
-
-useDatabase();
+import { USER_FILTERS } from '../../server/helpers/filters';
 
 let adminToken;
 let userToken;
 const adminUser = UserFactory.build(
-  { role: USER_ROLE.ADMIN, activated: true },
+  {
+    role: USER_ROLE.ADMIN,
+    activated: true,
+    address: { country: 'Nigeria' },
+    createdAt: currentDate,
+  },
   { generateId: true },
 );
 const regularUser = UserFactory.build(
@@ -766,6 +784,7 @@ describe('User Controller', () => {
         firstName: 'John',
         lastName: 'Doe',
         phone: '08012345678',
+        profileImage: 'https://ballers.ng/image.png',
       };
 
       context('with valid token', () => {
@@ -842,6 +861,23 @@ describe('User Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"First Name" is not allowed to be empty');
+                done();
+              });
+          });
+        });
+
+        context('when profile image is empty', () => {
+          it('returns an error', (done) => {
+            const invalidUser = UserFactory.build({ profileImage: '' });
+            request()
+              .put('/api/v1/user/update')
+              .set('authorization', userToken)
+              .send(invalidUser)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql('"Profile Image" is not allowed to be empty');
                 done();
               });
           });
@@ -1429,6 +1465,8 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Vendor verified');
               expect(res.body.vendor.vendor.verified).to.be.eql(true);
               expect(res.body.vendor.vendor.verifiedBy).to.be.eql(adminUser._id.toString());
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.VERIFY_VENDOR);
               done();
             });
         });
@@ -1471,6 +1509,7 @@ describe('User Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('companyInfo has not been verified');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -1496,6 +1535,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(400);
               expect(res.body.success).to.be.eql(false);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
               User.findByIdAndUpdate.restore();
             });
@@ -1514,6 +1554,7 @@ describe('User Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"Vendor id" is not allowed to be empty');
+                expect(sendMailStub.callCount).to.eq(0);
                 done();
               });
           });
@@ -2205,6 +2246,7 @@ describe('User Controller', () => {
         expect(res.body.user.vendor.logs[0].taxCertificate).to.be.eql(logs[0].taxCertificate);
         expect(res.body.user.vendor.logs[0].companyName).to.be.eql(logs[0].companyName);
         expect(res.body.user.vendor.logs[0].identification).to.be.eql(logs[0].identification);
+        expect(res.body.user.vendor.logs[0]).to.have.property('updatedAt');
         expect(res.body.user.vendor.verified).to.be.eql(false);
       };
 
@@ -2763,6 +2805,8 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql('Vendor certified');
               expect(res.body.vendor.vendor.certified).to.be.eql(true);
               expect(res.body.vendor.vendor.certifiedBy).to.be.eql(adminUser._id.toString());
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.CERTIFY_VENDOR);
               done();
             });
         });
@@ -2796,6 +2840,7 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql(
                 'ABC Limited must be verified before approval as a certified vendor',
               );
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -2813,6 +2858,7 @@ describe('User Controller', () => {
               expect(res).to.have.status(404);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Vendor not found');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -2828,6 +2874,7 @@ describe('User Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('User is not a registered vendor');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -2853,6 +2900,7 @@ describe('User Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(400);
               expect(res.body.success).to.be.eql(false);
+              expect(sendMailStub.callCount).to.eq(0);
               done();
               User.findByIdAndUpdate.restore();
             });
@@ -2871,6 +2919,7 @@ describe('User Controller', () => {
                 expect(res.body.success).to.be.eql(false);
                 expect(res.body.message).to.be.eql('Validation Error');
                 expect(res.body.error).to.be.eql('"Vendor id" is not allowed to be empty');
+                expect(sendMailStub.callCount).to.eq(0);
                 done();
               });
           });
@@ -3080,15 +3129,90 @@ describe('User Controller', () => {
 
   describe('Get all users', () => {
     const endpoint = '/api/v1/user/all';
-    const dummyUsers = UserFactory.buildList(17);
-    const method = 'get';
-
-    beforeEach(async () => {
-      await User.insertMany(dummyUsers);
+    const dummyUsers = UserFactory.buildList(13, {
+      role: USER_ROLE.USER,
+      activated: true,
+      referralCode: 'ab1234',
+      address: { country: 'Nigeria' },
+      activationDate: currentDate,
+      createdAt: currentDate,
     });
+    const dummyEditors = UserFactory.buildList(2, {
+      role: USER_ROLE.EDITOR,
+      activated: true,
+      activationDate: currentDate,
+      createdAt: currentDate,
+    });
+    const dummyVendor = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: false,
+        activationDate: futureDate,
+        createdAt: futureDate,
+        firstName: 'vendor1',
+        lastName: 'doe',
+        email: 'dummyevendor@mail.com',
+        referralCode: 'ed1234',
+        phone: '08023054226',
+        phone2: '08132139448',
+        address: {
+          country: 'france',
+          city: 'marsielle',
+          state: 'Ghana',
+          street1: 'napoleon st',
+          street2: 'CDG street',
+        },
+        banned: {
+          status: true,
+        },
+        vendor: {
+          companyName: 'Dangote PLC',
+          verified: true,
+          certified: true,
+          certifiedOn: futureDate,
+          verifiedOn: futureDate,
+          entity: 'Coporation',
+          redanNumber: '0123456789',
+          verification: {
+            companyInfo: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+            bankDetails: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+            directorInfo: {
+              status: VENDOR_INFO_STATUS.IN_REVIEW,
+            },
+            documentUpload: {
+              status: VENDOR_INFO_STATUS.IN_REVIEW,
+            },
+          },
+        },
+      },
+      { generateId: true },
+    );
+    const dummyAdmin = UserFactory.build(
+      {
+        role: USER_ROLE.ADMIN,
+        activated: true,
+        address: { country: 'Nigeria' },
+        activationDate: currentDate,
+        createdAt: currentDate,
+      },
+      { generateId: true },
+    );
+    const method = 'get';
 
     describe('User pagination', () => {
-      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
+      beforeEach(async () => {
+        await User.insertMany([dummyAdmin, dummyVendor, ...dummyUsers, ...dummyEditors]);
+      });
+
+      itReturnsTheRightPaginationValue({
+        endpoint,
+        method,
+        user: adminUser,
+      });
       itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
       itReturnsForbiddenForNoToken({ endpoint, method });
       itReturnsAnErrorWhenServiceFails({
@@ -3105,36 +3229,569 @@ describe('User Controller', () => {
         userId: adminUser._id,
       });
     });
-  });
 
-  describe('Get all vendors', () => {
-    const endpoint = '/api/v1/user/vendor/all';
-    const method = 'get';
-    const dummyVendors = UserFactory.buildList(18, {
-      vendor: { companyName: 'Google', verified: false },
-      role: USER_ROLE.VENDOR,
-    });
-
-    beforeEach(async () => {
-      await User.insertMany(dummyVendors);
-    });
-
-    describe('Vendor pagination', () => {
-      itReturnsTheRightPaginationValue({ endpoint, method, user: adminUser });
-      itReturnsForbiddenForTokenWithInvalidAccess({ endpoint, method, user: regularUser });
-      itReturnsForbiddenForNoToken({ endpoint, method });
-      itReturnsAnErrorWhenServiceFails({
-        endpoint,
-        method,
-        user: adminUser,
-        model: User,
-        modelMethod: 'aggregate',
+    describe('User filters', () => {
+      beforeEach(async () => {
+        await User.insertMany([dummyAdmin, dummyVendor, ...dummyUsers, ...dummyEditors]);
+        const adminInfo = await getUserByEmail(dummyAdmin.email);
+        adminToken = generateToken(adminInfo._id);
       });
-      itReturnsNotFoundForInvalidToken({
-        endpoint,
+
+      beforeEach(async () => {
+        adminToken = await addUser(adminUser);
+      });
+
+      context('when single filter satisfies multiple users', () => {
+        [USER_ROLE.EDITOR, USER_ROLE.ADMIN].map((user) =>
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?role=${user}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0].role).to.be.eql(user);
+                done();
+              });
+          }),
+        );
+      });
+
+      context('when multiple filters are used', () => {
+        const dummyVendorDetails = {
+          firstName: dummyVendor.firstName,
+          role: dummyVendor.role,
+          activated: dummyVendor.activated,
+          verified: dummyVendor.vendor.verified,
+          companyName: dummyVendor.vendor.companyName,
+          country: dummyVendor.address.country,
+        };
+        const filteredParams = querystring.stringify(dummyVendorDetails);
+
+        it('returns matched user', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(dummyVendor._id.toString());
+              expect(res.body.result[0].firstName).to.be.eql(dummyVendorDetails.firstName);
+              expect(res.body.result[0].role).to.be.eql(dummyVendorDetails.role);
+              expect(res.body.result[0].activated).to.be.eql(dummyVendorDetails.activated);
+              expect(res.body.result[0].vendor.verified).to.be.eql(dummyVendorDetails.verified);
+              expect(res.body.result[0].vendor.companyName).to.be.eql(
+                dummyVendorDetails.companyName,
+              );
+              expect(res.body.result[0].address.country).to.be.eql(dummyVendorDetails.country);
+              done();
+            });
+        });
+      });
+
+      context('when multiple filters are used', () => {
+        const filterToReturnTwoResults = {
+          role: 2,
+          companyName: 'go',
+        };
+        const filteredParams = querystring.stringify(filterToReturnTwoResults);
+
+        it('returns matched users', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0].role).to.be.eql(filterToReturnTwoResults.role);
+              expect(res.body.result[0].vendor.companyName.toLowerCase()).to.have.string(
+                filterToReturnTwoResults.companyName,
+              );
+              done();
+            });
+        });
+      });
+
+      context('when unknown filter is used', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            result: 10,
+            total: 18,
+            totalPage: 2,
+          },
+          useExistingUser: true,
+        });
+      });
+
+      context('when no parameter is matched', () => {
+        const nonMatchingOfferFilters = {
+          role: 2,
+          verified: false,
+          firstName: 'John',
+          activated: true,
+          companyName: 'Highrachy',
+          country: 'Ghana',
+        };
+
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
+          filter: nonMatchingOfferFilters,
+          method,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
+        });
+      });
+
+      filterTestForSingleParameter({
+        filter: USER_FILTERS,
         method,
+        endpoint,
         user: adminUser,
-        userId: adminUser._id,
+        dataObject: dummyVendor,
+        useExistingUser: true,
+      });
+    });
+
+    describe('User Sorting', () => {
+      const user1 = UserFactory.build(
+        {
+          role: USER_ROLE.USER,
+          activated: true,
+          address: { country: 'Nigeria' },
+          activationDate: '2020-12-11',
+        },
+        { generateId: true },
+      );
+      const user2 = UserFactory.build(
+        {
+          role: USER_ROLE.ADMIN,
+          activated: false,
+          address: { country: 'France' },
+          activationDate: '1997-05-11',
+        },
+        { generateId: true },
+      );
+      const user3 = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          address: { country: 'China' },
+          activationDate: '2003-03-29',
+        },
+        { generateId: true },
+      );
+
+      beforeEach(async () => {
+        await addUser(user1);
+        adminToken = await addUser(user2);
+        await addUser(user3);
+      });
+
+      context('when an unknown filter is used', () => {
+        const sortQuery = {
+          sortBy: 'dob',
+        };
+        const filteredParams = querystring.stringify(sortQuery);
+        it('returns all users', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res.body.result[0]._id).to.be.eql(user1._id.toString());
+              expect(res.body.result[1]._id).to.be.eql(user2._id.toString());
+              expect(res.body.result[2]._id).to.be.eql(user3._id.toString());
+              done();
+            });
+        });
+      });
+
+      context('when sorted by role', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'role',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user3._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'role',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user2._id.toString());
+                done();
+              });
+          });
+        });
+      });
+
+      context('when sorted by activated', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'activated',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user3._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'activated',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user2._id.toString());
+                done();
+              });
+          });
+        });
+      });
+
+      context('when sorted by country', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'country',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user1._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'country',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user3._id.toString());
+                done();
+              });
+          });
+        });
+      });
+
+      context('when sorted by activationDate', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'activationDate',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user2._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user1._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'activationDate',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res.body.result[0]._id).to.be.eql(user1._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(user3._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(user2._id.toString());
+                done();
+              });
+          });
+        });
+      });
+    });
+
+    describe('Range Filter', () => {
+      const user1 = UserFactory.build(
+        {
+          role: USER_ROLE.ADMIN,
+          activationDate: '2021-11-03',
+        },
+        { generateId: true },
+      );
+      const user2 = UserFactory.build(
+        {
+          role: USER_ROLE.USER,
+          activationDate: '2001-11-11',
+        },
+        { generateId: true },
+      );
+      const user3 = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activationDate: '2011-01-03',
+        },
+        { generateId: true },
+      );
+      const user4 = UserFactory.build(
+        {
+          role: USER_ROLE.EDITOR,
+          activationDate: '1998-08-15',
+        },
+        { generateId: true },
+      );
+
+      beforeEach(async () => {
+        adminToken = await addUser(user1);
+        await addUser(user2);
+        await addUser(user3);
+        await addUser(user4);
+      });
+
+      context('when unknown parameter is used', () => {
+        const unknownFilter = {
+          dob: '1997-12-15:2001-10-29',
+        };
+        const filteredParams = querystring.stringify(unknownFilter);
+
+        it('returns all users', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 4,
+                total: 4,
+                totalPage: 1,
+              });
+              done();
+            });
+        });
+      });
+
+      describe('when parameter is a number', () => {
+        context('when the value is range', () => {
+          const queryFilter = {
+            role: '1:3',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('when the value is from', () => {
+          const queryFilter = {
+            role: '2:0',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('when the value is to', () => {
+          const queryFilter = {
+            role: '0:1',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+      });
+
+      describe('when parameter is a date', () => {
+        context('when the value is range', () => {
+          const queryFilter = {
+            activationDate: '1998-01-01:2011-12-31',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('when the value is from', () => {
+          const queryFilter = {
+            activationDate: '2011-01-01:0',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
+
+        context('when the value is to', () => {
+          const queryFilter = {
+            activationDate: '0:2021-12-03',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched users', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 4,
+                  total: 4,
+                  totalPage: 1,
+                });
+                done();
+              });
+          });
+        });
       });
     });
   });

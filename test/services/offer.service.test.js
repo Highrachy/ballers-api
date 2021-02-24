@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { expect, sinon, useDatabase } from '../config';
+import { expect, sinon } from '../config';
 import Offer from '../../server/models/offer.model';
 import Enquiry from '../../server/models/enquiry.model';
 import Property from '../../server/models/property.model';
@@ -14,6 +14,7 @@ import {
   getActiveOffers,
   cancelOffer,
   getPropertyInitials,
+  generatePaymentSchedules,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -24,8 +25,6 @@ import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
-
-useDatabase();
 
 describe('Offer Service', () => {
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
@@ -117,20 +116,6 @@ describe('Offer Service', () => {
         await createOffer(offer);
         const referenceCode = await generateReferenceCode(property._id);
         expect(referenceCode).to.eql(`HIG/LVE/OLM/02/${getTodaysDateShortCode()}`);
-      });
-    });
-
-    context('when date class fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Date, 'now').throws(new Error('Date Error'));
-        try {
-          await createOffer(offer);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        Date.now.restore();
       });
     });
   });
@@ -471,18 +456,18 @@ describe('Offer Service', () => {
     context('when all is valid', () => {
       it('returns a valid accepted offer', async () => {
         const acceptedOffer = await acceptOffer(toAcceptValid);
-        expect(acceptedOffer[0].status).to.eql('Interested');
-        expect(acceptedOffer[0].contributionReward).to.eql(2000000);
-        expect(acceptedOffer[0].signature).to.eql(toAcceptValid.signature);
+        expect(acceptedOffer.status).to.eql('Interested');
+        expect(acceptedOffer.contributionReward).to.eql(2000000);
+        expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
       });
     });
 
     context('when offer price is higher than property price', () => {
       it('returns a valid accepted offer', async () => {
         const acceptedOffer = await acceptOffer(toAcceptInvalid);
-        expect(acceptedOffer[0].status).to.eql('Interested');
-        expect(acceptedOffer[0].contributionReward).to.eql(0);
-        expect(acceptedOffer[0].signature).to.eql(toAcceptInvalid.signature);
+        expect(acceptedOffer.status).to.eql('Interested');
+        expect(acceptedOffer.contributionReward).to.eql(0);
+        expect(acceptedOffer.signature).to.eql(toAcceptInvalid.signature);
       });
     });
   });
@@ -631,6 +616,81 @@ describe('Offer Service', () => {
         const validOffers = await getActiveOffers(user._id);
         expect(validOffers).to.be.an('array');
         expect(validOffers.length).to.be.eql(3);
+      });
+    });
+  });
+
+  describe('#generatePaymentSchedules', () => {
+    context('when totalAmountPayable is greater than initial payment', () => {
+      const offer = OfferFactory.build(
+        {
+          totalAmountPayable: 100000,
+          initialPayment: 50000,
+          periodicPayment: 10000,
+          paymentFrequency: 30,
+          initialPaymentDate: new Date('2021-03-01'),
+        },
+        { generateId: true },
+      );
+      it('returns a valid accepted offer', async () => {
+        const paymentDates = generatePaymentSchedules(offer);
+        expect(paymentDates.length).to.eql(6);
+        expect(paymentDates[0].amount).to.eql(50000);
+        expect(paymentDates[1].amount).to.eql(10000);
+        expect(paymentDates[2].amount).to.eql(10000);
+        expect(paymentDates[3].amount).to.eql(10000);
+        expect(paymentDates[4].amount).to.eql(10000);
+        expect(paymentDates[5].amount).to.eql(10000);
+        expect(paymentDates[0].date).to.eql(new Date('2021-03-01'));
+        expect(paymentDates[1].date).to.eql(new Date('2021-03-31'));
+        expect(paymentDates[2].date).to.eql(new Date('2021-04-30'));
+        expect(paymentDates[3].date).to.eql(new Date('2021-05-30'));
+        expect(paymentDates[4].date).to.eql(new Date('2021-06-29'));
+        expect(paymentDates[5].date).to.eql(new Date('2021-07-29'));
+      });
+    });
+
+    context('when totalAmountPayable is equal to initial payment', () => {
+      const offer = OfferFactory.build(
+        {
+          totalAmountPayable: 100000,
+          initialPayment: 100000,
+          periodicPayment: 10000,
+          paymentFrequency: 30,
+          initialPaymentDate: new Date('2021-03-01'),
+        },
+        { generateId: true },
+      );
+      it('returns a valid accepted offer', async () => {
+        const paymentDates = generatePaymentSchedules(offer);
+        expect(paymentDates.length).to.eql(1);
+        expect(paymentDates[0].amount).to.eql(100000);
+        expect(paymentDates[0].date).to.eql(new Date('2021-03-01'));
+      });
+    });
+
+    context('when  totalAmountPayable is slightly bigger than initial payment', () => {
+      const offer = OfferFactory.build(
+        {
+          totalAmountPayable: 100000,
+          initialPayment: 75000,
+          periodicPayment: 10000,
+          paymentFrequency: 14,
+          initialPaymentDate: new Date('2021-03-01'),
+        },
+        { generateId: true },
+      );
+      it('returns a valid accepted offer', async () => {
+        const paymentDates = generatePaymentSchedules(offer);
+        expect(paymentDates.length).to.eql(4);
+        expect(paymentDates[0].amount).to.eql(75000);
+        expect(paymentDates[1].amount).to.eql(10000);
+        expect(paymentDates[2].amount).to.eql(10000);
+        expect(paymentDates[3].amount).to.eql(5000);
+        expect(paymentDates[0].date).to.eql(new Date('2021-03-01'));
+        expect(paymentDates[1].date).to.eql(new Date('2021-03-15'));
+        expect(paymentDates[2].date).to.eql(new Date('2021-03-29'));
+        expect(paymentDates[3].date).to.eql(new Date('2021-04-12'));
       });
     });
   });

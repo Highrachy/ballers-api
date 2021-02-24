@@ -62,3 +62,23 @@ export const COMMENT_STATUS = {
   RESOLVED: 'Resolved',
   PENDING: 'Pending',
 };
+
+export const VISITATION_STATUS = {
+  CANCELLED: 'Cancelled',
+  PENDING: 'Pending',
+  RESOLVED: 'Resolved',
+};
+
+export const PROCESS_VISITATION_ACTION = {
+  CANCEL: 0,
+  RESCHEDULE: 1,
+};
+
+export const NEIGHBORHOOD_STEPS = [
+  'entertainments',
+  'hospitals',
+  'pointsOfInterest',
+  'restaurantsAndBars',
+  'schools',
+  'shoppingMalls',
+];
