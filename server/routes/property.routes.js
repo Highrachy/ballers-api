@@ -14,6 +14,9 @@ import {
   updateNeighborhoodSchema,
   addNeighborhoodSchema,
   deleteNeighborhoodSchema,
+  addFloorplanSchema,
+  updateFloorplanSchema,
+  deleteFloorplanSchema,
 } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -373,6 +376,100 @@ router.delete(
   isVendor,
   schemaValidation(deleteNeighborhoodSchema),
   PropertyController.deleteNeighborhood,
+);
+
+/**
+ * @swagger
+ * /property/:id/floorplan:
+ *   post:
+ *     tags:
+ *       - Property
+ *     description: Adds to a property's floorplan
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Adds to a property's floorplan
+ *     responses:
+ *      '200':
+ *        description: Floorplan added
+ *      '404':
+ *        description: Property not found
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/:id/floorplan',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  schemaValidation(addFloorplanSchema),
+  PropertyController.addFloorPlan,
+);
+
+/**
+ * @swagger
+ * /property/:id/floorplan:
+ *   put:
+ *     tags:
+ *       - Property
+ *     description: Updates existing property floorplan
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Updates existing property floorplan
+ *     responses:
+ *      '200':
+ *        description: Floorplan updated
+ *      '400':
+ *        description: Error updating floorplan
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/:id/floorplan',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  schemaValidation(updateFloorplanSchema),
+  PropertyController.updateFloorPlan,
+);
+
+/**
+ * @swagger
+ * /property/:id/floorplan:
+ *   delete:
+ *     tags:
+ *       - Property
+ *     description: Deletes from a property's floorplan
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Deletes from a property's floorplan
+ *     responses:
+ *      '200':
+ *        description: Floorplan deleted
+ *      '500':
+ *       description: Internal server error
+ */
+router.delete(
+  '/:id/floorplan',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  schemaValidation(deleteFloorplanSchema),
+  PropertyController.deleteFloorPlan,
 );
 
 module.exports = router;

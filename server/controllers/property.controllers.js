@@ -12,6 +12,9 @@ import {
   addNeighborhood,
   updateNeighborhood,
   deleteNeighborhood,
+  addFloorPlan,
+  updateFloorPlan,
+  deleteFloorPlan,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -158,6 +161,39 @@ const PropertyController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Neighborhood deleted', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  addFloorPlan(req, res, next) {
+    const floorPlan = req.locals;
+    const propertyId = req.params.id;
+    const vendorId = req.user._id;
+    addFloorPlan({ ...floorPlan, propertyId, vendorId })
+      .then((property) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Floor Plan added', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  updateFloorPlan(req, res, next) {
+    const updatedFloorPlan = req.locals;
+    const propertyId = req.params.id;
+    const vendorId = req.user._id;
+    updateFloorPlan({ ...updatedFloorPlan, propertyId, vendorId })
+      .then((property) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Floor Plan updated', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  deleteFloorPlan(req, res, next) {
+    const floorPlan = req.locals;
+    const propertyId = req.params.id;
+    const vendorId = req.user._id;
+    deleteFloorPlan({ ...floorPlan, propertyId, vendorId })
+      .then((property) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Floor Plan deleted', property });
       })
       .catch((error) => next(error));
   },

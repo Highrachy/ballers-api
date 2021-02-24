@@ -18,15 +18,13 @@ const mapLocation = Joi.object().keys({
   latitude: nonRequiredNumber('Map location latitude'),
 });
 
-const floorPlans = Joi.array()
-  .label('Property floor plans')
-  .items(
-    Joi.object().keys({
-      name: optionalString('Floor Plan Name'),
-      plan: optionalString('Floor Plan URL'),
-    }),
-  );
-  
+const floorPlan = Joi.object().keys({
+  name: optionalString('Floor Plan Name'),
+  plan: optionalString('Floor Plan URL'),
+});
+
+const floorPlans = Joi.array().label('Property floor plans').items(floorPlan);
+
 const neighborhoodInfoDetails = Joi.object().keys({
   timeAwayFromProperty: optionalNumber('Time Away From Property'),
   name: optionalString('Name'),
@@ -110,4 +108,16 @@ export const updateNeighborhoodSchema = Joi.object({
 export const deleteNeighborhoodSchema = Joi.object({
   type: neighborhoodType,
   typeId: requiredObjectId('Neighborhood Type id'),
+});
+
+export const addFloorplanSchema = Joi.object({
+  floorPlan,
+});
+
+export const updateFloorplanSchema = Joi.object({
+  floorPlanId: requiredObjectId('Floor Plan id'),
+  floorPlan,
+});
+export const deleteFloorplanSchema = Joi.object({
+  floorPlanId: requiredObjectId('Floor Plan id'),
 });
