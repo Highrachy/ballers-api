@@ -446,14 +446,14 @@ describe('Property Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property neighborhood" must be an array');
+              expect(res.body.error).to.be.eql('"Property neighborhood" must be of type object');
               done();
             });
         });
       });
-      context('when neighborhood is an empty array', () => {
+      context('when neighborhood is an empty object', () => {
         it('returns successful property', (done) => {
-          const property = PropertyFactory.build({ neighborhood: [] });
+          const property = PropertyFactory.build({ neighborhood: {} });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
@@ -948,14 +948,14 @@ describe('Property Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property neighborhood" must be an array');
+              expect(res.body.error).to.be.eql('"Property neighborhood" must be of type object');
               done();
             });
         });
       });
-      context('when neighborhood is empty array', () => {
+      context('when neighborhood is empty object', () => {
         it('returns updated property', (done) => {
-          const invalidProperty = PropertyFactory.build({ id: property._id, neighborhood: [] });
+          const invalidProperty = PropertyFactory.build({ id: property._id, neighborhood: {} });
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
@@ -964,7 +964,14 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('property');
-              expect(res.body.property.neighborhood).to.be.eql(invalidProperty.neighborhood);
+              expect(res.body.property.neighborhood).to.be.eql({
+                entertainments: [],
+                hospitals: [],
+                restaurantsAndBars: [],
+                schools: [],
+                shoppingMalls: [],
+                pointsOfInterest: [],
+              });
               done();
             });
         });
@@ -1011,7 +1018,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body).to.have.property('property');
-              expect(res.body.property.neighborhood).to.be.eql(invalidProperty.neighborhood);
+              expect(res.body.property.gallery).to.be.eql(invalidProperty.gallery);
               done();
             });
         });
@@ -2314,6 +2321,478 @@ describe('Property Controller', () => {
             expect(res).to.have.status(500);
             done();
             Offer.aggregate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Add Neighborhood to property', () => {
+    const property = PropertyFactory.build(
+      {
+        neighborhood: {
+          schools: [
+            {
+              name: 'covenant university',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              name: 'babcock university',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
+        },
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/neighborhood`;
+    const method = 'post';
+
+    const data = {
+      type: 'schools',
+      neighborhood: {
+        name: 'bingham university',
+        timeAwayFromProperty: 5,
+        mapLocation: {
+          longitude: 123.22,
+          latitude: 123.11,
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Neighborhood added');
+            expect(res.body.property.neighborhood.schools.length).to.be.eql(3);
+            expect(res.body.property.neighborhood.schools[0].name).to.be.eql(
+              property.neighborhood.schools[0].name,
+            );
+            expect(res.body.property.neighborhood.schools[1].name).to.be.eql(
+              property.neighborhood.schools[1].name,
+            );
+            expect(res.body.property.neighborhood.schools[2].name).to.be.eql(
+              data.neighborhood.name,
+            );
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/neighborhood`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Update Neighborhood', () => {
+    const property = PropertyFactory.build(
+      {
+        neighborhood: {
+          schools: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'covenant university',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'babcock university',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'bingham university',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
+          hospitals: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Reddington Hospital',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Primrose General',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
+        },
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/neighborhood`;
+    const method = 'put';
+
+    const data = {
+      type: 'schools',
+      typeId: property.neighborhood.schools[0]._id,
+      neighborhood: {
+        name: 'unilorin',
+        timeAwayFromProperty: 15,
+        mapLocation: {
+          longitude: 105.22,
+          latitude: 105.11,
+        },
+      },
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Neighborhood updated');
+            expect(res.body.property.neighborhood.schools[0]._id).to.be.eql(data.typeId.toString());
+            expect(res.body.property.neighborhood.schools[0].name).to.be.eql(
+              data.neighborhood.name,
+            );
+            expect(res.body.property.neighborhood.schools[0].timeAwayFromProperty).to.be.eql(
+              data.neighborhood.timeAwayFromProperty,
+            );
+            expect(res.body.property.neighborhood.schools[0].mapLocation).to.be.eql(
+              data.neighborhood.mapLocation,
+            );
+            expect(res.body.property.neighborhood.schools[1].name).to.be.eql(
+              property.neighborhood.schools[1].name,
+            );
+            expect(res.body.property.neighborhood.schools[2].name).to.be.eql(
+              property.neighborhood.schools[2].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[0].name).to.be.eql(
+              property.neighborhood.hospitals[0].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[1].name).to.be.eql(
+              property.neighborhood.hospitals[1].name,
+            );
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/neighborhood`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findOneAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findOneAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Delete Neighborhood', () => {
+    const property = PropertyFactory.build(
+      {
+        neighborhood: {
+          hospitals: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Reddington Hospital',
+              timeAwayFromProperty: 5,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              name: 'Primrose General',
+              timeAwayFromProperty: 15,
+              mapLocation: {
+                longitude: 123.22,
+                latitude: 123.11,
+              },
+            },
+          ],
+        },
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/neighborhood`;
+    const method = 'delete';
+
+    const data = {
+      type: 'hospitals',
+      typeId: property.neighborhood.hospitals[1]._id,
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Neighborhood deleted');
+            expect(res.body.property.neighborhood.hospitals.length).to.be.eql(1);
+            expect(res.body.property.neighborhood.hospitals[0]._id).to.be.eql(
+              property.neighborhood.hospitals[0]._id.toString(),
+            );
+            expect(res.body.property.neighborhood.hospitals[0].name).to.be.eql(
+              property.neighborhood.hospitals[0].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[0].timeAwayFromProperty).to.be.eql(
+              property.neighborhood.hospitals[0].timeAwayFromProperty,
+            );
+            expect(res.body.property.neighborhood.hospitals[0].mapLocation).to.be.eql(
+              property.neighborhood.hospitals[0].mapLocation,
+            );
+
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/neighborhood`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findByIdAndUpdate.restore();
           });
       });
     });

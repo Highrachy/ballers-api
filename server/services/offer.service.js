@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { add } from 'date-fns';
 import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
@@ -14,6 +15,7 @@ import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates'
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
+import { addNextPayment } from './nextpayment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -270,6 +272,34 @@ export const getOffer = async (offerId, user) => {
   return offer;
 };
 
+export const generatePaymentSchedules = (offer) => {
+  const {
+    totalAmountPayable,
+    initialPayment,
+    periodicPayment,
+    paymentFrequency,
+    initialPaymentDate,
+  } = offer;
+  const paymentDates = [{ date: initialPaymentDate, amount: initialPayment }];
+
+  const numberOfPaymentsToBeMade = (totalAmountPayable - initialPayment) / periodicPayment;
+
+  const fractionPayment = (totalAmountPayable - initialPayment) % periodicPayment;
+
+  for (let i = 1; i <= numberOfPaymentsToBeMade; i += 1) {
+    const paymentDate = add(initialPaymentDate, { days: paymentFrequency * i });
+    paymentDates.push({ date: paymentDate, amount: periodicPayment });
+  }
+
+  if (fractionPayment > 0) {
+    const paymentDate = add(paymentDates[paymentDates.length - 1].date, {
+      days: paymentFrequency,
+    });
+    paymentDates.push({ date: paymentDate, amount: fractionPayment });
+  }
+  return paymentDates;
+};
+
 export const createOffer = async (offer) => {
   const enquiry = await getEnquiryById(offer.enquiryId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -291,6 +321,7 @@ export const createOffer = async (offer) => {
   });
 
   const referenceCode = await generateReferenceCode(enquiry.propertyId);
+
   const user = await getUserById(enquiry.userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -333,10 +364,21 @@ export const acceptOffer = async (offerToAccept) => {
   const offerPrice = offer[0].totalAmountPayable;
   const contributionReward = propertyPrice - offerPrice < 0 ? 0 : propertyPrice - offerPrice;
 
-  const expiryDate = new Date(offer.expires);
+  const expiryDate = new Date(offer[0].expires);
   if (Date.now() > expiryDate) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
   }
+
+  const paymentSchedule = generatePaymentSchedules(offer[0]);
+
+  const nextPayment = {
+    expectedAmount: paymentSchedule[0].amount,
+    expiresOn: paymentSchedule[0].date,
+    offerId: offer[0]._id,
+    propertyId: offer[0].propertyId,
+    userId: offer[0].userId,
+    vendorId: offer[0].vendorId,
+  };
 
   const vendor = await getUserById(offer[0].vendorId);
 
@@ -346,6 +388,7 @@ export const acceptOffer = async (offerToAccept) => {
       userId: offer[0].userId,
       vendor,
     });
+    await addNextPayment(nextPayment);
     await Offer.findByIdAndUpdate(
       offer[0]._id,
       {
@@ -358,7 +401,8 @@ export const acceptOffer = async (offerToAccept) => {
       },
       { new: true },
     );
-    return await getOffer(offerToAccept.offerId, offerToAccept.user);
+    const acceptedoffer = await getOffer(offerToAccept.offerId, offerToAccept.user);
+    return { ...acceptedoffer[0], paymentSchedule };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error accepting offer', error);
   }
