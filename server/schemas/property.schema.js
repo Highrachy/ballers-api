@@ -110,14 +110,14 @@ export const deleteNeighborhoodSchema = Joi.object({
   typeId: requiredObjectId('Neighborhood Type id'),
 });
 
-export const addFloorplanSchema = Joi.object({
-  floorPlan,
-});
+export const addFloorplanSchema = floorPlan;
 
 export const updateFloorplanSchema = Joi.object({
   floorPlanId: requiredObjectId('Floor Plan id'),
-  floorPlan,
+  name: optionalString('Floor Plan Name'),
+  plan: optionalString('Floor Plan URL'),
 });
+
 export const deleteFloorplanSchema = Joi.object({
   floorPlanId: requiredObjectId('Floor Plan id'),
 });

@@ -2816,10 +2816,8 @@ describe('Property Controller', () => {
     const method = 'post';
 
     const data = {
-      floorPlan: {
-        name: 'second floor',
-        plan: 'https://ballers.ng/secondfloor.png',
-      },
+      name: 'second floor',
+      plan: 'https://ballers.ng/secondfloor.png',
     };
 
     beforeEach(async () => {
@@ -2839,8 +2837,8 @@ describe('Property Controller', () => {
             expect(res.body.property.floorPlans.length).to.be.eql(2);
             expect(res.body.property.floorPlans[0].plan).to.be.eql(property.floorPlans[0].plan);
             expect(res.body.property.floorPlans[0].name).to.be.eql(property.floorPlans[0].name);
-            expect(res.body.property.floorPlans[1].plan).to.be.eql(data.floorPlan.plan);
-            expect(res.body.property.floorPlans[1].name).to.be.eql(data.floorPlan.name);
+            expect(res.body.property.floorPlans[1].plan).to.be.eql(data.plan);
+            expect(res.body.property.floorPlans[1].name).to.be.eql(data.name);
             done();
           });
       });
@@ -2941,10 +2939,8 @@ describe('Property Controller', () => {
     const method = 'put';
 
     const data = {
-      floorPlan: {
-        name: 'bottom floor',
-        plan: 'https://ballers.ng/bottomfloor.png',
-      },
+      name: 'bottom floor',
+      plan: 'https://ballers.ng/bottomfloor.png',
       floorPlanId: property.floorPlans[1]._id,
     };
 
@@ -2964,8 +2960,9 @@ describe('Property Controller', () => {
             expect(res.body.message).to.be.eql('Floor Plan updated');
             expect(res.body.property.floorPlans[0].plan).to.be.eql(property.floorPlans[0].plan);
             expect(res.body.property.floorPlans[0].name).to.be.eql(property.floorPlans[0].name);
-            expect(res.body.property.floorPlans[1].plan).to.be.eql(data.floorPlan.plan);
-            expect(res.body.property.floorPlans[1].name).to.be.eql(data.floorPlan.name);
+            expect(res.body.property.floorPlans[1]._id).to.be.eql(data.floorPlanId.toString());
+            expect(res.body.property.floorPlans[1].plan).to.be.eql(data.plan);
+            expect(res.body.property.floorPlans[1].name).to.be.eql(data.name);
             done();
           });
       });

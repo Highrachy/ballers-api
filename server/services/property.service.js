@@ -465,7 +465,7 @@ export const addFloorPlan = async (floorPlanDetails) => {
   try {
     return Property.findByIdAndUpdate(
       property._id,
-      { $push: { floorPlans: floorPlanDetails.floorPlan } },
+      { $push: { floorPlans: { name: floorPlanDetails.name, plan: floorPlanDetails.plan } } },
       { new: true },
     );
   } catch (error) {
@@ -491,8 +491,8 @@ export const updateFloorPlan = async (updatedFloorPlan) => {
       { 'floorPlans._id': updatedFloorPlan.floorPlanId },
       {
         $set: {
-          'floorPlans.$.name': updatedFloorPlan.floorPlan.name,
-          'floorPlans.$.plan': updatedFloorPlan.floorPlan.plan,
+          'floorPlans.$.name': updatedFloorPlan.name,
+          'floorPlans.$.plan': updatedFloorPlan.plan,
         },
       },
       { new: true },
