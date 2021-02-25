@@ -18,6 +18,13 @@ const mapLocation = Joi.object().keys({
   latitude: nonRequiredNumber('Map location latitude'),
 });
 
+const floorPlan = Joi.object().keys({
+  name: optionalString('Floor Plan Name'),
+  plan: optionalString('Floor Plan URL'),
+});
+
+const floorPlans = Joi.array().label('Property floor plans').items(floorPlan);
+
 const neighborhoodInfoDetails = Joi.object().keys({
   timeAwayFromProperty: optionalNumber('Time Away From Property'),
   name: optionalString('Name'),
@@ -51,7 +58,7 @@ export const addPropertySchema = Joi.object({
   toilets: requiredNumber('Toilet number'),
   bathrooms: requiredNumber('Bathroom number'),
   description: requiredString('Property description'),
-  floorPlans: nonRequiredString('Property floor plans'),
+  floorPlans,
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
@@ -71,7 +78,7 @@ export const updatePropertySchema = Joi.object({
   toilets: optionalNumber('Toilet number'),
   bathrooms: optionalNumber('Bathroom number'),
   description: optionalString('Property description'),
-  floorPlans: nonRequiredString('Property floor plans'),
+  floorPlans,
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
@@ -101,4 +108,16 @@ export const updateNeighborhoodSchema = Joi.object({
 export const deleteNeighborhoodSchema = Joi.object({
   type: neighborhoodType,
   typeId: requiredObjectId('Neighborhood Type id'),
+});
+
+export const addFloorplanSchema = floorPlan;
+
+export const updateFloorplanSchema = Joi.object({
+  floorPlanId: requiredObjectId('Floor Plan id'),
+  name: optionalString('Floor Plan Name'),
+  plan: optionalString('Floor Plan URL'),
+});
+
+export const deleteFloorplanSchema = Joi.object({
+  floorPlanId: requiredObjectId('Floor Plan id'),
 });

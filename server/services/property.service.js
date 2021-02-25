@@ -448,3 +448,80 @@ export const deleteNeighborhood = async (neighborhoodInfo) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting neighborhood', error);
   }
 };
+
+export const addFloorPlan = async (floorPlanDetails) => {
+  const property = await getPropertyById(floorPlanDetails.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (floorPlanDetails.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    return Property.findByIdAndUpdate(
+      property._id,
+      { $push: { floorPlans: { name: floorPlanDetails.name, plan: floorPlanDetails.plan } } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error addding floor plan', error);
+  }
+};
+
+export const updateFloorPlan = async (updatedFloorPlan) => {
+  const property = await getPropertyById(updatedFloorPlan.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (updatedFloorPlan.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    return Property.findOneAndUpdate(
+      { 'floorPlans._id': updatedFloorPlan.floorPlanId },
+      {
+        $set: {
+          'floorPlans.$.name': updatedFloorPlan.name,
+          'floorPlans.$.plan': updatedFloorPlan.plan,
+        },
+      },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating floor plan', error);
+  }
+};
+
+export const deleteFloorPlan = async (floorPlanDetails) => {
+  const property = await getPropertyById(floorPlanDetails.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (floorPlanDetails.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    return Property.findByIdAndUpdate(
+      property._id,
+      { $pull: { floorPlans: { _id: floorPlanDetails.floorPlanId } } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting floor plan', error);
+  }
+};

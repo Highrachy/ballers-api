@@ -420,17 +420,17 @@ describe('Property Controller', () => {
         });
       });
       context('when floorPlans is empty', () => {
-        it('returns added property', (done) => {
+        it('returns an error', (done) => {
           const property = PropertyFactory.build({ floorPlans: '' });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
             .send(property)
             .end((err, res) => {
-              expect(res).to.have.status(201);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('Property added');
-              expect(res.body).to.have.property('property');
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Property floor plans" must be an array');
               done();
             });
         });
@@ -562,6 +562,12 @@ describe('Property Controller', () => {
       id: property._id,
       price: 30200000,
       units: 87,
+      floorPlans: [
+        {
+          name: 'ground floor',
+          plan: 'http://linktoplan.ng',
+        },
+      ],
     };
 
     beforeEach(async () => {
@@ -589,6 +595,8 @@ describe('Property Controller', () => {
             expect(res.body).to.have.property('property');
             expect(res.body.property.price).to.be.eql(newProperty.price);
             expect(res.body.property.units).to.be.eql(newProperty.units);
+            expect(res.body.property.floorPlans[0].name).to.be.eql(newProperty.floorPlans[0].name);
+            expect(res.body.property.floorPlans[0].plan).to.be.eql(newProperty.floorPlans[0].plan);
             done();
           });
       });
@@ -914,16 +922,17 @@ describe('Property Controller', () => {
         });
       });
       context('when floorPlans is empty', () => {
-        it('returns updated property', (done) => {
+        it('returns an error', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, floorPlans: '' });
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
             .send(invalidProperty)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('property');
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Property floor plans" must be an array');
               done();
             });
         });
@@ -2723,6 +2732,367 @@ describe('Property Controller', () => {
       it('returns successful payload', (done) => {
         request()
           [method](`/api/v1/property/${invalidPropertyId}/neighborhood`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Add Floor plan to property', () => {
+    const property = PropertyFactory.build(
+      {
+        floorPlans: [
+          {
+            name: 'first floor',
+            plan: 'https://ballers.ng/firstfloor.png',
+          },
+        ],
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/floorplan`;
+    const method = 'post';
+
+    const data = {
+      name: 'second floor',
+      plan: 'https://ballers.ng/secondfloor.png',
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Floor Plan added');
+            expect(res.body.property.floorPlans.length).to.be.eql(2);
+            expect(res.body.property.floorPlans[0].plan).to.be.eql(property.floorPlans[0].plan);
+            expect(res.body.property.floorPlans[0].name).to.be.eql(property.floorPlans[0].name);
+            expect(res.body.property.floorPlans[1].plan).to.be.eql(data.plan);
+            expect(res.body.property.floorPlans[1].name).to.be.eql(data.name);
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/floorplan`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Update Floor plan', () => {
+    const property = PropertyFactory.build(
+      {
+        floorPlans: [
+          {
+            _id: mongoose.Types.ObjectId(),
+            name: 'ground floor',
+            plan: 'https://ballers.ng/groundfloor.png',
+          },
+          {
+            _id: mongoose.Types.ObjectId(),
+            name: 'second floor',
+            plan: 'https://ballers.ng/secondfloor.png',
+          },
+        ],
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/floorplan`;
+    const method = 'put';
+
+    const data = {
+      name: 'bottom floor',
+      plan: 'https://ballers.ng/bottomfloor.png',
+      floorPlanId: property.floorPlans[1]._id,
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Floor Plan updated');
+            expect(res.body.property.floorPlans[0].plan).to.be.eql(property.floorPlans[0].plan);
+            expect(res.body.property.floorPlans[0].name).to.be.eql(property.floorPlans[0].name);
+            expect(res.body.property.floorPlans[1]._id).to.be.eql(data.floorPlanId.toString());
+            expect(res.body.property.floorPlans[1].plan).to.be.eql(data.plan);
+            expect(res.body.property.floorPlans[1].name).to.be.eql(data.name);
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/floorplan`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findOneAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findOneAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Delete Floor plan', () => {
+    const property = PropertyFactory.build(
+      {
+        floorPlans: [
+          {
+            _id: mongoose.Types.ObjectId(),
+            name: 'ground floor',
+            plan: 'https://ballers.ng/groundfloor.png',
+          },
+          {
+            _id: mongoose.Types.ObjectId(),
+            name: 'second floor',
+            plan: 'https://ballers.ng/secondfloor.png',
+          },
+        ],
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/floorplan`;
+    const method = 'delete';
+
+    const data = {
+      floorPlanId: property.floorPlans[0]._id,
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Floor Plan deleted');
+            expect(res.body.property.neighborhood.hospitals.length).to.be.eql(1);
+            expect(res.body.property.floorPlans[0].plan).to.be.eql(property.floorPlans[1].plan);
+            expect(res.body.property.floorPlans[0].name).to.be.eql(property.floorPlans[1].name);
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/floorplan`)
           .set('authorization', vendorToken)
           .send(data)
           .end((err, res) => {

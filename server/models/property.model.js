@@ -46,7 +46,7 @@ import { addressSchema } from '../helpers/constants';
  *          description:
  *            type: string
  *          floorPlans:
- *            type: string
+ *            type: array
  *          mapLocation:
  *            type: object
  *          neighborhood:
@@ -66,7 +66,7 @@ import { addressSchema } from '../helpers/constants';
  *           bathrooms: 3
  *           toilets: 4
  *           description: Newly built 3 bedroom semi-detached duplex
- *           floorPlans: http://linktoplan.ng
+ *           floorPlans: ['http://linktoplan.ng/plan1.png','http://linktoplan.ng/plan2.png' ]
  *           mapLocation: {longitude: 1.23456, latitude: 2.34567}
  *           neighborhood: {schools: [{name: British International,distance: 1500m, mapLocation: {longitude: 1.23456, latitude: 2.34567}}]}
  *           mainImage: https://picsum.photos/200
@@ -132,9 +132,16 @@ const PropertySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    floorPlans: {
-      type: String,
-    },
+    floorPlans: [
+      {
+        name: {
+          type: String,
+        },
+        plan: {
+          type: String,
+        },
+      },
+    ],
     mapLocation: {
       longitude: {
         type: Number,
