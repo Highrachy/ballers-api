@@ -5,7 +5,6 @@ import {
   getAllTransactions,
   updateTransaction,
   getUserTransactionsByProperty,
-  getTransactionsByUser,
 } from '../../server/services/transaction.service';
 import TransactionFactory from '../factories/transaction.factory';
 import Transaction from '../../server/models/transaction.model';
@@ -37,7 +36,8 @@ describe('Transaction Service', () => {
   );
   const transaction = TransactionFactory.build(
     {
-      vendorId: vendor._id,
+      addedBy: admin._id,
+      updatedBy: admin._id,
       offerId: offer._id,
       propertyId: property._id,
       userId: user._id,
@@ -87,7 +87,8 @@ describe('Transaction Service', () => {
       it('throws an error', async () => {
         try {
           const InvalidTransaction = TransactionFactory.build({
-            vendorId: vendor._id,
+            addedBy: admin._id,
+            updatedBy: admin._id,
             offerId: offer._id,
             userId: user._id,
             propertyId: '',
@@ -109,10 +110,13 @@ describe('Transaction Service', () => {
       propertyId: property._id,
       userId: user._id,
       vendorId: vendor._id,
+      addedBy: admin._id,
+      updatedBy: admin._id,
       offerId: offer._id,
     });
     const transactionToAdd = TransactionFactory.build({
-      vendorId: vendor._id,
+      addedBy: admin._id,
+      updatedBy: admin._id,
       offerId: offer._id,
       propertyId: property._id,
       userId: user._id,
@@ -151,7 +155,7 @@ describe('Transaction Service', () => {
     const updatedDetails = {
       transactionId: transaction._id,
       paidOn: Date.now(),
-      vendorId: vendor._id,
+      updatedBy: admin._id,
     };
 
     beforeEach(async () => {
@@ -205,20 +209,6 @@ describe('Transaction Service', () => {
       it('returns a valid updated transaction', async () => {
         const searchResult = await getUserTransactionsByProperty(property._id, admin);
         expect(searchResult[0].propertyInfo._id).to.eql(property._id);
-      });
-    });
-  });
-
-  describe('#getTransactionsByUser', () => {
-    beforeEach(async () => {
-      await addTransaction(transaction);
-    });
-
-    context('when transaction is updated', () => {
-      it('returns a valid updated transaction', async () => {
-        const searchResult = await getTransactionsByUser(user._id);
-        expect(searchResult[0].propertyInfo._id).to.eql(property._id);
-        expect(searchResult[0].userId).to.eql(user._id);
       });
     });
   });

@@ -3,7 +3,9 @@ import {
   authenticate,
   schemaValidation,
   isVendorOrAdmin,
-  isVendor,
+  isAdminOrUserOrVendor,
+  isAdmin,
+  isUser,
   hasValidObjectId,
 } from '../helpers/middleware';
 import { addTransactionSchema, updateTransactionSchema } from '../schemas/transaction.schema';
@@ -37,7 +39,7 @@ const router = express.Router();
 router.post(
   '/add',
   authenticate,
-  isVendor,
+  isAdmin,
   schemaValidation(addTransactionSchema),
   TransactionController.add,
 );
@@ -63,7 +65,7 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isVendorOrAdmin, TransactionController.getAll);
+router.get('/all', authenticate, isAdminOrUserOrVendor, TransactionController.getAll);
 
 /**
  * @swagger
@@ -89,33 +91,10 @@ router.get('/all', authenticate, isVendorOrAdmin, TransactionController.getAll);
 router.put(
   '/update',
   authenticate,
-  isVendor,
+  isAdmin,
   schemaValidation(updateTransactionSchema),
   TransactionController.update,
 );
-
-/**
- * @swagger
- * /transaction/user:
- *   get:
- *     tags:
- *       - Transaction
- *     description: Get all transactions made by a user
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/Transaction'
- *      description: Get all transactions made by a user
- *     responses:
- *      '200':
- *        description: returns object of transactions
- *      '500':
- *       description: Internal server error
- */
-router.get('/user', authenticate, TransactionController.getAllPersonal);
 
 /**
  * @swagger
@@ -146,7 +125,7 @@ router.get(
 
 /**
  * @swagger
- * /transaction/user/referral-rewards:
+ * /transaction/referral-rewards:
  *   get:
  *     tags:
  *       - Transaction
@@ -165,11 +144,11 @@ router.get(
  *      '500':
  *       description: Internal server error
  */
-router.get('/user/referral-rewards', authenticate, TransactionController.getReferralRewards);
+router.get('/referral-rewards', authenticate, isUser, TransactionController.getReferralRewards);
 
 /**
  * @swagger
- * /transaction/user/contribution-rewards:
+ * /transaction/contribution-rewards:
  *   get:
  *     tags:
  *       - Transaction
@@ -189,8 +168,9 @@ router.get('/user/referral-rewards', authenticate, TransactionController.getRefe
  *       description: Internal server error
  */
 router.get(
-  '/user/contribution-rewards',
+  '/contribution-rewards',
   authenticate,
+  isUser,
   TransactionController.getContributionRewards,
 );
 

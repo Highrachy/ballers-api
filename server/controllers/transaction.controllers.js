@@ -3,7 +3,6 @@ import {
   getAllTransactions,
   updateTransaction,
   getUserTransactionsByProperty,
-  getTransactionsByUser,
   getReferralRewards,
   getContributionRewards,
 } from '../services/transaction.service';
@@ -13,7 +12,7 @@ const TransactionController = {
   add(req, res, next) {
     const newTransaction = req.locals;
     const { user } = req;
-    addTransaction({ ...newTransaction, vendorId: user._id })
+    addTransaction({ ...newTransaction, addedBy: user._id, updatedBy: user._id })
       .then((transaction) => {
         res
           .status(httpStatus.CREATED)
@@ -39,20 +38,11 @@ const TransactionController = {
   update(req, res, next) {
     const updatedInfo = req.locals;
     const { user } = req;
-    updateTransaction({ ...updatedInfo, vendorId: user._id })
+    updateTransaction({ ...updatedInfo, updatedBy: user._id })
       .then((transaction) => {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Payment date updated', transaction });
-      })
-      .catch((error) => next(error));
-  },
-
-  getAllPersonal(req, res, next) {
-    const id = req.user._id;
-    getTransactionsByUser(id)
-      .then((transactions) => {
-        res.status(httpStatus.OK).json({ success: true, transactions });
       })
       .catch((error) => next(error));
   },

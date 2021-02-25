@@ -25,10 +25,6 @@ export const addTransaction = async (transaction) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offer');
   }
 
-  if (offer.vendorId.toString() !== transaction.vendorId.toString()) {
-    throw new ErrorHandler(httpStatus.UNAUTHORIZED, 'You are not permitted to perform this action');
-  }
-
   if (offer.propertyId.toString() !== transaction.propertyId.toString()) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Property not for offer');
   }
@@ -38,23 +34,31 @@ export const addTransaction = async (transaction) => {
   }
 
   try {
-    const newTransaction = await new Transaction(transaction).save();
+    const newTransaction = await new Transaction({
+      ...transaction,
+      vendorId: offer.vendorId,
+    }).save();
     return newTransaction;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding transaction', error);
   }
 };
 
-export const updateTransaction = async ({ transactionId, paidOn, vendorId }) => {
+export const updateTransaction = async ({ transactionId, paidOn, updatedBy }) => {
   const transaction = await getTransactionById(transactionId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (transaction.vendorId.toString() !== vendorId.toString()) {
-    throw new ErrorHandler(httpStatus.UNAUTHORIZED, 'You are not permitted to perform this action');
+  if (!transaction) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid transaction');
   }
+
   try {
-    return Transaction.findByIdAndUpdate(transaction.id, { $set: { paidOn } }, { new: true });
+    return Transaction.findByIdAndUpdate(
+      transaction.id,
+      { $set: { paidOn, updatedBy } },
+      { new: true },
+    );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating transaction', error);
   }
@@ -116,6 +120,10 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
     transactionOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
   }
 
+  if (user.role === USER_ROLE.USER) {
+    transactionOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+  }
+
   const transactions = await Transaction.aggregate(transactionOptions);
 
   const total = getPaginationTotal(transactions);
@@ -123,27 +131,6 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
   const result = transactions[0].data;
   return { pagination, result };
 };
-
-export const getTransactionsByUser = async (userId) =>
-  Transaction.aggregate([
-    { $match: { userId: ObjectId(userId) } },
-    {
-      $lookup: {
-        from: 'properties',
-        localField: 'propertyId',
-        foreignField: '_id',
-        as: 'propertyInfo',
-      },
-    },
-    {
-      $unwind: '$propertyInfo',
-    },
-    {
-      $project: {
-        'propertyInfo.assignedTo': 0,
-      },
-    },
-  ]);
 
 export const getUserTransactionsByProperty = async (propertyId, user) => {
   const transactionOptions = [
