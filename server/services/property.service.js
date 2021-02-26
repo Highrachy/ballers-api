@@ -525,3 +525,98 @@ export const deleteFloorPlan = async (floorPlanDetails) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting floor plan', error);
   }
 };
+
+export const addGallery = async (imageDetails) => {
+  const property = await getPropertyById(imageDetails.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (imageDetails.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  let { gallery } = property;
+
+  gallery = gallery.filter((image) => image.title === imageDetails.title);
+
+  if (gallery.length > 0) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Image with title already exists');
+  }
+
+  try {
+    return Property.findByIdAndUpdate(
+      property._id,
+      { $push: { gallery: { title: imageDetails.title, url: imageDetails.url } } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error addding image', error);
+  }
+};
+
+export const updateGallery = async (updatedImage) => {
+  const property = await getPropertyById(updatedImage.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (updatedImage.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  const gallery = property.gallery.filter(
+    (image) =>
+      image.title === updatedImage.title &&
+      image._id.toString() !== updatedImage.imageId.toString(),
+  );
+
+  if (gallery.length > 0) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Image with title already exists');
+  }
+
+  try {
+    return Property.findOneAndUpdate(
+      { 'gallery._id': updatedImage.imageId },
+      {
+        $set: {
+          'gallery.$.title': updatedImage.title,
+          'gallery.$.url': updatedImage.url,
+        },
+      },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating image', error);
+  }
+};
+
+export const deleteGallery = async (imageDetails) => {
+  const property = await getPropertyById(imageDetails.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (imageDetails.vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  try {
+    return Property.findByIdAndUpdate(
+      property._id,
+      { $pull: { gallery: { _id: imageDetails.imageId } } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting image', error);
+  }
+};

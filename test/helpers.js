@@ -391,7 +391,6 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.name).to.be.eql(property.name);
   expect(response.address).to.be.eql(property.address);
   expect(response.mainImage).to.be.eql(property.mainImage);
-  expect(response.gallery).to.be.eql(property.gallery);
   expect(response.price).to.be.eql(property.price);
   expect(response.houseType).to.be.eql(property.houseType);
   expect(response.description).to.be.eql(property.description);
@@ -400,6 +399,8 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.bathrooms).to.be.eql(property.bathrooms);
   expect(response.toilets).to.be.eql(property.toilets);
   expect(response.titleDocument).to.be.eql(property.titleDocument);
+  expect(response.gallery[0].title).to.be.eql(property.gallery[0].title);
+  expect(response.gallery[0].url).to.be.eql(property.gallery[0].url);
   expect(response.neighborhood.entertainments[0].name).to.be.eql(
     property.neighborhood.entertainments[0].name,
   );

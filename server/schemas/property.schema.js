@@ -19,11 +19,18 @@ const mapLocation = Joi.object().keys({
 });
 
 const floorPlan = Joi.object().keys({
-  name: optionalString('Floor Plan Name'),
-  plan: optionalString('Floor Plan URL'),
+  name: requiredString('Floor Plan Name'),
+  plan: requiredString('Floor Plan URL'),
 });
 
 const floorPlans = Joi.array().label('Property floor plans').items(floorPlan);
+
+const image = Joi.object().keys({
+  title: requiredString('Image Name'),
+  url: requiredString('Image URL'),
+});
+
+const gallery = Joi.array().label('Property gallery').items(image);
 
 const neighborhoodInfoDetails = Joi.object().keys({
   timeAwayFromProperty: optionalNumber('Time Away From Property'),
@@ -62,7 +69,7 @@ export const addPropertySchema = Joi.object({
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
-  gallery: optionalArray('Property gallery'),
+  gallery,
   paymentPlan: optionalArray('Payment plan'),
 });
 
@@ -82,7 +89,7 @@ export const updatePropertySchema = Joi.object({
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
-  gallery: optionalArray('Property gallery'),
+  gallery,
   paymentPlan: optionalArray('Payment plan'),
 });
 
@@ -114,10 +121,22 @@ export const addFloorplanSchema = floorPlan;
 
 export const updateFloorplanSchema = Joi.object({
   floorPlanId: requiredObjectId('Floor Plan id'),
-  name: optionalString('Floor Plan Name'),
-  plan: optionalString('Floor Plan URL'),
+  name: requiredString('Floor Plan Name'),
+  plan: requiredString('Floor Plan URL'),
 });
 
 export const deleteFloorplanSchema = Joi.object({
   floorPlanId: requiredObjectId('Floor Plan id'),
+});
+
+export const addImageSchema = image;
+
+export const updateGallerySchema = Joi.object({
+  imageId: requiredObjectId('Image id'),
+  title: requiredString('Image Name'),
+  url: requiredString('Image URL'),
+});
+
+export const deleteImageSchema = Joi.object({
+  imageId: requiredObjectId('Image id'),
 });

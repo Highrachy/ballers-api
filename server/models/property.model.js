@@ -70,7 +70,7 @@ import { addressSchema } from '../helpers/constants';
  *           mapLocation: {longitude: 1.23456, latitude: 2.34567}
  *           neighborhood: {schools: [{name: British International,distance: 1500m, mapLocation: {longitude: 1.23456, latitude: 2.34567}}]}
  *           mainImage: https://picsum.photos/200
- *           gallery: ['https://picsum.photos/200', 'https://picsum.photos/200', 'https://picsum.photos/200']
+ *           gallery: [{title: main image, url: 'https://picsum.photos/200'}]
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -161,9 +161,16 @@ const PropertySchema = new mongoose.Schema(
     mainImage: {
       type: String,
     },
-    gallery: {
-      type: [String],
-    },
+    gallery: [
+      {
+        title: {
+          type: String,
+        },
+        url: {
+          type: String,
+        },
+      },
+    ],
     assignedTo: {
       type: [ObjectId],
     },
