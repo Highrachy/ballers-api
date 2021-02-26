@@ -3080,7 +3080,7 @@ describe('Property Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Floor Plan deleted');
-            expect(res.body.property.neighborhood.hospitals.length).to.be.eql(1);
+            expect(res.body.property.floorPlans.length).to.be.eql(1);
             expect(res.body.property.floorPlans[0].plan).to.be.eql(property.floorPlans[1].plan);
             expect(res.body.property.floorPlans[0].name).to.be.eql(property.floorPlans[1].name);
             done();
@@ -3093,6 +3093,425 @@ describe('Property Controller', () => {
       it('returns successful payload', (done) => {
         request()
           [method](`/api/v1/property/${invalidPropertyId}/floorplan`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Add Image to property gallery', () => {
+    const property = PropertyFactory.build(
+      {
+        gallery: [
+          {
+            title: 'first image',
+            url: 'https://ballers.ng/firstimage.png',
+          },
+        ],
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/gallery`;
+    const method = 'post';
+
+    const data = {
+      title: 'second image',
+      url: 'https://ballers.ng/secondimage.png',
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Image added');
+            expect(res.body.property.gallery.length).to.be.eql(2);
+            expect(res.body.property.gallery[0].title).to.be.eql(property.gallery[0].title);
+            expect(res.body.property.gallery[0].url).to.be.eql(property.gallery[0].url);
+            expect(res.body.property.gallery[1].title).to.be.eql(data.title);
+            expect(res.body.property.gallery[1].url).to.be.eql(data.url);
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/gallery`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when image with same title already exists', () => {
+      it('returns error', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send({
+            title: property.gallery[0].title,
+            url: 'https://ballers.ng/randomimage.png',
+          })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Image with title already exists');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Update Image in gallery', () => {
+    const property = PropertyFactory.build(
+      {
+        gallery: [
+          {
+            _id: mongoose.Types.ObjectId(),
+            title: 'front view',
+            url: 'https://ballers.ng/frontview.png',
+          },
+          {
+            _id: mongoose.Types.ObjectId(),
+            title: 'back view',
+            url: 'https://ballers.ng/backview.png',
+          },
+        ],
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/gallery`;
+    const method = 'put';
+
+    const data = {
+      title: 'new view',
+      url: 'https://ballers.ng/newview.png',
+      imageId: property.gallery[1]._id,
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Image updated');
+            expect(res.body.property.gallery[0].title).to.be.eql(property.gallery[0].title);
+            expect(res.body.property.gallery[0].url).to.be.eql(property.gallery[0].url);
+            expect(res.body.property.gallery[1]._id).to.be.eql(data.imageId.toString());
+            expect(res.body.property.gallery[1].title).to.be.eql(data.title);
+            expect(res.body.property.gallery[1].url).to.be.eql(data.url);
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/gallery`)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when request is made by another vendor', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', newVendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(403);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            done();
+          });
+      });
+    });
+
+    context('when image with same title exists', () => {
+      context('with different image id', () => {
+        it('returns error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send({
+              imageId: property.gallery[1]._id,
+              title: property.gallery[0].title,
+              url: 'https://ballers.ng/randomimage.png',
+            })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Image with title already exists');
+              done();
+            });
+        });
+      });
+
+      context('with same image id', () => {
+        it('updates image', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', vendorToken)
+            .send({
+              imageId: property.gallery[0]._id,
+              title: property.gallery[0].title,
+              url: 'https://ballers.ng/randomimage.png',
+            })
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Image updated');
+              done();
+            });
+        });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findOneAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findOneAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Delete Image from gallery', () => {
+    const property = PropertyFactory.build(
+      {
+        gallery: [
+          {
+            _id: mongoose.Types.ObjectId(),
+            title: 'front view',
+            url: 'https://ballers.ng/frontview.png',
+          },
+          {
+            _id: mongoose.Types.ObjectId(),
+            title: 'back view',
+            url: 'https://ballers.ng/backview.png',
+          },
+        ],
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/${property._id}/gallery`;
+    const method = 'delete';
+
+    const data = {
+      imageId: property.gallery[0]._id,
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Image deleted');
+            expect(res.body.property.gallery.length).to.be.eql(1);
+            expect(res.body.property.gallery[0].title).to.be.eql(property.gallery[1].title);
+            expect(res.body.property.gallery[0].url).to.be.eql(property.gallery[1].url);
+            done();
+          });
+      });
+    });
+
+    context('when property id is invalid', () => {
+      const invalidPropertyId = mongoose.Types.ObjectId();
+      it('returns successful payload', (done) => {
+        request()
+          [method](`/api/v1/property/${invalidPropertyId}/gallery`)
           .set('authorization', vendorToken)
           .send(data)
           .end((err, res) => {

@@ -91,7 +91,6 @@ export default new Factory()
   })
   .attr('mainImage', 'https://picsum.photos/200')
   .attr('gallery', [
-    'https://picsum.photos/200',
-    'https://picsum.photos/200',
-    'https://picsum.photos/200',
+    { title: 'first image', url: 'https://picsum.photos/200' },
+    { title: 'second image', url: 'https://picsum.photos/200' },
   ]);
