@@ -15,9 +15,9 @@ import {
   addFloorPlan,
   updateFloorPlan,
   deleteFloorPlan,
-  addImage,
-  updateImage,
-  deleteImage,
+  addGallery,
+  updateGallery,
+  deleteGallery,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -201,33 +201,33 @@ const PropertyController = {
       .catch((error) => next(error));
   },
 
-  addImage(req, res, next) {
+  addGallery(req, res, next) {
     const image = req.locals;
     const propertyId = req.params.id;
     const vendorId = req.user._id;
-    addImage({ ...image, propertyId, vendorId })
+    addGallery({ ...image, propertyId, vendorId })
       .then((property) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Image added', property });
       })
       .catch((error) => next(error));
   },
 
-  updateImage(req, res, next) {
+  updateGallery(req, res, next) {
     const updatedImage = req.locals;
     const propertyId = req.params.id;
     const vendorId = req.user._id;
-    updateImage({ ...updatedImage, propertyId, vendorId })
+    updateGallery({ ...updatedImage, propertyId, vendorId })
       .then((property) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Image updated', property });
       })
       .catch((error) => next(error));
   },
 
-  deleteImage(req, res, next) {
+  deleteGallery(req, res, next) {
     const image = req.locals;
     const propertyId = req.params.id;
     const vendorId = req.user._id;
-    deleteImage({ ...image, propertyId, vendorId })
+    deleteGallery({ ...image, propertyId, vendorId })
       .then((property) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Image deleted', property });
       })

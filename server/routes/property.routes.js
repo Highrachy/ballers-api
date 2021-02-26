@@ -504,7 +504,7 @@ router.post(
   hasValidObjectId,
   isVendor,
   schemaValidation(addImageSchema),
-  PropertyController.addImage,
+  PropertyController.addGallery,
 );
 
 /**
@@ -536,7 +536,7 @@ router.put(
   hasValidObjectId,
   isVendor,
   schemaValidation(updateGallerySchema),
-  PropertyController.updateImage,
+  PropertyController.updateGallery,
 );
 
 /**
@@ -566,7 +566,7 @@ router.delete(
   hasValidObjectId,
   isVendor,
   schemaValidation(deleteImageSchema),
-  PropertyController.deleteImage,
+  PropertyController.deleteGallery,
 );
 
 module.exports = router;

@@ -526,7 +526,7 @@ export const deleteFloorPlan = async (floorPlanDetails) => {
   }
 };
 
-export const addImage = async (imageDetails) => {
+export const addGallery = async (imageDetails) => {
   const property = await getPropertyById(imageDetails.propertyId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -558,7 +558,7 @@ export const addImage = async (imageDetails) => {
   }
 };
 
-export const updateImage = async (updatedImage) => {
+export const updateGallery = async (updatedImage) => {
   const property = await getPropertyById(updatedImage.propertyId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -571,11 +571,13 @@ export const updateImage = async (updatedImage) => {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
-  let { gallery } = property;
+  const gallery = property.gallery.filter(
+    (image) =>
+      image.title === updatedImage.title &&
+      image._id.toString() !== updatedImage.imageId.toString(),
+  );
 
-  gallery = gallery.filter((image) => image.title === updatedImage.title);
-
-  if (gallery.length > 0 && gallery[0]._id.toString() !== updatedImage.imageId.toString()) {
+  if (gallery.length > 0) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Image with title already exists');
   }
 
@@ -595,7 +597,7 @@ export const updateImage = async (updatedImage) => {
   }
 };
 
-export const deleteImage = async (imageDetails) => {
+export const deleteGallery = async (imageDetails) => {
   const property = await getPropertyById(imageDetails.propertyId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
