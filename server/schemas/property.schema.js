@@ -25,6 +25,13 @@ const floorPlan = Joi.object().keys({
 
 const floorPlans = Joi.array().label('Property floor plans').items(floorPlan);
 
+const image = Joi.object().keys({
+  title: optionalString('Image Name'),
+  url: optionalString('Image URL'),
+});
+
+const gallery = Joi.array().label('Property gallery').items(image);
+
 const neighborhoodInfoDetails = Joi.object().keys({
   timeAwayFromProperty: optionalNumber('Time Away From Property'),
   name: optionalString('Name'),
@@ -62,7 +69,7 @@ export const addPropertySchema = Joi.object({
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
-  gallery: optionalArray('Property gallery'),
+  gallery,
   paymentPlan: optionalArray('Payment plan'),
 });
 
@@ -82,7 +89,7 @@ export const updatePropertySchema = Joi.object({
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
-  gallery: optionalArray('Property gallery'),
+  gallery,
   paymentPlan: optionalArray('Payment plan'),
 });
 
@@ -120,4 +127,16 @@ export const updateFloorplanSchema = Joi.object({
 
 export const deleteFloorplanSchema = Joi.object({
   floorPlanId: requiredObjectId('Floor Plan id'),
+});
+
+export const addImageSchema = image;
+
+export const updateGallerySchema = Joi.object({
+  imageId: requiredObjectId('Image id'),
+  title: optionalString('Image Name'),
+  url: optionalString('Image URL'),
+});
+
+export const deleteImageSchema = Joi.object({
+  imageId: requiredObjectId('Image id'),
 });

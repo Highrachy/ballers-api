@@ -17,6 +17,9 @@ import {
   addFloorplanSchema,
   updateFloorplanSchema,
   deleteFloorplanSchema,
+  addImageSchema,
+  updateGallerySchema,
+  deleteImageSchema,
 } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -470,6 +473,100 @@ router.delete(
   isVendor,
   schemaValidation(deleteFloorplanSchema),
   PropertyController.deleteFloorPlan,
+);
+
+/**
+ * @swagger
+ * /property/:id/gallery:
+ *   post:
+ *     tags:
+ *       - Property
+ *     description: Adds an image to a property's gallery
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Adds an image to a property's gallery
+ *     responses:
+ *      '200':
+ *        description: Image added
+ *      '404':
+ *        description: Property not found
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/:id/gallery',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  schemaValidation(addImageSchema),
+  PropertyController.addImage,
+);
+
+/**
+ * @swagger
+ * /property/:id/gallery:
+ *   put:
+ *     tags:
+ *       - Property
+ *     description: Updates an image in a property's gallery
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Updates an image in a property's gallery
+ *     responses:
+ *      '200':
+ *        description: Image updated
+ *      '400':
+ *        description: Error updating image
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/:id/gallery',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  schemaValidation(updateGallerySchema),
+  PropertyController.updateImage,
+);
+
+/**
+ * @swagger
+ * /property/:id/gallery:
+ *   delete:
+ *     tags:
+ *       - Property
+ *     description: Deletes an image from a property's gallery
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Deletes an image from a property's gallery
+ *     responses:
+ *      '200':
+ *        description: Image deleted
+ *      '500':
+ *       description: Internal server error
+ */
+router.delete(
+  '/:id/gallery',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  schemaValidation(deleteImageSchema),
+  PropertyController.deleteImage,
 );
 
 module.exports = router;
