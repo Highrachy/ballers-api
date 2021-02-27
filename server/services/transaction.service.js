@@ -8,7 +8,7 @@ import Referral from '../models/referral.model';
 // eslint-disable-next-line import/no-cycle
 import { getOfferById } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
+import { NON_PROJECTED_USER_INFO, EXCLUDED_PROPERTY_INFO } from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -25,17 +25,11 @@ export const addTransaction = async (transaction) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offer');
   }
 
-  if (offer.propertyId.toString() !== transaction.propertyId.toString()) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Property not for offer');
-  }
-
-  if (offer.userId.toString() !== transaction.userId.toString()) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User not for offer');
-  }
-
   try {
     const newTransaction = await new Transaction({
       ...transaction,
+      userId: offer.userId,
+      propertyId: offer.propertyId,
       vendorId: offer.vendorId,
     }).save();
     return newTransaction;
@@ -103,15 +97,16 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
       },
     },
     {
-      $facet: {
-        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
-        data: generateFacetData(page, limit),
-      },
-    },
-    {
       $project: {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...EXCLUDED_PROPERTY_INFO,
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
       },
     },
   ];
@@ -132,7 +127,7 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
   return { pagination, result };
 };
 
-export const getUserTransactionsByProperty = async (propertyId, user) => {
+export const getUserTransactionsByProperty = async (propertyId, user, page = 1, limit = 10) => {
   const transactionOptions = [
     { $match: { propertyId: ObjectId(propertyId) } },
     {
@@ -158,7 +153,16 @@ export const getUserTransactionsByProperty = async (propertyId, user) => {
       $unwind: '$userInfo',
     },
     {
-      $project: NON_PROJECTED_USER_INFO('userInfo'),
+      $project: {
+        ...NON_PROJECTED_USER_INFO('userInfo'),
+        ...EXCLUDED_PROPERTY_INFO,
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
     },
   ];
 
@@ -166,9 +170,16 @@ export const getUserTransactionsByProperty = async (propertyId, user) => {
     transactionOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
   }
 
-  const transaction = await Transaction.aggregate(transactionOptions);
+  if (user.role === USER_ROLE.USER) {
+    transactionOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+  }
 
-  return transaction;
+  const transactions = await Transaction.aggregate(transactionOptions);
+
+  const total = getPaginationTotal(transactions);
+  const pagination = generatePagination(page, limit, total);
+  const result = transactions[0].data;
+  return { pagination, result };
 };
 
 export const getTotalAmountPaidByUser = async (userId) =>

@@ -19,6 +19,10 @@ export const PROJECTED_PROPERTY_INFO = {
   addedBy: 1,
 };
 
+export const EXCLUDED_PROPERTY_INFO = {
+  assignedTo: 0,
+};
+
 export const PROJECTED_VENDOR_INFO = {
   'vendorInfo._id': 1,
   'vendorInfo.firstName': 1,

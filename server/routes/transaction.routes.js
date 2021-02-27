@@ -2,7 +2,6 @@ import express from 'express';
 import {
   authenticate,
   schemaValidation,
-  isVendorOrAdmin,
   isAdminOrUserOrVendor,
   isAdmin,
   isUser,
@@ -118,14 +117,14 @@ router.put(
 router.get(
   '/property/:id',
   authenticate,
-  isVendorOrAdmin,
+  isAdminOrUserOrVendor,
   hasValidObjectId,
   TransactionController.getTransactionsByProperty,
 );
 
 /**
  * @swagger
- * /transaction/referral-rewards:
+ * /transaction/user/referral-rewards:
  *   get:
  *     tags:
  *       - Transaction
@@ -144,11 +143,16 @@ router.get(
  *      '500':
  *       description: Internal server error
  */
-router.get('/referral-rewards', authenticate, isUser, TransactionController.getReferralRewards);
+router.get(
+  '/user/referral-rewards',
+  authenticate,
+  isUser,
+  TransactionController.getReferralRewards,
+);
 
 /**
  * @swagger
- * /transaction/contribution-rewards:
+ * /transaction/user/contribution-rewards:
  *   get:
  *     tags:
  *       - Transaction
@@ -168,7 +172,7 @@ router.get('/referral-rewards', authenticate, isUser, TransactionController.getR
  *       description: Internal server error
  */
 router.get(
-  '/contribution-rewards',
+  '/user/contribution-rewards',
   authenticate,
   isUser,
   TransactionController.getContributionRewards,
