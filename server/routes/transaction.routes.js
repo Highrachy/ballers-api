@@ -178,4 +178,31 @@ router.get(
   TransactionController.getContributionRewards,
 );
 
+/**
+ * @swagger
+ * path:
+ *  /transaction/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets a transaction based by its ID
+ *      tags: [Transaction]
+ *      responses:
+ *        '200':
+ *          description: Transaction found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get(
+  '/:id',
+  authenticate,
+  isAdminOrUserOrVendor,
+  hasValidObjectId,
+  TransactionController.getOneTransaction,
+);
+
 module.exports = router;

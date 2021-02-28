@@ -23,6 +23,7 @@ import {
   itReturnsTheRightPaginationValue,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
   expectsPaginationToReturnTheRightValues,
+  itReturnsAnErrorWhenServiceFails,
 } from '../helpers';
 
 let adminToken;
@@ -90,11 +91,7 @@ describe('Transaction Controller', () => {
   });
 
   describe('Add Transaction Route', () => {
-    const transactionBody = {
-      propertyId: property._id,
-      offerId: offer._id,
-      userId: regularUser._id,
-    };
+    const transactionBody = { offerId: offer._id };
     context('with valid data', () => {
       it('returns successful transaction', (done) => {
         const transaction = TransactionFactory.build(transactionBody);
@@ -150,22 +147,6 @@ describe('Transaction Controller', () => {
     });
 
     context('with invalid data', () => {
-      context('when user id is empty', () => {
-        it('returns an error', (done) => {
-          const transaction = TransactionFactory.build({ userId: '' });
-          request()
-            .post('/api/v1/transaction/add')
-            .set('authorization', adminToken)
-            .send(transaction)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"User Id" is not allowed to be empty');
-              done();
-            });
-        });
-      });
       context('when offer id is empty', () => {
         it('returns an error', (done) => {
           const transaction = TransactionFactory.build({ offerId: '' });
@@ -178,22 +159,6 @@ describe('Transaction Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
-              done();
-            });
-        });
-      });
-      context('when property id is empty', () => {
-        it('returns an error', (done) => {
-          const transaction = TransactionFactory.build({ propertyId: '' });
-          request()
-            .post('/api/v1/transaction/add')
-            .set('authorization', adminToken)
-            .send(transaction)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Property Id" is not allowed to be empty');
               done();
             });
         });
@@ -950,6 +915,97 @@ describe('Transaction Controller', () => {
             });
         });
       });
+    });
+  });
+
+  describe('Get Single Transaction', () => {
+    let vendor2Token;
+    const method = 'get';
+    const transaction = TransactionFactory.build(
+      {
+        userId: regularUser._id,
+        propertyId: property._id,
+        offerId: offer._id,
+        addedBy: adminUser._id,
+        updatedBy: adminUser._id,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/transaction/${transaction._id}`;
+    const vendor2 = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        vendor: { verified: true },
+      },
+      { generateId: true },
+    );
+    const editorUser = UserFactory.build(
+      { role: USER_ROLE.EDITOR, activated: true },
+      { generateId: true },
+    );
+
+    beforeEach(async () => {
+      vendor2Token = await addUser(vendor2);
+      await addTransaction(transaction);
+    });
+
+    context('with valid token', () => {
+      [...new Array(3)].map((_, index) =>
+        it('returns related transaction', (done) => {
+          request()
+            .get(`/api/v1/transaction/${transaction._id}`)
+            .set('authorization', [userToken, vendorToken, adminToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.transaction._id).to.be.eql(transaction._id.toString());
+              expect(res.body.transaction.propertyId).to.be.eql(transaction.propertyId.toString());
+              expect(res.body.transaction.userId).to.be.eql(transaction.userId.toString());
+              expect(res.body.transaction.offerId).to.be.eql(transaction.offerId.toString());
+              done();
+            });
+        }),
+      );
+    });
+
+    context('with token with invalid access', () => {
+      it('returns not found', (done) => {
+        request()
+          .get(`/api/v1/transaction/${transaction._id}`)
+          .set('authorization', vendor2Token)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Transaction not found');
+            done();
+          });
+      });
+    });
+
+    itReturnsForbiddenForTokenWithInvalidAccess({
+      endpoint,
+      method,
+      user: editorUser,
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: regularUser,
+      userId: regularUser._id,
+      useExistingUser: true,
+    });
+
+    itReturnsAnErrorWhenServiceFails({
+      endpoint,
+      method,
+      user: regularUser,
+      model: Transaction,
+      modelMethod: 'aggregate',
+      useExistingUser: true,
     });
   });
 });

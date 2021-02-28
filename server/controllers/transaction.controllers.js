@@ -5,6 +5,7 @@ import {
   getUserTransactionsByProperty,
   getReferralRewards,
   getContributionRewards,
+  getOneTransaction,
 } from '../services/transaction.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -76,6 +77,22 @@ const TransactionController = {
     getReferralRewards(userId)
       .then((referralRewards) => {
         res.status(httpStatus.OK).json({ success: true, referralRewards });
+      })
+      .catch((error) => next(error));
+  },
+
+  getOneTransaction(req, res, next) {
+    const transactionId = req.params.id;
+    const { user } = req;
+    getOneTransaction(transactionId, user)
+      .then((transaction) => {
+        if (transaction.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, transaction: transaction[0] });
+        } else {
+          res
+            .status(httpStatus.NOT_FOUND)
+            .json({ success: false, message: 'Transaction not found' });
+        }
       })
       .catch((error) => next(error));
   },

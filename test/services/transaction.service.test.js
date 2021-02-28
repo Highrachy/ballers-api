@@ -208,7 +208,7 @@ describe('Transaction Service', () => {
     context('when transaction is updated', () => {
       it('returns a valid updated transaction', async () => {
         const searchResult = await getUserTransactionsByProperty(property._id, admin);
-        expect(searchResult[0].propertyInfo._id).to.eql(property._id);
+        expect(searchResult.result[0].propertyInfo._id).to.eql(property._id);
       });
     });
   });

@@ -210,3 +210,60 @@ export const getContributionRewards = async (userId) =>
 
 export const getReferralRewards = async (referrerId) =>
   Referral.aggregate([{ $match: { referrerId: ObjectId(referrerId) } }]);
+
+export const getOneTransaction = async (transactionId, user) => {
+  const transactionOptions = [
+    { $match: { _id: ObjectId(transactionId) } },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'vendorId',
+        foreignField: '_id',
+        as: 'vendorInfo',
+      },
+    },
+    {
+      $unwind: '$propertyInfo',
+    },
+    {
+      $unwind: '$userInfo',
+    },
+    {
+      $unwind: '$vendorInfo',
+    },
+    {
+      $project: {
+        ...NON_PROJECTED_USER_INFO('userInfo'),
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...EXCLUDED_PROPERTY_INFO,
+      },
+    },
+  ];
+
+  if (user.role === USER_ROLE.VENDOR) {
+    transactionOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
+  }
+
+  if (user.role === USER_ROLE.USER) {
+    transactionOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+  }
+
+  const transaction = await Transaction.aggregate(transactionOptions);
+  return transaction;
+};
