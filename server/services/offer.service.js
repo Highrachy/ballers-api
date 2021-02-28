@@ -15,6 +15,7 @@ import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates'
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
+// eslint-disable-next-line import/no-cycle
 import { addNextPayment } from './nextpayment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
@@ -349,6 +350,10 @@ export const acceptOffer = async (offerToAccept) => {
   const offer = await getOffer(offerToAccept.offerId, offerToAccept.user).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
+  if (offer.length < 1) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid offer');
+  }
 
   if (offer[0].userId.toString() !== offerToAccept.user._id.toString()) {
     throw new ErrorHandler(
