@@ -5,7 +5,6 @@ import {
   getAllTransactions,
   updateTransaction,
   getUserTransactionsByProperty,
-  getTransactionsByUser,
 } from '../../server/services/transaction.service';
 import TransactionFactory from '../factories/transaction.factory';
 import Transaction from '../../server/models/transaction.model';
@@ -37,7 +36,8 @@ describe('Transaction Service', () => {
   );
   const transaction = TransactionFactory.build(
     {
-      adminId: admin._id,
+      addedBy: admin._id,
+      updatedBy: admin._id,
       offerId: offer._id,
       propertyId: property._id,
       userId: user._id,
@@ -55,7 +55,7 @@ describe('Transaction Service', () => {
   });
 
   describe('#getTransactionById', () => {
-    before(async () => {
+    beforeEach(async () => {
       await addTransaction(transaction);
     });
 
@@ -86,13 +86,18 @@ describe('Transaction Service', () => {
     context('when an invalid data is entered', () => {
       it('throws an error', async () => {
         try {
-          const InvalidTransaction = TransactionFactory.build({ propertyId: '' });
+          const InvalidTransaction = TransactionFactory.build({
+            addedBy: admin._id,
+            updatedBy: admin._id,
+            offerId: offer._id,
+            userId: user._id,
+            propertyId: '',
+          });
           await addTransaction(InvalidTransaction);
         } catch (err) {
           const currentCountedTransactions = await Transaction.countDocuments({});
-          expect(err.statusCode).to.eql(400);
-          expect(err.error.name).to.be.eql('ValidationError');
-          expect(err.message).to.be.eql('Error adding transaction');
+          expect(err.statusCode).to.eql(412);
+          expect(err.message).to.be.eql('Property not for offer');
           expect(currentCountedTransactions).to.eql(countedTransactions);
         }
       });
@@ -100,15 +105,21 @@ describe('Transaction Service', () => {
   });
 
   describe('#getAllTransactions', () => {
+    let countedTransactions;
     const transactions = TransactionFactory.buildList(18, {
       propertyId: property._id,
       userId: user._id,
-      adminId: admin._id,
+      vendorId: vendor._id,
+      addedBy: admin._id,
+      updatedBy: admin._id,
+      offerId: offer._id,
     });
     const transactionToAdd = TransactionFactory.build({
+      addedBy: admin._id,
+      updatedBy: admin._id,
+      offerId: offer._id,
       propertyId: property._id,
       userId: user._id,
-      adminId: admin._id,
     });
 
     beforeEach(async () => {
@@ -116,19 +127,26 @@ describe('Transaction Service', () => {
     });
     context('when transaction added is valid', () => {
       it('returns 18 transactions', async () => {
-        const multipleTransactions = await getAllTransactions();
-        expect(multipleTransactions).to.be.an('array');
-        expect(multipleTransactions.length).to.be.eql(18);
+        countedTransactions = await Transaction.countDocuments({});
+        const multipleTransactions = await getAllTransactions(admin);
+        expect(multipleTransactions.pagination.total).to.be.eql(countedTransactions);
+        expect(multipleTransactions.pagination.currentPage).to.be.eql(1);
+        expect(multipleTransactions.pagination.limit).to.be.eql(10);
+        expect(multipleTransactions.pagination.offset).to.be.eql(0);
+        expect(multipleTransactions.pagination.totalPage).to.be.eql(2);
       });
     });
     context('when new transaction is added', () => {
-      before(async () => {
+      beforeEach(async () => {
         await addTransaction(transactionToAdd);
       });
       it('returns 19 transactions', async () => {
-        const multipleTransactions = await getAllTransactions();
-        expect(multipleTransactions).to.be.an('array');
-        expect(multipleTransactions.length).to.be.eql(19);
+        const multipleTransactions = await getAllTransactions(admin);
+        expect(multipleTransactions.pagination.total).to.be.eql(countedTransactions + 1);
+        expect(multipleTransactions.pagination.currentPage).to.be.eql(1);
+        expect(multipleTransactions.pagination.limit).to.be.eql(10);
+        expect(multipleTransactions.pagination.offset).to.be.eql(0);
+        expect(multipleTransactions.pagination.totalPage).to.be.eql(2);
       });
     });
   });
@@ -137,6 +155,7 @@ describe('Transaction Service', () => {
     const updatedDetails = {
       transactionId: transaction._id,
       paidOn: Date.now(),
+      updatedBy: admin._id,
     };
 
     beforeEach(async () => {
@@ -188,22 +207,8 @@ describe('Transaction Service', () => {
 
     context('when transaction is updated', () => {
       it('returns a valid updated transaction', async () => {
-        const searchResult = await getUserTransactionsByProperty(property._id);
-        expect(searchResult[0].propertyInfo._id).to.eql(property._id);
-      });
-    });
-  });
-
-  describe('#getTransactionsByUser', () => {
-    beforeEach(async () => {
-      await addTransaction(transaction);
-    });
-
-    context('when transaction is updated', () => {
-      it('returns a valid updated transaction', async () => {
-        const searchResult = await getTransactionsByUser(user._id);
-        expect(searchResult[0].propertyInfo._id).to.eql(property._id);
-        expect(searchResult[0].userId).to.eql(user._id);
+        const searchResult = await getUserTransactionsByProperty(property._id, admin);
+        expect(searchResult.result[0].propertyInfo._id).to.eql(property._id);
       });
     });
   });

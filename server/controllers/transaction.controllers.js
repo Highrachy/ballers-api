@@ -3,9 +3,9 @@ import {
   getAllTransactions,
   updateTransaction,
   getUserTransactionsByProperty,
-  getTransactionsByUser,
   getReferralRewards,
   getContributionRewards,
+  getOneTransaction,
 } from '../services/transaction.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -13,7 +13,7 @@ const TransactionController = {
   add(req, res, next) {
     const newTransaction = req.locals;
     const { user } = req;
-    addTransaction({ ...newTransaction, adminId: user._id })
+    addTransaction({ ...newTransaction, addedBy: user._id, updatedBy: user._id })
       .then((transaction) => {
         res
           .status(httpStatus.CREATED)
@@ -22,17 +22,10 @@ const TransactionController = {
       .catch((error) => next(error));
   },
 
-  getAll(req, res, next) {
-    getAllTransactions()
-      .then((transactions) => {
-        res.status(httpStatus.OK).json({ success: true, transactions });
-      })
-      .catch((error) => next(error));
-  },
-
   update(req, res, next) {
     const updatedInfo = req.locals;
-    updateTransaction(updatedInfo)
+    const { user } = req;
+    updateTransaction({ ...updatedInfo, updatedBy: user._id })
       .then((transaction) => {
         res
           .status(httpStatus.OK)
@@ -41,20 +34,31 @@ const TransactionController = {
       .catch((error) => next(error));
   },
 
-  getAllPersonal(req, res, next) {
-    const id = req.user._id;
-    getTransactionsByUser(id)
-      .then((transactions) => {
-        res.status(httpStatus.OK).json({ success: true, transactions });
+  getAll(req, res, next) {
+    const { user } = req;
+    const { page, limit } = req.query;
+    getAllTransactions(user, page, limit)
+      .then(({ pagination, result }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          pagination,
+          result,
+        });
       })
       .catch((error) => next(error));
   },
 
   getTransactionsByProperty(req, res, next) {
     const propertyId = req.params.id;
-    getUserTransactionsByProperty(propertyId)
-      .then((transactions) => {
-        res.status(httpStatus.OK).json({ success: true, transactions });
+    const { user } = req;
+    const { page, limit } = req.query;
+    getUserTransactionsByProperty(propertyId, user, page, limit)
+      .then(({ pagination, result }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          pagination,
+          result,
+        });
       })
       .catch((error) => next(error));
   },
@@ -73,6 +77,22 @@ const TransactionController = {
     getReferralRewards(userId)
       .then((referralRewards) => {
         res.status(httpStatus.OK).json({ success: true, referralRewards });
+      })
+      .catch((error) => next(error));
+  },
+
+  getOneTransaction(req, res, next) {
+    const transactionId = req.params.id;
+    const { user } = req;
+    getOneTransaction(transactionId, user)
+      .then((transaction) => {
+        if (transaction.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, transaction: transaction[0] });
+        } else {
+          res
+            .status(httpStatus.NOT_FOUND)
+            .json({ success: false, message: 'Transaction not found' });
+        }
       })
       .catch((error) => next(error));
   },

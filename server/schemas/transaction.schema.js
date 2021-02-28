@@ -8,8 +8,6 @@ import {
 } from './helper.schema';
 
 export const addTransactionSchema = Joi.object({
-  propertyId: requiredObjectId('Property Id'),
-  userId: requiredObjectId('User Id'),
   offerId: requiredObjectId('Offer Id'),
   paymentSource: requiredString('Transaction Payment Source'),
   amount: requiredNumber('Transaction Amount'),

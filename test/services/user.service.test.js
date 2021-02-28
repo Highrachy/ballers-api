@@ -817,6 +817,7 @@ describe('User Service', () => {
   describe('#getAccountOverview', () => {
     const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
     const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
+    const admin = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
     const property = PropertyFactory.build(
       {
         addedBy: vendor._id,
@@ -852,7 +853,9 @@ describe('User Service', () => {
       {
         propertyId: property._id,
         userId: user._id,
-        adminId: vendor._id,
+        addedBy: admin._id,
+        updatedBy: admin._id,
+        offerId: offer._id,
         amount: 250000,
       },
       { generateId: true },

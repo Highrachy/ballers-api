@@ -1,5 +1,12 @@
 import express from 'express';
-import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
+import {
+  authenticate,
+  schemaValidation,
+  isAdminOrUserOrVendor,
+  isAdmin,
+  isUser,
+  hasValidObjectId,
+} from '../helpers/middleware';
 import { addTransactionSchema, updateTransactionSchema } from '../schemas/transaction.schema';
 import TransactionController from '../controllers/transaction.controllers';
 
@@ -57,7 +64,7 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, TransactionController.getAll);
+router.get('/all', authenticate, isAdminOrUserOrVendor, TransactionController.getAll);
 
 /**
  * @swagger
@@ -90,29 +97,6 @@ router.put(
 
 /**
  * @swagger
- * /transaction/user:
- *   get:
- *     tags:
- *       - Transaction
- *     description: Get all transactions made by a user
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/Transaction'
- *      description: Get all transactions made by a user
- *     responses:
- *      '200':
- *        description: returns object of transactions
- *      '500':
- *       description: Internal server error
- */
-router.get('/user', authenticate, TransactionController.getAllPersonal);
-
-/**
- * @swagger
  * path:
  *  /transaction/property/:id:
  *    get:
@@ -133,7 +117,7 @@ router.get('/user', authenticate, TransactionController.getAllPersonal);
 router.get(
   '/property/:id',
   authenticate,
-  isAdmin,
+  isAdminOrUserOrVendor,
   hasValidObjectId,
   TransactionController.getTransactionsByProperty,
 );
@@ -159,7 +143,12 @@ router.get(
  *      '500':
  *       description: Internal server error
  */
-router.get('/user/referral-rewards', authenticate, TransactionController.getReferralRewards);
+router.get(
+  '/user/referral-rewards',
+  authenticate,
+  isUser,
+  TransactionController.getReferralRewards,
+);
 
 /**
  * @swagger
@@ -185,7 +174,35 @@ router.get('/user/referral-rewards', authenticate, TransactionController.getRefe
 router.get(
   '/user/contribution-rewards',
   authenticate,
+  isUser,
   TransactionController.getContributionRewards,
+);
+
+/**
+ * @swagger
+ * path:
+ *  /transaction/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets a transaction based by its ID
+ *      tags: [Transaction]
+ *      responses:
+ *        '200':
+ *          description: Transaction found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get(
+  '/:id',
+  authenticate,
+  isAdminOrUserOrVendor,
+  hasValidObjectId,
+  TransactionController.getOneTransaction,
 );
 
 module.exports = router;

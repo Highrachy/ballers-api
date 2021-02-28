@@ -1167,7 +1167,9 @@ describe('User Controller', () => {
         {
           propertyId: property._id,
           userId: regularUser._id,
-          adminId: vendor._id,
+          addedBy: adminUser._id,
+          updatedBy: adminUser._id,
+          offerId: offer._id,
           amount: 250000,
         },
         { generateId: true },
