@@ -2366,7 +2366,7 @@ describe('Property Controller', () => {
           schools: [
             {
               name: 'covenant university',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2374,7 +2374,7 @@ describe('Property Controller', () => {
             },
             {
               name: 'babcock university',
-              timeAwayFromProperty: 15,
+              distance: 15,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2394,7 +2394,7 @@ describe('Property Controller', () => {
       type: 'schools',
       neighborhood: {
         name: 'bingham university',
-        timeAwayFromProperty: 5,
+        distance: 5,
         mapLocation: {
           longitude: 123.22,
           latitude: 123.11,
@@ -2510,7 +2510,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'covenant university',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2519,7 +2519,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'babcock university',
-              timeAwayFromProperty: 15,
+              distance: 15,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2528,7 +2528,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'bingham university',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2539,7 +2539,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'Reddington Hospital',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2548,7 +2548,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'Primrose General',
-              timeAwayFromProperty: 15,
+              distance: 15,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2569,7 +2569,7 @@ describe('Property Controller', () => {
       typeId: property.neighborhood.schools[0]._id,
       neighborhood: {
         name: 'unilorin',
-        timeAwayFromProperty: 15,
+        distance: 15,
         mapLocation: {
           longitude: 105.22,
           latitude: 105.11,
@@ -2595,8 +2595,8 @@ describe('Property Controller', () => {
             expect(res.body.property.neighborhood.schools[0].name).to.be.eql(
               data.neighborhood.name,
             );
-            expect(res.body.property.neighborhood.schools[0].timeAwayFromProperty).to.be.eql(
-              data.neighborhood.timeAwayFromProperty,
+            expect(res.body.property.neighborhood.schools[0].distance).to.be.eql(
+              data.neighborhood.distance,
             );
             expect(res.body.property.neighborhood.schools[0].mapLocation).to.be.eql(
               data.neighborhood.mapLocation,
@@ -2697,7 +2697,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'Reddington Hospital',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2706,7 +2706,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'Primrose General',
-              timeAwayFromProperty: 15,
+              distance: 15,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2748,8 +2748,8 @@ describe('Property Controller', () => {
             expect(res.body.property.neighborhood.hospitals[0].name).to.be.eql(
               property.neighborhood.hospitals[0].name,
             );
-            expect(res.body.property.neighborhood.hospitals[0].timeAwayFromProperty).to.be.eql(
-              property.neighborhood.hospitals[0].timeAwayFromProperty,
+            expect(res.body.property.neighborhood.hospitals[0].distance).to.be.eql(
+              property.neighborhood.hospitals[0].distance,
             );
             expect(res.body.property.neighborhood.hospitals[0].mapLocation).to.be.eql(
               property.neighborhood.hospitals[0].mapLocation,

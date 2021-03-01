@@ -10,7 +10,7 @@ export default new Factory()
   .attr('titleDocument', 'https://ballers.ng/sampletitledocument.pdf')
   .attr('price', 55000000)
   .attr('units', 5)
-  .attr('features', 'swmming pool, bar, tiled roads')
+  .attr('features', 'swimming pool, bar, tiled roads')
   .attr('address', {
     street1: 'sesame street',
     street2: 'oxford street',
@@ -32,7 +32,7 @@ export default new Factory()
     entertainments: [
       {
         name: 'iFitness',
-        timeAwayFromProperty: 10,
+        distance: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,
@@ -42,7 +42,7 @@ export default new Factory()
     hospitals: [
       {
         name: 'Reddington Hospital',
-        timeAwayFromProperty: 10,
+        distance: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,
@@ -52,7 +52,7 @@ export default new Factory()
     pointsOfInterest: [
       {
         name: 'Genesis Cinema',
-        timeAwayFromProperty: 10,
+        distance: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,
@@ -62,7 +62,7 @@ export default new Factory()
     restaurantsAndBars: [
       {
         name: 'Cut steak house',
-        timeAwayFromProperty: 10,
+        distance: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,
@@ -72,7 +72,7 @@ export default new Factory()
     schools: [
       {
         name: 'British International School',
-        timeAwayFromProperty: 10,
+        distance: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,
@@ -82,7 +82,7 @@ export default new Factory()
     shoppingMalls: [
       {
         name: 'Shoprite',
-        timeAwayFromProperty: 10,
+        distance: 10,
         mapLocation: {
           longitude: 1.234555,
           latitude: 1.234555,

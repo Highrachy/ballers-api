@@ -68,7 +68,7 @@ import { addressSchema } from '../helpers/constants';
  *           description: Newly built 3 bedroom semi-detached duplex
  *           floorPlans: ['http://linktoplan.ng/plan1.png','http://linktoplan.ng/plan2.png' ]
  *           mapLocation: {longitude: 1.23456, latitude: 2.34567}
- *           neighborhood: {schools: [{name: British International,distance: 1500m, mapLocation: {longitude: 1.23456, latitude: 2.34567}}]}
+ *           neighborhood: {schools: [{name: British International,distance: 1500km, mapLocation: {longitude: 1.23456, latitude: 2.34567}}]}
  *           mainImage: https://picsum.photos/200
  *           gallery: [{title: main image, url: 'https://picsum.photos/200'}]
  */
@@ -77,7 +77,7 @@ const { ObjectId } = mongoose.Schema.Types;
 
 const neighborhoodInfoSchema = [
   {
-    timeAwayFromProperty: {
+    distance: {
       type: Number,
     },
     mapLocation: {

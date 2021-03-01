@@ -410,8 +410,8 @@ export const updateNeighborhood = async (updatedNeighborhood) => {
         $set: {
           [`neighborhood.${updatedNeighborhood.type}.$.name`]: updatedNeighborhood.neighborhood
             .name,
-          [`neighborhood.${updatedNeighborhood.type}.$.timeAwayFromProperty`]: updatedNeighborhood
-            .neighborhood.timeAwayFromProperty,
+          [`neighborhood.${updatedNeighborhood.type}.$.distance`]: updatedNeighborhood.neighborhood
+            .distance,
           [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.latitude`]: updatedNeighborhood
             .neighborhood.mapLocation.latitude,
           [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.longitude`]: updatedNeighborhood

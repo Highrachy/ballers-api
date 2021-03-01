@@ -33,7 +33,7 @@ const image = Joi.object().keys({
 const gallery = Joi.array().label('Property gallery').items(image);
 
 const neighborhoodInfoDetails = Joi.object().keys({
-  timeAwayFromProperty: optionalNumber('Time Away From Property'),
+  distance: optionalNumber('Distance'),
   name: optionalString('Name'),
   mapLocation,
 });
