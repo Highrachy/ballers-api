@@ -6,6 +6,7 @@ export const PROJECTED_PROPERTY_INFO = {
   mapLocation: 1,
   gallery: 1,
   mainImage: 1,
+  features: 1,
   price: 1,
   units: 1,
   houseType: 1,

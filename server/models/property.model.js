@@ -132,6 +132,9 @@ const PropertySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    features: {
+      type: String,
+    },
     floorPlans: [
       {
         name: {

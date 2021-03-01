@@ -69,6 +69,7 @@ export const addPropertySchema = Joi.object({
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
+  features: nonRequiredString('Features'),
   gallery,
   paymentPlan: optionalArray('Payment plan'),
 });
@@ -89,6 +90,7 @@ export const updatePropertySchema = Joi.object({
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
+  features: nonRequiredString('Features'),
   gallery,
   paymentPlan: optionalArray('Payment plan'),
 });

@@ -483,6 +483,22 @@ describe('Property Controller', () => {
             });
         });
       });
+      context('when features is empty', () => {
+        it('returns added property', (done) => {
+          const property = PropertyFactory.build({ features: '' });
+          request()
+            .post('/api/v1/property/add')
+            .set('authorization', vendorToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Property added');
+              expect(res.body).to.have.property('property');
+              done();
+            });
+        });
+      });
       context('when gallery is empty', () => {
         it('returns an error', (done) => {
           const property = PropertyFactory.build({ gallery: '' });
@@ -979,6 +995,21 @@ describe('Property Controller', () => {
       context('when mainImage is empty', () => {
         it('returns updated property', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, mainImage: '' });
+          request()
+            .put('/api/v1/property/update')
+            .set('authorization', vendorToken)
+            .send(invalidProperty)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('property');
+              done();
+            });
+        });
+      });
+      context('when features is empty', () => {
+        it('returns updated property', (done) => {
+          const invalidProperty = PropertyFactory.build({ id: property._id, features: '' });
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
@@ -1800,6 +1831,7 @@ describe('Property Controller', () => {
               expect(res.body.properties[0]).to.have.property('name');
               expect(res.body.properties[0]).to.have.property('address');
               expect(res.body.properties[0]).to.have.property('mainImage');
+              expect(res.body.properties[0]).to.have.property('features');
               expect(res.body.properties[0]).to.have.property('gallery');
               expect(res.body.properties[0]).to.have.property('price');
               expect(res.body.properties[0]).to.have.property('houseType');

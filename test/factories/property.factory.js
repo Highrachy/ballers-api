@@ -10,6 +10,7 @@ export default new Factory()
   .attr('titleDocument', 'https://ballers.ng/sampletitledocument.pdf')
   .attr('price', 55000000)
   .attr('units', 5)
+  .attr('features', 'swmming pool, bar, tiled roads')
   .attr('address', {
     street1: 'sesame street',
     street2: 'oxford street',
