@@ -77,6 +77,10 @@ const NextPaymentSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    totalOutstandingBalance: {
+      type: Number,
+      required: true,
+    },
     transactionId: {
       type: ObjectId,
     },

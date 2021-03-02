@@ -16,7 +16,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
-import { addNextPayment } from './nextpayment.service';
+import { addNextPayment } from './nextPayment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -381,6 +381,7 @@ export const acceptOffer = async (offerToAccept) => {
     expiresOn: paymentSchedule[0].date,
     offerId: offer[0]._id,
     propertyId: offer[0].propertyId,
+    totalOutstandingBalance: offer[0].totalAmountPayable,
     userId: offer[0].userId,
     vendorId: offer[0].vendorId,
   };

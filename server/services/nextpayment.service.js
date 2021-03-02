@@ -5,6 +5,8 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getOfferById } from './offer.service';
+// eslint-disable-next-line import/no-cycle
+import { getTransactionByOfferId } from './transaction.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -21,83 +23,90 @@ export const addNextPayment = async (payment) => {
   }
 };
 
-export const resolvePendingPayment = async (pendingPaymentId, transactionId) => {
+export const resolvePendingPayment = async (pendingPaymentId, transactionId = null) => {
   return NextPayment.findByIdAndUpdate(pendingPaymentId, {
     $set: {
       resolved: true,
       resolvedDate: Date.now(),
-      resolvedViaTransaction: true,
+      resolvedViaTransaction: transactionId !== null,
       transactionId,
     },
   });
 };
 
+const calculateTotalPaid = (array) => {
+  return array.reduce((a, b) => {
+    return a + b.amount;
+  }, 0);
+};
+
 export const generateNextPaymentDate = async ({ transactionId, offerId, transactionAmount }) => {
+  let nextPayment;
   const offer = await getOfferById(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  // const transactions = await getTransactionByOfferId(offerId).catch((error) => {
-  //   throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  // });
-
-  const previousPayments = await getNextPaymentByOfferId(offerId).catch((error) => {
+  const transactions = await getTransactionByOfferId(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
-  const pendingPayment = previousPayments[previousPayments.length - 1];
+
+  const nextPayments = await getNextPaymentByOfferId(offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  const pendingPayment = nextPayments[nextPayments.length - 1];
+
+  const totalPaid = calculateTotalPaid(transactions);
+
+  const outstandingBalance = offer.totalAmountPayable - totalPaid;
 
   if (transactionAmount === pendingPayment.expectedAmount) {
-    await resolvePendingPayment(pendingPayment._id, transactionId);
-
-    const nextPayment = {
+    nextPayment = {
       expectedAmount: offer.periodicPayment,
       expiresOn: add(pendingPayment.expiresOn, {
         days: offer.paymentFrequency,
       }),
       offerId,
       propertyId: offer.propertyId,
+      totalOutstandingBalance: outstandingBalance,
       userId: offer.userId,
       vendorId: offer.vendorId,
     };
-
-    await addNextPayment(nextPayment);
   }
 
   if (transactionAmount > pendingPayment.expectedAmount) {
-    await resolvePendingPayment(pendingPayment._id, transactionId);
-
     const excess = transactionAmount - pendingPayment.expectedAmount;
 
-    const nextPayment = {
+    nextPayment = {
       expectedAmount: offer.periodicPayment - excess,
       expiresOn: add(pendingPayment.expiresOn, {
         days: offer.paymentFrequency,
       }),
       offerId,
       propertyId: offer.propertyId,
+      totalOutstandingBalance: outstandingBalance,
       userId: offer.userId,
       vendorId: offer.vendorId,
     };
-
-    await addNextPayment(nextPayment);
   }
 
   if (transactionAmount < pendingPayment.expectedAmount) {
-    await resolvePendingPayment(pendingPayment._id, transactionId);
-
     const deficit = pendingPayment.expectedAmount - transactionAmount;
 
-    const nextPayment = {
-      expectedAmount: offer.periodicPayment + deficit,
-      expiresOn: add(pendingPayment.expiresOn, {
-        days: offer.paymentFrequency,
-      }),
+    nextPayment = {
+      expectedAmount: deficit,
+      expiresOn: pendingPayment.expiresOn,
       offerId,
       propertyId: offer.propertyId,
+      totalOutstandingBalance: outstandingBalance,
       userId: offer.userId,
       vendorId: offer.vendorId,
     };
+  }
 
+  await resolvePendingPayment(pendingPayment._id, transactionId);
+
+  if (totalPaid < outstandingBalance) {
     await addNextPayment(nextPayment);
   }
 };

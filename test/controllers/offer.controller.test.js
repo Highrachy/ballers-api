@@ -382,6 +382,22 @@ describe('Offer Controller', () => {
           });
         });
 
+        context('when offer id is invalid', () => {
+          it('returns error', (done) => {
+            request()
+              .put(endpoint)
+              .set('authorization', adminToken)
+              .send({ ...acceptanceInfo, offerId: mongoose.Types.ObjectId() })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Invalid offer');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+
         itReturnsForbiddenForNoToken({ endpoint, method, data: acceptanceInfo });
 
         context('when accept service returns an error', () => {

@@ -10,7 +10,7 @@ import { getOfferById } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO, EXCLUDED_PROPERTY_INFO } from '../helpers/projectedSchemaInfo';
 // eslint-disable-next-line import/no-cycle
-import { generateNextPaymentDate } from './nextpayment.service';
+import { generateNextPaymentDate } from './nextPayment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -41,7 +41,7 @@ export const addTransaction = async (transaction) => {
     await generateNextPaymentDate({
       transactionId: newTransaction._id,
       offerId: offer._id,
-      transactionAmount: transaction.amount,
+      transactionAmount: newTransaction.amount,
     }).catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
