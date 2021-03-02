@@ -399,13 +399,14 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.bathrooms).to.be.eql(property.bathrooms);
   expect(response.toilets).to.be.eql(property.toilets);
   expect(response.titleDocument).to.be.eql(property.titleDocument);
+  expect(response.features).to.be.eql(property.features);
   expect(response.gallery[0].title).to.be.eql(property.gallery[0].title);
   expect(response.gallery[0].url).to.be.eql(property.gallery[0].url);
   expect(response.neighborhood.entertainments[0].name).to.be.eql(
     property.neighborhood.entertainments[0].name,
   );
-  expect(response.neighborhood.entertainments[0].timeAwayFromProperty).to.be.eql(
-    property.neighborhood.entertainments[0].timeAwayFromProperty,
+  expect(response.neighborhood.entertainments[0].distance).to.be.eql(
+    property.neighborhood.entertainments[0].distance,
   );
   expect(response.neighborhood.entertainments[0].mapLocation).to.be.eql(
     property.neighborhood.entertainments[0].mapLocation,
@@ -413,8 +414,8 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.neighborhood.hospitals[0].name).to.be.eql(
     property.neighborhood.hospitals[0].name,
   );
-  expect(response.neighborhood.hospitals[0].timeAwayFromProperty).to.be.eql(
-    property.neighborhood.hospitals[0].timeAwayFromProperty,
+  expect(response.neighborhood.hospitals[0].distance).to.be.eql(
+    property.neighborhood.hospitals[0].distance,
   );
   expect(response.neighborhood.hospitals[0].mapLocation).to.be.eql(
     property.neighborhood.hospitals[0].mapLocation,
@@ -422,8 +423,8 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.neighborhood.pointsOfInterest[0].name).to.be.eql(
     property.neighborhood.pointsOfInterest[0].name,
   );
-  expect(response.neighborhood.pointsOfInterest[0].timeAwayFromProperty).to.be.eql(
-    property.neighborhood.pointsOfInterest[0].timeAwayFromProperty,
+  expect(response.neighborhood.pointsOfInterest[0].distance).to.be.eql(
+    property.neighborhood.pointsOfInterest[0].distance,
   );
   expect(response.neighborhood.pointsOfInterest[0].mapLocation).to.be.eql(
     property.neighborhood.pointsOfInterest[0].mapLocation,
@@ -431,15 +432,15 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.neighborhood.restaurantsAndBars[0].name).to.be.eql(
     property.neighborhood.restaurantsAndBars[0].name,
   );
-  expect(response.neighborhood.restaurantsAndBars[0].timeAwayFromProperty).to.be.eql(
-    property.neighborhood.restaurantsAndBars[0].timeAwayFromProperty,
+  expect(response.neighborhood.restaurantsAndBars[0].distance).to.be.eql(
+    property.neighborhood.restaurantsAndBars[0].distance,
   );
   expect(response.neighborhood.restaurantsAndBars[0].mapLocation).to.be.eql(
     property.neighborhood.restaurantsAndBars[0].mapLocation,
   );
   expect(response.neighborhood.schools[0].name).to.be.eql(property.neighborhood.schools[0].name);
-  expect(response.neighborhood.schools[0].timeAwayFromProperty).to.be.eql(
-    property.neighborhood.schools[0].timeAwayFromProperty,
+  expect(response.neighborhood.schools[0].distance).to.be.eql(
+    property.neighborhood.schools[0].distance,
   );
   expect(response.neighborhood.schools[0].mapLocation).to.be.eql(
     property.neighborhood.schools[0].mapLocation,
@@ -447,8 +448,8 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.neighborhood.shoppingMalls[0].name).to.be.eql(
     property.neighborhood.shoppingMalls[0].name,
   );
-  expect(response.neighborhood.shoppingMalls[0].timeAwayFromProperty).to.be.eql(
-    property.neighborhood.shoppingMalls[0].timeAwayFromProperty,
+  expect(response.neighborhood.shoppingMalls[0].distance).to.be.eql(
+    property.neighborhood.shoppingMalls[0].distance,
   );
   expect(response.neighborhood.shoppingMalls[0].mapLocation).to.be.eql(
     property.neighborhood.shoppingMalls[0].mapLocation,

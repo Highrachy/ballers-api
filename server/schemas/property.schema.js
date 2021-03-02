@@ -33,7 +33,7 @@ const image = Joi.object().keys({
 const gallery = Joi.array().label('Property gallery').items(image);
 
 const neighborhoodInfoDetails = Joi.object().keys({
-  timeAwayFromProperty: optionalNumber('Time Away From Property'),
+  distance: optionalNumber('Distance'),
   name: optionalString('Name'),
   mapLocation,
 });
@@ -69,6 +69,7 @@ export const addPropertySchema = Joi.object({
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
+  features: optionalArray('Features'),
   gallery,
   paymentPlan: optionalArray('Payment plan'),
 });
@@ -89,6 +90,7 @@ export const updatePropertySchema = Joi.object({
   mapLocation,
   neighborhood,
   mainImage: nonRequiredString('Property main image'),
+  features: optionalArray('Features'),
   gallery,
   paymentPlan: optionalArray('Payment plan'),
 });

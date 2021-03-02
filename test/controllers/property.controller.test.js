@@ -483,6 +483,22 @@ describe('Property Controller', () => {
             });
         });
       });
+      context('when features is empty', () => {
+        it('returns added property', (done) => {
+          const property = PropertyFactory.build({ features: [] });
+          request()
+            .post('/api/v1/property/add')
+            .set('authorization', vendorToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Property added');
+              expect(res.body).to.have.property('property');
+              done();
+            });
+        });
+      });
       context('when gallery is empty', () => {
         it('returns an error', (done) => {
           const property = PropertyFactory.build({ gallery: '' });
@@ -991,6 +1007,21 @@ describe('Property Controller', () => {
             });
         });
       });
+      context('when features is empty', () => {
+        it('returns updated property', (done) => {
+          const invalidProperty = PropertyFactory.build({ id: property._id, features: [] });
+          request()
+            .put('/api/v1/property/update')
+            .set('authorization', vendorToken)
+            .send(invalidProperty)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body).to.have.property('property');
+              done();
+            });
+        });
+      });
       context('when gallery is empty', () => {
         it('returns an error', (done) => {
           const invalidProperty = PropertyFactory.build({ id: property._id, gallery: '' });
@@ -1360,6 +1391,7 @@ describe('Property Controller', () => {
         bathrooms: 1,
         bedrooms: 1,
         createdAt: futureDate,
+        features: ['swimming pool', 'tiled roads', 'electricity'],
         houseType: 'penthouse apartment',
         name: 'penthouse apartment',
         price: 12500000,
@@ -1552,7 +1584,7 @@ describe('Property Controller', () => {
         };
         const filteredParams = querystring.stringify(multiplePropertyDetails);
 
-        it('returns matched user', (done) => {
+        it('returns matched property', (done) => {
           request()
             [method](`${endpoint}?${filteredParams}`)
             .set('authorization', adminToken)
@@ -1601,6 +1633,60 @@ describe('Property Controller', () => {
         user: adminUser,
         dataObject: vendorProperty,
         useExistingUser: true,
+      });
+    });
+  });
+
+  describe('Array filters', () => {
+    const addedBy = vendorUser._id;
+    const updatedBy = vendorUser._id;
+
+    const property1 = PropertyFactory.build({
+      features: null,
+      addedBy,
+      updatedBy,
+    });
+    const property2 = PropertyFactory.build({
+      features: ['electricity'],
+      addedBy,
+      updatedBy,
+    });
+    const property3 = PropertyFactory.build({
+      features: ['swimming pool', 'electricity', 'tile roads'],
+      addedBy,
+      updatedBy,
+    });
+
+    beforeEach(async () => {
+      await addProperty(property1);
+      await addProperty(property2);
+      await addProperty(property3);
+    });
+
+    context('when a single entry is used', () => {
+      it('returns matched properties', (done) => {
+        request()
+          .get(`/api/v1/property/all?features=electricity`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res.body.result.length).to.be.eql(2);
+            expect(res.body.result[0].features).to.be.eql(property2.features);
+            expect(res.body.result[1].features).to.be.eql(property3.features);
+            done();
+          });
+      });
+    });
+
+    context('when a multiple entries are used', () => {
+      it('returns matched property', (done) => {
+        request()
+          .get(`/api/v1/property/all?features=electricity,swimming pool`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res.body.result.length).to.be.eql(1);
+            expect(res.body.result[0].features).to.be.eql(property3.features);
+            done();
+          });
       });
     });
   });
@@ -1800,6 +1886,7 @@ describe('Property Controller', () => {
               expect(res.body.properties[0]).to.have.property('name');
               expect(res.body.properties[0]).to.have.property('address');
               expect(res.body.properties[0]).to.have.property('mainImage');
+              expect(res.body.properties[0]).to.have.property('features');
               expect(res.body.properties[0]).to.have.property('gallery');
               expect(res.body.properties[0]).to.have.property('price');
               expect(res.body.properties[0]).to.have.property('houseType');
@@ -2334,7 +2421,7 @@ describe('Property Controller', () => {
           schools: [
             {
               name: 'covenant university',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2342,7 +2429,7 @@ describe('Property Controller', () => {
             },
             {
               name: 'babcock university',
-              timeAwayFromProperty: 15,
+              distance: 15,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2362,7 +2449,7 @@ describe('Property Controller', () => {
       type: 'schools',
       neighborhood: {
         name: 'bingham university',
-        timeAwayFromProperty: 5,
+        distance: 5,
         mapLocation: {
           longitude: 123.22,
           latitude: 123.11,
@@ -2478,7 +2565,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'covenant university',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2487,7 +2574,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'babcock university',
-              timeAwayFromProperty: 15,
+              distance: 15,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2496,7 +2583,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'bingham university',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2507,7 +2594,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'Reddington Hospital',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2516,7 +2603,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'Primrose General',
-              timeAwayFromProperty: 15,
+              distance: 15,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2537,7 +2624,7 @@ describe('Property Controller', () => {
       typeId: property.neighborhood.schools[0]._id,
       neighborhood: {
         name: 'unilorin',
-        timeAwayFromProperty: 15,
+        distance: 15,
         mapLocation: {
           longitude: 105.22,
           latitude: 105.11,
@@ -2563,8 +2650,8 @@ describe('Property Controller', () => {
             expect(res.body.property.neighborhood.schools[0].name).to.be.eql(
               data.neighborhood.name,
             );
-            expect(res.body.property.neighborhood.schools[0].timeAwayFromProperty).to.be.eql(
-              data.neighborhood.timeAwayFromProperty,
+            expect(res.body.property.neighborhood.schools[0].distance).to.be.eql(
+              data.neighborhood.distance,
             );
             expect(res.body.property.neighborhood.schools[0].mapLocation).to.be.eql(
               data.neighborhood.mapLocation,
@@ -2665,7 +2752,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'Reddington Hospital',
-              timeAwayFromProperty: 5,
+              distance: 5,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2674,7 +2761,7 @@ describe('Property Controller', () => {
             {
               _id: mongoose.Types.ObjectId(),
               name: 'Primrose General',
-              timeAwayFromProperty: 15,
+              distance: 15,
               mapLocation: {
                 longitude: 123.22,
                 latitude: 123.11,
@@ -2716,8 +2803,8 @@ describe('Property Controller', () => {
             expect(res.body.property.neighborhood.hospitals[0].name).to.be.eql(
               property.neighborhood.hospitals[0].name,
             );
-            expect(res.body.property.neighborhood.hospitals[0].timeAwayFromProperty).to.be.eql(
-              property.neighborhood.hospitals[0].timeAwayFromProperty,
+            expect(res.body.property.neighborhood.hospitals[0].distance).to.be.eql(
+              property.neighborhood.hospitals[0].distance,
             );
             expect(res.body.property.neighborhood.hospitals[0].mapLocation).to.be.eql(
               property.neighborhood.hospitals[0].mapLocation,
