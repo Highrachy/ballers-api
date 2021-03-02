@@ -18,8 +18,18 @@ export const getTransactionById = async (id) => Transaction.findById(id).select(
 export const getTransactionByInfo = async (additionalInfo) =>
   Transaction.findOne({ additionalInfo }).select();
 
-export const getTransactionByOfferId = async (offerId) =>
-  Transaction.find({ offerId: ObjectId(offerId) }).select();
+export const getTotalPaidOnOffer = async (offerId) => {
+  const total = await Transaction.aggregate([
+    { $match: { offerId: ObjectId(offerId) } },
+    {
+      $group: {
+        _id: null,
+        totalAmountPaid: { $sum: '$amount' },
+      },
+    },
+  ]);
+  return total[0].totalAmountPaid;
+};
 
 export const addTransaction = async (transaction) => {
   const offer = await getOfferById(transaction.offerId).catch((error) => {
@@ -41,7 +51,6 @@ export const addTransaction = async (transaction) => {
     await generateNextPaymentDate({
       transactionId: newTransaction._id,
       offerId: offer._id,
-      transactionAmount: newTransaction.amount,
     }).catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });

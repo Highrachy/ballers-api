@@ -362,7 +362,11 @@ export const acceptOffer = async (offerToAccept) => {
     );
   }
 
-  if (offer[0].status === OFFER_STATUS.CANCELLED) {
+  if (
+    offer[0].status === OFFER_STATUS.CANCELLED ||
+    offer[0].status === OFFER_STATUS.NEGLECTED ||
+    offer[0].status === OFFER_STATUS.REJECTED
+  ) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'You cannot accept a cancelled offer');
   }
   const propertyPrice = offer[0].propertyInfo.price;
@@ -374,6 +378,14 @@ export const acceptOffer = async (offerToAccept) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
   }
 
+  if (
+    offer[0].status === OFFER_STATUS.INTERESTED ||
+    offer[0].status === OFFER_STATUS.ASSIGNED ||
+    offer[0].status === OFFER_STATUS.ALLOCATED
+  ) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has been accepted');
+  }
+
   const paymentSchedule = generatePaymentSchedules(offer[0]);
 
   const nextPayment = {
@@ -381,7 +393,6 @@ export const acceptOffer = async (offerToAccept) => {
     expiresOn: paymentSchedule[0].date,
     offerId: offer[0]._id,
     propertyId: offer[0].propertyId,
-    totalOutstandingBalance: offer[0].totalAmountPayable,
     userId: offer[0].userId,
     vendorId: offer[0].vendorId,
   };
