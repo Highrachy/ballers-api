@@ -485,7 +485,7 @@ describe('Property Controller', () => {
       });
       context('when features is empty', () => {
         it('returns added property', (done) => {
-          const property = PropertyFactory.build({ features: '' });
+          const property = PropertyFactory.build({ features: [] });
           request()
             .post('/api/v1/property/add')
             .set('authorization', vendorToken)
@@ -1009,7 +1009,7 @@ describe('Property Controller', () => {
       });
       context('when features is empty', () => {
         it('returns updated property', (done) => {
-          const invalidProperty = PropertyFactory.build({ id: property._id, features: '' });
+          const invalidProperty = PropertyFactory.build({ id: property._id, features: [] });
           request()
             .put('/api/v1/property/update')
             .set('authorization', vendorToken)
@@ -1391,6 +1391,7 @@ describe('Property Controller', () => {
         bathrooms: 1,
         bedrooms: 1,
         createdAt: futureDate,
+        features: ['swimming pool', 'tiled roads', 'electricity'],
         houseType: 'penthouse apartment',
         name: 'penthouse apartment',
         price: 12500000,
@@ -1583,7 +1584,7 @@ describe('Property Controller', () => {
         };
         const filteredParams = querystring.stringify(multiplePropertyDetails);
 
-        it('returns matched user', (done) => {
+        it('returns matched property', (done) => {
           request()
             [method](`${endpoint}?${filteredParams}`)
             .set('authorization', adminToken)
@@ -1632,6 +1633,60 @@ describe('Property Controller', () => {
         user: adminUser,
         dataObject: vendorProperty,
         useExistingUser: true,
+      });
+    });
+  });
+
+  describe('Array filters', () => {
+    const addedBy = vendorUser._id;
+    const updatedBy = vendorUser._id;
+
+    const property1 = PropertyFactory.build({
+      features: null,
+      addedBy,
+      updatedBy,
+    });
+    const property2 = PropertyFactory.build({
+      features: ['electricity'],
+      addedBy,
+      updatedBy,
+    });
+    const property3 = PropertyFactory.build({
+      features: ['swimming pool', 'electricity', 'tile roads'],
+      addedBy,
+      updatedBy,
+    });
+
+    beforeEach(async () => {
+      await addProperty(property1);
+      await addProperty(property2);
+      await addProperty(property3);
+    });
+
+    context('when a single entry is used', () => {
+      it('returns matched properties', (done) => {
+        request()
+          .get(`/api/v1/property/all?features=electricity`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res.body.result.length).to.be.eql(2);
+            expect(res.body.result[0].features).to.be.eql(property2.features);
+            expect(res.body.result[1].features).to.be.eql(property3.features);
+            done();
+          });
+      });
+    });
+
+    context('when a multiple entries are used', () => {
+      it('returns matched property', (done) => {
+        request()
+          .get(`/api/v1/property/all?features=electricity,swimming pool`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res.body.result.length).to.be.eql(1);
+            expect(res.body.result[0].features).to.be.eql(property3.features);
+            done();
+          });
       });
     });
   });

@@ -399,6 +399,7 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
   expect(response.bathrooms).to.be.eql(property.bathrooms);
   expect(response.toilets).to.be.eql(property.toilets);
   expect(response.titleDocument).to.be.eql(property.titleDocument);
+  expect(response.features).to.be.eql(property.features);
   expect(response.gallery[0].title).to.be.eql(property.gallery[0].title);
   expect(response.gallery[0].url).to.be.eql(property.gallery[0].url);
   expect(response.neighborhood.entertainments[0].name).to.be.eql(

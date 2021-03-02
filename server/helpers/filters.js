@@ -3,8 +3,10 @@ import mongoose from 'mongoose';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 const RANGE_SEPARATOR = ':';
+const ARRAY_SEPARATOR = ',';
 
 export const FILTER_TYPE = {
+  ARRAY: 'array',
   BOOLEAN: 'boolean',
   DATE: 'date',
   INTEGER: 'integer',
@@ -52,6 +54,10 @@ export const buildFilterQuery = (allFilters, query) => {
       const [rangeFrom = 0, rangeTo = 0] = query[queryKey].split(RANGE_SEPARATOR);
 
       switch (type) {
+        case FILTER_TYPE.ARRAY:
+          acc.push({ [filterKey]: { $all: query[queryKey].split(ARRAY_SEPARATOR) } });
+          break;
+
         case FILTER_TYPE.BOOLEAN:
           acc.push({ [filterKey]: query[queryKey] === 'true' });
           break;
@@ -208,6 +214,7 @@ export const PROPERTY_FILTERS = {
   bathrooms: { type: FILTER_TYPE.INTEGER },
   bedrooms: { type: FILTER_TYPE.INTEGER },
   createdAt: { type: FILTER_TYPE.DATE },
+  features: { type: FILTER_TYPE.ARRAY },
   houseType: { type: FILTER_TYPE.STRING },
   name: { type: FILTER_TYPE.STRING },
   price: { type: FILTER_TYPE.INTEGER },
