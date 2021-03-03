@@ -18,7 +18,7 @@ export const getTransactionById = async (id) => Transaction.findById(id).select(
 export const getTransactionByInfo = async (additionalInfo) =>
   Transaction.findOne({ additionalInfo }).select();
 
-export const getTotalPaidOnOffer = async (offerId) => {
+export const getTotalTransactionByOfferId = async (offerId) => {
   const total = await Transaction.aggregate([
     { $match: { offerId: ObjectId(offerId) } },
     {

@@ -5,14 +5,14 @@ import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getOfferById, generatePaymentSchedules } from './offer.service';
 // eslint-disable-next-line import/no-cycle
-import { getTotalPaidOnOffer } from './transaction.service';
+import { getTotalTransactionByOfferId } from './transaction.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
-export const getNextPaymentById = async (id) => NextPayment.findById(id).select();
-
-export const getNextPaymentByOfferId = async (offerId) =>
-  NextPayment.find({ offerId: ObjectId(offerId) }).select();
+export const getLastPendingNextPayment = async (offerId) =>
+  NextPayment.find({ offerId: ObjectId(offerId) })
+    .sort({ _id: -1 })
+    .limit(1);
 
 export const addNextPayment = async (payment) => {
   try {
@@ -54,7 +54,7 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  const totalPaid = await getTotalPaidOnOffer(offerId).catch((error) => {
+  const totalPaid = await getTotalTransactionByOfferId(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
@@ -62,11 +62,9 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
 
   const { validSchedules, expectedTotal } = calculateExpectedTotal(paymentSchedule);
 
-  const nextPayments = await getNextPaymentByOfferId(offerId).catch((error) => {
+  const pendingPayment = await getLastPendingNextPayment(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
-
-  const pendingPayment = nextPayments[nextPayments.length - 1];
 
   const nextPayment = {
     expectedAmount: expectedTotal - totalPaid,
@@ -77,7 +75,9 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
     vendorId: offer.vendorId,
   };
 
-  await resolvePendingPayment(pendingPayment._id, transactionId);
+  if (pendingPayment.length > 0) {
+    await resolvePendingPayment(pendingPayment[0]._id, transactionId);
+  }
 
   await addNextPayment(nextPayment);
 };
