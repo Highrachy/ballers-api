@@ -28,7 +28,7 @@ export const getTotalTransactionByOfferId = async (offerId) => {
       },
     },
   ]);
-  return total[0].totalAmountPaid;
+  return total[0]?.totalAmountPaid || 0;
 };
 
 export const addTransaction = async (transaction) => {
