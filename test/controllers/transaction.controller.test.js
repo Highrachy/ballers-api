@@ -12,7 +12,7 @@ import ReferralFactory from '../factories/referral.factory';
 import { addTransaction } from '../../server/services/transaction.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
-import { createOffer } from '../../server/services/offer.service';
+import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addReferral } from '../../server/services/referral.service';
 import { OFFER_STATUS, REWARD_STATUS, USER_ROLE } from '../../server/helpers/constants';
@@ -91,21 +91,45 @@ describe('Transaction Controller', () => {
   });
 
   describe('Add Transaction Route', () => {
-    const transactionBody = { offerId: offer._id };
+    const transactionBody = { offerId: offer._id, amount: 100_000, paidOn: '2021-02-12' };
     context('with valid data', () => {
-      it('returns successful transaction', (done) => {
-        const transaction = TransactionFactory.build(transactionBody);
-        request()
-          .post('/api/v1/transaction/add')
-          .set('authorization', adminToken)
-          .send(transaction)
-          .end((err, res) => {
-            expect(res).to.have.status(201);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Transaction added');
-            expect(res.body).to.have.property('transaction');
-            done();
-          });
+      context('when nextPayment does not exist', () => {
+        it('returns successful transaction', (done) => {
+          const transaction = TransactionFactory.build(transactionBody);
+          request()
+            .post('/api/v1/transaction/add')
+            .set('authorization', adminToken)
+            .send(transaction)
+            .end((err, res) => {
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Transaction added');
+              expect(res.body.transaction.offerId).to.be.eql(offer._id.toString());
+              expect(res.body.transaction.amount).to.be.eql(transaction.amount);
+              done();
+            });
+        });
+      });
+
+      context('when nextPayment exist', () => {
+        beforeEach(async () => {
+          await acceptOffer({ offerId: offer._id, user: regularUser });
+        });
+        it('returns successful transaction', (done) => {
+          const transaction = TransactionFactory.build(transactionBody);
+          request()
+            .post('/api/v1/transaction/add')
+            .set('authorization', adminToken)
+            .send(transaction)
+            .end((err, res) => {
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Transaction added');
+              expect(res.body.transaction.offerId).to.be.eql(offer._id.toString());
+              expect(res.body.transaction.amount).to.be.eql(transaction.amount);
+              done();
+            });
+        });
       });
     });
 
