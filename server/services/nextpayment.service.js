@@ -68,7 +68,12 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
 
   const nextPayment = {
     expectedAmount: expectedTotal - totalPaid,
-    expiresOn: paymentSchedule[validSchedules.length].date,
+    expiresOn:
+      paymentSchedule[
+        paymentSchedule.length === validSchedules.length
+          ? validSchedules.length - 1
+          : validSchedules.length
+      ].date,
     offerId,
     propertyId: offer.propertyId,
     userId: offer.userId,
