@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { add, format } from 'date-fns';
 import NextPayment from '../models/nextPayment.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
@@ -33,7 +34,7 @@ export const resolvePendingPayment = async (pendingPaymentId, transactionId = nu
   });
 };
 
-const calculateExpectedTotal = (schedule) => {
+const calculateExpectedTotal = (schedule, frequency) => {
   const today = new Date();
   const validSchedules = schedule.reduce((acc, val) => {
     if (val.date <= today) {
@@ -41,6 +42,14 @@ const calculateExpectedTotal = (schedule) => {
     }
     return acc;
   }, []);
+
+  if (
+    validSchedules.length === schedule.length - 1 &&
+    new Date(format(add(today, { days: frequency }), 'yyyy-MM-dd')) >
+      schedule[schedule.length - 1].date
+  ) {
+    validSchedules.push(schedule[schedule.length - 1]);
+  }
 
   const expectedTotal = validSchedules.reduce((a, b) => {
     return a + b.amount;
@@ -60,7 +69,10 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
 
   const paymentSchedule = generatePaymentSchedules(offer);
 
-  const { validSchedules, expectedTotal } = calculateExpectedTotal(paymentSchedule);
+  const { validSchedules, expectedTotal } = calculateExpectedTotal(
+    paymentSchedule,
+    offer.paymentFrequency,
+  );
 
   const pendingPayment = await getLastPendingNextPayment(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);

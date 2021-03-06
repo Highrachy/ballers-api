@@ -17,6 +17,7 @@ import { addUser } from '../../server/services/user.service';
 import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { USER_ROLE } from '../../server/helpers/constants';
+import NextPayment from '../../server/models/nextPayment.model';
 
 describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -31,7 +32,15 @@ describe('Transaction Service', () => {
     { generateId: true },
   );
   const offer = OfferFactory.build(
-    { enquiryId: enquiry._id, vendorId: vendor._id },
+    {
+      enquiryId: enquiry._id,
+      vendorId: vendor._id,
+      totalAmountPayable: 4_000_000,
+      initialPayment: 2_000_000,
+      periodicPayment: 500_000,
+      paymentFrequency: 30,
+      initialPaymentDate: new Date('2020-03-01'),
+    },
     { generateId: true },
   );
   const transaction = TransactionFactory.build(
@@ -41,6 +50,7 @@ describe('Transaction Service', () => {
       offerId: offer._id,
       propertyId: property._id,
       userId: user._id,
+      amount: 1_000_000,
     },
     { generateId: true },
   );
@@ -66,20 +76,81 @@ describe('Transaction Service', () => {
   });
 
   describe('#addTransaction', () => {
+    let fakeDate;
     let countedTransactions;
+    let countedNextPayments;
 
     beforeEach(async () => {
       countedTransactions = await Transaction.countDocuments({});
+      countedNextPayments = await NextPayment.countDocuments({});
+    });
+
+    afterEach(() => {
+      fakeDate.restore();
     });
 
     context('when a valid transaction is entered', () => {
-      beforeEach(async () => {
-        await addTransaction(transaction);
+      context('during first payment cycle', () => {
+        beforeEach(async () => {
+          fakeDate = sinon.useFakeTimers({
+            now: new Date('2020-03-20'),
+          });
+          await addTransaction(transaction);
+        });
+
+        it('adds a new transaction', async () => {
+          const currentCountedTransactions = await Transaction.countDocuments({});
+          const currentCountedNextPayments = await NextPayment.countDocuments({});
+          const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
+          expect(currentCountedTransactions).to.eql(countedTransactions + 1);
+          expect(currentCountedNextPayments).to.eql(countedNextPayments + 1);
+          expect(matchedNextPayments.length).to.eql(1);
+          expect(matchedNextPayments[0].resolved).to.eql(false);
+          expect(matchedNextPayments[0].expectedAmount).to.eql(1_000_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(new Date('2020-03-31'));
+        });
       });
 
-      it('adds a new transaction', async () => {
-        const currentCountedTransactions = await Transaction.countDocuments({});
-        expect(currentCountedTransactions).to.eql(countedTransactions + 1);
+      context('during second payment cycle', () => {
+        beforeEach(async () => {
+          fakeDate = sinon.useFakeTimers({
+            now: new Date('2020-04-05'),
+          });
+          await addTransaction(transaction);
+        });
+
+        it('adds a new transaction', async () => {
+          const currentCountedTransactions = await Transaction.countDocuments({});
+          const currentCountedNextPayments = await NextPayment.countDocuments({});
+          const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
+          expect(currentCountedTransactions).to.eql(countedTransactions + 1);
+          expect(currentCountedNextPayments).to.eql(countedNextPayments + 1);
+          expect(matchedNextPayments.length).to.eql(1);
+          expect(matchedNextPayments[0].resolved).to.eql(false);
+          expect(matchedNextPayments[0].expectedAmount).to.eql(1_500_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(new Date('2020-04-30'));
+        });
+      });
+
+      context('during last payment cycle', () => {
+        beforeEach(async () => {
+          fakeDate = sinon.useFakeTimers({
+            now: new Date('2020-06-15'),
+          });
+          await addTransaction(transaction);
+        });
+
+        it('adds a new transaction', async () => {
+          const currentCountedTransactions = await Transaction.countDocuments({});
+          const currentCountedNextPayments = await NextPayment.countDocuments({});
+          const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
+          expect(currentCountedTransactions).to.eql(countedTransactions + 1);
+          expect(currentCountedNextPayments).to.eql(countedNextPayments + 1);
+          expect(matchedNextPayments.length).to.eql(1);
+          expect(matchedNextPayments[0].resolved).to.eql(false);
+          expect(matchedNextPayments[0].expectedAmount).to.eql(3_000_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(new Date('2020-06-29'));
+        });
       });
     });
 
