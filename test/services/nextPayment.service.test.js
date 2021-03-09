@@ -3,7 +3,7 @@ import { expect, sinon } from '../config';
 import NextPayment from '../../server/models/nextPayment.model';
 import Offer from '../../server/models/offer.model';
 import Transaction from '../../server/models/transaction.model';
-import { generateNextPaymentDate } from '../../server/services/next-Payment.service';
+import { generateNextPaymentDate } from '../../server/services/nextPayment.service';
 import OfferFactory from '../factories/offer.factory';
 import NextPaymentFactory from '../factories/nextPayment.factory';
 import TransactionFactory from '../factories/transaction.factory';
