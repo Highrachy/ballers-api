@@ -10,7 +10,7 @@ import { getOfferById } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO, EXCLUDED_PROPERTY_INFO } from '../helpers/projectedSchemaInfo';
 // eslint-disable-next-line import/no-cycle
-import { generateNextPaymentDate } from './nextPayment.service';
+import { generateNextPaymentDate } from './next-Payment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 

@@ -16,7 +16,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
-import { addNextPayment } from './nextPayment.service';
+import { addNextPayment } from './next-Payment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 

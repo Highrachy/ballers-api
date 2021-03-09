@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { add, format } from 'date-fns';
+import { add, format, subDays } from 'date-fns';
 import NextPayment from '../models/nextPayment.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
@@ -37,7 +37,7 @@ export const resolvePendingPayment = async (pendingPaymentId, transactionId = nu
 const calculateExpectedTotal = (schedule, frequency) => {
   const today = new Date();
   const validSchedules = schedule.reduce((acc, val) => {
-    if (val.date <= today) {
+    if (subDays(val.date, frequency) <= today) {
       acc.push(val);
     }
     return acc;
@@ -78,14 +78,27 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  let expectedAmount = expectedTotal - totalPaid;
+  let expiresOn = paymentSchedule[validSchedules.length - 1].date;
+
+  if (expectedTotal === totalPaid && paymentSchedule.length !== validSchedules.length) {
+    expectedAmount = offer.periodicPayment;
+    expiresOn = paymentSchedule[validSchedules.length].date;
+  }
+
+  if (
+    expectedTotal - totalPaid < 0 &&
+    paymentSchedule.length !== validSchedules.length &&
+    totalPaid !== offer.totalAmountPayable
+  ) {
+    const advance = Math.ceil(Math.abs(expectedTotal - totalPaid) / offer.periodicPayment);
+    expectedAmount = offer.periodicPayment * advance - Math.abs(expectedTotal - totalPaid);
+    expiresOn = paymentSchedule[validSchedules.length - 1 + advance].date;
+  }
+
   const nextPayment = {
-    expectedAmount: expectedTotal - totalPaid,
-    expiresOn:
-      paymentSchedule[
-        paymentSchedule.length === validSchedules.length
-          ? validSchedules.length - 1
-          : validSchedules.length
-      ].date,
+    expectedAmount: expectedAmount === 0 ? offer.periodicPayment : expectedAmount,
+    expiresOn,
     offerId,
     propertyId: offer.propertyId,
     userId: offer.userId,

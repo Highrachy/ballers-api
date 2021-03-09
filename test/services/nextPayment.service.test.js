@@ -3,12 +3,12 @@ import { expect, sinon } from '../config';
 import NextPayment from '../../server/models/nextPayment.model';
 import Offer from '../../server/models/offer.model';
 import Transaction from '../../server/models/transaction.model';
-import { generateNextPaymentDate } from '../../server/services/nextPayment.service';
+import { generateNextPaymentDate } from '../../server/services/next-Payment.service';
 import OfferFactory from '../factories/offer.factory';
 import NextPaymentFactory from '../factories/nextPayment.factory';
 import TransactionFactory from '../factories/transaction.factory';
 
-describe('NextPayment Service', () => {
+describe.only('NextPayment Service', () => {
   const offer = OfferFactory.build(
     {
       totalAmountPayable: 4_000_000,
@@ -41,8 +41,9 @@ describe('NextPayment Service', () => {
 
   describe('#generateNextPaymentDate', () => {
     let fakeDate;
-    const expiresOnForFirstCycle = new Date('2020-03-31');
-    const expiresOnForSecondCycle = new Date('2020-04-30');
+    const expiresOnForFirstCycle = new Date('2020-03-01');
+    const expiresOnForSecondCycle = new Date('2020-03-31');
+    const expiresOnForThirdCycle = new Date('2020-04-30');
     const expiresOnForLastCycle = new Date('2020-06-29');
 
     beforeEach(async () => {
@@ -56,7 +57,7 @@ describe('NextPayment Service', () => {
     describe('Payment schedule is in the first cycle', () => {
       beforeEach(async () => {
         fakeDate = sinon.useFakeTimers({
-          now: new Date('2020-03-20'),
+          now: new Date('2020-02-21'),
         });
       });
 
@@ -113,12 +114,12 @@ describe('NextPayment Service', () => {
           await generateNextPaymentDate({ offerId: offer._id });
         });
 
-        it('returns a negative number as the expected balance', async () => {
+        it('returns the expected balance for third cycle', async () => {
           const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
           expect(matchedNextPayments.length).to.eql(1);
           expect(matchedNextPayments[0].resolved).to.eql(false);
-          expect(matchedNextPayments[0].expectedAmount).to.eql(-500_000);
-          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForFirstCycle);
+          expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForThirdCycle);
         });
       });
 
@@ -128,12 +129,12 @@ describe('NextPayment Service', () => {
           await generateNextPaymentDate({ offerId: offer._id });
         });
 
-        it('returns zero as expected balance', async () => {
+        it('returns expected balance for second cycle', async () => {
           const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
           expect(matchedNextPayments.length).to.eql(1);
           expect(matchedNextPayments[0].resolved).to.eql(false);
-          expect(matchedNextPayments[0].expectedAmount).to.eql(0);
-          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForFirstCycle);
+          expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForSecondCycle);
         });
       });
 
@@ -189,7 +190,7 @@ describe('NextPayment Service', () => {
     describe('Payment schedule is in the second cycle', () => {
       beforeEach(async () => {
         fakeDate = sinon.useFakeTimers({
-          now: new Date('2020-04-05'),
+          now: new Date('2020-03-08'),
         });
       });
 
@@ -211,7 +212,7 @@ describe('NextPayment Service', () => {
             expect(matchedNextPayments[0].resolvedViaTransaction).to.eql(false);
             expect(matchedNextPayments[1].resolved).to.eql(false);
             expect(matchedNextPayments[1].expectedAmount).to.eql(2_500_000);
-            expect(matchedNextPayments[1].expiresOn).to.eql(expiresOnForSecondCycle);
+            expect(matchedNextPayments[1].expiresOn).to.eql(expiresOnForFirstCycle);
           });
         });
 
@@ -244,7 +245,7 @@ describe('NextPayment Service', () => {
             const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
             expect(matchedNextPayments[0].resolved).to.eql(false);
             expect(matchedNextPayments[0].expectedAmount).to.eql(2_500_000);
-            expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForSecondCycle);
+            expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForFirstCycle);
           });
         });
 
@@ -279,12 +280,12 @@ describe('NextPayment Service', () => {
           await generateNextPaymentDate({ offerId: offer._id });
         });
 
-        it('returns zero as expected balance', async () => {
+        it('returns expected balance for next cycle', async () => {
           const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
           expect(matchedNextPayments.length).to.eql(1);
           expect(matchedNextPayments[0].resolved).to.eql(false);
-          expect(matchedNextPayments[0].expectedAmount).to.eql(0);
-          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForSecondCycle);
+          expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForThirdCycle);
         });
       });
 
@@ -319,12 +320,12 @@ describe('NextPayment Service', () => {
           await generateNextPaymentDate({ offerId: offer._id });
         });
 
-        it('returns a negative number as expected balance', async () => {
+        it('returns expected balance for next cycle', async () => {
           const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
           expect(matchedNextPayments.length).to.eql(1);
           expect(matchedNextPayments[0].resolved).to.eql(false);
-          expect(matchedNextPayments[0].expectedAmount).to.eql(-200_000);
-          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForSecondCycle);
+          expect(matchedNextPayments[0].expectedAmount).to.eql(300_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForThirdCycle);
         });
       });
 
@@ -349,7 +350,7 @@ describe('NextPayment Service', () => {
     describe('Payment schedule is in the last cycle', () => {
       beforeEach(async () => {
         fakeDate = sinon.useFakeTimers({
-          now: new Date('2020-06-15'),
+          now: new Date('2020-06-8'),
         });
       });
 
@@ -414,13 +415,13 @@ describe('NextPayment Service', () => {
     describe('Payment schedule is past the last cycle', () => {
       beforeEach(async () => {
         fakeDate = sinon.useFakeTimers({
-          now: new Date('2020-07-12'),
+          now: new Date('2020-07-01'),
         });
       });
 
       context('the user has outstanding payments', () => {
         beforeEach(async () => {
-          await Transaction.create({ ...transaction, amount: 2_500_000 });
+          await Transaction.create({ ...transaction, amount: 3_500_000 });
           await generateNextPaymentDate({ offerId: offer._id });
         });
 
@@ -428,7 +429,7 @@ describe('NextPayment Service', () => {
           const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
           expect(matchedNextPayments.length).to.eql(1);
           expect(matchedNextPayments[0].resolved).to.eql(false);
-          expect(matchedNextPayments[0].expectedAmount).to.eql(1_500_000);
+          expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
           expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForLastCycle);
         });
       });
