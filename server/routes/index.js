@@ -13,6 +13,7 @@ import visitation from './visitation.routes';
 import welcome from './welcome.routes';
 import area from './area.routes';
 import contentProperty from './contentProperty.routes';
+import reportProperty from './reportedProperty.routes';
 
 export default (app) => {
   app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, { explorer: true }));
@@ -29,4 +30,5 @@ export default (app) => {
   app.use('/api/v1/', welcome);
   app.use('/api/v1/area', area);
   app.use('/api/v1/content-property', contentProperty);
+  app.use('/api/v1/report-property', reportProperty);
 };
