@@ -8,5 +8,5 @@ export const reportPropertySchema = Joi.object({
 
 export const resolveReportedPropertySchema = Joi.object({
   id: requiredObjectId('Report Id'),
-  notes: optionalString('Reason'),
+  notes: optionalString('Notes'),
 });
