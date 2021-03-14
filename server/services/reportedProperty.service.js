@@ -4,6 +4,7 @@ import httpStatus from '../helpers/httpStatus';
 import { getPropertyById } from './property.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterAndSortQuery, REPORT_FILTERS } from '../helpers/filters';
+import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 
 export const getReportById = async (id) => ReportedProperty.findById(id).select();
 
@@ -52,12 +53,53 @@ export const getAllReports = async ({ page = 1, limit = 10, ...query } = {}) => 
     { $match: { $and: filterQuery } },
     { $sort: sortQuery },
     {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'reportedBy',
+        foreignField: '_id',
+        as: 'reportedBy',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'resolved.by',
+        foreignField: '_id',
+        as: 'resolved.by',
+      },
+    },
+    {
+      $unwind: '$propertyInfo',
+    },
+    {
+      $unwind: '$reportedBy',
+    },
+    {
+      $unwind: {
+        path: '$resolved.by',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        ...NON_PROJECTED_USER_INFO('reportedBy'),
+        ...NON_PROJECTED_USER_INFO('resolved.by'),
+      },
+    },
+    {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
         data: generateFacetData(page, limit),
       },
     },
-    { $project: { preferences: 0, password: 0, notifications: 0 } },
   ];
 
   if (Object.keys(sortQuery).length === 0) {

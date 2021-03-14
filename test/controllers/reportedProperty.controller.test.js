@@ -14,6 +14,11 @@ import {
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
   itReturnsNotFoundForInvalidToken,
+  expectsPaginationToReturnTheRightValues,
+  defaultPaginationResult,
+  expectResponseToExcludeSensitiveUserData,
+  expectResponseToContainNecessaryPropertyData,
+  futureDate,
 } from '../helpers';
 
 let adminToken;
@@ -46,7 +51,7 @@ describe('Report Property Controller', () => {
 
   describe('Report Property Route', () => {
     const method = 'post';
-    const endpoint = '/api/v1/report-property/report';
+    const endpoint = '/api/v1/report-property/';
     const report = ReportedPropertyFactory.build({
       propertyId: property._id,
       reason: 'fraudulent vendor',
@@ -55,7 +60,7 @@ describe('Report Property Controller', () => {
     context('with valid data', () => {
       it('returns successful token', (done) => {
         request()
-          .post('/api/v1/report-property/report')
+          .post('/api/v1/report-property/')
           .set('authorization', userToken)
           .send(report)
           .end((err, res) => {
@@ -74,7 +79,7 @@ describe('Report Property Controller', () => {
       context('when propertyId is empty', () => {
         it('returns an error', (done) => {
           request()
-            .post('/api/v1/report-property/report')
+            .post('/api/v1/report-property/')
             .set('authorization', userToken)
             .send({ ...report, propertyId: '' })
             .end((err, res) => {
@@ -90,7 +95,7 @@ describe('Report Property Controller', () => {
       context('when reason is empty', () => {
         it('returns an error', (done) => {
           request()
-            .post('/api/v1/report-property/report')
+            .post('/api/v1/report-property/')
             .set('authorization', userToken)
             .send({ ...report, reason: '' })
             .end((err, res) => {
@@ -237,7 +242,7 @@ describe('Report Property Controller', () => {
     const endpoint = '/api/v1/report-property/all';
 
     const reports = ReportedPropertyFactory.buildList(
-      18,
+      17,
       {
         propertyId: property._id,
         reason: 'fraudulent vendor',
@@ -245,6 +250,21 @@ describe('Report Property Controller', () => {
         resolved: {
           status: false,
         },
+      },
+      { generateId: true },
+    );
+    const report = ReportedPropertyFactory.build(
+      {
+        propertyId: property._id,
+        reason: 'suspicious activity',
+        reportedBy: regularUser._id,
+        resolved: {
+          status: false,
+          by: adminUser._id,
+          notes: 'vendor banned',
+          date: futureDate,
+        },
+        createdAt: futureDate,
       },
       { generateId: true },
     );
@@ -261,7 +281,7 @@ describe('Report Property Controller', () => {
 
       context('when reports exist in db', () => {
         beforeEach(async () => {
-          await ReportedProperty.insertMany(reports);
+          await ReportedProperty.insertMany([report, ...reports]);
         });
 
         itReturnsTheRightPaginationValue({
@@ -269,6 +289,37 @@ describe('Report Property Controller', () => {
           method,
           user: adminUser,
           useExistingUser: true,
+        });
+
+        context('with a vendor token not attached to any property', () => {
+          it('returns no property', (done) => {
+            request()
+              [method](`${endpoint}?limit=1&page=1`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  limit: 1,
+                  total: 18,
+                  result: 1,
+                  totalPage: 18,
+                });
+                expect(res.body.result[0]._id).to.be.eql(report._id.toString());
+                expect(res.body.result[0].reportedBy._id).to.be.eql(regularUser._id.toString());
+                expect(res.body.result[0].resolved.by._id).to.be.eql(adminUser._id.toString());
+                expect(res.body.result[0].reason).to.be.eql(report.reason);
+                expect(res.body.result[0].createdAt).to.have.string(report.createdAt);
+                expect(res.body.result[0].resolved.notes).to.be.eql(report.resolved.notes);
+                expect(res.body.result[0].resolved.date).to.have.string(report.resolved.date);
+                expectResponseToExcludeSensitiveUserData(res.body.result[0].reportedBy);
+                expectResponseToExcludeSensitiveUserData(res.body.result[0].resolved.by);
+                expectResponseToContainNecessaryPropertyData(
+                  res.body.result[0].propertyInfo,
+                  property,
+                );
+                done();
+              });
+          });
         });
 
         [regularUser, vendorUser].map((user) =>

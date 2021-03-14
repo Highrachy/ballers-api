@@ -10,7 +10,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /report-property/report:
+ * /report-property:
  *   post:
  *     tags:
  *       - ReportedProperty
@@ -32,7 +32,7 @@ const router = express.Router();
  *       description: Internal server error
  */
 router.post(
-  '/report',
+  '/',
   authenticate,
   isUser,
   schemaValidation(reportPropertySchema),
