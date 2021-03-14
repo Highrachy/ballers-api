@@ -362,7 +362,7 @@ export const itReturnsErrorForUnverifiedVendor = ({
   });
 };
 
-export const expectResponseToExcludeSensitiveVendorData = (data) => {
+export const expectResponseToExcludeSensitiveUserData = (data) => {
   expect(data).to.not.have.property('assignedProperties');
   expect(data).to.not.have.property('favorites');
   expect(data).to.not.have.property('password');

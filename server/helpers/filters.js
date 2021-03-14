@@ -274,3 +274,12 @@ export const VISITATION_FILTERS = {
   visitorName: { type: FILTER_TYPE.STRING },
   visitorPhone: { type: FILTER_TYPE.STRING },
 };
+
+export const REPORT_FILTERS = {
+  createdAt: { type: FILTER_TYPE.DATE },
+  propertyId: { type: FILTER_TYPE.OBJECT_ID },
+  reportedBy: { type: FILTER_TYPE.OBJECT_ID },
+  resolvedBy: { key: 'resolved.by', type: FILTER_TYPE.OBJECT_ID },
+  resolvedDate: { key: 'resolved.date', type: FILTER_TYPE.DATE },
+  status: { key: 'resolved.status', type: FILTER_TYPE.BOOLEAN },
+};

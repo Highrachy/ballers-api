@@ -19,7 +19,7 @@ import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import Enquiry from '../../server/models/enquiry.model';
 import {
   itReturnsErrorForUnverifiedVendor,
-  expectResponseToExcludeSensitiveVendorData,
+  expectResponseToExcludeSensitiveUserData,
   expectResponseToContainNecessaryVendorData,
   itReturnsForbiddenForNoToken,
   itReturnsForbiddenForTokenWithInvalidAccess,
@@ -1227,7 +1227,7 @@ describe('Property Controller', () => {
               expect(res.body.property).to.not.have.property('assignedTo');
               expect(res.body.property).to.not.have.property('enquiryInfo');
               expect(res.body.property).to.not.have.property('visitationInfo');
-              expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
+              expectResponseToExcludeSensitiveUserData(res.body.property.vendorInfo);
               expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
               done();
             });
@@ -1274,7 +1274,7 @@ describe('Property Controller', () => {
               expect(res.body.property.visitationInfo[0].propertyId).to.be.eql(
                 property._id.toString(),
               );
-              expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
+              expectResponseToExcludeSensitiveUserData(res.body.property.vendorInfo);
               expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
               done();
             });
@@ -1293,7 +1293,7 @@ describe('Property Controller', () => {
               expect(res.body.property._id).to.be.eql(property._id.toString());
               expect(res.body.property).to.not.have.property('enquiryInfo');
               expect(res.body.property.visitationInfo.length).to.be.eql(0);
-              expectResponseToExcludeSensitiveVendorData(res.body.property.vendorInfo);
+              expectResponseToExcludeSensitiveUserData(res.body.property.vendorInfo);
               expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
               done();
             });
@@ -1441,7 +1441,7 @@ describe('Property Controller', () => {
                   res.body.result[0],
                   vendorProperties[0],
                 );
-                expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+                expectResponseToExcludeSensitiveUserData(res.body.result[0].vendorInfo);
                 expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
                 done();
               });
@@ -1464,7 +1464,7 @@ describe('Property Controller', () => {
                   res.body.result[0],
                   vendorProperties[0],
                 );
-                expectResponseToExcludeSensitiveVendorData(res.body.result[0].vendorInfo);
+                expectResponseToExcludeSensitiveUserData(res.body.result[0].vendorInfo);
                 expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
                 done();
               });
@@ -1896,8 +1896,8 @@ describe('Property Controller', () => {
               expect(res.body.properties[0].assignedUsers).to.not.include(
                 regularUser._id.toString(),
               );
-              expectResponseToExcludeSensitiveVendorData(res.body.properties[0].assignedUsers);
-              expectResponseToExcludeSensitiveVendorData(res.body.properties[0].vendorInfo);
+              expectResponseToExcludeSensitiveUserData(res.body.properties[0].assignedUsers);
+              expectResponseToExcludeSensitiveUserData(res.body.properties[0].vendorInfo);
               expectResponseToContainNecessaryVendorData(res.body.properties[0].vendorInfo);
 
               done();
