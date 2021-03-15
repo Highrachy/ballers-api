@@ -12,7 +12,7 @@ export const getReportById = async (id) => ReportedProperty.findById(id).select(
 export const reportProperty = async (report) => {
   const property = await getPropertyById(report.propertyId);
   if (!property) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid property');
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
   }
 
   try {
@@ -26,7 +26,7 @@ export const reportProperty = async (report) => {
 export const resolveReport = async (resolveDetails) => {
   const report = await getReportById(resolveDetails.id);
   if (!report) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid report');
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid report');
   }
 
   try {

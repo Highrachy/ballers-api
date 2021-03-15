@@ -634,7 +634,7 @@ export const flagProperty = async (propertyInfo) => {
 
   const report = await getReportById(propertyInfo.reportId);
   if (!report) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid report');
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid report');
   }
 
   if (report.propertyId.toString() !== property._id.toString()) {

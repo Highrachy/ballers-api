@@ -39,6 +39,9 @@ import AddressFactory from '../factories/address.factory';
 import VisitationFactory from '../factories/visitation.factory';
 import { scheduleVisitation } from '../../server/services/visitation.service';
 import { PROPERTY_FILTERS } from '../../server/helpers/filters';
+import ReportedProperty from '../../server/models/reportedProperty.model';
+import ReportedPropertyFactory from '../factories/reportedProperty.factory';
+import { reportProperty } from '../../server/services/reportedProperty.service';
 
 let adminToken;
 let vendorToken;
@@ -3661,6 +3664,182 @@ describe('Property Controller', () => {
             expect(res.body.success).to.be.eql(false);
             done();
             Property.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Flag property', () => {
+    const endpoint = '/api/v1/property/flag';
+    const method = 'post';
+
+    const property = PropertyFactory.build(
+      {
+        flagged: {
+          status: false,
+        },
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
+    );
+
+    const report = ReportedPropertyFactory.build(
+      {
+        propertyId: property._id,
+        reason: 'fraudulent vendor',
+        reportedBy: regularUser._id,
+        resolved: {
+          status: false,
+        },
+      },
+      { generateId: true },
+    );
+
+    const data = {
+      propertyId: property._id,
+      reportId: report._id,
+      notes: 'fraudulent property flagged',
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+      await reportProperty(report);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Property flagged');
+            expect(res.body.property.flagged.status).to.be.eql(true);
+            expect(res.body.property.flagged.by).to.be.eql(adminUser._id.toString());
+            expect(res.body.property.flagged.reportId).to.be.eql(report._id.toString());
+            done();
+          });
+      });
+    });
+
+    context('when data is invalid', () => {
+      context('when propertyId is empty', () => {
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...report, propertyId: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Property id" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+
+      context('when reportId is empty', () => {
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...report, reportId: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Report id" is not allowed to be empty');
+              done();
+            });
+        });
+      });
+
+      context('when property id is invalid', () => {
+        it('returns anerror', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...data, propertyId: mongoose.Types.ObjectId() })
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Invalid property');
+              done();
+            });
+        });
+      });
+
+      context('when report id is invalid', () => {
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...data, reportId: mongoose.Types.ObjectId() })
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Invalid report');
+              done();
+            });
+        });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, vendorUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: adminUser,
+      userId: adminUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Property.findByIdAndUpdate.restore();
+          });
+      });
+    });
+
+    context('when report service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(ReportedProperty, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            ReportedProperty.findByIdAndUpdate.restore();
           });
       });
     });
