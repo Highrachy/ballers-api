@@ -20,6 +20,7 @@ import {
   addImageSchema,
   updateGallerySchema,
   deleteImageSchema,
+  flagPropertySchema,
 } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -567,6 +568,35 @@ router.delete(
   isVendor,
   schemaValidation(deleteImageSchema),
   PropertyController.deleteGallery,
+);
+
+/**
+ * @swagger
+ * /property/flag:
+ *   post:
+ *     tags:
+ *       - Property
+ *     description: Allows an admin to flag a property
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Allows an admin to flag a property
+ *     responses:
+ *      '200':
+ *        description: Properties flagged
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/flag',
+  authenticate,
+  isAdmin,
+  schemaValidation(flagPropertySchema),
+  PropertyController.flagProperty,
 );
 
 module.exports = router;

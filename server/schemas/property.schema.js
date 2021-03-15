@@ -142,3 +142,9 @@ export const updateGallerySchema = Joi.object({
 export const deleteImageSchema = Joi.object({
   imageId: requiredObjectId('Image id'),
 });
+
+export const flagPropertySchema = Joi.object({
+  propertyId: requiredObjectId('Property id'),
+  reportId: requiredObjectId('Report id'),
+  notes: optionalString('Notes'),
+});

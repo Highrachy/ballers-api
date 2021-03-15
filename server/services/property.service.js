@@ -14,6 +14,8 @@ import {
 } from '../helpers/projectedSchemaInfo';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterQuery, PROPERTY_FILTERS } from '../helpers/filters';
+// eslint-disable-next-line import/no-cycle
+import { resolveReport, getReportById } from './reportedProperty.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -618,5 +620,51 @@ export const deleteGallery = async (imageDetails) => {
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting image', error);
+  }
+};
+
+export const flagProperty = async (propertyInfo) => {
+  const property = await getPropertyById(propertyInfo.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  const report = await getReportById(propertyInfo.reportId);
+  if (!report) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid report');
+  }
+
+  if (report.propertyId.toString() !== property._id.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'Property does not match report property');
+  }
+
+  try {
+    const reportInfo = {
+      id: propertyInfo.reportId,
+      resolvedBy: propertyInfo.adminId,
+      notes: propertyInfo.notes,
+    };
+
+    await resolveReport(reportInfo).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+
+    return Property.findByIdAndUpdate(
+      property._id,
+      {
+        $set: {
+          'flagged.by': propertyInfo.adminId,
+          'flagged.date': Date.now(),
+          'flagged.status': true,
+          'flagged.reportId': propertyInfo.reportId,
+        },
+      },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error flagging property', error);
   }
 };

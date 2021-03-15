@@ -18,6 +18,7 @@ import {
   addGallery,
   updateGallery,
   deleteGallery,
+  flagProperty,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -230,6 +231,16 @@ const PropertyController = {
     deleteGallery({ ...image, propertyId, vendorId })
       .then((property) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Image deleted', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  flagProperty(req, res, next) {
+    const propertyInfo = req.locals;
+    const adminId = req.user._id;
+    flagProperty({ ...propertyInfo, adminId })
+      .then((property) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Property flagged', property });
       })
       .catch((error) => next(error));
   },
