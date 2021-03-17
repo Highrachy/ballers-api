@@ -15,7 +15,8 @@ import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates'
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
-import { addNextPayment } from './nextpayment.service';
+// eslint-disable-next-line import/no-cycle
+import { addNextPayment } from './nextPayment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -350,6 +351,10 @@ export const acceptOffer = async (offerToAccept) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  if (offer.length < 1) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid offer');
+  }
+
   if (offer[0].userId.toString() !== offerToAccept.user._id.toString()) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
@@ -357,7 +362,11 @@ export const acceptOffer = async (offerToAccept) => {
     );
   }
 
-  if (offer[0].status === OFFER_STATUS.CANCELLED) {
+  if (
+    offer[0].status === OFFER_STATUS.CANCELLED ||
+    offer[0].status === OFFER_STATUS.NEGLECTED ||
+    offer[0].status === OFFER_STATUS.REJECTED
+  ) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'You cannot accept a cancelled offer');
   }
   const propertyPrice = offer[0].propertyInfo.price;
@@ -367,6 +376,14 @@ export const acceptOffer = async (offerToAccept) => {
   const expiryDate = new Date(offer[0].expires);
   if (Date.now() > expiryDate) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
+  }
+
+  if (
+    offer[0].status === OFFER_STATUS.INTERESTED ||
+    offer[0].status === OFFER_STATUS.ASSIGNED ||
+    offer[0].status === OFFER_STATUS.ALLOCATED
+  ) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has been accepted');
   }
 
   const paymentSchedule = generatePaymentSchedules(offer[0]);

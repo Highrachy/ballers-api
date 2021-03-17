@@ -9,12 +9,27 @@ import Referral from '../models/referral.model';
 import { getOfferById } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO, EXCLUDED_PROPERTY_INFO } from '../helpers/projectedSchemaInfo';
+// eslint-disable-next-line import/no-cycle
+import { generateNextPaymentDate } from './nextPayment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getTransactionById = async (id) => Transaction.findById(id).select();
 export const getTransactionByInfo = async (additionalInfo) =>
   Transaction.findOne({ additionalInfo }).select();
+
+export const getTotalTransactionByOfferId = async (offerId) => {
+  const total = await Transaction.aggregate([
+    { $match: { offerId: ObjectId(offerId) } },
+    {
+      $group: {
+        _id: null,
+        totalAmountPaid: { $sum: '$amount' },
+      },
+    },
+  ]);
+  return total[0]?.totalAmountPaid || 0;
+};
 
 export const addTransaction = async (transaction) => {
   const offer = await getOfferById(transaction.offerId).catch((error) => {
@@ -32,6 +47,14 @@ export const addTransaction = async (transaction) => {
       propertyId: offer.propertyId,
       vendorId: offer.vendorId,
     }).save();
+
+    await generateNextPaymentDate({
+      transactionId: newTransaction._id,
+      offerId: offer._id,
+    }).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+
     return newTransaction;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding transaction', error);
