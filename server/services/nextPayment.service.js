@@ -51,6 +51,10 @@ const calculateExpectedTotal = (schedule, frequency) => {
     validSchedules.push(schedule[schedule.length - 1]);
   }
 
+  if (validSchedules.length === 0) {
+    validSchedules.push(schedule[0]);
+  }
+
   const expectedTotal = validSchedules.reduce((a, b) => {
     return a + b.amount;
   }, 0);

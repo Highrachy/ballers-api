@@ -80,6 +80,9 @@ describe('Transaction Service', () => {
     let countedTransactions;
     let countedNextPayments;
 
+    const expiresOnForSecondCycle = new Date('2020-03-31');
+    const expiresOnForLastCycle = new Date('2020-06-29');
+
     beforeEach(async () => {
       countedTransactions = await Transaction.countDocuments({});
       countedNextPayments = await NextPayment.countDocuments({});
@@ -93,9 +96,9 @@ describe('Transaction Service', () => {
       context('during first payment cycle', () => {
         beforeEach(async () => {
           fakeDate = sinon.useFakeTimers({
-            now: new Date('2020-03-20'),
+            now: new Date('2020-02-21'),
           });
-          await addTransaction(transaction);
+          await addTransaction({ ...transaction, amount: 2_000_000 });
         });
 
         it('adds a new transaction', async () => {
@@ -106,17 +109,17 @@ describe('Transaction Service', () => {
           expect(currentCountedNextPayments).to.eql(countedNextPayments + 1);
           expect(matchedNextPayments.length).to.eql(1);
           expect(matchedNextPayments[0].resolved).to.eql(false);
-          expect(matchedNextPayments[0].expectedAmount).to.eql(1_000_000);
-          expect(matchedNextPayments[0].expiresOn).to.eql(new Date('2020-03-31'));
+          expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForSecondCycle);
         });
       });
 
       context('during second payment cycle', () => {
         beforeEach(async () => {
           fakeDate = sinon.useFakeTimers({
-            now: new Date('2020-04-05'),
+            now: new Date('2020-03-08'),
           });
-          await addTransaction(transaction);
+          await addTransaction({ ...transaction, amount: 2_300_000 });
         });
 
         it('adds a new transaction', async () => {
@@ -127,17 +130,17 @@ describe('Transaction Service', () => {
           expect(currentCountedNextPayments).to.eql(countedNextPayments + 1);
           expect(matchedNextPayments.length).to.eql(1);
           expect(matchedNextPayments[0].resolved).to.eql(false);
-          expect(matchedNextPayments[0].expectedAmount).to.eql(1_500_000);
-          expect(matchedNextPayments[0].expiresOn).to.eql(new Date('2020-04-30'));
+          expect(matchedNextPayments[0].expectedAmount).to.eql(200_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForSecondCycle);
         });
       });
 
       context('during last payment cycle', () => {
         beforeEach(async () => {
           fakeDate = sinon.useFakeTimers({
-            now: new Date('2020-06-15'),
+            now: new Date('2020-06-8'),
           });
-          await addTransaction(transaction);
+          await addTransaction({ ...transaction, amount: 3_500_000 });
         });
 
         it('adds a new transaction', async () => {
@@ -148,8 +151,8 @@ describe('Transaction Service', () => {
           expect(currentCountedNextPayments).to.eql(countedNextPayments + 1);
           expect(matchedNextPayments.length).to.eql(1);
           expect(matchedNextPayments[0].resolved).to.eql(false);
-          expect(matchedNextPayments[0].expectedAmount).to.eql(3_000_000);
-          expect(matchedNextPayments[0].expiresOn).to.eql(new Date('2020-06-29'));
+          expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForLastCycle);
         });
       });
     });

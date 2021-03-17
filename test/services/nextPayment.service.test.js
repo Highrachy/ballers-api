@@ -8,7 +8,7 @@ import OfferFactory from '../factories/offer.factory';
 import NextPaymentFactory from '../factories/nextPayment.factory';
 import TransactionFactory from '../factories/transaction.factory';
 
-describe.only('NextPayment Service', () => {
+describe('NextPayment Service', () => {
   const offer = OfferFactory.build(
     {
       totalAmountPayable: 4_000_000,
@@ -108,7 +108,7 @@ describe.only('NextPayment Service', () => {
         });
       });
 
-      context('when user pays more than initial payment', () => {
+      context.skip('when user pays for first and second cycle', () => {
         beforeEach(async () => {
           await Transaction.create({ ...transaction, amount: 2_500_000 });
           await generateNextPaymentDate({ offerId: offer._id });
@@ -120,6 +120,21 @@ describe.only('NextPayment Service', () => {
           expect(matchedNextPayments[0].resolved).to.eql(false);
           expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
           expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForThirdCycle);
+        });
+      });
+
+      context('when user pays more than initial payment', () => {
+        beforeEach(async () => {
+          await Transaction.create({ ...transaction, amount: 2_150_000 });
+          await generateNextPaymentDate({ offerId: offer._id });
+        });
+
+        it('returns the expected balance for second cycle', async () => {
+          const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
+          expect(matchedNextPayments.length).to.eql(1);
+          expect(matchedNextPayments[0].resolved).to.eql(false);
+          expect(matchedNextPayments[0].expectedAmount).to.eql(350_000);
+          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForSecondCycle);
         });
       });
 
@@ -199,7 +214,7 @@ describe.only('NextPayment Service', () => {
           await NextPayment.create(nextPayment);
         });
 
-        context('when user has not made payment', () => {
+        context.skip('when user has not made payment', () => {
           beforeEach(async () => {
             await generateNextPaymentDate({ offerId: offer._id });
           });
@@ -236,7 +251,7 @@ describe.only('NextPayment Service', () => {
       });
 
       context('when a previous nextPayment record does not exist', () => {
-        context('user has not made payment', () => {
+        context.skip('user has not made payment', () => {
           beforeEach(async () => {
             await generateNextPaymentDate({ offerId: offer._id });
           });

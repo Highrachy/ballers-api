@@ -9,7 +9,6 @@ import EnquiryFactory from '../factories/enquiry.factory';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
 import ReferralFactory from '../factories/referral.factory';
-import { addTransaction } from '../../server/services/transaction.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { createOffer, acceptOffer } from '../../server/services/offer.service';
@@ -421,6 +420,7 @@ describe('Transaction Controller', () => {
         userId: regularUser._id,
         propertyId: property._id,
         offerId: offer._id,
+        vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
       },
@@ -428,7 +428,7 @@ describe('Transaction Controller', () => {
     );
 
     beforeEach(async () => {
-      await addTransaction(transaction);
+      await Transaction.create(transaction);
     });
 
     const updatedTransaction = {
@@ -950,6 +950,7 @@ describe('Transaction Controller', () => {
         userId: regularUser._id,
         propertyId: property._id,
         offerId: offer._id,
+        vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
       },
@@ -971,7 +972,7 @@ describe('Transaction Controller', () => {
 
     beforeEach(async () => {
       vendor2Token = await addUser(vendor2);
-      await addTransaction(transaction);
+      await Transaction.create(transaction);
     });
 
     context('with valid token', () => {
