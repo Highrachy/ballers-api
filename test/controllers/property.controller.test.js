@@ -42,11 +42,15 @@ import { PROPERTY_FILTERS } from '../../server/helpers/filters';
 import ReportedProperty from '../../server/models/reportedProperty.model';
 import ReportedPropertyFactory from '../factories/reportedProperty.factory';
 import { reportProperty } from '../../server/services/reportedProperty.service';
+import * as MailService from '../../server/services/mailer.service';
+import EMAIL_CONTENT from '../../mailer';
 
 let adminToken;
 let vendorToken;
 let userToken;
 let newVendorToken;
+let sendMailStub;
+const sandbox = sinon.createSandbox();
 
 const adminUser = UserFactory.build(
   { role: USER_ROLE.ADMIN, activated: true },
@@ -86,6 +90,14 @@ const regularUser = UserFactory.build(
 );
 
 describe('Property Controller', () => {
+  beforeEach(() => {
+    sendMailStub = sandbox.stub(MailService, 'sendMail');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     vendorToken = await addUser(vendorUser);
@@ -1375,6 +1387,9 @@ describe('Property Controller', () => {
       addedBy: vendorUser._id,
       updatedBy: vendorUser._id,
       createdAt: new Date(),
+      flagged: {
+        status: false,
+      },
     });
     const vendor2Properties = PropertyFactory.buildList(5, {
       addedBy: vendorUser2._id,
@@ -1401,6 +1416,9 @@ describe('Property Controller', () => {
         toilets: 1,
         units: 1,
         updatedBy: vendorUser._id,
+        flagged: {
+          status: true,
+        },
       },
       { generateId: true },
     );
@@ -3671,7 +3689,7 @@ describe('Property Controller', () => {
 
   describe('Flag property', () => {
     const endpoint = '/api/v1/property/flag';
-    const method = 'post';
+    const method = 'put';
 
     const property = PropertyFactory.build(
       {
@@ -3699,7 +3717,7 @@ describe('Property Controller', () => {
     const data = {
       propertyId: property._id,
       reportId: report._id,
-      notes: 'fraudulent property flagged',
+      reason: 'fraudulent property flagged',
     };
 
     beforeEach(async () => {
@@ -3718,8 +3736,10 @@ describe('Property Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Property flagged');
             expect(res.body.property.flagged.status).to.be.eql(true);
-            expect(res.body.property.flagged.by).to.be.eql(adminUser._id.toString());
-            expect(res.body.property.flagged.reportId).to.be.eql(report._id.toString());
+            expect(res.body.property.flagged.case[0].flaggedBy).to.be.eql(adminUser._id.toString());
+            expect(res.body.property.flagged.case[0].flaggedReason).to.be.eql(data.reason);
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.FLAG_PROPERTY);
             done();
           });
       });
@@ -3737,6 +3757,7 @@ describe('Property Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Property id" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -3753,6 +3774,7 @@ describe('Property Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Report id" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -3768,6 +3790,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(404);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Invalid property');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -3783,6 +3806,7 @@ describe('Property Controller', () => {
               expect(res).to.have.status(404);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Invalid report');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -3822,6 +3846,7 @@ describe('Property Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(400);
             expect(res.body.success).to.be.eql(false);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
             Property.findByIdAndUpdate.restore();
           });
@@ -3836,10 +3861,158 @@ describe('Property Controller', () => {
           .set('authorization', adminToken)
           .send(data)
           .end((err, res) => {
-            expect(res).to.have.status(400);
+            expect(res).to.have.status(500);
             expect(res.body.success).to.be.eql(false);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
             ReportedProperty.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Unflag property', () => {
+    const endpoint = '/api/v1/property/unflag';
+    const method = 'put';
+
+    const property = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+        flagged: {
+          status: true,
+          case: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              flaggedBy: adminUser._id,
+              flaggedReason: 'suspicious activity',
+            },
+          ],
+        },
+      },
+      { generateId: true },
+    );
+
+    const data = {
+      propertyId: property._id,
+      caseId: property.flagged.case[0]._id,
+      reason: 'case resolved',
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Property unflagged');
+            expect(res.body.property.flagged.status).to.be.eql(false);
+            expect(res.body.property.flagged.case[0].unflaggedBy).to.be.eql(
+              adminUser._id.toString(),
+            );
+            expect(res.body.property.flagged.case[0].unflaggedReason).to.be.eql(data.reason);
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.UNFLAG_PROPERTY);
+            done();
+          });
+      });
+    });
+
+    context('when data is invalid', () => {
+      context('when propertyId is empty', () => {
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...data, propertyId: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Property id" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('when caseId is empty', () => {
+        it('returns an error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...data, caseId: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Validation Error');
+              expect(res.body.error).to.be.eql('"Case id" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('when property id is invalid', () => {
+        it('returns anerror', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...data, propertyId: mongoose.Types.ObjectId() })
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Invalid property');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, vendorUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: adminUser,
+      userId: adminUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            expect(sendMailStub.callCount).to.eq(0);
+            done();
+            Property.findByIdAndUpdate.restore();
           });
       });
     });

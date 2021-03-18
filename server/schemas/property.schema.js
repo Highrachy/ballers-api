@@ -8,6 +8,7 @@ import {
   optionalString,
   optionalNumber,
   optionalAddress,
+  optionalObjectId,
   nonRequiredNumber,
   nonRequiredString,
 } from './helper.schema';
@@ -145,6 +146,13 @@ export const deleteImageSchema = Joi.object({
 
 export const flagPropertySchema = Joi.object({
   propertyId: requiredObjectId('Property id'),
-  reportId: requiredObjectId('Report id'),
+  reason: requiredString('Reason'),
+  reportId: optionalObjectId('Report id'),
   notes: optionalString('Notes'),
+});
+
+export const unflagPropertySchema = Joi.object({
+  caseId: requiredObjectId('Case id'),
+  propertyId: requiredObjectId('Property id'),
+  reason: requiredString('Reason'),
 });

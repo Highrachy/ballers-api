@@ -19,8 +19,11 @@ import {
   updateGallery,
   deleteGallery,
   flagProperty,
+  unflagProperty,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
+import EMAIL_CONTENT from '../../mailer';
+import { sendMail } from '../services/mailer.service';
 
 const PropertyController = {
   add(req, res, next) {
@@ -239,8 +242,24 @@ const PropertyController = {
     const propertyInfo = req.locals;
     const adminId = req.user._id;
     flagProperty({ ...propertyInfo, adminId })
-      .then((property) => {
+      .then(({ property, vendor }) => {
+        const contentTop = `Your property ${property.name} has been flagged, and is now unavailable for viewing. Kindly visit your dashboard to resolve the issue.`;
+        sendMail(EMAIL_CONTENT.FLAG_PROPERTY, vendor, { contentTop });
+
         res.status(httpStatus.OK).json({ success: true, message: 'Property flagged', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  unflagProperty(req, res, next) {
+    const propertyInfo = req.locals;
+    const adminId = req.user._id;
+    unflagProperty({ ...propertyInfo, adminId })
+      .then(({ property, vendor }) => {
+        const contentTop = `Your property ${property.name} has been unflagged, and is now available for viewing.`;
+        sendMail(EMAIL_CONTENT.UNFLAG_PROPERTY, vendor, { contentTop });
+
+        res.status(httpStatus.OK).json({ success: true, message: 'Property unflagged', property });
       })
       .catch((error) => next(error));
   },

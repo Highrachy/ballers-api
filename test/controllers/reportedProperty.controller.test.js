@@ -37,7 +37,7 @@ const vendorUser = UserFactory.build(
   { generateId: true },
 );
 const property = PropertyFactory.build(
-  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+  { addedBy: vendorUser._id, updatedBy: vendorUser._id, flagged: { status: false } },
   { generateId: true },
 );
 

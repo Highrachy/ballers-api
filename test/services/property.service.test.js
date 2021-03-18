@@ -214,8 +214,8 @@ describe('Property Service', () => {
 
     it('returns a flagged prperty', async () => {
       const flaggedProperty = await flagProperty(propertyInfo);
-      expect(flaggedProperty.flagged.status).to.eql(true);
-      expect(flaggedProperty.flagged.by).to.eql(adminId);
+      expect(flaggedProperty.property.flagged.status).to.eql(true);
+      expect(flaggedProperty.property.flagged.case[0].flaggedBy).to.eql(adminId);
 
       const resolvedReport = await getReportById(report._id);
       expect(resolvedReport.resolved.status).to.eql(true);

@@ -21,6 +21,7 @@ import {
   updateGallerySchema,
   deleteImageSchema,
   flagPropertySchema,
+  unflagPropertySchema,
 } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -573,7 +574,7 @@ router.delete(
 /**
  * @swagger
  * /property/flag:
- *   post:
+ *   put:
  *     tags:
  *       - Property
  *     description: Allows an admin to flag a property
@@ -587,16 +588,45 @@ router.delete(
  *      description: Allows an admin to flag a property
  *     responses:
  *      '200':
- *        description: Properties flagged
+ *        description: Property flagged
  *      '500':
  *       description: Internal server error
  */
-router.post(
+router.put(
   '/flag',
   authenticate,
   isAdmin,
   schemaValidation(flagPropertySchema),
   PropertyController.flagProperty,
+);
+
+/**
+ * @swagger
+ * /property/unflag:
+ *   put:
+ *     tags:
+ *       - Property
+ *     description: Allows an admin to unflag a flagged property
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Allows an admin to unflag a flagged property
+ *     responses:
+ *      '200':
+ *        description: Property unflagged
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/unflag',
+  authenticate,
+  isAdmin,
+  schemaValidation(unflagPropertySchema),
+  PropertyController.unflagProperty,
 );
 
 module.exports = router;

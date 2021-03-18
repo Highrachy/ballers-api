@@ -16,6 +16,8 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import { buildFilterQuery, PROPERTY_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { resolveReport, getReportById } from './reportedProperty.service';
+// eslint-disable-next-line import/no-cycle
+import { getUserById } from './user.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -632,39 +634,86 @@ export const flagProperty = async (propertyInfo) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
   }
 
-  const report = await getReportById(propertyInfo.reportId);
-  if (!report) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid report');
-  }
+  const vendor = await getUserById(property.addedBy).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
 
-  if (report.propertyId.toString() !== property._id.toString()) {
-    throw new ErrorHandler(httpStatus.FORBIDDEN, 'Property does not match report property');
-  }
+  if (propertyInfo.reportId) {
+    const report = await getReportById(propertyInfo.reportId);
+    if (!report) {
+      throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid report');
+    }
 
-  try {
+    if (report.propertyId.toString() !== property._id.toString()) {
+      throw new ErrorHandler(httpStatus.FORBIDDEN, 'Property does not match report property');
+    }
+
     const reportInfo = {
       id: propertyInfo.reportId,
       resolvedBy: propertyInfo.adminId,
-      notes: propertyInfo.notes,
+      notes: propertyInfo.notes || propertyInfo.reason,
     };
 
     await resolveReport(reportInfo).catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
+  }
 
-    return Property.findByIdAndUpdate(
+  try {
+    const flaggedProperty = await Property.findByIdAndUpdate(
       property._id,
       {
-        $set: {
-          'flagged.by': propertyInfo.adminId,
-          'flagged.date': Date.now(),
-          'flagged.status': true,
-          'flagged.reportId': propertyInfo.reportId,
+        $set: { 'flagged.status': true },
+        $push: {
+          'flagged.case': {
+            flaggedBy: propertyInfo.adminId,
+            flaggedDate: Date.now(),
+            flaggedReason: propertyInfo.reason,
+          },
         },
       },
       { new: true },
     );
+
+    return { property: flaggedProperty, vendor };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error flagging property', error);
+  }
+};
+
+export const unflagProperty = async (propertyInfo) => {
+  const property = await getPropertyById(propertyInfo.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  const vendor = await getUserById(property.addedBy).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    await Property.findOneAndUpdate(
+      { 'flagged.case._id': propertyInfo.caseId },
+      {
+        $set: {
+          'flagged.case.$.unflaggedBy': propertyInfo.adminId,
+          'flagged.case.$.unflaggedDate': Date.now(),
+          'flagged.case.$.unflaggedReason': propertyInfo.reason,
+        },
+      },
+    );
+
+    const unflaggedProperty = await Property.findByIdAndUpdate(
+      property._id,
+      { $set: { 'flagged.status': false } },
+      { new: true },
+    );
+
+    return { property: unflaggedProperty, vendor };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error unflagging property', error);
   }
 };
