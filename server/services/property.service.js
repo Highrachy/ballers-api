@@ -185,8 +185,9 @@ export const getOneProperty = async (propertyId, user = {}) => {
   ];
 
   if (user?.role === USER_ROLE.USER) {
+    propertyOptions.splice(1, 0, { $match: { 'flagged.status': false } });
     propertyOptions.splice(
-      1,
+      2,
       0,
       {
         $lookup: {
@@ -241,6 +242,13 @@ export const getOneProperty = async (propertyId, user = {}) => {
   }
 
   const property = await Property.aggregate(propertyOptions);
+  if (
+    property.length > 0 &&
+    user?.role === USER_ROLE.VENDOR &&
+    user?._id.toString() !== property[0].addedBy.toString()
+  ) {
+    return [];
+  }
   return property;
 };
 
@@ -254,6 +262,7 @@ export const searchThroughProperties = async ({
 }) =>
   Property.aggregate([
     { $match: { assignedTo: { $nin: [ObjectId(userId)] } } },
+    { $match: { 'flagged.status': false } },
     {
       $match: {
         $and: [

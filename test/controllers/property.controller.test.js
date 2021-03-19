@@ -1334,6 +1334,49 @@ describe('Property Controller', () => {
       });
     });
 
+    context('when property is flagged', () => {
+      beforeEach(async () => {
+        await Property.findByIdAndUpdate(property._id, { 'flagged.status': true });
+      });
+
+      context('request sent by vendor or admin', () => {
+        [...new Array(2)].map((_, index) =>
+          it('successfully returns property', (done) => {
+            request()
+              .get(`/api/v1/property/${property._id}`)
+              .set('authorization', [vendorToken, adminToken][index])
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.property._id).to.be.eql(property._id.toString());
+                expect(res.body.property).to.not.have.property('assignedTo');
+                expect(res.body.property).to.not.have.property('enquiryInfo');
+                expect(res.body.property).to.not.have.property('visitationInfo');
+                expectResponseToExcludeSensitiveUserData(res.body.property.vendorInfo);
+                expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
+                done();
+              });
+          }),
+        );
+      });
+
+      context('request sent by user or another vendor', () => {
+        [...new Array(2)].map((_, index) =>
+          it('returns not found', (done) => {
+            request()
+              .get(`/api/v1/property/${property._id}`)
+              .set('authorization', [userToken, newVendorToken][index])
+              .end((err, res) => {
+                expect(res).to.have.status(404);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Property not found');
+                done();
+              });
+          }),
+        );
+      });
+    });
+
     context('with an invalid property id', () => {
       it('returns not found', (done) => {
         request()
@@ -1927,19 +1970,41 @@ describe('Property Controller', () => {
       });
 
       context('when filter is empty', () => {
-        it('returns all properties', (done) => {
-          request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send({})
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
-              expect(res.body.properties.length).to.be.eql(3);
-              done();
-            });
+        context('when no data is sent', () => {
+          it('returns all properties', (done) => {
+            request()
+              .post('/api/v1/property/search')
+              .set('authorization', userToken)
+              .send({})
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body).to.have.property('properties');
+                expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
+                expect(res.body.properties.length).to.be.eql(3);
+                done();
+              });
+          });
+        });
+
+        context('when one property is flagged', () => {
+          beforeEach(async () => {
+            await Property.findByIdAndUpdate(property1._id, { 'flagged.status': true });
+          });
+          it('returns 2 properties', (done) => {
+            request()
+              .post('/api/v1/property/search')
+              .set('authorization', userToken)
+              .send({})
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body).to.have.property('properties');
+                expect(res.body.properties[0]._id).to.be.eql(property2._id.toString());
+                expect(res.body.properties.length).to.be.eql(2);
+                done();
+              });
+          });
         });
       });
 
