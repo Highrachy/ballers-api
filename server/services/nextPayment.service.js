@@ -113,7 +113,9 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
     await resolvePendingPayment(pendingPayment[0]._id, transactionId);
   }
 
-  if (totalPaid < offer.totalAmountPayable) {
+  if (totalPaid > offer.totalAmountPayable) {
     await addNextPayment(nextPayment);
+    return nextPayment;
   }
+  return {};
 };

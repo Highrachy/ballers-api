@@ -24,6 +24,7 @@ import {
   resolveVerificationStepComment,
   banUser,
   unbanUser,
+  getNextPayments,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -322,6 +323,17 @@ const UserController = {
       .then((user) => {
         sendMail(EMAIL_CONTENT.UNBAN_USER, user, {});
         res.status(httpStatus.OK).json({ success: true, message: 'User unbanned', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  getNextPayments(req, res, next) {
+    const { user } = req;
+    getNextPayments(user)
+      .then((nextPayments) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Next payments found', nextPayments });
       })
       .catch((error) => next(error));
   },

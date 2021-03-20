@@ -22,6 +22,7 @@ import {
   isAdmin,
   isUnverifiedVendor,
   hasValidObjectId,
+  isUserOrVendor,
 } from '../helpers/middleware';
 import UserController from '../controllers/user.controllers';
 import Upload, { UploadController } from '../helpers/uploadImage';
@@ -689,27 +690,6 @@ router.put(
 
 /**
  * @swagger
- * path:
- *  /user/:id:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: verifies user access
- *      summary: Gets a user based by its ID
- *      tags: [User]
- *      responses:
- *        '200':
- *          description: User found
- *        '500':
- *          description: Internal server error
- */
-router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOneUser);
-
-/**
- * @swagger
  * /user/vendor/director:
  *   put:
  *     tags:
@@ -872,5 +852,47 @@ router.put(
   schemaValidation(unbanUserSchema),
   UserController.unbanUser,
 );
+
+/**
+ * @swagger
+ * path:
+ *  /user/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets a user based by its ID
+ *      tags: [User]
+ *      responses:
+ *        '200':
+ *          description: Next payments found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/next-payments', authenticate, isUserOrVendor, UserController.getNextPayments);
+
+/**
+ * @swagger
+ * path:
+ *  /user/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets a user based by its ID
+ *      tags: [User]
+ *      responses:
+ *        '200':
+ *          description: User found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOneUser);
 
 module.exports = router;
