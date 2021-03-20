@@ -188,6 +188,34 @@ const PropertySchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
+    flagged: {
+      status: {
+        type: Boolean,
+        default: false,
+      },
+      case: [
+        {
+          flaggedBy: {
+            type: ObjectId,
+          },
+          flaggedDate: {
+            type: Date,
+          },
+          flaggedReason: {
+            type: String,
+          },
+          unflaggedBy: {
+            type: ObjectId,
+          },
+          unflaggedDate: {
+            type: Date,
+          },
+          unflaggedReason: {
+            type: String,
+          },
+        },
+      ],
+    },
   },
   { timestamps: true },
 );

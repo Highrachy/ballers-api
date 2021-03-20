@@ -220,6 +220,7 @@ export const PROPERTY_FILTERS = {
   price: { type: FILTER_TYPE.INTEGER },
   toilets: { type: FILTER_TYPE.INTEGER },
   units: { type: FILTER_TYPE.INTEGER },
+  flagged: { key: 'flagged.status', type: FILTER_TYPE.BOOLEAN },
 };
 
 export const OFFER_FILTERS = {

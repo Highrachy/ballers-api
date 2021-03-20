@@ -6,17 +6,26 @@ import {
   updateProperty,
   deleteProperty,
   getPropertiesWithPaymentPlanId,
+  flagProperty,
 } from '../../server/services/property.service';
 import { addUser } from '../../server/services/user.service';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
 import Property from '../../server/models/property.model';
 import { USER_ROLE } from '../../server/helpers/constants';
+import ReportedPropertyFactory from '../factories/reportedProperty.factory';
+import { getReportById, reportProperty } from '../../server/services/reportedProperty.service';
 
 describe('Property Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
   const property = PropertyFactory.build(
-    { addedBy: vendor._id, updatedBy: vendor._id },
+    {
+      addedBy: vendor._id,
+      updatedBy: vendor._id,
+      flagged: {
+        status: false,
+      },
+    },
     { generateId: true },
   );
 
@@ -174,6 +183,43 @@ describe('Property Service', () => {
       const properties = await getPropertiesWithPaymentPlanId(planId);
       expect(properties[0]._id).to.eql(property._id);
       expect(properties[0].paymentPlan[0]).to.eql(planId);
+    });
+  });
+
+  describe('#flagProperty', () => {
+    const adminId = mongoose.Types.ObjectId();
+    const report = ReportedPropertyFactory.build(
+      {
+        propertyId: property._id,
+        reason: 'fraudulent vendor',
+        reportedBy: adminId,
+        resolved: {
+          status: false,
+        },
+      },
+      { generateId: true },
+    );
+
+    const propertyInfo = {
+      propertyId: property._id,
+      reportId: report._id,
+      adminId,
+      notes: 'dummy note',
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+      await reportProperty(report);
+    });
+
+    it('returns a flagged prperty', async () => {
+      const flaggedProperty = await flagProperty(propertyInfo);
+      expect(flaggedProperty.property.flagged.status).to.eql(true);
+      expect(flaggedProperty.property.flagged.case[0].flaggedBy).to.eql(adminId);
+
+      const resolvedReport = await getReportById(report._id);
+      expect(resolvedReport.resolved.status).to.eql(true);
+      expect(resolvedReport.resolved.by).to.eql(adminId);
     });
   });
 });

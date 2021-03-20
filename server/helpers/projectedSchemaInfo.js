@@ -18,6 +18,7 @@ export const PROJECTED_PROPERTY_INFO = {
   floorPlans: 1,
   createdAt: 1,
   addedBy: 1,
+  flagged: 1,
 };
 
 export const EXCLUDED_PROPERTY_INFO = {

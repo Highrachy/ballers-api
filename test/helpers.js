@@ -455,6 +455,17 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
     property.neighborhood.shoppingMalls[0].mapLocation,
   );
   expect(response.mainImage).to.be.eql(property.mainImage);
+  expect(response.flagged.status).to.be.eql(property.flagged.status);
+  if (property.flagged.case?.length > 0) {
+    expect(response.flagged.case[0].flaggedBy).to.be.eql(property.flagged.case[0].flaggedBy);
+    expect(response.flagged.case[0].flaggedReason).to.be.eql(
+      property.flagged.case[0].flaggedReason,
+    );
+    expect(response.flagged.case[0].unflaggedBy).to.be.eql(property.flagged.case[0].unflaggedBy);
+    expect(response.flagged.case[0].unflaggedReason).to.be.eql(
+      property.flagged.case[0].unflaggedReason,
+    );
+  }
 };
 
 export const futureDate = format(add(new Date(), { days: 5 }), 'yyyy-MM-dd');

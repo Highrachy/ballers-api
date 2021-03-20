@@ -14,6 +14,10 @@ import {
 } from '../helpers/projectedSchemaInfo';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterQuery, PROPERTY_FILTERS } from '../helpers/filters';
+// eslint-disable-next-line import/no-cycle
+import { resolveReport, getReportById } from './reportedProperty.service';
+// eslint-disable-next-line import/no-cycle
+import { getUserById } from './user.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -181,8 +185,9 @@ export const getOneProperty = async (propertyId, user = {}) => {
   ];
 
   if (user?.role === USER_ROLE.USER) {
+    propertyOptions.splice(1, 0, { $match: { 'flagged.status': false } });
     propertyOptions.splice(
-      1,
+      2,
       0,
       {
         $lookup: {
@@ -237,6 +242,13 @@ export const getOneProperty = async (propertyId, user = {}) => {
   }
 
   const property = await Property.aggregate(propertyOptions);
+  if (
+    property.length > 0 &&
+    user?.role === USER_ROLE.VENDOR &&
+    user?._id.toString() !== property[0].addedBy.toString()
+  ) {
+    return [];
+  }
   return property;
 };
 
@@ -250,6 +262,7 @@ export const searchThroughProperties = async ({
 }) =>
   Property.aggregate([
     { $match: { assignedTo: { $nin: [ObjectId(userId)] } } },
+    { $match: { 'flagged.status': false } },
     {
       $match: {
         $and: [
@@ -618,5 +631,98 @@ export const deleteGallery = async (imageDetails) => {
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error deleting image', error);
+  }
+};
+
+export const flagProperty = async (propertyInfo) => {
+  const property = await getPropertyById(propertyInfo.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  const vendor = await getUserById(property.addedBy).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (propertyInfo.reportId) {
+    const report = await getReportById(propertyInfo.reportId);
+    if (!report) {
+      throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid report');
+    }
+
+    if (report.propertyId.toString() !== property._id.toString()) {
+      throw new ErrorHandler(httpStatus.FORBIDDEN, 'Property does not match report property');
+    }
+
+    const reportInfo = {
+      id: propertyInfo.reportId,
+      resolvedBy: propertyInfo.adminId,
+      notes: propertyInfo.notes || propertyInfo.reason,
+    };
+
+    await resolveReport(reportInfo).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+  }
+
+  try {
+    const flaggedProperty = await Property.findByIdAndUpdate(
+      property._id,
+      {
+        $set: { 'flagged.status': true },
+        $push: {
+          'flagged.case': {
+            flaggedBy: propertyInfo.adminId,
+            flaggedDate: Date.now(),
+            flaggedReason: propertyInfo.reason,
+          },
+        },
+      },
+      { new: true },
+    );
+
+    return { property: flaggedProperty, vendor };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error flagging property', error);
+  }
+};
+
+export const unflagProperty = async (propertyInfo) => {
+  const property = await getPropertyById(propertyInfo.propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  const vendor = await getUserById(property.addedBy).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    await Property.findOneAndUpdate(
+      { 'flagged.case._id': propertyInfo.caseId },
+      {
+        $set: {
+          'flagged.case.$.unflaggedBy': propertyInfo.adminId,
+          'flagged.case.$.unflaggedDate': Date.now(),
+          'flagged.case.$.unflaggedReason': propertyInfo.reason,
+        },
+      },
+    );
+
+    const unflaggedProperty = await Property.findByIdAndUpdate(
+      property._id,
+      { $set: { 'flagged.status': false } },
+      { new: true },
+    );
+
+    return { property: unflaggedProperty, vendor };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error unflagging property', error);
   }
 };

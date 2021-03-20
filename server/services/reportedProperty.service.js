@@ -1,6 +1,7 @@
 import ReportedProperty from '../models/reportedProperty.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
+// eslint-disable-next-line import/no-cycle
 import { getPropertyById } from './property.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterAndSortQuery, REPORT_FILTERS } from '../helpers/filters';
@@ -11,7 +12,7 @@ export const getReportById = async (id) => ReportedProperty.findById(id).select(
 export const reportProperty = async (report) => {
   const property = await getPropertyById(report.propertyId);
   if (!property) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid property');
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
   }
 
   try {
@@ -25,7 +26,7 @@ export const reportProperty = async (report) => {
 export const resolveReport = async (resolveDetails) => {
   const report = await getReportById(resolveDetails.id);
   if (!report) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid report');
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid report');
   }
 
   try {

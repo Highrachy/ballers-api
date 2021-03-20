@@ -36,6 +36,11 @@ const EMAIL_CONTENT = {
     link: 'sample link',
     subject: 'Email Subject is Here',
   },
+  FLAG_PROPERTY: {
+    subject: 'Property Flagged',
+    contentTop:
+      'Your property [property name] has been flagged, and is now unavailable for viewing. Kindly visit your dashboard to resolve the issue.',
+  },
   OFFER_CREATED: {
     subject: 'New Offer Available',
     contentTop:
@@ -87,6 +92,11 @@ const EMAIL_CONTENT = {
     subject: 'Account Unlocked',
     contentTop:
       'Your account has been unlocked, and the issue resolved. Your dashboard is now accessible.',
+  },
+  UNFLAG_PROPERTY: {
+    subject: 'Property Unflagged',
+    contentTop:
+      'Your property [property name] has been unflagged, and is now available for viewing.',
   },
   VERIFY_VENDOR: {
     subject: 'Account Verified',
