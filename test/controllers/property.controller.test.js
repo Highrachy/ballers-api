@@ -3816,7 +3816,7 @@ describe('Property Controller', () => {
           request()
             [method](endpoint)
             .set('authorization', adminToken)
-            .send({ ...report, propertyId: '' })
+            .send({ ...data, propertyId: '' })
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
@@ -3833,13 +3833,35 @@ describe('Property Controller', () => {
           request()
             [method](endpoint)
             .set('authorization', adminToken)
-            .send({ ...report, reportId: '' })
+            .send({ ...data, reportId: '' })
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Report id" is not allowed to be empty');
               expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('when reportId is missing', () => {
+        it('property is flagged', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ propertyId: property._id, reason: 'fraudulent property flagged' })
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Property flagged');
+              expect(res.body.property.flagged.status).to.be.eql(true);
+              expect(res.body.property.flagged.case[0].flaggedBy).to.be.eql(
+                adminUser._id.toString(),
+              );
+              expect(res.body.property.flagged.case[0].flaggedReason).to.be.eql(data.reason);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.FLAG_PROPERTY);
               done();
             });
         });
