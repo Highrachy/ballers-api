@@ -633,3 +633,15 @@ export const getAllUserOffers = async (user, accountId, page = 1, limit = 10) =>
   const result = offers[0].data;
   return { pagination, result };
 };
+
+export const resolveOffer = async (offerId) => {
+  try {
+    return Offer.findByIdAndUpdate(
+      offerId,
+      { $set: { status: OFFER_STATUS.RESOLVED } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving offer', error);
+  }
+};

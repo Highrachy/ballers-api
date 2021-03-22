@@ -24,12 +24,12 @@ import {
   resolveVerificationStepComment,
   banUser,
   unbanUser,
-  getNextPayments,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import httpStatus from '../helpers/httpStatus';
 import { HOST } from '../config';
+import { getUnresolvedNextPayments } from '../services/nextPayment.service';
 
 const UserController = {
   register(req, res, next) {
@@ -328,12 +328,14 @@ const UserController = {
   },
 
   getNextPayments(req, res, next) {
-    const { user } = req;
-    getNextPayments(user)
-      .then((nextPayments) => {
-        res
-          .status(httpStatus.OK)
-          .json({ success: true, message: 'Next payments found', nextPayments });
+    const { user, query } = req;
+    getUnresolvedNextPayments(user, query)
+      .then(({ pagination, result }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          pagination,
+          result,
+        });
       })
       .catch((error) => next(error));
   },

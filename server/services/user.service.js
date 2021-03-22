@@ -7,7 +7,7 @@ import { USER_SECRET } from '../config';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { getPropertyById, updateProperty } from './property.service';
-import { calculateContributionReward, getActiveOffers } from './offer.service';
+import { calculateContributionReward } from './offer.service';
 import { addReferral, calculateReferralRewards } from './referral.service';
 import { getTotalAmountPaidByUser } from './transaction.service';
 import {
@@ -20,7 +20,6 @@ import {
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
 import { buildFilterAndSortQuery, USER_FILTERS } from '../helpers/filters';
-import { generateNextPaymentDate } from './nextPayment.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -827,20 +826,4 @@ export const unbanUser = async ({ adminId, userId, caseId, reason }) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error unbanning user', error);
   }
-};
-
-export const getNextPayments = async (user) => {
-  const activeOffers = await getActiveOffers(user._id).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  const nextPayments = await activeOffers.reduce(async (acc, val) => {
-    const payment = await generateNextPaymentDate({ offerId: val._id }).catch((error) => {
-      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-    });
-    acc.push(payment);
-    return acc;
-  }, []);
-
-  return nextPayments;
 };
