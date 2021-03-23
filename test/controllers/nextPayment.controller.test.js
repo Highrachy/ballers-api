@@ -44,7 +44,7 @@ describe('Next Payments Controller', () => {
   });
 
   describe('Get All Next Payments', () => {
-    const endpoint = '/api/v1/next-payments/all';
+    const endpoint = '/api/v1/next-payment/all';
     const method = 'get';
 
     const vendorUser2 = UserFactory.build(

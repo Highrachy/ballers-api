@@ -32,5 +32,5 @@ export default (app) => {
   app.use('/api/v1/area', area);
   app.use('/api/v1/content-property', contentProperty);
   app.use('/api/v1/report-property', reportProperty);
-  app.use('/api/v1/next-payments', nextPayment);
+  app.use('/api/v1/next-payment', nextPayment);
 };

@@ -6,7 +6,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /next-payments/all:
+ * /next-payment/all:
  *   get:
  *     tags:
  *       - NextPayment

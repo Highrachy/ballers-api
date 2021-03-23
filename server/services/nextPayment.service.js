@@ -127,19 +127,19 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
 export const getUnresolvedNextPayments = async (user, { page = 1, limit = 10 } = {}) => {
   let accountType;
 
-  if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.ADMIN) {
-    accountType = {
-      matchKey: 'vendorId',
-      localField: 'userId',
-      as: 'userInfo',
-      unwind: '$userInfo',
-    };
-  } else if (user.role === USER_ROLE.USER) {
+  if (user.role === USER_ROLE.USER) {
     accountType = {
       matchKey: 'userId',
       localField: 'vendorId',
       as: 'vendorInfo',
       unwind: '$vendorInfo',
+    };
+  } else {
+    accountType = {
+      matchKey: 'vendorId',
+      localField: 'userId',
+      as: 'userInfo',
+      unwind: '$userInfo',
     };
   }
 
