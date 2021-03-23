@@ -689,27 +689,6 @@ router.put(
 
 /**
  * @swagger
- * path:
- *  /user/:id:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: verifies user access
- *      summary: Gets a user based by its ID
- *      tags: [User]
- *      responses:
- *        '200':
- *          description: User found
- *        '500':
- *          description: Internal server error
- */
-router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOneUser);
-
-/**
- * @swagger
  * /user/vendor/director:
  *   put:
  *     tags:
@@ -872,5 +851,26 @@ router.put(
   schemaValidation(unbanUserSchema),
   UserController.unbanUser,
 );
+
+/**
+ * @swagger
+ * path:
+ *  /user/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *          description: verifies user access
+ *      summary: Gets a user based by its ID
+ *      tags: [User]
+ *      responses:
+ *        '200':
+ *          description: User found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOneUser);
 
 module.exports = router;

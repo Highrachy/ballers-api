@@ -13,6 +13,7 @@ export const OFFER_STATUS = {
   REJECTED: 'Rejected',
   NEGLECTED: 'Neglected',
   CANCELLED: 'Cancelled',
+  RESOLVED: 'Resolved',
 };
 
 export const REFERRAL_STATUS = {

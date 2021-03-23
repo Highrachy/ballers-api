@@ -7,6 +7,7 @@ import { generateNextPaymentDate } from '../../server/services/nextPayment.servi
 import OfferFactory from '../factories/offer.factory';
 import NextPaymentFactory from '../factories/nextPayment.factory';
 import TransactionFactory from '../factories/transaction.factory';
+import { OFFER_STATUS } from '../../server/helpers/constants';
 
 describe('NextPayment Service', () => {
   const offer = OfferFactory.build(
@@ -198,6 +199,8 @@ describe('NextPayment Service', () => {
         it('returns no next payment', async () => {
           const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
           expect(matchedNextPayments.length).to.eql(0);
+          const resolvedOffer = await Offer.findById(offer._id);
+          expect(resolvedOffer.status).to.eql(OFFER_STATUS.RESOLVED);
         });
       });
     });
@@ -358,6 +361,8 @@ describe('NextPayment Service', () => {
         it('returns no next payment', async () => {
           const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
           expect(matchedNextPayments.length).to.eql(0);
+          const resolvedOffer = await Offer.findById(offer._id);
+          expect(resolvedOffer.status).to.eql(OFFER_STATUS.RESOLVED);
         });
       });
     });
@@ -396,6 +401,8 @@ describe('NextPayment Service', () => {
         it('returns no next payment', async () => {
           const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
           expect(matchedNextPayments.length).to.eql(0);
+          const resolvedOffer = await Offer.findById(offer._id);
+          expect(resolvedOffer.status).to.eql(OFFER_STATUS.RESOLVED);
         });
       });
 
@@ -423,6 +430,8 @@ describe('NextPayment Service', () => {
         it('returns no next payment', async () => {
           const matchedNextPayments = await NextPayment.find({ offerId: offer._id });
           expect(matchedNextPayments.length).to.eql(0);
+          const resolvedOffer = await Offer.findById(offer._id);
+          expect(resolvedOffer.status).to.eql(OFFER_STATUS.RESOLVED);
         });
       });
     });
