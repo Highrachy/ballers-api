@@ -127,7 +127,7 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
 export const getUnresolvedNextPayments = async (user, { page = 1, limit = 10 } = {}) => {
   let accountType;
 
-  if (user.role === USER_ROLE.VENDOR) {
+  if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.ADMIN) {
     accountType = {
       matchKey: 'vendorId',
       localField: 'userId',
@@ -144,7 +144,6 @@ export const getUnresolvedNextPayments = async (user, { page = 1, limit = 10 } =
   }
 
   const nextPaymentOptions = [
-    { $match: { [accountType.matchKey]: ObjectId(user._id) } },
     { $match: { resolved: false } },
     {
       $lookup: {
@@ -169,7 +168,10 @@ export const getUnresolvedNextPayments = async (user, { page = 1, limit = 10 } =
       $unwind: '$propertyInfo',
     },
     {
-      $project: NON_PROJECTED_USER_INFO(accountType.as),
+      $project: {
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO(accountType.as),
+      },
     },
     {
       $facet: {
@@ -178,6 +180,26 @@ export const getUnresolvedNextPayments = async (user, { page = 1, limit = 10 } =
       },
     },
   ];
+
+  if (user.role === USER_ROLE.ADMIN) {
+    nextPaymentOptions.unshift(
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'vendorId',
+          foreignField: '_id',
+          as: 'vendorInfo',
+        },
+      },
+      {
+        $unwind: '$vendorInfo',
+      },
+    );
+  }
+
+  if (user.role === USER_ROLE.VENDOR || user.role === USER_ROLE.USER) {
+    nextPaymentOptions.unshift({ $match: { [accountType.matchKey]: ObjectId(user._id) } });
+  }
 
   const nextPayments = await NextPayment.aggregate(nextPaymentOptions);
 

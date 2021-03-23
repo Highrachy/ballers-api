@@ -37,7 +37,6 @@ import {
   filterTestForSingleParameter,
   itReturnsNoResultWhenNoFilterParameterIsMatched,
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
-  itReturnsEmptyValuesWhenNoItemExistInDatabase,
 } from '../helpers';
 import {
   USER_ROLE,
@@ -48,8 +47,6 @@ import {
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
 import { USER_FILTERS } from '../../server/helpers/filters';
-import NextPayment from '../../server/models/nextPayment.model';
-import NextPaymentFactory from '../factories/nextPayment.factory';
 
 let adminToken;
 let userToken;
@@ -3126,130 +3123,6 @@ describe('User Controller', () => {
               done();
               User.findOneAndUpdate.restore();
             });
-        });
-      });
-    });
-
-    describe('Get All Next Payments', () => {
-      let vendorToken;
-      const endpoint = '/api/v1/user/next-payments';
-      const method = 'get';
-
-      const vendorUser = UserFactory.build(
-        {
-          role: USER_ROLE.VENDOR,
-          activated: true,
-          vendor: { verified: true },
-        },
-        { generateId: true },
-      );
-      const vendorUser2 = UserFactory.build(
-        {
-          role: USER_ROLE.VENDOR,
-          activated: true,
-          vendor: { verified: true },
-        },
-        { generateId: true },
-      );
-
-      const vendorProperty = PropertyFactory.build(
-        { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-        { generateId: true },
-      );
-      const vendor2Property = PropertyFactory.build(
-        { addedBy: vendorUser2._id, updatedBy: vendorUser2._id },
-        { generateId: true },
-      );
-
-      const validNextPayments1 = NextPaymentFactory.buildList(8, {
-        propertyId: vendorProperty._id,
-        userId: regularUser._id,
-        vendorId: vendorUser._id,
-        resolved: false,
-      });
-      const validNextPayments2 = NextPaymentFactory.buildList(10, {
-        propertyId: vendor2Property._id,
-        userId: regularUser._id,
-        vendorId: vendorUser2._id,
-        resolved: false,
-      });
-      const inValidNextPayments = NextPaymentFactory.buildList(3, {
-        propertyId: vendorProperty._id,
-        userId: regularUser._id,
-        vendorId: vendorUser._id,
-        resolved: true,
-      });
-
-      beforeEach(async () => {
-        vendorToken = await addUser(vendorUser);
-        await addUser(vendorUser2);
-        await addProperty(vendorProperty);
-        await addProperty(vendor2Property);
-      });
-
-      describe('Next Payments Pagination', () => {
-        context('when db is empty', () => {
-          [regularUser, vendorUser].map((user) =>
-            itReturnsEmptyValuesWhenNoItemExistInDatabase({
-              endpoint,
-              method,
-              user,
-              useExistingUser: true,
-            }),
-          );
-        });
-
-        describe('when next payments exist in db', () => {
-          beforeEach(async () => {
-            await NextPayment.insertMany([
-              ...validNextPayments1,
-              ...validNextPayments2,
-              ...inValidNextPayments,
-            ]);
-          });
-
-          itReturnsTheRightPaginationValue({
-            endpoint,
-            method,
-            user: regularUser,
-            useExistingUser: true,
-          });
-
-          context('when request is sent by vendor token', () => {
-            it('returns vendor next payments', (done) => {
-              request()
-                [method](endpoint)
-                .set('authorization', vendorToken)
-                .end((err, res) => {
-                  expect(res).to.have.status(200);
-                  expect(res.body.success).to.be.eql(true);
-                  expect(res.body.pagination.currentPage).to.be.eql(1);
-                  expect(res.body.pagination.limit).to.be.eql(10);
-                  expect(res.body.pagination.total).to.be.eql(8);
-                  expect(res.body.pagination.offset).to.be.eql(0);
-                  expect(res.body.result.length).to.be.eql(8);
-                  done();
-                });
-            });
-          });
-
-          itReturnsForbiddenForNoToken({ endpoint, method });
-
-          itReturnsForbiddenForTokenWithInvalidAccess({
-            endpoint,
-            method,
-            user: adminUser,
-            useExistingUser: true,
-          });
-
-          itReturnsAnErrorWhenServiceFails({
-            endpoint,
-            method,
-            user: regularUser,
-            model: NextPayment,
-            modelMethod: 'aggregate',
-            useExistingUser: true,
-          });
         });
       });
     });

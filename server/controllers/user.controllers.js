@@ -29,7 +29,6 @@ import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import httpStatus from '../helpers/httpStatus';
 import { HOST } from '../config';
-import { getUnresolvedNextPayments } from '../services/nextPayment.service';
 
 const UserController = {
   register(req, res, next) {
@@ -323,19 +322,6 @@ const UserController = {
       .then((user) => {
         sendMail(EMAIL_CONTENT.UNBAN_USER, user, {});
         res.status(httpStatus.OK).json({ success: true, message: 'User unbanned', user });
-      })
-      .catch((error) => next(error));
-  },
-
-  getNextPayments(req, res, next) {
-    const { user, query } = req;
-    getUnresolvedNextPayments(user, query)
-      .then(({ pagination, result }) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          pagination,
-          result,
-        });
       })
       .catch((error) => next(error));
   },
