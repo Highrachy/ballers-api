@@ -48,6 +48,6 @@ router.get('/all', authenticate, isAdminOrUserOrVendor, NextPaymentController.ge
  *      '500':
  *       description: Internal server error
  */
-router.get('/send-reminders', NextPaymentController.sendReminder);
+router.get('/reminder', NextPaymentController.sendReminder);
 
 module.exports = router;

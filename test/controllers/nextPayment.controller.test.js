@@ -1,4 +1,4 @@
-import { expect, request } from '../config';
+import { expect, request, sinon } from '../config';
 import NextPayment from '../../server/models/nextPayment.model';
 import NextPaymentFactory from '../factories/nextPayment.factory';
 import UserFactory from '../factories/user.factory';
@@ -11,7 +11,10 @@ import {
   itReturnsForbiddenForNoToken,
   itReturnsAnErrorWhenServiceFails,
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
+  futureDate,
 } from '../helpers';
+import * as MailService from '../../server/services/mailer.service';
+import EMAIL_CONTENT from '../../mailer';
 
 let userToken;
 let adminToken;
@@ -36,11 +39,28 @@ const vendorUser = UserFactory.build(
   { generateId: true },
 );
 
+const vendorProperty = PropertyFactory.build(
+  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+  { generateId: true },
+);
+
+let sendMailStub;
+const sandbox = sinon.createSandbox();
+
 describe('Next Payments Controller', () => {
+  beforeEach(() => {
+    sendMailStub = sandbox.stub(MailService, 'sendMail');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   beforeEach(async () => {
     userToken = await addUser(regularUser);
     adminToken = await addUser(adminUser);
     vendorToken = await addUser(vendorUser);
+    await addProperty(vendorProperty);
   });
 
   describe('Get All Next Payments', () => {
@@ -56,10 +76,6 @@ describe('Next Payments Controller', () => {
       { generateId: true },
     );
 
-    const vendorProperty = PropertyFactory.build(
-      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-      { generateId: true },
-    );
     const vendor2Property = PropertyFactory.build(
       { addedBy: vendorUser2._id, updatedBy: vendorUser2._id },
       { generateId: true },
@@ -86,7 +102,6 @@ describe('Next Payments Controller', () => {
 
     beforeEach(async () => {
       await addUser(vendorUser2);
-      await addProperty(vendorProperty);
       await addProperty(vendor2Property);
     });
 
@@ -197,6 +212,158 @@ describe('Next Payments Controller', () => {
           useExistingUser: true,
         });
       });
+    });
+  });
+
+  describe('Send Reminders', () => {
+    let fakeDate;
+    const endpoint = '/api/v1/next-payment/reminder';
+    const method = 'get';
+
+    const unresolvedNextPayments = NextPaymentFactory.buildList(2, {
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorUser._id,
+      resolved: false,
+      expiresOn: futureDate,
+    });
+
+    const resolvedNextPayments = NextPaymentFactory.buildList(3, {
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorUser._id,
+      resolved: true,
+      expiresOn: futureDate,
+    });
+
+    const oneDayAway = NextPaymentFactory.build({
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorUser._id,
+      resolved: false,
+      expiresOn: new Date('2020-03-25'),
+    });
+
+    const sevenDaysAway = NextPaymentFactory.build({
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorUser._id,
+      resolved: false,
+      expiresOn: new Date('2020-03-31'),
+    });
+
+    const thirtyDaysAway = NextPaymentFactory.build({
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorUser._id,
+      resolved: false,
+      expiresOn: new Date('2020-04-23'),
+    });
+
+    afterEach(() => {
+      fakeDate.restore();
+    });
+
+    beforeEach(async () => {
+      await NextPayment.insertMany([
+        ...unresolvedNextPayments,
+        ...resolvedNextPayments,
+        oneDayAway,
+        sevenDaysAway,
+        thirtyDaysAway,
+      ]);
+    });
+
+    context('when date is in range of 3 next payments', () => {
+      beforeEach(async () => {
+        fakeDate = sinon.useFakeTimers({
+          now: new Date('2020-03-24'),
+        });
+      });
+
+      it('sends 3 reminders', (done) => {
+        request()
+          [method](endpoint)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('3 reminders sent');
+            expect(sendMailStub.callCount).to.eq(3);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.PAYMENT_REMINDER);
+            done();
+          });
+      });
+    });
+
+    context('when date is 7 days away from 1 next payment', () => {
+      beforeEach(async () => {
+        fakeDate = sinon.useFakeTimers({
+          now: new Date('2020-04-16'),
+        });
+      });
+
+      it('sends 1 reminder', (done) => {
+        request()
+          [method](endpoint)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('1 reminder sent');
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.PAYMENT_REMINDER);
+            done();
+          });
+      });
+    });
+
+    context('when date is 1 day away from 1 next payment', () => {
+      beforeEach(async () => {
+        fakeDate = sinon.useFakeTimers({
+          now: new Date('2020-04-22'),
+        });
+      });
+
+      it('sends 1 reminder', (done) => {
+        request()
+          [method](endpoint)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('1 reminder sent');
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.PAYMENT_REMINDER);
+            done();
+          });
+      });
+    });
+
+    context('when date is not in range of any next payment', () => {
+      beforeEach(async () => {
+        fakeDate = sinon.useFakeTimers({
+          now: new Date('2020-03-16'),
+        });
+      });
+
+      it('sends no reminder', (done) => {
+        request()
+          [method](endpoint)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('0 reminder sent');
+            expect(sendMailStub.callCount).to.eq(0);
+            done();
+          });
+      });
+    });
+
+    itReturnsAnErrorWhenServiceFails({
+      endpoint,
+      method,
+      user: regularUser,
+      model: NextPayment,
+      modelMethod: 'aggregate',
+      useExistingUser: true,
     });
   });
 });
