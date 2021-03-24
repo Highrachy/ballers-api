@@ -56,6 +56,13 @@ const EMAIL_CONTENT = {
     contentTop: `Congratulations on signing your offer. Details of your next steps are included in your offer letter and we are here to guide your process.`,
     contentBottom: `Meanwhile, click below to read our article on <a href="https://ballers.ng">5 Things Every Intending Homeowner Should Know</a>. We look forward to an enjoyable process.`,
   },
+  PAYMENT_REMINDER: {
+    subject: 'Payment Reminder',
+    contentTop:
+      'This is a quick reminder that the periodic payment of your property [Property name], is due on [Payment date].',
+    contentBottom:
+      'Kindly contact us if you have any questions concerning the payment or proposed payment methods.',
+  },
   RAISE_CONCERN: {
     subject: 'Concern Raised',
     contentTop: `A concern has been raised on your offer to [User name]. The question states [question].`,
