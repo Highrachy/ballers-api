@@ -161,12 +161,8 @@ export const getUnresolvedNextPayments = async (user, { page = 1, limit = 10 } =
         as: 'propertyInfo',
       },
     },
-    {
-      $unwind: accountType.unwind,
-    },
-    {
-      $unwind: '$propertyInfo',
-    },
+    { $unwind: accountType.unwind },
+    { $unwind: '$propertyInfo' },
     {
       $project: {
         ...NON_PROJECTED_USER_INFO('vendorInfo'),
@@ -191,9 +187,7 @@ export const getUnresolvedNextPayments = async (user, { page = 1, limit = 10 } =
           as: 'vendorInfo',
         },
       },
-      {
-        $unwind: '$vendorInfo',
-      },
+      { $unwind: '$vendorInfo' },
     );
   }
 
@@ -207,4 +201,38 @@ export const getUnresolvedNextPayments = async (user, { page = 1, limit = 10 } =
   const pagination = generatePagination(page, limit, total);
   const result = nextPayments[0].data;
   return { pagination, result };
+};
+
+export const sendReminder = async () => {
+  const today = new Date();
+  return NextPayment.aggregate([
+    { $match: { resolved: false } },
+    {
+      $match: {
+        $or: [
+          { expiresOn: { $eq: new Date(format(add(today, { days: 1 }), 'yyyy-MM-dd')) } },
+          { expiresOn: { $eq: new Date(format(add(today, { days: 7 }), 'yyyy-MM-dd')) } },
+          { expiresOn: { $eq: new Date(format(add(today, { days: 30 }), 'yyyy-MM-dd')) } },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    { $unwind: '$userInfo' },
+    { $unwind: '$propertyInfo' },
+  ]);
 };

@@ -27,4 +27,27 @@ const router = express.Router();
  */
 router.get('/all', authenticate, isAdminOrUserOrVendor, NextPaymentController.getNextPayments);
 
+/**
+ * @swagger
+ * /next-payment/reminder:
+ *   get:
+ *     tags:
+ *       - NextPayment
+ *     description: Send reminders for next payments
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/NextPayment'
+ *      description: Send reminders for next payments
+ *     responses:
+ *      '200':
+ *        description: Sends reminders
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/reminder', NextPaymentController.sendReminder);
+
 module.exports = router;
