@@ -30,7 +30,7 @@ const NextPaymentController = {
 
         res.status(httpStatus.OK).json({
           success: true,
-          message: `${reminders.length} ${reminders.length > 1 ? 'reminders' : 'reminder'} sent`,
+          message: `${reminders.length} ${reminders.length === 1 ? 'reminder' : 'reminders'} sent`,
         });
       })
       .catch((error) => next(error));

@@ -350,7 +350,7 @@ describe('Next Payments Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('0 reminder sent');
+            expect(res.body.message).to.be.eql('0 reminders sent');
             expect(sendMailStub.callCount).to.eq(0);
             done();
           });
