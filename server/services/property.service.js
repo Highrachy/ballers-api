@@ -11,6 +11,7 @@ import {
   PROJECTED_VENDOR_INFO,
   PROJECTED_PROPERTY_INFO,
   PROJECTED_ASSIGNED_USER_INFO,
+  NON_PROJECTED_USER_INFO,
 } from '../helpers/projectedSchemaInfo';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterQuery, PROPERTY_FILTERS } from '../helpers/filters';
@@ -725,4 +726,84 @@ export const unflagProperty = async (propertyInfo) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error unflagging property', error);
   }
+};
+
+export const getPortfolio = async (offerId, user = {}) => {
+  const portfolioOptions = [
+    { $match: { _id: ObjectId(offerId) } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'vendorId',
+        foreignField: '_id',
+        as: 'vendorInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'transactions',
+        localField: '_id',
+        foreignField: 'offerId',
+        as: 'transactionInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'nextpayments',
+        let: { oOfferId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ['$offerId', '$$oOfferId'] }, { $eq: ['$resolved', false] }],
+              },
+            },
+          },
+        ],
+        as: 'nextPaymentInfo',
+      },
+    },
+    { $unwind: '$userInfo' },
+    { $unwind: '$vendorInfo' },
+    { $unwind: '$propertyInfo' },
+    // {
+    //   $group: {
+    //     _id: '$transactionInfo._id',
+    //     totalAmountContributed: { $sum: '$amount' },
+    //   },
+    // },
+    {
+      $project: {
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO('userInfo'),
+      },
+    },
+  ];
+
+  const portfolio = await Offer.aggregate(portfolioOptions);
+  if (
+    portfolio.length > 0 &&
+    ((user?.role === USER_ROLE.VENDOR &&
+      user?._id.toString() !== portfolio[0].vendorId.toString()) ||
+      (user?.role === USER_ROLE.USER && user?._id.toString() !== portfolio[0].userId.toString()))
+  ) {
+    return [];
+  }
+  return portfolio;
 };

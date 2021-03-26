@@ -20,6 +20,7 @@ import {
   deleteGallery,
   flagProperty,
   unflagProperty,
+  getPortfolio,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -87,6 +88,7 @@ const PropertyController = {
       })
       .catch((error) => next(error));
   },
+
   search(req, res, next) {
     const filter = req.locals;
     const userId = req.user._id;
@@ -260,6 +262,20 @@ const PropertyController = {
         sendMail(EMAIL_CONTENT.UNFLAG_PROPERTY, vendor, { contentTop });
 
         res.status(httpStatus.OK).json({ success: true, message: 'Property unflagged', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  getPortfolio(req, res, next) {
+    const offerId = req.params.id;
+    const { user } = req;
+    getPortfolio(offerId, user)
+      .then((portfolio) => {
+        if (portfolio.length > 0) {
+          res.status(httpStatus.OK).json({ success: true, portfolio: portfolio[0] });
+        } else {
+          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Portfolio not found' });
+        }
       })
       .catch((error) => next(error));
   },
