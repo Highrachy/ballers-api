@@ -7,6 +7,7 @@ import {
   isVendorOrAdmin,
   hasValidObjectId,
   isAdminOrUserOrVendor,
+  isUserOrVendor,
 } from '../helpers/middleware';
 import {
   addPropertySchema,
@@ -225,7 +226,7 @@ router.get('/available-options', authenticate, PropertyController.getDistinctPro
 /**
  * @swagger
  * path:
- *  /property/assigned/:id:
+ *  /property/portfolio/all:
  *    get:
  *      parameters:
  *        - in: query
@@ -233,7 +234,7 @@ router.get('/available-options', authenticate, PropertyController.getDistinctPro
  *          schema:
  *            type: string
  *          description: verifies user access
- *      summary: Gets all information and transaction summ of assigned property by offer ID
+ *      summary: Gets all properties in a user's portfolio
  *      tags: [Property]
  *      responses:
  *        '200':
@@ -242,32 +243,11 @@ router.get('/available-options', authenticate, PropertyController.getDistinctPro
  *          description: Internal server error
  */
 router.get(
-  '/assigned/:id',
+  '/portfolio/all',
   authenticate,
-  hasValidObjectId,
-  PropertyController.getAssignedPropertyByOfferId,
+  isUserOrVendor,
+  PropertyController.getAssignedProperties,
 );
-
-/**
- * @swagger
- * path:
- *  /property/assigned/:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: verifies user access
- *      summary: Gets all properties assigned to a user
- *      tags: [Property]
- *      responses:
- *        '200':
- *          description: Properties found
- *        '500':
- *          description: Internal server error
- */
-router.get('/assigned/', authenticate, PropertyController.getAssignedProperties);
 
 /**
  * @swagger

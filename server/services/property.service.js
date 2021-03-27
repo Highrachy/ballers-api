@@ -3,8 +3,6 @@ import Property from '../models/property.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import Transaction from '../models/transaction.model';
-// eslint-disable-next-line import/no-cycle
-import { getOffer } from './offer.service';
 import { OFFER_STATUS, USER_ROLE } from '../helpers/constants';
 import Offer from '../models/offer.model';
 import {
@@ -343,27 +341,24 @@ export const getTotalAmountPaidForProperty = async (offerId) =>
     },
   ]);
 
-export const getAssignedPropertyByOfferId = async (offerId, user) => {
-  const total = await getTotalAmountPaidForProperty(offerId);
-  const totalPaid = total.length > 0 ? total[0].totalAmountContributed : 0;
+export const getAssignedProperties = async (user) => {
+  let matchKey;
 
-  const offer = await getOffer(offerId, user);
+  if (user.role === USER_ROLE.USER) {
+    matchKey = 'userId';
+  } else {
+    matchKey = 'vendorId';
+  }
 
-  return {
-    totalPaid,
-    offer: offer[0],
-  };
-};
-
-export const getAssignedProperties = async (userId) =>
-  Offer.aggregate([
-    { $match: { userId: ObjectId(userId) } },
+  const portfolio = await Offer.aggregate([
+    { $match: { [matchKey]: ObjectId(user._id) } },
     {
       $match: {
         $or: [
           { status: OFFER_STATUS.ASSIGNED },
           { status: OFFER_STATUS.ALLOCATED },
           { status: OFFER_STATUS.INTERESTED },
+          { status: OFFER_STATUS.RESOLVED },
         ],
       },
     },
@@ -372,13 +367,46 @@ export const getAssignedProperties = async (userId) =>
         from: 'properties',
         localField: 'propertyId',
         foreignField: '_id',
-        as: 'property',
+        as: 'propertyInfo',
       },
     },
     {
-      $unwind: '$property',
+      $lookup: {
+        from: 'users',
+        localField: 'vendorId',
+        foreignField: '_id',
+        as: 'vendorInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    { $unwind: '$userInfo' },
+    { $unwind: '$vendorInfo' },
+    { $unwind: '$propertyInfo' },
+    {
+      $project: {
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO('userInfo'),
+      },
     },
   ]);
+
+  if (
+    (user?.role === USER_ROLE.VENDOR &&
+      user?._id.toString() !== portfolio[0].vendorId.toString()) ||
+    (user?.role === USER_ROLE.USER && user?._id.toString() !== portfolio[0].userId.toString())
+  ) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Portfolio not found');
+  }
+
+  return portfolio;
+};
 
 export const addNeighborhood = async (neighborhoodInfo) => {
   const property = await getPropertyById(neighborhoodInfo.propertyId).catch((error) => {
@@ -729,38 +757,17 @@ export const unflagProperty = async (propertyInfo) => {
 };
 
 export const getPortfolio = async (offerId, user = {}) => {
+  const total = await getTotalAmountPaidForProperty(offerId);
+  const amountContributed = total.length > 0 ? total[0].totalAmountContributed : 0;
+
   const portfolioOptions = [
     { $match: { _id: ObjectId(offerId) } },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'vendorId',
-        foreignField: '_id',
-        as: 'vendorInfo',
-      },
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'userId',
-        foreignField: '_id',
-        as: 'userInfo',
-      },
-    },
     {
       $lookup: {
         from: 'properties',
         localField: 'propertyId',
         foreignField: '_id',
         as: 'propertyInfo',
-      },
-    },
-    {
-      $lookup: {
-        from: 'transactions',
-        localField: '_id',
-        foreignField: 'offerId',
-        as: 'transactionInfo',
       },
     },
     {
@@ -779,31 +786,40 @@ export const getPortfolio = async (offerId, user = {}) => {
         as: 'nextPaymentInfo',
       },
     },
-    { $unwind: '$userInfo' },
-    { $unwind: '$vendorInfo' },
     { $unwind: '$propertyInfo' },
-    // {
-    //   $group: {
-    //     _id: '$transactionInfo._id',
-    //     totalAmountContributed: { $sum: '$amount' },
-    //   },
-    // },
     {
       $project: {
-        ...NON_PROJECTED_USER_INFO('vendorInfo'),
-        ...NON_PROJECTED_USER_INFO('userInfo'),
+        'propertyInfo.assignedTo': 0,
       },
     },
   ];
 
   const portfolio = await Offer.aggregate(portfolioOptions);
+
+  if (portfolio.length < 1) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Portfolio not found');
+  }
+
+  if (
+    portfolio[0].status === OFFER_STATUS.RESOLVED ||
+    amountContributed >= portfolio[0].totalAmountPayable
+  ) {
+    delete portfolio[0].nextPaymentInfo;
+  }
+
   if (
     portfolio.length > 0 &&
     ((user?.role === USER_ROLE.VENDOR &&
       user?._id.toString() !== portfolio[0].vendorId.toString()) ||
       (user?.role === USER_ROLE.USER && user?._id.toString() !== portfolio[0].userId.toString()))
   ) {
-    return [];
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Portfolio not found');
   }
-  return portfolio;
+
+  return {
+    ...portfolio[0],
+    equityAmount: portfolio[0].totalAmountPayable,
+    amountContributed,
+    outstandingBalance: portfolio[0].totalAmountPayable - amountContributed,
+  };
 };

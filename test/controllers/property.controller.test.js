@@ -12,7 +12,7 @@ import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import TransactionFactory from '../factories/transaction.factory';
 import { addProperty } from '../../server/services/property.service';
-import { createOffer } from '../../server/services/offer.service';
+import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
@@ -44,6 +44,7 @@ import ReportedPropertyFactory from '../factories/reportedProperty.factory';
 import { reportProperty } from '../../server/services/reportedProperty.service';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import { generateNextPaymentDate } from '../../server/services/nextPayment.service';
 
 let adminToken;
 let vendorToken;
@@ -2263,15 +2264,8 @@ describe('Property Controller', () => {
     });
   });
 
-  describe('Load transaction sum and info of assigned property', () => {
-    const property1 = PropertyFactory.build(
-      {
-        addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
-      },
-      { generateId: true },
-    );
-    const property2 = PropertyFactory.build(
+  describe('View User Portfolio', () => {
+    const property = PropertyFactory.build(
       {
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
@@ -2279,92 +2273,171 @@ describe('Property Controller', () => {
       { generateId: true },
     );
 
-    const enquiry1 = EnquiryFactory.build(
+    const enquiry = EnquiryFactory.build(
       {
-        propertyId: property1._id,
-        userId: regularUser._id,
-      },
-      { generateId: true },
-    );
-    const enquiry2 = EnquiryFactory.build(
-      {
-        propertyId: property2._id,
+        propertyId: property._id,
         userId: regularUser._id,
       },
       { generateId: true },
     );
 
-    const offer1 = OfferFactory.build(
+    const offer = OfferFactory.build(
       {
-        enquiryId: enquiry1._id,
+        enquiryId: enquiry._id,
         userId: regularUser._id,
         vendorId: vendorUser._id,
-      },
-      { generateId: true },
-    );
-    const offer2 = OfferFactory.build(
-      {
-        enquiryId: enquiry2._id,
-        userId: regularUser._id,
-        vendorId: vendorUser._id,
+        totalAmountPayable: 1_000_000,
+        initialPayment: 500_000,
+        periodicPayment: 100_000,
+        paymentFrequency: 30,
+        initialPaymentDate: new Date('2020-03-01'),
       },
       { generateId: true },
     );
 
     const transaction1 = TransactionFactory.build(
       {
-        propertyId: property1._id,
-        offerId: offer1._id,
+        propertyId: property._id,
+        offerId: offer._id,
         userId: regularUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
-        amount: 40000,
+        amount: 100_000,
       },
       { generateId: true },
     );
 
+    const transaction2 = TransactionFactory.build(
+      {
+        propertyId: property._id,
+        offerId: offer._id,
+        userId: regularUser._id,
+        addedBy: adminUser._id,
+        updatedBy: adminUser._id,
+        amount: 250_000,
+      },
+      { generateId: true },
+    );
+
+    const transaction3 = TransactionFactory.build(
+      {
+        propertyId: property._id,
+        offerId: offer._id,
+        userId: regularUser._id,
+        addedBy: adminUser._id,
+        updatedBy: adminUser._id,
+        amount: 650_000,
+      },
+      { generateId: true },
+    );
+
+    const acceptOfferData = {
+      offerId: offer._id,
+      signature: 'http://www.ballers.ng/signature.png',
+      user: regularUser._id,
+    };
+
+    let fakeDate;
+
+    afterEach(() => {
+      fakeDate.restore();
+    });
+
     beforeEach(async () => {
-      await addProperty(property1);
-      await addProperty(property2);
-      await addEnquiry(enquiry1);
-      await addEnquiry(enquiry2);
-      await createOffer(offer1);
-      await createOffer(offer2);
+      await addProperty(property);
+      await addEnquiry(enquiry);
+      await createOffer(offer);
+      await acceptOffer(acceptOfferData);
       await addTransaction(transaction1);
+      await addTransaction(transaction2);
     });
 
     context('with a valid token & id', () => {
-      it('returns successful payload', (done) => {
+      beforeEach(async () => {
+        fakeDate = sinon.useFakeTimers({
+          now: new Date('2020-03-21'),
+        });
+      });
+
+      beforeEach(async () => {
+        await generateNextPaymentDate({ offerId: offer._id });
+      });
+
+      [...new Array(3)].map((_, index) =>
+        it('returns portfolio', (done) => {
+          request()
+            .get(`/api/v1/property/portfolio/${offer._id}`)
+            .set('authorization', [userToken, adminToken, vendorToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.portfolio._id).to.be.eql(offer._id.toString());
+              expect(res.body.portfolio.propertyInfo._id).to.be.eql(property._id.toString());
+              expect(res.body.portfolio.equityAmount).to.be.eql(offer.totalAmountPayable);
+              expect(res.body.portfolio.amountContributed).to.be.eql(
+                transaction1.amount + transaction2.amount,
+              );
+              expect(res.body.portfolio.outstandingBalance).to.be.eql(
+                offer.totalAmountPayable - (transaction1.amount + transaction2.amount),
+              );
+              expect(res.body.portfolio.nextPaymentInfo[0].expectedAmount).to.be.eql(250_000);
+              expect(res.body.portfolio.nextPaymentInfo[0].expiresOn).to.have.string('2020-03-31');
+              done();
+            });
+        }),
+      );
+    });
+
+    context('when user has completed payment', () => {
+      beforeEach(async () => {
+        await addTransaction(transaction3);
+      });
+      it('does not return next payment', (done) => {
         request()
-          .get(`/api/v1/property/assigned/${offer1._id}`)
+          .get(`/api/v1/property/portfolio/${offer._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.property.totalPaid).to.be.eql(transaction1.amount);
-            expect(res.body.property.offer._id).to.be.eql(offer1._id.toString());
-            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiry1._id.toString());
-            expect(res.body.property.offer.propertyInfo._id).to.be.eql(property1._id.toString());
-            expect(res.body.property.offer.transactionInfo[0]._id).to.be.eql(
-              transaction1._id.toString(),
+            expect(res.body.portfolio._id).to.be.eql(offer._id.toString());
+            expect(res.body.portfolio.propertyInfo._id).to.be.eql(property._id.toString());
+            expect(res.body.portfolio.equityAmount).to.be.eql(offer.totalAmountPayable);
+            expect(res.body.portfolio.amountContributed).to.be.eql(
+              transaction1.amount + transaction2.amount + transaction3.amount,
             );
+            expect(res.body.portfolio.outstandingBalance).to.be.eql(
+              offer.totalAmountPayable -
+                (transaction1.amount + transaction2.amount + transaction3.amount),
+            );
+            expect(res.body.portfolio).to.not.have.property('nextPaymentInfo');
             done();
           });
       });
     });
 
-    context('when no transaction has been made', () => {
-      it('returns successful payload', (done) => {
+    context('with invalid offer id', () => {
+      it('returns not found', (done) => {
         request()
-          .get(`/api/v1/property/assigned/${offer2._id}`)
+          .get(`/api/v1/property/portfolio/${mongoose.Types.ObjectId()}`)
           .set('authorization', userToken)
           .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.property.totalPaid).to.be.eql(0);
-            expect(res.body.property.offer._id).to.be.eql(offer2._id.toString());
-            expect(res.body.property.offer.enquiryInfo._id).to.be.eql(enquiry2._id.toString());
-            expect(res.body.property.offer.propertyInfo._id).to.be.eql(property2._id.toString());
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Portfolio not found');
+            done();
+          });
+      });
+    });
+
+    context('without wrong vendor token', () => {
+      it('returns not found', (done) => {
+        request()
+          .get(`/api/v1/property/portfolio/${offer._id}`)
+          .set('authorization', newVendorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Portfolio not found');
             done();
           });
       });
@@ -2373,7 +2446,7 @@ describe('Property Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get(`/api/v1/property/assigned/${offer1._id}`)
+          .get(`/api/v1/property/portfolio/${offer._id}`)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -2387,7 +2460,7 @@ describe('Property Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/property/assigned/${offer1._id}`)
+          .get(`/api/v1/property/portfolio/${offer._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
@@ -2396,11 +2469,12 @@ describe('Property Controller', () => {
           });
       });
     });
-    context('when getOffer service fails', () => {
+
+    context('when getPortfolio service fails', () => {
       it('returns the error', (done) => {
         sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get(`/api/v1/property/assigned/${offer1._id}`)
+          .get(`/api/v1/property/portfolio/${offer._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);
@@ -2455,27 +2529,31 @@ describe('Property Controller', () => {
     });
 
     context('with a valid token & id', () => {
-      it('returns successful payload', (done) => {
-        request()
-          .get('/api/v1/property/assigned')
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.properties.length).to.be.eql(3);
-            res.body.properties.forEach(({ _id, property }, index) => {
-              expect(_id).to.be.eql(offers[index + 1]._id.toString());
-              expect(property._id).to.be.eql(properties[index + 1]._id.toString());
+      [...new Array(2)].map((_, index) =>
+        it('returns successful payload', (done) => {
+          request()
+            .get('/api/v1/property/portfolio/all')
+            .set('authorization', [userToken, vendorToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.properties.length).to.be.eql(4);
+              res.body.properties.forEach((portfolio) => {
+                expect(portfolio.userId).to.be.eql(regularUser._id.toString());
+                expect(portfolio.vendorId).to.be.eql(vendorUser._id.toString());
+                expect(portfolio.vendorInfo._id).to.be.eql(vendorUser._id.toString());
+                expect(portfolio.userInfo._id).to.be.eql(regularUser._id.toString());
+              });
+              done();
             });
-            done();
-          });
-      });
+        }),
+      );
     });
 
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .get('/api/v1/property/assigned')
+          .get('/api/v1/property/portfolio/all')
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
@@ -2489,7 +2567,7 @@ describe('Property Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
         request()
-          .get('/api/v1/property/assigned')
+          .get('/api/v1/property/portfolio/all')
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(500);

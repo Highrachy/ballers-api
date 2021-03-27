@@ -7,7 +7,6 @@ import {
   searchThroughProperties,
   getOneProperty,
   getAvailablePropertyOptions,
-  getAssignedPropertyByOfferId,
   getAssignedProperties,
   addNeighborhood,
   updateNeighborhood,
@@ -112,22 +111,9 @@ const PropertyController = {
       .catch((error) => next(error));
   },
 
-  getAssignedPropertyByOfferId(req, res, next) {
-    const offerId = req.params.id;
-    const { user } = req;
-    getAssignedPropertyByOfferId(offerId, user)
-      .then((property) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          property,
-        });
-      })
-      .catch((error) => next(error));
-  },
-
   getAssignedProperties(req, res, next) {
-    const userId = req.user._id;
-    getAssignedProperties(userId)
+    const { user } = req;
+    getAssignedProperties(user)
       .then((properties) => {
         res.status(httpStatus.OK).json({
           success: true,
@@ -271,11 +257,7 @@ const PropertyController = {
     const { user } = req;
     getPortfolio(offerId, user)
       .then((portfolio) => {
-        if (portfolio.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, portfolio: portfolio[0] });
-        } else {
-          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Portfolio not found' });
-        }
+        res.status(httpStatus.OK).json({ success: true, portfolio });
       })
       .catch((error) => next(error));
   },
