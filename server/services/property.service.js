@@ -12,7 +12,7 @@ import {
   NON_PROJECTED_USER_INFO,
 } from '../helpers/projectedSchemaInfo';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { buildFilterQuery, PROPERTY_FILTERS } from '../helpers/filters';
+import { buildFilterQuery, PROPERTY_FILTERS, OFFER_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { resolveReport, getReportById } from './reportedProperty.service';
 // eslint-disable-next-line import/no-cycle
@@ -341,17 +341,12 @@ export const getTotalAmountPaidForProperty = async (offerId) =>
     },
   ]);
 
-export const getAssignedProperties = async (user) => {
-  let matchKey;
+export const getAssignedProperties = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const matchKey = user.role === USER_ROLE.USER ? 'userId' : 'vendorId';
+  const filterQuery = buildFilterQuery(OFFER_FILTERS, query);
 
-  if (user.role === USER_ROLE.USER) {
-    matchKey = 'userId';
-  } else {
-    matchKey = 'vendorId';
-  }
-
-  const portfolio = await Offer.aggregate([
-    { $match: { [matchKey]: ObjectId(user._id) } },
+  const portfolioOptions = [
+    { $match: { $and: filterQuery } },
     {
       $match: {
         $or: [
@@ -395,17 +390,28 @@ export const getAssignedProperties = async (user) => {
         ...NON_PROJECTED_USER_INFO('userInfo'),
       },
     },
-  ]);
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+  ];
 
-  if (
-    (user?.role === USER_ROLE.VENDOR &&
-      user?._id.toString() !== portfolio[0].vendorId.toString()) ||
-    (user?.role === USER_ROLE.USER && user?._id.toString() !== portfolio[0].userId.toString())
-  ) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Portfolio not found');
+  if (filterQuery.length < 1) {
+    portfolioOptions.shift();
   }
 
-  return portfolio;
+  if (user.role !== USER_ROLE.ADMIN) {
+    portfolioOptions.unshift({ $match: { [matchKey]: ObjectId(user._id) } });
+  }
+
+  const portfolio = await Offer.aggregate(portfolioOptions);
+
+  const total = getPaginationTotal(portfolio);
+  const pagination = generatePagination(page, limit, total);
+  const result = portfolio[0].data;
+  return { pagination, result };
 };
 
 export const addNeighborhood = async (neighborhoodInfo) => {
@@ -796,7 +802,13 @@ export const getPortfolio = async (offerId, user = {}) => {
 
   const portfolio = await Offer.aggregate(portfolioOptions);
 
-  if (portfolio.length < 1) {
+  if (
+    portfolio.length < 1 ||
+    (portfolio.length > 0 &&
+      ((user?.role === USER_ROLE.VENDOR &&
+        user?._id.toString() !== portfolio[0].vendorId.toString()) ||
+        (user?.role === USER_ROLE.USER && user?._id.toString() !== portfolio[0].userId.toString())))
+  ) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Portfolio not found');
   }
 
@@ -807,19 +819,8 @@ export const getPortfolio = async (offerId, user = {}) => {
     delete portfolio[0].nextPaymentInfo;
   }
 
-  if (
-    portfolio.length > 0 &&
-    ((user?.role === USER_ROLE.VENDOR &&
-      user?._id.toString() !== portfolio[0].vendorId.toString()) ||
-      (user?.role === USER_ROLE.USER && user?._id.toString() !== portfolio[0].userId.toString()))
-  ) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Portfolio not found');
-  }
-
   return {
     ...portfolio[0],
-    equityAmount: portfolio[0].totalAmountPayable,
     amountContributed,
-    outstandingBalance: portfolio[0].totalAmountPayable - amountContributed,
   };
 };

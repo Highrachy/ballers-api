@@ -112,13 +112,10 @@ const PropertyController = {
   },
 
   getAssignedProperties(req, res, next) {
-    const { user } = req;
-    getAssignedProperties(user)
-      .then((properties) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          properties,
-        });
+    const { user, query } = req;
+    getAssignedProperties(user, query)
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },

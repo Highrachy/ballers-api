@@ -7,7 +7,6 @@ import {
   isVendorOrAdmin,
   hasValidObjectId,
   isAdminOrUserOrVendor,
-  isUserOrVendor,
 } from '../helpers/middleware';
 import {
   addPropertySchema,
@@ -245,7 +244,7 @@ router.get('/available-options', authenticate, PropertyController.getDistinctPro
 router.get(
   '/portfolio/all',
   authenticate,
-  isUserOrVendor,
+  isAdminOrUserOrVendor,
   PropertyController.getAssignedProperties,
 );
 
