@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { expect, request, sinon } from '../config';
 import NextPayment from '../../server/models/nextPayment.model';
 import NextPaymentFactory from '../factories/nextPayment.factory';
@@ -15,6 +16,10 @@ import {
 } from '../helpers';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import Offer from '../../server/models/offer.model';
+import OfferFactory from '../factories/offer.factory';
+import TransactionFactory from '../factories/transaction.factory';
+import { addTransaction } from '../../server/services/transaction.service';
 
 let userToken;
 let adminToken;
@@ -365,5 +370,122 @@ describe('Next Payments Controller', () => {
       modelMethod: 'aggregate',
       useExistingUser: true,
     });
+  });
+
+  describe('Recalculate Next Payment', () => {
+    let fakeDate;
+
+    afterEach(() => {
+      fakeDate.restore();
+    });
+
+    const offer = OfferFactory.build(
+      {
+        enquiryId: mongoose.Types.ObjectId(),
+        propertyId: vendorProperty._id,
+        vendorId: vendorUser._id,
+        userId: regularUser._id,
+        totalAmountPayable: 100_000,
+        initialPayment: 50_000,
+        periodicPayment: 10_000,
+        paymentFrequency: 30,
+        initialPaymentDate: new Date('2020-03-01'),
+        referenceCode: '123456XXX',
+      },
+      { generateId: true },
+    );
+
+    const transaction = TransactionFactory.build({
+      propertyId: vendorProperty._id,
+      offerId: offer._id,
+      userId: regularUser._id,
+      addedBy: adminUser._id,
+      updatedBy: adminUser._id,
+      amount: 60_000,
+    });
+
+    const endpoint = `/api/v1/next-payment/recalculate/${offer._id}`;
+    const method = 'get';
+
+    beforeEach(async () => {
+      fakeDate = sinon.useFakeTimers({
+        now: new Date('2020-03-24'),
+      });
+
+      Offer.create(offer);
+    });
+
+    context('with a valid token & id', () => {
+      beforeEach(async () => {
+        await addTransaction(transaction);
+      });
+
+      context('when offer payment is still on', () => {
+        it('successfully recalculates next payment', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Next payment recalculated');
+              expect(res.body.nextPayment.expectedAmount).to.be.eql(10_000);
+              expect(res.body.nextPayment.offerId).to.be.eql(offer._id.toString());
+              expect(res.body.nextPayment.expiresOn).to.have.string('2020-04-30');
+              done();
+            });
+        });
+      });
+
+      context('when offer payment is complete', () => {
+        beforeEach(async () => {
+          await addTransaction(transaction);
+        });
+
+        it('returns offer complete', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Offer has been completed');
+              done();
+            });
+        });
+      });
+    });
+
+    context.skip('when offer id is invalid', () => {
+      it('returns error', (done) => {
+        request()
+          [method](`/api/v1/next-payment/recalculate/${mongoose.Types.ObjectId()}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid offer');
+            done();
+          });
+      });
+    });
+
+    context('with a valid token without access permission', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns forbidden', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', [userToken, vendorToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+              done();
+            });
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
   });
 });

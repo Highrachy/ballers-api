@@ -1,7 +1,7 @@
 import {
   getUnresolvedNextPayments,
   sendReminder,
-  recalculateNextPayment,
+  generateNextPaymentDate,
 } from '../services/nextPayment.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -42,12 +42,17 @@ const NextPaymentController = {
 
   recalculateNextPayment(req, res, next) {
     const offerId = req.params.id;
-    const { user } = req;
-    recalculateNextPayment(offerId, user)
+    generateNextPaymentDate({ offerId })
       .then((nextPayment) => {
-        res
-          .status(httpStatus.OK)
-          .json({ success: true, message: 'Next payment recalculated', nextPayment });
+        if (Object.keys(nextPayment).length === 0) {
+          res
+            .status(httpStatus.PRECONDITION_FAILED)
+            .json({ success: false, message: 'Offer has been completed' });
+        } else {
+          res
+            .status(httpStatus.OK)
+            .json({ success: true, message: 'Next payment recalculated', nextPayment });
+        }
       })
       .catch((error) => next(error));
   },

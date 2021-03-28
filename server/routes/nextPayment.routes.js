@@ -1,5 +1,10 @@
 import express from 'express';
-import { authenticate, isAdminOrUserOrVendor, hasValidObjectId } from '../helpers/middleware';
+import {
+  authenticate,
+  isAdminOrUserOrVendor,
+  isAdmin,
+  hasValidObjectId,
+} from '../helpers/middleware';
 import NextPaymentController from '../controllers/nextPayment.controllers';
 
 const router = express.Router();
@@ -52,7 +57,7 @@ router.get('/reminder', NextPaymentController.sendReminder);
 
 /**
  * @swagger
- * /next-payment/calculate/:id:
+ * /next-payment/recalculate/:id:
  *   get:
  *     tags:
  *       - NextPayment
@@ -72,10 +77,10 @@ router.get('/reminder', NextPaymentController.sendReminder);
  *       description: Internal server error
  */
 router.get(
-  '/calculate/:id',
+  '/recalculate/:id',
   hasValidObjectId,
   authenticate,
-  isAdminOrUserOrVendor,
+  isAdmin,
   NextPaymentController.recalculateNextPayment,
 );
 

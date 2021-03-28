@@ -70,6 +70,10 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  if (!offer) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offer');
+  }
+
   const totalPaid = await getTotalTransactionByOfferId(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -95,6 +99,7 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
 
   if (
     expectedTotal - totalPaid < 0 &&
+    totalPaid < offer.totalAmountPayable &&
     paymentSchedule.length !== validSchedules.length &&
     totalPaid !== offer.totalAmountPayable
   ) {
@@ -235,31 +240,4 @@ export const sendReminder = async () => {
     { $unwind: '$userInfo' },
     { $unwind: '$propertyInfo' },
   ]);
-};
-
-export const recalculateNextPayment = async (offerId, user) => {
-  const offer = await getOfferById(offerId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (!offer) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offer');
-  }
-
-  if (
-    (user.role === USER_ROLE.VENDOR && offer.vendorId.toString() !== user._id.toString()) ||
-    (user.role === USER_ROLE.USER && offer.userId.toString() !== user._id.toString())
-  ) {
-    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
-  }
-
-  const nextPayment = await generateNextPaymentDate({ offerId }).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (Object.keys(nextPayment).length === 0) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has been completed');
-  }
-
-  return nextPayment;
 };
