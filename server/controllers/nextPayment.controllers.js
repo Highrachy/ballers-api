@@ -1,4 +1,8 @@
-import { getUnresolvedNextPayments, sendReminder } from '../services/nextPayment.service';
+import {
+  getUnresolvedNextPayments,
+  sendReminder,
+  recalculateNextPayment,
+} from '../services/nextPayment.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
@@ -32,6 +36,18 @@ const NextPaymentController = {
           success: true,
           message: `${reminders.length} ${reminders.length === 1 ? 'reminder' : 'reminders'} sent`,
         });
+      })
+      .catch((error) => next(error));
+  },
+
+  recalculateNextPayment(req, res, next) {
+    const offerId = req.params.id;
+    const { user } = req;
+    recalculateNextPayment(offerId, user)
+      .then((nextPayment) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Next payment recalculated', nextPayment });
       })
       .catch((error) => next(error));
   },
