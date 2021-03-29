@@ -84,4 +84,27 @@ router.get(
   NextPaymentController.recalculateNextPayment,
 );
 
+/**
+ * @swagger
+ * /next-payment/cronjob:
+ *   get:
+ *     tags:
+ *       - NextPayment
+ *     description: Process expired but unresolved next payments
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/NextPayment'
+ *      description: Process expired but unresolved next payments
+ *     responses:
+ *      '200':
+ *        description: Next payments processed
+ *      '500':
+ *       description: Internal server error
+ */
+router.get('/cronjob', NextPaymentController.cronjob);
+
 module.exports = router;

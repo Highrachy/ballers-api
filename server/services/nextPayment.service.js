@@ -241,3 +241,19 @@ export const sendReminder = async () => {
     { $unwind: '$propertyInfo' },
   ]);
 };
+
+export const cronjob = async () => {
+  const today = new Date();
+
+  const unResolvedNextPayments = await NextPayment.aggregate([
+    { $match: { resolved: false } },
+    { $match: { expiresOn: { $lte: today } } },
+  ]);
+
+  await unResolvedNextPayments.forEach(async (nextPayment) => {
+    await resolvePendingPayment(nextPayment._id);
+    await generateNextPaymentDate({ offerId: nextPayment.offerId });
+  });
+
+  return unResolvedNextPayments.length;
+};
