@@ -70,6 +70,10 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  if (!offer) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offer');
+  }
+
   const totalPaid = await getTotalTransactionByOfferId(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -95,6 +99,7 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
 
   if (
     expectedTotal - totalPaid < 0 &&
+    totalPaid < offer.totalAmountPayable &&
     paymentSchedule.length !== validSchedules.length &&
     totalPaid !== offer.totalAmountPayable
   ) {
