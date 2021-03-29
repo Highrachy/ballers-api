@@ -19,7 +19,7 @@ import {
   deleteGallery,
   flagProperty,
   unflagProperty,
-  getPortfolio,
+  getOnePortfolio,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -249,10 +249,10 @@ const PropertyController = {
       .catch((error) => next(error));
   },
 
-  getPortfolio(req, res, next) {
+  getOnePortfolio(req, res, next) {
     const offerId = req.params.id;
     const { user } = req;
-    getPortfolio(offerId, user)
+    getOnePortfolio(offerId, user)
       .then((portfolio) => {
         res.status(httpStatus.OK).json({ success: true, portfolio });
       })

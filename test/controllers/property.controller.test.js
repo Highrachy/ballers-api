@@ -50,6 +50,7 @@ let adminToken;
 let vendorToken;
 let userToken;
 let newVendorToken;
+let newUserToken;
 let sendMailStub;
 const sandbox = sinon.createSandbox();
 
@@ -90,6 +91,11 @@ const regularUser = UserFactory.build(
   { generateId: true },
 );
 
+const invalidUser = UserFactory.build(
+  { role: USER_ROLE.USER, activated: true },
+  { generateId: true },
+);
+
 describe('Property Controller', () => {
   beforeEach(() => {
     sendMailStub = sandbox.stub(MailService, 'sendMail');
@@ -103,6 +109,7 @@ describe('Property Controller', () => {
     adminToken = await addUser(adminUser);
     vendorToken = await addUser(vendorUser);
     newVendorToken = await addUser(invalidVendorUser);
+    newUserToken = await addUser(invalidUser);
     userToken = await addUser(regularUser);
   });
 
@@ -2352,7 +2359,7 @@ describe('Property Controller', () => {
       await addTransaction(transaction2);
     });
 
-    context('with a valid token & id', () => {
+    context('when payment is in second cycle', () => {
       beforeEach(async () => {
         fakeDate = sinon.useFakeTimers({
           now: new Date('2020-03-21'),
@@ -2373,12 +2380,8 @@ describe('Property Controller', () => {
               expect(res.body.success).to.be.eql(true);
               expect(res.body.portfolio._id).to.be.eql(offer._id.toString());
               expect(res.body.portfolio.propertyInfo._id).to.be.eql(property._id.toString());
-              expect(res.body.portfolio.equityAmount).to.be.eql(offer.totalAmountPayable);
               expect(res.body.portfolio.amountContributed).to.be.eql(
                 transaction1.amount + transaction2.amount,
-              );
-              expect(res.body.portfolio.outstandingBalance).to.be.eql(
-                offer.totalAmountPayable - (transaction1.amount + transaction2.amount),
               );
               expect(res.body.portfolio.nextPaymentInfo[0].expectedAmount).to.be.eql(250_000);
               expect(res.body.portfolio.nextPaymentInfo[0].expiresOn).to.have.string('2020-03-31');
@@ -2401,15 +2404,10 @@ describe('Property Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.portfolio._id).to.be.eql(offer._id.toString());
             expect(res.body.portfolio.propertyInfo._id).to.be.eql(property._id.toString());
-            expect(res.body.portfolio.equityAmount).to.be.eql(offer.totalAmountPayable);
             expect(res.body.portfolio.amountContributed).to.be.eql(
               transaction1.amount + transaction2.amount + transaction3.amount,
             );
-            expect(res.body.portfolio.outstandingBalance).to.be.eql(
-              offer.totalAmountPayable -
-                (transaction1.amount + transaction2.amount + transaction3.amount),
-            );
-            expect(res.body.portfolio).to.not.have.property('nextPaymentInfo');
+            expect(res.body.portfolio.nextPaymentInfo.length).to.be.eql(0);
             done();
           });
       });
@@ -2429,18 +2427,20 @@ describe('Property Controller', () => {
       });
     });
 
-    context('without wrong vendor token', () => {
-      it('returns not found', (done) => {
-        request()
-          .get(`/api/v1/property/portfolio/${offer._id}`)
-          .set('authorization', newVendorToken)
-          .end((err, res) => {
-            expect(res).to.have.status(404);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Portfolio not found');
-            done();
-          });
-      });
+    context('without wrong token without access', () => {
+      [...new Array(2)].map((_, index) =>
+        it('returns portfolio', (done) => {
+          request()
+            .get(`/api/v1/property/portfolio/${offer._id}`)
+            .set('authorization', [newVendorToken, newUserToken][index])
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Portfolio not found');
+              done();
+            });
+        }),
+      );
     });
 
     context('without token', () => {
@@ -2537,8 +2537,8 @@ describe('Property Controller', () => {
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
-              expect(res.body.properties.length).to.be.eql(4);
-              res.body.properties.forEach((portfolio) => {
+              expect(res.body.pagination.total).to.be.eql(4);
+              res.body.result.forEach((portfolio) => {
                 expect(portfolio.userId).to.be.eql(regularUser._id.toString());
                 expect(portfolio.vendorId).to.be.eql(vendorUser._id.toString());
                 expect(portfolio.vendorInfo._id).to.be.eql(vendorUser._id.toString());

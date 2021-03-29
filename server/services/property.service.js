@@ -762,7 +762,7 @@ export const unflagProperty = async (propertyInfo) => {
   }
 };
 
-export const getPortfolio = async (offerId, user = {}) => {
+export const getOnePortfolio = async (offerId, user = {}) => {
   const total = await getTotalAmountPaidForProperty(offerId);
   const amountContributed = total.length > 0 ? total[0].totalAmountContributed : 0;
 
@@ -810,13 +810,6 @@ export const getPortfolio = async (offerId, user = {}) => {
         (user?.role === USER_ROLE.USER && user?._id.toString() !== portfolio[0].userId.toString())))
   ) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Portfolio not found');
-  }
-
-  if (
-    portfolio[0].status === OFFER_STATUS.RESOLVED ||
-    amountContributed >= portfolio[0].totalAmountPayable
-  ) {
-    delete portfolio[0].nextPaymentInfo;
   }
 
   return {

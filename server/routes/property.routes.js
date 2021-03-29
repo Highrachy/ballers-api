@@ -633,7 +633,7 @@ router.get(
   hasValidObjectId,
   authenticate,
   isAdminOrUserOrVendor,
-  PropertyController.getPortfolio,
+  PropertyController.getOnePortfolio,
 );
 
 module.exports = router;
