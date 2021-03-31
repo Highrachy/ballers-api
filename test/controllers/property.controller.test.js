@@ -33,6 +33,7 @@ import {
   futureDate,
   itReturnsNoResultWhenNoFilterParameterIsMatched,
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
+  itReturnsAnErrorWhenServiceFails,
 } from '../helpers';
 import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
@@ -2519,7 +2520,17 @@ describe('Property Controller', () => {
   });
 
   describe('Get All Portfolios', () => {
-    const allOfferStatus = Object.keys(OFFER_STATUS);
+    const method = 'get';
+    const endpoint = '/api/v1/property/portfolio/all';
+    const offerStatus = Object.keys(OFFER_STATUS);
+    const allOfferStatus = [
+      ...offerStatus,
+      ...offerStatus,
+      ...offerStatus,
+      ...offerStatus,
+      offerStatus[1],
+      offerStatus[7],
+    ];
     const properties = allOfferStatus.map(() =>
       PropertyFactory.build(
         {
@@ -2555,58 +2566,96 @@ describe('Property Controller', () => {
       ),
     );
 
-    beforeEach(async () => {
-      await Property.insertMany(properties);
-      await Enquiry.insertMany(enquiries);
-      await Offer.insertMany(offers);
-    });
-
-    context('with a valid token & id', () => {
-      [...new Array(2)].map((_, index) =>
-        it('returns successful payload', (done) => {
-          request()
-            .get('/api/v1/property/portfolio/all')
-            .set('authorization', [userToken, vendorToken][index])
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.pagination.total).to.be.eql(4);
-              res.body.result.forEach((portfolio) => {
-                expect(portfolio.userId).to.be.eql(regularUser._id.toString());
-                expect(portfolio.vendorId).to.be.eql(vendorUser._id.toString());
-                expect(portfolio.vendorInfo._id).to.be.eql(vendorUser._id.toString());
-                expect(portfolio.userInfo._id).to.be.eql(regularUser._id.toString());
-              });
-              done();
-            });
-        }),
-      );
-    });
-
-    context('without token', () => {
-      it('returns error', (done) => {
-        request()
-          .get('/api/v1/property/portfolio/all')
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
-            done();
-          });
+    describe('Portfolio Pagination', () => {
+      context('when no portfolio exists in db', () => {
+        [adminUser, vendorUser, regularUser].map((user) =>
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
       });
-    });
 
-    context('when getOffer service fails', () => {
-      it('returns the error', (done) => {
-        sinon.stub(Offer, 'aggregate').throws(new Error('Type Error'));
-        request()
-          .get('/api/v1/property/portfolio/all')
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(500);
-            done();
-            Offer.aggregate.restore();
+      describe('when portfolio exist in db', () => {
+        beforeEach(async () => {
+          await Property.insertMany(properties);
+          await Enquiry.insertMany(enquiries);
+          await Offer.insertMany(offers);
+        });
+
+        itReturnsTheRightPaginationValue({
+          endpoint,
+          method,
+          user: adminUser,
+          useExistingUser: true,
+        });
+
+        context('with a valid token & id', () => {
+          [...new Array(3)].map((_, index) =>
+            it('returns successful payload', (done) => {
+              request()
+                .get('/api/v1/property/portfolio/all')
+                .set('authorization', [userToken, vendorToken, adminToken][index])
+                .end((err, res) => {
+                  expect(res).to.have.status(200);
+                  expect(res.body.success).to.be.eql(true);
+                  expect(res.body.pagination.total).to.be.eql(18);
+                  res.body.result.forEach((portfolio) => {
+                    expect(portfolio.userId).to.be.eql(regularUser._id.toString());
+                    expect(portfolio.vendorId).to.be.eql(vendorUser._id.toString());
+                    expect(portfolio.vendorInfo._id).to.be.eql(vendorUser._id.toString());
+                    expect(portfolio.userInfo._id).to.be.eql(regularUser._id.toString());
+                  });
+                  done();
+                });
+            }),
+          );
+        });
+
+        context('with a vendor token not attached to any portfolio', () => {
+          it('returns no portfolio', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', newVendorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 0,
+                  result: 0,
+                  totalPage: 0,
+                });
+                done();
+              });
           });
+        });
+
+        itReturnsErrorForUnverifiedVendor({
+          endpoint,
+          method,
+          user: vendorUser,
+          useExistingUser: true,
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        itReturnsNotFoundForInvalidToken({
+          endpoint,
+          method,
+          user: adminUser,
+          userId: adminUser._id,
+          useExistingUser: true,
+        });
+
+        itReturnsAnErrorWhenServiceFails({
+          endpoint,
+          method,
+          user: regularUser,
+          model: Offer,
+          modelMethod: 'aggregate',
+          useExistingUser: true,
+        });
       });
     });
   });
