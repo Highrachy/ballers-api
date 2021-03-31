@@ -488,4 +488,98 @@ describe('Next Payments Controller', () => {
 
     itReturnsForbiddenForNoToken({ endpoint, method });
   });
+
+  describe('Resolve Expired Pending Next Payments', () => {
+    let fakeDate;
+    const endpoint = '/api/v1/next-payment/resolved-expired';
+    const method = 'get';
+
+    afterEach(() => {
+      fakeDate.restore();
+    });
+
+    const unresolvedNextPaymentsOffers = OfferFactory.buildList(
+      100,
+      {
+        totalAmountPayable: 4_000_000,
+        initialPayment: 2_000_000,
+        periodicPayment: 500_000,
+        paymentFrequency: 30,
+        initialPaymentDate: new Date('2020-03-01'),
+        referenceCode: 'HIG/P/OLP/02/28022021',
+        enquiryId: mongoose.Types.ObjectId(),
+        propertyId: mongoose.Types.ObjectId(),
+        vendorId: mongoose.Types.ObjectId(),
+        userId: mongoose.Types.ObjectId(),
+      },
+      { generateId: true },
+    );
+
+    const unresolvedNextPayments = unresolvedNextPaymentsOffers.map((_, index) =>
+      NextPaymentFactory.build(
+        {
+          offerId: unresolvedNextPaymentsOffers[index]._id,
+          propertyId: unresolvedNextPaymentsOffers[index].propertyId,
+          userId: unresolvedNextPaymentsOffers[index].userId,
+          vendorId: unresolvedNextPaymentsOffers[index].vendorId,
+          resolved: false,
+          expectedAmount: 2_000_000,
+          expiresOn: new Date('2020-03-01'),
+        },
+        { generateId: true },
+      ),
+    );
+
+    const resolvedNextPaymentsOffers = OfferFactory.buildList(
+      10,
+      {
+        totalAmountPayable: 4_000_000,
+        initialPayment: 2_000_000,
+        periodicPayment: 500_000,
+        paymentFrequency: 30,
+        initialPaymentDate: new Date('2020-03-01'),
+        referenceCode: 'HIG/P/OLP/02/28022021',
+        enquiryId: mongoose.Types.ObjectId(),
+        propertyId: mongoose.Types.ObjectId(),
+        vendorId: mongoose.Types.ObjectId(),
+        userId: mongoose.Types.ObjectId(),
+      },
+      { generateId: true },
+    );
+
+    const resolvedNextPayments = resolvedNextPaymentsOffers.map((_, index) =>
+      NextPaymentFactory.build(
+        {
+          offerId: resolvedNextPaymentsOffers[index]._id,
+          propertyId: resolvedNextPaymentsOffers[index].propertyId,
+          userId: resolvedNextPaymentsOffers[index].userId,
+          vendorId: resolvedNextPaymentsOffers[index].vendorId,
+          resolved: true,
+        },
+        { generateId: true },
+      ),
+    );
+
+    beforeEach(async () => {
+      fakeDate = sinon.useFakeTimers({
+        now: new Date('2020-03-24'),
+      });
+
+      await Offer.insertMany([...unresolvedNextPaymentsOffers, ...resolvedNextPaymentsOffers]);
+      await NextPayment.insertMany([...unresolvedNextPayments, ...resolvedNextPayments]);
+    });
+
+    context('when next payments are processed properly', () => {
+      it('successfully processes next payments', (done) => {
+        request()
+          [method](endpoint)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('100 next payments processed');
+            done();
+          });
+      });
+    });
+  });
 });

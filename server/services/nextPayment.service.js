@@ -242,7 +242,7 @@ export const sendReminder = async () => {
   ]);
 };
 
-export const cronjob = async () => {
+export const resolvedExpiredNextPayments = async () => {
   const today = new Date();
 
   const unResolvedNextPayments = await NextPayment.aggregate([
@@ -250,10 +250,11 @@ export const cronjob = async () => {
     { $match: { expiresOn: { $lte: today } } },
   ]);
 
-  await unResolvedNextPayments.forEach(async (nextPayment) => {
-    await resolvePendingPayment(nextPayment._id);
-    await generateNextPaymentDate({ offerId: nextPayment.offerId });
-  });
+  await Promise.all(
+    unResolvedNextPayments.map(async (nextPayment) => {
+      await generateNextPaymentDate({ offerId: nextPayment.offerId });
+    }),
+  );
 
-  return unResolvedNextPayments.length;
+  return unResolvedNextPayments;
 };

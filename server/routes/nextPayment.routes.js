@@ -86,7 +86,7 @@ router.get(
 
 /**
  * @swagger
- * /next-payment/cronjob:
+ * /next-payment/resolved-expired:
  *   get:
  *     tags:
  *       - NextPayment
@@ -105,6 +105,6 @@ router.get(
  *      '500':
  *       description: Internal server error
  */
-router.get('/cronjob', NextPaymentController.cronjob);
+router.get('/resolved-expired', NextPaymentController.resolvedExpiredNextPayments);
 
 module.exports = router;

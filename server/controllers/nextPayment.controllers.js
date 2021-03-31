@@ -2,7 +2,7 @@ import {
   getUnresolvedNextPayments,
   sendReminder,
   generateNextPaymentDate,
-  cronjob,
+  resolvedExpiredNextPayments,
 } from '../services/nextPayment.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -58,13 +58,13 @@ const NextPaymentController = {
       .catch((error) => next(error));
   },
 
-  cronjob(req, res, next) {
-    cronjob()
-      .then((numberResolved) => {
+  resolvedExpiredNextPayments(req, res, next) {
+    resolvedExpiredNextPayments()
+      .then((resolvedNextPayments) => {
         res.status(httpStatus.OK).json({
           success: true,
-          message: `${numberResolved} next ${
-            numberResolved === 1 ? 'payment' : 'payments'
+          message: `${resolvedNextPayments.length} next ${
+            resolvedNextPayments.length === 1 ? 'payment' : 'payments'
           } processed`,
         });
       })
