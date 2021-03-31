@@ -242,7 +242,7 @@ export const sendReminder = async () => {
   ]);
 };
 
-export const resolvedExpiredNextPayments = async () => {
+export const resolveExpiredNextPayments = async () => {
   const today = new Date();
 
   const unResolvedNextPayments = await NextPayment.aggregate([

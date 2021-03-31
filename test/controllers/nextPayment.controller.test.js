@@ -491,7 +491,7 @@ describe('Next Payments Controller', () => {
 
   describe('Resolve Expired Pending Next Payments', () => {
     let fakeDate;
-    const endpoint = '/api/v1/next-payment/resolved-expired';
+    const endpoint = '/api/v1/next-payment/resolve-expired';
     const method = 'get';
 
     afterEach(() => {
@@ -564,21 +564,60 @@ describe('Next Payments Controller', () => {
       fakeDate = sinon.useFakeTimers({
         now: new Date('2020-03-24'),
       });
-
-      await Offer.insertMany([...unresolvedNextPaymentsOffers, ...resolvedNextPaymentsOffers]);
-      await NextPayment.insertMany([...unresolvedNextPayments, ...resolvedNextPayments]);
     });
 
-    context('when next payments are processed properly', () => {
-      it('successfully processes next payments', (done) => {
-        request()
-          [method](endpoint)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('100 next payments processed');
-            done();
-          });
+    context('only multiple next payments are processed', () => {
+      beforeEach(async () => {
+        await Offer.insertMany([...unresolvedNextPaymentsOffers, ...resolvedNextPaymentsOffers]);
+        await NextPayment.insertMany([...unresolvedNextPayments, ...resolvedNextPayments]);
+      });
+
+      context('when next payments are processed properly', () => {
+        it('successfully processes next payments', (done) => {
+          request()
+            [method](endpoint)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('100 next payments processed');
+              done();
+            });
+        });
+      });
+    });
+
+    context('only 1 next payment is processed', () => {
+      beforeEach(async () => {
+        await Offer.insertMany([unresolvedNextPaymentsOffers[0], ...resolvedNextPaymentsOffers]);
+        await NextPayment.insertMany([unresolvedNextPayments[0], ...resolvedNextPayments]);
+      });
+
+      context('when next payment is processed properly', () => {
+        it('successfully processes next payment', (done) => {
+          request()
+            [method](endpoint)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('1 next payment processed');
+              done();
+            });
+        });
+      });
+    });
+
+    context('only no next payment is processed', () => {
+      context('when next payments are processed properly', () => {
+        it('successfully processes next payments', (done) => {
+          request()
+            [method](endpoint)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('0 next payments processed');
+              done();
+            });
+        });
       });
     });
   });

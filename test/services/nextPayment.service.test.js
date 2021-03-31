@@ -5,7 +5,7 @@ import Offer from '../../server/models/offer.model';
 import Transaction from '../../server/models/transaction.model';
 import {
   generateNextPaymentDate,
-  resolvedExpiredNextPayments,
+  resolveExpiredNextPayments,
 } from '../../server/services/nextPayment.service';
 import OfferFactory from '../factories/offer.factory';
 import NextPaymentFactory from '../factories/nextPayment.factory';
@@ -463,7 +463,7 @@ describe('NextPayment Service', () => {
     });
   });
 
-  describe('#resolvedExpiredNextPayments', () => {
+  describe('#resolveExpiredNextPayments', () => {
     let fakeDate;
     let countedNextPayments;
     const expiresOnForFirstCycle = new Date('2020-03-01');
@@ -546,7 +546,7 @@ describe('NextPayment Service', () => {
 
     context('when expired pending payments are resolved', () => {
       it('returns unresolved & generates new next payments', async () => {
-        const processedNextPayments = await resolvedExpiredNextPayments();
+        const processedNextPayments = await resolveExpiredNextPayments();
         expect(processedNextPayments.length).to.eql(unresolvedNextPayments.length);
         expect(processedNextPayments[0].resolved).to.eql(false);
         expect(processedNextPayments[0].expectedAmount).to.eql(2_000_000);

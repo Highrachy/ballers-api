@@ -86,7 +86,7 @@ router.get(
 
 /**
  * @swagger
- * /next-payment/resolved-expired:
+ * /next-payment/resolve-expired:
  *   get:
  *     tags:
  *       - NextPayment
@@ -105,6 +105,6 @@ router.get(
  *      '500':
  *       description: Internal server error
  */
-router.get('/resolved-expired', NextPaymentController.resolvedExpiredNextPayments);
+router.get('/resolve-expired', NextPaymentController.resolveExpiredNextPayments);
 
 module.exports = router;
