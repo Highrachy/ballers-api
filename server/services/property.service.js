@@ -3,17 +3,16 @@ import Property from '../models/property.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import Transaction from '../models/transaction.model';
-// eslint-disable-next-line import/no-cycle
-import { getOffer } from './offer.service';
 import { OFFER_STATUS, USER_ROLE } from '../helpers/constants';
 import Offer from '../models/offer.model';
 import {
   PROJECTED_VENDOR_INFO,
   PROJECTED_PROPERTY_INFO,
   PROJECTED_ASSIGNED_USER_INFO,
+  NON_PROJECTED_USER_INFO,
 } from '../helpers/projectedSchemaInfo';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { buildFilterQuery, PROPERTY_FILTERS } from '../helpers/filters';
+import { buildFilterQuery, PROPERTY_FILTERS, OFFER_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { resolveReport, getReportById } from './reportedProperty.service';
 // eslint-disable-next-line import/no-cycle
@@ -342,27 +341,19 @@ export const getTotalAmountPaidForProperty = async (offerId) =>
     },
   ]);
 
-export const getAssignedPropertyByOfferId = async (offerId, user) => {
-  const total = await getTotalAmountPaidForProperty(offerId);
-  const totalPaid = total.length > 0 ? total[0].totalAmountContributed : 0;
+export const getAllPortfolios = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const matchKey = user.role === USER_ROLE.USER ? 'userId' : 'vendorId';
+  const filterQuery = buildFilterQuery(OFFER_FILTERS, query);
 
-  const offer = await getOffer(offerId, user);
-
-  return {
-    totalPaid,
-    offer: offer[0],
-  };
-};
-
-export const getAssignedProperties = async (userId) =>
-  Offer.aggregate([
-    { $match: { userId: ObjectId(userId) } },
+  const portfolioOptions = [
+    { $match: { $and: filterQuery } },
     {
       $match: {
         $or: [
           { status: OFFER_STATUS.ASSIGNED },
           { status: OFFER_STATUS.ALLOCATED },
           { status: OFFER_STATUS.INTERESTED },
+          { status: OFFER_STATUS.RESOLVED },
         ],
       },
     },
@@ -371,13 +362,57 @@ export const getAssignedProperties = async (userId) =>
         from: 'properties',
         localField: 'propertyId',
         foreignField: '_id',
-        as: 'property',
+        as: 'propertyInfo',
       },
     },
     {
-      $unwind: '$property',
+      $lookup: {
+        from: 'users',
+        localField: 'vendorId',
+        foreignField: '_id',
+        as: 'vendorInfo',
+      },
     },
-  ]);
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userInfo',
+      },
+    },
+    { $unwind: '$userInfo' },
+    { $unwind: '$vendorInfo' },
+    { $unwind: '$propertyInfo' },
+    {
+      $project: {
+        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO('userInfo'),
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+  ];
+
+  if (filterQuery.length < 1) {
+    portfolioOptions.shift();
+  }
+
+  if (user.role !== USER_ROLE.ADMIN) {
+    portfolioOptions.unshift({ $match: { [matchKey]: ObjectId(user._id) } });
+  }
+
+  const portfolio = await Offer.aggregate(portfolioOptions);
+
+  const total = getPaginationTotal(portfolio);
+  const pagination = generatePagination(page, limit, total);
+  const result = portfolio[0].data;
+  return { pagination, result };
+};
 
 export const addNeighborhood = async (neighborhoodInfo) => {
   const property = await getPropertyById(neighborhoodInfo.propertyId).catch((error) => {
@@ -725,4 +760,60 @@ export const unflagProperty = async (propertyInfo) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error unflagging property', error);
   }
+};
+
+export const getOnePortfolio = async (offerId, user = {}) => {
+  const total = await getTotalAmountPaidForProperty(offerId);
+  const amountContributed = total.length > 0 ? total[0].totalAmountContributed : 0;
+
+  const portfolioOptions = [
+    { $match: { _id: ObjectId(offerId) } },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    {
+      $lookup: {
+        from: 'nextpayments',
+        let: { oOfferId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ['$offerId', '$$oOfferId'] }, { $eq: ['$resolved', false] }],
+              },
+            },
+          },
+        ],
+        as: 'nextPaymentInfo',
+      },
+    },
+    { $unwind: '$propertyInfo' },
+    {
+      $project: {
+        'propertyInfo.assignedTo': 0,
+      },
+    },
+  ];
+
+  const portfolio = await Offer.aggregate(portfolioOptions);
+
+  if (
+    portfolio.length < 1 ||
+    (portfolio.length > 0 &&
+      ((user?.role === USER_ROLE.VENDOR &&
+        user?._id.toString() !== portfolio[0].vendorId.toString()) ||
+        (user?.role === USER_ROLE.USER && user?._id.toString() !== portfolio[0].userId.toString())))
+  ) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Portfolio not found');
+  }
+
+  return {
+    ...portfolio[0],
+    amountContributed,
+  };
 };

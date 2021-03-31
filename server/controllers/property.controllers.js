@@ -7,8 +7,7 @@ import {
   searchThroughProperties,
   getOneProperty,
   getAvailablePropertyOptions,
-  getAssignedPropertyByOfferId,
-  getAssignedProperties,
+  getAllPortfolios,
   addNeighborhood,
   updateNeighborhood,
   deleteNeighborhood,
@@ -20,6 +19,7 @@ import {
   deleteGallery,
   flagProperty,
   unflagProperty,
+  getOnePortfolio,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -87,6 +87,7 @@ const PropertyController = {
       })
       .catch((error) => next(error));
   },
+
   search(req, res, next) {
     const filter = req.locals;
     const userId = req.user._id;
@@ -110,27 +111,11 @@ const PropertyController = {
       .catch((error) => next(error));
   },
 
-  getAssignedPropertyByOfferId(req, res, next) {
-    const offerId = req.params.id;
-    const { user } = req;
-    getAssignedPropertyByOfferId(offerId, user)
-      .then((property) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          property,
-        });
-      })
-      .catch((error) => next(error));
-  },
-
-  getAssignedProperties(req, res, next) {
-    const userId = req.user._id;
-    getAssignedProperties(userId)
-      .then((properties) => {
-        res.status(httpStatus.OK).json({
-          success: true,
-          properties,
-        });
+  getAllPortfolios(req, res, next) {
+    const { user, query } = req;
+    getAllPortfolios(user, query)
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },
@@ -260,6 +245,16 @@ const PropertyController = {
         sendMail(EMAIL_CONTENT.UNFLAG_PROPERTY, vendor, { contentTop });
 
         res.status(httpStatus.OK).json({ success: true, message: 'Property unflagged', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  getOnePortfolio(req, res, next) {
+    const offerId = req.params.id;
+    const { user } = req;
+    getOnePortfolio(offerId, user)
+      .then((portfolio) => {
+        res.status(httpStatus.OK).json({ success: true, portfolio });
       })
       .catch((error) => next(error));
   },
