@@ -2,6 +2,7 @@ import {
   getUnresolvedNextPayments,
   sendReminder,
   generateNextPaymentDate,
+  resolveExpiredNextPayments,
 } from '../services/nextPayment.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -53,6 +54,19 @@ const NextPaymentController = {
             .status(httpStatus.OK)
             .json({ success: true, message: 'Next payment recalculated', nextPayment });
         }
+      })
+      .catch((error) => next(error));
+  },
+
+  resolveExpiredNextPayments(req, res, next) {
+    resolveExpiredNextPayments()
+      .then((resolvedNextPayments) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          message: `${resolvedNextPayments.length} next ${
+            resolvedNextPayments.length === 1 ? 'payment' : 'payments'
+          } processed`,
+        });
       })
       .catch((error) => next(error));
   },

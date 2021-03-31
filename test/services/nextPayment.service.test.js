@@ -3,49 +3,52 @@ import { expect, sinon } from '../config';
 import NextPayment from '../../server/models/nextPayment.model';
 import Offer from '../../server/models/offer.model';
 import Transaction from '../../server/models/transaction.model';
-import { generateNextPaymentDate } from '../../server/services/nextPayment.service';
+import {
+  generateNextPaymentDate,
+  resolveExpiredNextPayments,
+} from '../../server/services/nextPayment.service';
 import OfferFactory from '../factories/offer.factory';
 import NextPaymentFactory from '../factories/nextPayment.factory';
 import TransactionFactory from '../factories/transaction.factory';
 import { OFFER_STATUS } from '../../server/helpers/constants';
 
 describe('NextPayment Service', () => {
-  const offer = OfferFactory.build(
-    {
-      totalAmountPayable: 4_000_000,
-      initialPayment: 2_000_000,
-      periodicPayment: 500_000,
-      paymentFrequency: 30,
-      initialPaymentDate: new Date('2020-03-01'),
-      referenceCode: 'HIG/P/OLP/02/28022021',
-      propertyId: mongoose.Types.ObjectId(),
-      vendorId: mongoose.Types.ObjectId(),
-      userId: mongoose.Types.ObjectId(),
-    },
-    { generateId: true },
-  );
-
-  const transaction = TransactionFactory.build(
-    {
-      addedBy: mongoose.Types.ObjectId(),
-      updatedBy: mongoose.Types.ObjectId(),
-      offerId: offer._id,
-      propertyId: mongoose.Types.ObjectId(),
-      userId: mongoose.Types.ObjectId(),
-      vendorId: mongoose.Types.ObjectId(),
-      amount: 1_000_000,
-    },
-    { generateId: true },
-  );
-
-  const nextPayment = NextPaymentFactory.build({ offerId: offer._id }, { generateId: true });
-
   describe('#generateNextPaymentDate', () => {
     let fakeDate;
     const expiresOnForFirstCycle = new Date('2020-03-01');
     const expiresOnForSecondCycle = new Date('2020-03-31');
     const expiresOnForThirdCycle = new Date('2020-04-30');
     const expiresOnForLastCycle = new Date('2020-06-29');
+
+    const offer = OfferFactory.build(
+      {
+        totalAmountPayable: 4_000_000,
+        initialPayment: 2_000_000,
+        periodicPayment: 500_000,
+        paymentFrequency: 30,
+        initialPaymentDate: new Date('2020-03-01'),
+        referenceCode: 'HIG/P/OLP/02/28022021',
+        propertyId: mongoose.Types.ObjectId(),
+        vendorId: mongoose.Types.ObjectId(),
+        userId: mongoose.Types.ObjectId(),
+      },
+      { generateId: true },
+    );
+
+    const transaction = TransactionFactory.build(
+      {
+        addedBy: mongoose.Types.ObjectId(),
+        updatedBy: mongoose.Types.ObjectId(),
+        offerId: offer._id,
+        propertyId: mongoose.Types.ObjectId(),
+        userId: mongoose.Types.ObjectId(),
+        vendorId: mongoose.Types.ObjectId(),
+        amount: 1_000_000,
+      },
+      { generateId: true },
+    );
+
+    const nextPayment = NextPaymentFactory.build({ offerId: offer._id }, { generateId: true });
 
     beforeEach(async () => {
       await Offer.create(offer);
@@ -455,6 +458,111 @@ describe('NextPayment Service', () => {
           expect(matchedNextPayments[0].resolved).to.eql(false);
           expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
           expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForLastCycle);
+        });
+      });
+    });
+  });
+
+  describe('#resolveExpiredNextPayments', () => {
+    let fakeDate;
+    let countedNextPayments;
+    const expiresOnForFirstCycle = new Date('2020-03-01');
+    const expiresOnForSecondCycle = new Date('2020-03-31');
+
+    const unresolvedNextPaymentsOffers = OfferFactory.buildList(
+      100,
+      {
+        totalAmountPayable: 4_000_000,
+        initialPayment: 2_000_000,
+        periodicPayment: 500_000,
+        paymentFrequency: 30,
+        initialPaymentDate: new Date('2020-03-01'),
+        referenceCode: 'HIG/P/OLP/02/28022021',
+        enquiryId: mongoose.Types.ObjectId(),
+        propertyId: mongoose.Types.ObjectId(),
+        vendorId: mongoose.Types.ObjectId(),
+        userId: mongoose.Types.ObjectId(),
+      },
+      { generateId: true },
+    );
+
+    const unresolvedNextPayments = unresolvedNextPaymentsOffers.map((_, index) =>
+      NextPaymentFactory.build(
+        {
+          offerId: unresolvedNextPaymentsOffers[index]._id,
+          propertyId: unresolvedNextPaymentsOffers[index].propertyId,
+          userId: unresolvedNextPaymentsOffers[index].userId,
+          vendorId: unresolvedNextPaymentsOffers[index].vendorId,
+          resolved: false,
+          expectedAmount: 2_000_000,
+          expiresOn: new Date('2020-03-01'),
+        },
+        { generateId: true },
+      ),
+    );
+
+    const resolvedNextPaymentsOffers = OfferFactory.buildList(
+      10,
+      {
+        totalAmountPayable: 4_000_000,
+        initialPayment: 2_000_000,
+        periodicPayment: 500_000,
+        paymentFrequency: 30,
+        initialPaymentDate: new Date('2020-03-01'),
+        referenceCode: 'HIG/P/OLP/02/28022021',
+        enquiryId: mongoose.Types.ObjectId(),
+        propertyId: mongoose.Types.ObjectId(),
+        vendorId: mongoose.Types.ObjectId(),
+        userId: mongoose.Types.ObjectId(),
+      },
+      { generateId: true },
+    );
+
+    const resolvedNextPayments = resolvedNextPaymentsOffers.map((_, index) =>
+      NextPaymentFactory.build(
+        {
+          offerId: resolvedNextPaymentsOffers[index]._id,
+          propertyId: resolvedNextPaymentsOffers[index].propertyId,
+          userId: resolvedNextPaymentsOffers[index].userId,
+          vendorId: resolvedNextPaymentsOffers[index].vendorId,
+          resolved: true,
+        },
+        { generateId: true },
+      ),
+    );
+
+    beforeEach(async () => {
+      fakeDate = sinon.useFakeTimers({
+        now: new Date('2020-03-11'),
+      });
+      await Offer.insertMany([...unresolvedNextPaymentsOffers, ...resolvedNextPaymentsOffers]);
+      await NextPayment.insertMany([...unresolvedNextPayments, ...resolvedNextPayments]);
+      countedNextPayments = await NextPayment.countDocuments({});
+    });
+
+    afterEach(() => {
+      fakeDate.restore();
+    });
+
+    context('when expired pending payments are resolved', () => {
+      it('returns unresolved & generates new next payments', async () => {
+        const processedNextPayments = await resolveExpiredNextPayments();
+        expect(processedNextPayments.length).to.eql(unresolvedNextPayments.length);
+        expect(processedNextPayments[0].resolved).to.eql(false);
+        expect(processedNextPayments[0].expectedAmount).to.eql(2_000_000);
+        expect(processedNextPayments[0].expiresOn).to.eql(expiresOnForFirstCycle);
+
+        const currentCountedNextPayments = await NextPayment.countDocuments({});
+        expect(currentCountedNextPayments).to.eql(
+          countedNextPayments + unresolvedNextPayments.length,
+        );
+
+        const generatedNextPayments = await NextPayment.find({
+          expiresOn: expiresOnForSecondCycle,
+        });
+        expect(generatedNextPayments.length).to.eql(unresolvedNextPayments.length);
+        generatedNextPayments.forEach((payment) => {
+          expect(payment.expectedAmount).to.be.eql(2_500_000);
         });
       });
     });

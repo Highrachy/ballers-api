@@ -241,3 +241,20 @@ export const sendReminder = async () => {
     { $unwind: '$propertyInfo' },
   ]);
 };
+
+export const resolveExpiredNextPayments = async () => {
+  const today = new Date();
+
+  const unResolvedNextPayments = await NextPayment.aggregate([
+    { $match: { resolved: false } },
+    { $match: { expiresOn: { $lte: today } } },
+  ]);
+
+  await Promise.all(
+    unResolvedNextPayments.map(async (nextPayment) => {
+      await generateNextPaymentDate({ offerId: nextPayment.offerId });
+    }),
+  );
+
+  return unResolvedNextPayments;
+};
