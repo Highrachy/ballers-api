@@ -2271,7 +2271,7 @@ describe('Property Controller', () => {
     });
   });
 
-  describe('View User Portfolio', () => {
+  describe('Get One Portfolio', () => {
     const property = PropertyFactory.build(
       {
         addedBy: vendorUser._id,
@@ -2355,46 +2355,79 @@ describe('Property Controller', () => {
       await addEnquiry(enquiry);
       await createOffer(offer);
       await acceptOffer(acceptOfferData);
-      await addTransaction(transaction1);
-      await addTransaction(transaction2);
     });
 
-    context('when payment is in second cycle', () => {
+    context('when payment has been made', () => {
       beforeEach(async () => {
-        fakeDate = sinon.useFakeTimers({
-          now: new Date('2020-03-21'),
+        await addTransaction(transaction1);
+        await addTransaction(transaction2);
+      });
+
+      context('when payment is in second cycle', () => {
+        beforeEach(async () => {
+          fakeDate = sinon.useFakeTimers({
+            now: new Date('2020-03-21'),
+          });
         });
+
+        beforeEach(async () => {
+          await generateNextPaymentDate({ offerId: offer._id });
+        });
+
+        [...new Array(3)].map((_, index) =>
+          it('returns portfolio', (done) => {
+            request()
+              .get(`/api/v1/property/portfolio/${offer._id}`)
+              .set('authorization', [userToken, adminToken, vendorToken][index])
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.portfolio._id).to.be.eql(offer._id.toString());
+                expect(res.body.portfolio.propertyInfo._id).to.be.eql(property._id.toString());
+                expect(res.body.portfolio.totalAmountPayable).to.be.eql(offer.totalAmountPayable);
+                expect(res.body.portfolio.amountContributed).to.be.eql(
+                  transaction1.amount + transaction2.amount,
+                );
+                expect(res.body.portfolio.nextPaymentInfo[0].expectedAmount).to.be.eql(250_000);
+                expect(res.body.portfolio.nextPaymentInfo[0].expiresOn).to.have.string(
+                  '2020-03-31',
+                );
+                done();
+              });
+          }),
+        );
       });
 
-      beforeEach(async () => {
-        await generateNextPaymentDate({ offerId: offer._id });
-      });
-
-      [...new Array(3)].map((_, index) =>
-        it('returns portfolio', (done) => {
+      context('when user has completed payment', () => {
+        beforeEach(async () => {
+          await addTransaction(transaction3);
+        });
+        it('does not return next payment', (done) => {
           request()
             .get(`/api/v1/property/portfolio/${offer._id}`)
-            .set('authorization', [userToken, adminToken, vendorToken][index])
+            .set('authorization', userToken)
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.portfolio._id).to.be.eql(offer._id.toString());
               expect(res.body.portfolio.propertyInfo._id).to.be.eql(property._id.toString());
               expect(res.body.portfolio.amountContributed).to.be.eql(
-                transaction1.amount + transaction2.amount,
+                transaction1.amount + transaction2.amount + transaction3.amount,
               );
-              expect(res.body.portfolio.nextPaymentInfo[0].expectedAmount).to.be.eql(250_000);
-              expect(res.body.portfolio.nextPaymentInfo[0].expiresOn).to.have.string('2020-03-31');
+              expect(res.body.portfolio.nextPaymentInfo.length).to.be.eql(0);
               done();
             });
-        }),
-      );
+        });
+      });
     });
 
-    context('when user has completed payment', () => {
+    context.skip('when no payment has been made', () => {
       beforeEach(async () => {
-        await addTransaction(transaction3);
+        fakeDate = sinon.useFakeTimers({
+          now: new Date('2020-03-21'),
+        });
       });
+
       it('does not return next payment', (done) => {
         request()
           .get(`/api/v1/property/portfolio/${offer._id}`)
@@ -2404,10 +2437,10 @@ describe('Property Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.portfolio._id).to.be.eql(offer._id.toString());
             expect(res.body.portfolio.propertyInfo._id).to.be.eql(property._id.toString());
-            expect(res.body.portfolio.amountContributed).to.be.eql(
-              transaction1.amount + transaction2.amount + transaction3.amount,
-            );
-            expect(res.body.portfolio.nextPaymentInfo.length).to.be.eql(0);
+            expect(res.body.portfolio.totalAmountPayable).to.be.eql(offer.totalAmountPayable);
+            expect(res.body.portfolio.amountContributed).to.be.eql(0);
+            expect(res.body.portfolio.nextPaymentInfo[0].expectedAmount).to.be.eql(600_000);
+            expect(res.body.portfolio.nextPaymentInfo[0].expiresOn).to.have.string('2020-03-01');
             done();
           });
       });
@@ -2427,9 +2460,9 @@ describe('Property Controller', () => {
       });
     });
 
-    context('without wrong token without access', () => {
+    context('with a different user', () => {
       [...new Array(2)].map((_, index) =>
-        it('returns portfolio', (done) => {
+        it('does not return the portfolio', (done) => {
           request()
             .get(`/api/v1/property/portfolio/${offer._id}`)
             .set('authorization', [newVendorToken, newUserToken][index])
@@ -2485,7 +2518,7 @@ describe('Property Controller', () => {
     });
   });
 
-  describe('Load all properties assigned to a user', () => {
+  describe('Get All Portfolios', () => {
     const allOfferStatus = Object.keys(OFFER_STATUS);
     const properties = allOfferStatus.map(() =>
       PropertyFactory.build(

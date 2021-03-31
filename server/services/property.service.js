@@ -341,7 +341,7 @@ export const getTotalAmountPaidForProperty = async (offerId) =>
     },
   ]);
 
-export const getAssignedProperties = async (user, { page = 1, limit = 10, ...query } = {}) => {
+export const getAllPortfolios = async (user, { page = 1, limit = 10, ...query } = {}) => {
   const matchKey = user.role === USER_ROLE.USER ? 'userId' : 'vendorId';
   const filterQuery = buildFilterQuery(OFFER_FILTERS, query);
 

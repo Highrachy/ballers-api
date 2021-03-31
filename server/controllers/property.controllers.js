@@ -7,7 +7,7 @@ import {
   searchThroughProperties,
   getOneProperty,
   getAvailablePropertyOptions,
-  getAssignedProperties,
+  getAllPortfolios,
   addNeighborhood,
   updateNeighborhood,
   deleteNeighborhood,
@@ -111,9 +111,9 @@ const PropertyController = {
       .catch((error) => next(error));
   },
 
-  getAssignedProperties(req, res, next) {
+  getAllPortfolios(req, res, next) {
     const { user, query } = req;
-    getAssignedProperties(user, query)
+    getAllPortfolios(user, query)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
       })

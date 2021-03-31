@@ -245,7 +245,7 @@ router.get(
   '/portfolio/all',
   authenticate,
   isAdminOrUserOrVendor,
-  PropertyController.getAssignedProperties,
+  PropertyController.getAllPortfolios,
 );
 
 /**
