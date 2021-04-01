@@ -1,19 +1,16 @@
 import express from 'express';
-import addOfflinePaymentSchema from '../schemas/offlinePayment.schema';
 import {
-  schemaValidation,
-  authenticate,
-  isUser,
-  isAdmin,
-  hasValidObjectId,
-} from '../helpers/middleware';
+  addOfflinePaymentSchema,
+  updateOfflinePaymentSchema,
+} from '../schemas/offlinePayment.schema';
+import { schemaValidation, authenticate, isUser, isAdmin } from '../helpers/middleware';
 import OfflinePaymentController from '../controllers/offlinePayment.controllers';
 
 const router = express.Router();
 
 /**
  * @swagger
- * /offline-payment/add:
+ * /offline-payment:
  *   post:
  *     tags:
  *       - OfflinePayment
@@ -35,7 +32,7 @@ const router = express.Router();
  *       description: Internal server error
  */
 router.post(
-  '/add',
+  '/',
   authenticate,
   isUser,
   schemaValidation(addOfflinePaymentSchema),
@@ -44,11 +41,11 @@ router.post(
 
 /**
  * @swagger
- * /offline-payment/resolve/:id:
+ * /offline-payment/:
  *   put:
  *     tags:
  *       - OfflinePayment
- *     description: Resolves an offline payment
+ *     description: Allows a user edit an offline payment
  *     produces:
  *       - application/json
  *     requestBody:
@@ -56,21 +53,21 @@ router.post(
  *        application/json:
  *          schema:
  *            $ref: '#/components/schemas/OfflinePayment'
- *      description: Resolves an offline payment
+ *      description: Allows a user edit an offline payment
  *     responses:
  *      '200':
  *        description: Offline payment resolved
  *      '400':
- *        description: Error resolving offline payment
+ *        description: Error updating offline payment
  *      '500':
  *       description: Internal server error
  */
 router.put(
-  '/resolve/:id',
+  '/',
   authenticate,
-  hasValidObjectId,
-  isAdmin,
-  OfflinePaymentController.resolve,
+  isUser,
+  schemaValidation(updateOfflinePaymentSchema),
+  OfflinePaymentController.update,
 );
 
 /**

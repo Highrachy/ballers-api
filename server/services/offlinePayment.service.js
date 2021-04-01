@@ -24,22 +24,27 @@ export const addOfflinePayment = async (offlinePayment) => {
   }
 };
 
-export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
-  const offlinePayment = await getOfflinePaymentById(offlinePaymentId).catch((error) => {
+export const updateOfflinePayment = async ({ offlinePaymentInfo, userId }) => {
+  const offlinePayment = await getOfflinePaymentById(offlinePaymentInfo.id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
   if (!offlinePayment) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
   }
 
+  const offer = await getOfferById(offlinePayment.offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (offer.userId.toString() !== userId.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
   try {
-    return OfflinePayment.findByIdAndUpdate(
-      offlinePayment._id,
-      { $set: { 'resolved.by': adminId, 'resolved.date': Date.now(), 'resolved.status': true } },
-      { new: true },
-    );
+    return OfflinePayment.findByIdAndUpdate(offlinePayment._id, offlinePaymentInfo, { new: true });
   } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving offline payment', error);
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating offline payment', error);
   }
 };
 

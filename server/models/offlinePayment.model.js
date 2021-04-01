@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { CONCERN_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -9,7 +10,7 @@ import mongoose from 'mongoose';
  *        required:
  *          - amount
  *          - bank
- *          - date
+ *          - dateOfPayment
  *          - offerId
  *          - type
  *        properties:
@@ -17,20 +18,20 @@ import mongoose from 'mongoose';
  *            type: number
  *          bank:
  *            type: string
- *          date:
+ *          dateOfPayment:
  *            type: date
  *          offerId:
  *            type: string
- *          reciept:
+ *          receipt:
  *            type: string
  *          type:
  *            type: string
  *        example:
  *           amount: 10000000
  *           bank: GT Bank
- *           date: 2020-11-02
+ *           dateOfPayment: 2020-11-02
  *           offerId: 603c0300f8477208ed73b976
- *           reciept: https://ballers.ng/paymentscreenshot.jpg
+ *           receipt: https://ballers.ng/paymentscreenshot.jpg
  *           type: Cash deposit
  */
 
@@ -45,7 +46,27 @@ const OfflinePaymentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    date: {
+    comments: [
+      {
+        question: {
+          type: String,
+        },
+        dateAsked: {
+          type: Date,
+        },
+        response: {
+          type: String,
+        },
+        dateResponded: {
+          type: Date,
+        },
+        status: {
+          type: String,
+          default: CONCERN_STATUS.PENDING,
+        },
+      },
+    ],
+    dateOfPayment: {
       type: Date,
       required: true,
     },
@@ -65,9 +86,8 @@ const OfflinePaymentSchema = new mongoose.Schema(
         default: false,
       },
     },
-    reciept: {
+    receipt: {
       type: String,
-      required: true,
     },
     type: {
       type: String,
