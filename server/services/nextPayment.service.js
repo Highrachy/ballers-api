@@ -37,32 +37,28 @@ export const resolvePendingPayment = async (pendingPaymentId, transactionId = nu
   });
 };
 
-const calculateExpectedTotal = (schedule, frequency) => {
-  const today = new Date();
-  const validSchedules = schedule.reduce((acc, val) => {
-    if (subDays(val.date, frequency) <= today) {
-      acc.push(val);
-    }
-    return acc;
-  }, []);
+const calculateExpectedTotal = ({ amountPaid, paymentSchedules, frequency }) => {
+  const todaysDate = new Date();
 
-  if (
-    validSchedules.length === schedule.length - 1 &&
-    new Date(format(add(today, { days: frequency }), 'yyyy-MM-dd')) >
-      schedule[schedule.length - 1].date
-  ) {
-    validSchedules.push(schedule[schedule.length - 1]);
-  }
+  return paymentSchedules.reduce(
+    (result, schedule) => {
+      const scheduleHasExpired = subDays(schedule.date, frequency) <= todaysDate;
+      const userHasPaidForPastSchedule = amountPaid >= result.expectedTotal;
 
-  if (validSchedules.length === 0) {
-    validSchedules.push(schedule[0]);
-  }
+      if (scheduleHasExpired || userHasPaidForPastSchedule) {
+        return {
+          validSchedules:
+            userHasPaidForPastSchedule || result.validSchedules.length === 0
+              ? [schedule, ...result.validSchedules]
+              : [...result.validSchedules],
+          expectedTotal: result.expectedTotal + schedule.amount,
+        };
+      }
 
-  const expectedTotal = validSchedules.reduce((a, b) => {
-    return a + b.amount;
-  }, 0);
-
-  return { validSchedules, expectedTotal };
+      return result;
+    },
+    { expectedTotal: 0, validSchedules: [] },
+  );
 };
 
 export const generateNextPaymentDate = async ({ transactionId = null, offerId }) => {
@@ -78,35 +74,20 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  const paymentSchedule = generatePaymentSchedules(offer);
+  const paymentSchedules = generatePaymentSchedules(offer);
 
-  const { validSchedules, expectedTotal } = calculateExpectedTotal(
-    paymentSchedule,
-    offer.paymentFrequency,
-  );
+  const { validSchedules, expectedTotal } = calculateExpectedTotal({
+    amountPaid: totalPaid,
+    paymentSchedules,
+    frequency: offer.paymentFrequency,
+  });
 
   const pendingPayment = await getLastPendingNextPayment(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  let expectedAmount = expectedTotal - totalPaid;
-  let expiresOn = paymentSchedule[validSchedules.length - 1].date;
-
-  if (expectedTotal === totalPaid && paymentSchedule.length !== validSchedules.length) {
-    expectedAmount = offer.periodicPayment;
-    expiresOn = paymentSchedule[validSchedules.length].date;
-  }
-
-  if (
-    expectedTotal - totalPaid < 0 &&
-    totalPaid < offer.totalAmountPayable &&
-    paymentSchedule.length !== validSchedules.length &&
-    totalPaid !== offer.totalAmountPayable
-  ) {
-    const advance = Math.ceil(Math.abs(expectedTotal - totalPaid) / offer.periodicPayment);
-    expectedAmount = offer.periodicPayment * advance - Math.abs(expectedTotal - totalPaid);
-    expiresOn = paymentSchedule[validSchedules.length - 1 + advance].date;
-  }
+  const expectedAmount = expectedTotal - totalPaid;
+  const expiresOn = validSchedules[0].date;
 
   const nextPayment = {
     expectedAmount: expectedAmount === 0 ? offer.periodicPayment : expectedAmount,
