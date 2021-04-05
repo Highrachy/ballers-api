@@ -22,7 +22,7 @@ const OfflinePaymentController = {
     const userId = req.user._id;
     updateOfflinePayment({ offlinePaymentInfo, userId })
       .then((payment) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Payment updateed', payment });
+        res.status(httpStatus.OK).json({ success: true, message: 'Payment updated', payment });
       })
       .catch((error) => next(error));
   },
