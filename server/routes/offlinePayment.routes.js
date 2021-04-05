@@ -3,7 +3,7 @@ import {
   addOfflinePaymentSchema,
   updateOfflinePaymentSchema,
 } from '../schemas/offlinePayment.schema';
-import { schemaValidation, authenticate, isUser, isAdmin } from '../helpers/middleware';
+import { schemaValidation, authenticate, isUser, isUserOrAdmin } from '../helpers/middleware';
 import OfflinePaymentController from '../controllers/offlinePayment.controllers';
 
 const router = express.Router();
@@ -91,6 +91,6 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, OfflinePaymentController.getAll);
+router.get('/all', authenticate, isUserOrAdmin, OfflinePaymentController.getAll);
 
 module.exports = router;

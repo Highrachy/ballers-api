@@ -28,7 +28,8 @@ const OfflinePaymentController = {
   },
 
   getAll(req, res, next) {
-    getAllOfflinePayments(req.query)
+    const { user, query } = req;
+    getAllOfflinePayments(user, query)
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,

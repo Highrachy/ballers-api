@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import OfflinePayment from '../models/offlinePayment.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
@@ -5,6 +6,9 @@ import httpStatus from '../helpers/httpStatus';
 import { getOfferById } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
+import { USER_ROLE } from '../helpers/constants';
+
+const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getOfflinePaymentById = async (id) => OfflinePayment.findById(id).select();
 
@@ -18,7 +22,7 @@ export const addOfflinePayment = async (offlinePayment) => {
   }
 
   try {
-    return await new OfflinePayment(offlinePayment).save();
+    return await new OfflinePayment({ ...offlinePayment, userId: offer.userId }).save();
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding offline payment', error);
   }
@@ -33,11 +37,7 @@ export const updateOfflinePayment = async ({ offlinePaymentInfo, userId }) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
   }
 
-  const offer = await getOfferById(offlinePayment.offerId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (offer.userId.toString() !== userId.toString()) {
+  if (offlinePayment.userId.toString() !== userId.toString()) {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
@@ -48,7 +48,7 @@ export const updateOfflinePayment = async ({ offlinePaymentInfo, userId }) => {
   }
 };
 
-export const getAllOfflinePayments = async ({ page = 1, limit = 10 }) => {
+export const getAllOfflinePayments = async (user, { page = 1, limit = 10 }) => {
   const offlinePaymentOptions = [
     {
       $lookup: {
@@ -90,6 +90,10 @@ export const getAllOfflinePayments = async ({ page = 1, limit = 10 }) => {
       },
     },
   ];
+
+  if (user.role === USER_ROLE.USER) {
+    offlinePaymentOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+  }
 
   const offlinePayments = await OfflinePayment.aggregate(offlinePaymentOptions);
 

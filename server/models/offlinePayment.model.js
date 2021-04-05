@@ -33,6 +33,7 @@ import { CONCERN_STATUS } from '../helpers/constants';
  *           offerId: 603c0300f8477208ed73b976
  *           receipt: https://ballers.ng/paymentscreenshot.jpg
  *           type: Cash deposit
+ *           comments: [{question: is there an error, dateAsked: 2020-11-01, response: yes there is , dateResponded: 2020-11-02, status: true}]
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -91,6 +92,10 @@ const OfflinePaymentSchema = new mongoose.Schema(
     },
     type: {
       type: String,
+      required: true,
+    },
+    userId: {
+      type: ObjectId,
       required: true,
     },
   },
