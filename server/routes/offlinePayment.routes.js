@@ -100,7 +100,7 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, OfflinePaymentController.getAll);
+router.get('/all', authenticate, isUserOrAdmin, OfflinePaymentController.getAll);
 
 /**
  * @swagger

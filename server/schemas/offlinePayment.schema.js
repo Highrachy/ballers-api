@@ -10,7 +10,7 @@ import {
 export const addOfflinePaymentSchema = Joi.object({
   amount: requiredNumber('Amount'),
   bank: requiredString('Bank'),
-  date: requiredDate('Date'),
+  dateOfPayment: requiredDate('Payment Date'),
   offerId: requiredObjectId('Offer id'),
   receipt: optionalString('Receipt'),
   type: requiredString('Payment Type'),
@@ -20,7 +20,7 @@ export const updateOfflinePaymentSchema = Joi.object({
   id: requiredObjectId('Offline Payment Id'),
   amount: requiredNumber('Amount'),
   bank: requiredString('Bank'),
-  date: requiredDate('Date'),
+  dateOfPayment: requiredDate('Payment Date'),
   offerId: requiredObjectId('Offer Id'),
   receipt: optionalString('Receipt'),
   type: requiredString('Payment Type'),

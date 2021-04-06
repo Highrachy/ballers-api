@@ -25,13 +25,14 @@ const OfflinePaymentController = {
     const userId = req.user._id;
     updateOfflinePayment({ offlinePaymentInfo, userId })
       .then((payment) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Payment updateed', payment });
+        res.status(httpStatus.OK).json({ success: true, message: 'Payment updated', payment });
       })
       .catch((error) => next(error));
   },
 
   getAll(req, res, next) {
-    getAllOfflinePayments(req.query)
+    const { user, query } = req;
+    getAllOfflinePayments(user, query)
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,
