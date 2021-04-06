@@ -25,3 +25,14 @@ export const updateOfflinePaymentSchema = Joi.object({
   receipt: optionalString('Receipt'),
   type: requiredString('Payment Type'),
 });
+
+export const commentSchema = Joi.object({
+  comment: requiredString('Comment'),
+  paymentId: requiredObjectId('Payment Id'),
+});
+
+export const resolveCommentSchema = Joi.object({
+  paymentId: requiredObjectId('Payment Id'),
+  commentId: requiredObjectId('Comment Id'),
+  response: requiredString('Response'),
+});

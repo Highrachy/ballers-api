@@ -48,6 +48,9 @@ const OfflinePaymentSchema = new mongoose.Schema(
     },
     comments: [
       {
+        askedBy: {
+          type: ObjectId,
+        },
         question: {
           type: String,
         },
@@ -59,6 +62,9 @@ const OfflinePaymentSchema = new mongoose.Schema(
         },
         dateResponded: {
           type: Date,
+        },
+        respondedBy: {
+          type: ObjectId,
         },
         status: {
           type: String,

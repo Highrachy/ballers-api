@@ -194,3 +194,16 @@ export const hasValidObjectId = async (req, res, next) => {
   }
   return null;
 };
+
+export const isUserOrAdmin = async (req, res, next) => {
+  const { user } = req;
+  if (isValidUser(user) || isValidAdmin(user)) {
+    next();
+  } else {
+    return res.status(httpStatus.FORBIDDEN).json({
+      success: false,
+      message: 'You are not permitted to perform this action',
+    });
+  }
+  return null;
+};
