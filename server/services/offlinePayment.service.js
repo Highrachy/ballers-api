@@ -8,6 +8,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { COMMENT_STATUS, USER_ROLE } from '../helpers/constants';
 import { getTodaysDateStandard } from '../helpers/dates';
+import { addTransaction } from './transaction.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 export const getOfflinePaymentById = async (id) => OfflinePayment.findById(id).select();
@@ -111,7 +112,21 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
   }
 
+  const transaction = {
+    offerId: offlinePayment.offerId,
+    paymentSource: offlinePayment.type,
+    amount: offlinePayment.amount,
+    paidOn: offlinePayment.dateOfPayment,
+    additionalInfo: offlinePayment._id,
+    addedBy: adminId,
+    updatedBy: adminId,
+  };
+
   try {
+    await addTransaction(transaction).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+
     return OfflinePayment.findByIdAndUpdate(
       offlinePayment._id,
       { $set: { 'resolved.by': adminId, 'resolved.date': Date.now(), 'resolved.status': true } },
@@ -126,16 +141,17 @@ export const makeComment = async ({ comment, user }) => {
   const offlinePayment = await getOfflinePaymentById(comment.paymentId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
   if (!offlinePayment) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
   }
 
-  const offer = await getOfferById(offlinePayment.offerId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (user.role === USER_ROLE.USER && offer.userId.toString() !== user._id.toString()) {
+  if (user.role === USER_ROLE.USER && offlinePayment.userId.toString() !== user._id.toString()) {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  if (offlinePayment.resolved.status === true) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Payment has been resolved');
   }
 
   try {
@@ -143,7 +159,7 @@ export const makeComment = async ({ comment, user }) => {
       offlinePayment._id,
       {
         $push: {
-          comment: {
+          comments: {
             askedBy: user._id,
             question: comment.question,
             status: COMMENT_STATUS.PENDING,
@@ -161,5 +177,38 @@ export const makeComment = async ({ comment, user }) => {
 };
 
 export const resolveComment = async ({ comment, user }) => {
-  return { comment, user };
+  const offlinePayment = await getOfflinePaymentById(comment.paymentId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!offlinePayment) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
+  }
+
+  if (user.role === USER_ROLE.USER && offlinePayment.userId.toString() !== user._id.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  if (offlinePayment.resolved.status === true) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Payment has been resolved');
+  }
+
+  try {
+    const payment = await OfflinePayment.findOneAndUpdate(
+      { _id: offlinePayment._id, 'comments._id': comment.commentId },
+      {
+        $set: {
+          'comments.$.response': comment.response,
+          'comments.$.dateResponded': getTodaysDateStandard(),
+          'comments.$.respondedBy': user._id,
+          'comments.$.status': COMMENT_STATUS.RESOLVED,
+        },
+      },
+      { new: true },
+    );
+
+    return { payment };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving comment', error);
+  }
 };

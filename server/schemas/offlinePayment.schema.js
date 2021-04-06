@@ -27,7 +27,7 @@ export const updateOfflinePaymentSchema = Joi.object({
 });
 
 export const commentSchema = Joi.object({
-  comment: requiredString('Comment'),
+  question: requiredString('Question'),
   paymentId: requiredObjectId('Payment Id'),
 });
 

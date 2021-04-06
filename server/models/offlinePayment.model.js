@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { CONCERN_STATUS } from '../helpers/constants';
+import { COMMENT_STATUS } from '../helpers/constants';
 
 /**
  * @swagger
@@ -69,7 +69,7 @@ const OfflinePaymentSchema = new mongoose.Schema(
         },
         status: {
           type: String,
-          default: CONCERN_STATUS.PENDING,
+          default: COMMENT_STATUS.PENDING,
         },
       },
     ],
