@@ -8,7 +8,8 @@ import httpStatus from '../helpers/httpStatus';
 const OfflinePaymentController = {
   add(req, res, next) {
     const offlinePaymentInfo = req.locals;
-    addOfflinePayment(offlinePaymentInfo)
+    const userId = req.user._id;
+    addOfflinePayment({ ...offlinePaymentInfo, userId })
       .then((payment) => {
         res
           .status(httpStatus.CREATED)

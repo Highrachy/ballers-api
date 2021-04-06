@@ -2,11 +2,11 @@ import mongoose from 'mongoose';
 import OfflinePayment from '../models/offlinePayment.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-// eslint-disable-next-line import/no-cycle
 import { getOfferById } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { USER_ROLE } from '../helpers/constants';
+import { buildFilterAndSortQuery, OFFLINE_PAYMENT_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -22,7 +22,7 @@ export const addOfflinePayment = async (offlinePayment) => {
   }
 
   try {
-    return await new OfflinePayment({ ...offlinePayment, userId: offer.userId }).save();
+    return await new OfflinePayment(offlinePayment).save();
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding offline payment', error);
   }
@@ -41,6 +41,10 @@ export const updateOfflinePayment = async ({ offlinePaymentInfo, userId }) => {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
+  if (offlinePayment.resolved.status) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Payment has been resolved');
+  }
+
   try {
     return OfflinePayment.findByIdAndUpdate(offlinePayment._id, offlinePaymentInfo, { new: true });
   } catch (error) {
@@ -48,8 +52,12 @@ export const updateOfflinePayment = async ({ offlinePaymentInfo, userId }) => {
   }
 };
 
-export const getAllOfflinePayments = async (user, { page = 1, limit = 10 }) => {
+export const getAllOfflinePayments = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(OFFLINE_PAYMENT_FILTERS, query);
+
   const offlinePaymentOptions = [
+    { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     {
       $lookup: {
         from: 'offers',
@@ -90,6 +98,14 @@ export const getAllOfflinePayments = async (user, { page = 1, limit = 10 }) => {
       },
     },
   ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    offlinePaymentOptions.splice(1, 1);
+  }
+
+  if (filterQuery.length < 1) {
+    offlinePaymentOptions.shift();
+  }
 
   if (user.role === USER_ROLE.USER) {
     offlinePaymentOptions.unshift({ $match: { userId: ObjectId(user._id) } });
