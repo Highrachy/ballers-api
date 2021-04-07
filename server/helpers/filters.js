@@ -284,3 +284,15 @@ export const REPORT_FILTERS = {
   resolvedDate: { key: 'resolved.date', type: FILTER_TYPE.DATE },
   status: { key: 'resolved.status', type: FILTER_TYPE.BOOLEAN },
 };
+
+export const OFFLINE_PAYMENT_FILTERS = {
+  amount: { type: FILTER_TYPE.INTEGER },
+  bank: { type: FILTER_TYPE.STRING },
+  createdAt: { type: FILTER_TYPE.DATE },
+  dateOfPayment: { type: FILTER_TYPE.DATE },
+  offerId: { type: FILTER_TYPE.OBJECT_ID },
+  resolved: { key: 'resolved.status', type: FILTER_TYPE.BOOLEAN },
+  resolvedBy: { key: 'resolved.by', type: FILTER_TYPE.OBJECT_ID },
+  resolvedOn: { key: 'resolved.date', type: FILTER_TYPE.DATE },
+  type: { type: FILTER_TYPE.STRING },
+};
