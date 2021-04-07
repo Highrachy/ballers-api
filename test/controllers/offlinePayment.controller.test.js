@@ -564,6 +564,32 @@ describe('Offline Payment Controller', () => {
       });
     });
 
+    context('when offline payment contains unresolved comment', () => {
+      beforeEach(async () => {
+        await OfflinePayment.findByIdAndUpdate(offlinePayment._id, {
+          comments: [
+            {
+              status: COMMENT_STATUS.PENDING,
+              _id: mongoose.Types.ObjectId(),
+              askedBy: regularUser._id,
+              question: 'demo question 1',
+            },
+          ],
+        });
+      });
+      it('returns an error', (done) => {
+        request()
+          .put(endpoint)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Offline payment still has an unresolved comment');
+            done();
+          });
+      });
+    });
+
     context('when non admin token is used', () => {
       [regularUser, vendorUser].map((user) =>
         itReturnsForbiddenForTokenWithInvalidAccess({

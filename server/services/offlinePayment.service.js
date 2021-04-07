@@ -128,6 +128,15 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
   }
 
+  for (let i = 0; i < offlinePayment.comments.length; i += 1) {
+    if (offlinePayment.comments[i].status === COMMENT_STATUS.PENDING) {
+      throw new ErrorHandler(
+        httpStatus.PRECONDITION_FAILED,
+        'Offline payment still has an unresolved comment',
+      );
+    }
+  }
+
   const transaction = {
     offerId: offlinePayment.offerId,
     paymentSource: offlinePayment.type,
