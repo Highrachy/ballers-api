@@ -117,7 +117,7 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
     paymentSource: offlinePayment.type,
     amount: offlinePayment.amount,
     paidOn: offlinePayment.dateOfPayment,
-    additionalInfo: offlinePayment._id,
+    additionalInfo: `offlinePaymentId:${offlinePayment._id}`,
     addedBy: adminId,
     updatedBy: adminId,
   };
@@ -137,7 +137,7 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
   }
 };
 
-export const makeComment = async ({ comment, user }) => {
+export const raiseComment = async ({ comment, user }) => {
   const offlinePayment = await getOfflinePaymentById(comment.paymentId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -150,7 +150,7 @@ export const makeComment = async ({ comment, user }) => {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
-  if (offlinePayment.resolved.status === true) {
+  if (offlinePayment.resolved.status) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Payment has been resolved');
   }
 
@@ -189,7 +189,7 @@ export const resolveComment = async ({ comment, user }) => {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
-  if (offlinePayment.resolved.status === true) {
+  if (offlinePayment.resolved.status) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Payment has been resolved');
   }
 

@@ -3,7 +3,7 @@ import {
   updateOfflinePayment,
   getAllOfflinePayments,
   resolveOfflinePayment,
-  makeComment,
+  raiseComment,
   resolveComment,
 } from '../services/offlinePayment.service';
 import httpStatus from '../helpers/httpStatus';
@@ -53,10 +53,10 @@ const OfflinePaymentController = {
       .catch((error) => next(error));
   },
 
-  makeComment(req, res, next) {
+  raiseComment(req, res, next) {
     const comment = req.locals;
     const { user } = req;
-    makeComment({ comment, user })
+    raiseComment({ comment, user })
       .then(({ payment }) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Comment raised', payment });
       })

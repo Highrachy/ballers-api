@@ -135,7 +135,7 @@ router.put(
 
 /**
  * @swagger
- * /offline-payment/comment:
+ * /offline-payment/raise-comment:
  *   put:
  *     tags:
  *       - OfflinePayment
@@ -157,11 +157,11 @@ router.put(
  *       description: Internal server error
  */
 router.put(
-  '/comment',
+  '/raise-comment',
   authenticate,
   isUserOrAdmin,
   schemaValidation(commentSchema),
-  OfflinePaymentController.makeComment,
+  OfflinePaymentController.raiseComment,
 );
 
 /**

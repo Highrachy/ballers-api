@@ -9,7 +9,7 @@ import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
 import { addOfflinePayment } from '../../server/services/offlinePayment.service';
 import { addUser } from '../../server/services/user.service';
-import { USER_ROLE } from '../../server/helpers/constants';
+import { USER_ROLE, COMMENT_STATUS } from '../../server/helpers/constants';
 import {
   itReturnsErrorForEmptyFields,
   itReturnsForbiddenForNoToken,
@@ -23,6 +23,7 @@ import {
 } from '../helpers';
 
 let userToken;
+let adminToken;
 
 const regularUser = UserFactory.build(
   { role: USER_ROLE.USER, activated: true },
@@ -69,7 +70,7 @@ describe('Offline Payment Controller', () => {
   beforeEach(async () => {
     await addUser(vendorUser);
     userToken = await addUser(regularUser);
-    await addUser(adminUser);
+    adminToken = await addUser(adminUser);
     await Offer.create(offer);
   });
 
@@ -356,6 +357,367 @@ describe('Offline Payment Controller', () => {
         model: OfflinePayment,
         modelMethod: 'aggregate',
         useExistingUser: true,
+      });
+    });
+  });
+
+  describe('Resolve Offline Payment', () => {
+    const offlinePayment = OfflinePaymentFactory.build(
+      {
+        offerId: offer._id,
+        userId: regularUser._id,
+        amount: 10_000,
+        bank: 'GTB',
+        dateOfPayment: '2020-01-21',
+        type: 'bank transfer',
+        resolved: {
+          status: false,
+        },
+      },
+      { generateId: true },
+    );
+
+    const method = 'put';
+    const endpoint = `/api/v1/offline-payment/resolve/${offlinePayment._id}`;
+
+    beforeEach(async () => {
+      await addOfflinePayment(offlinePayment);
+    });
+
+    context('when offline payment is resolved successfully', () => {
+      it('returns resolved offline payment', (done) => {
+        request()
+          .put(endpoint)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Payment resolved');
+            expect(res.body.payment.resolved.status).to.be.eql(true);
+            expect(res.body.payment.resolved.by).to.be.eql(adminUser._id.toString());
+            done();
+          });
+      });
+    });
+
+    context('when offline payment id is invalid', () => {
+      it('returns not found', (done) => {
+        request()
+          .put(`/api/v1/offline-payment/resolve/${mongoose.Types.ObjectId()}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid offline payment');
+            done();
+          });
+      });
+    });
+
+    context('when non admin token is used', () => {
+      [regularUser, vendorUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: adminUser,
+      userId: adminUser._id,
+      data: OfflinePaymentFactory.build({ offerId: offer._id }),
+      useExistingUser: true,
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    context('when resolve service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(OfflinePayment, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          .put(endpoint)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            OfflinePayment.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Raise Comment', () => {
+    const offlinePayment = OfflinePaymentFactory.build(
+      {
+        offerId: offer._id,
+        userId: regularUser._id,
+        amount: 10_000,
+        bank: 'GTB',
+        dateOfPayment: '2020-01-21',
+        type: 'bank transfer',
+        resolved: {
+          status: false,
+        },
+        comments: [
+          {
+            status: COMMENT_STATUS.PENDING,
+            _id: mongoose.Types.ObjectId(),
+            askedBy: regularUser._id,
+            question: 'demo question 1',
+          },
+        ],
+      },
+      { generateId: true },
+    );
+
+    const testUser = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
+
+    const method = 'put';
+    const endpoint = '/api/v1/offline-payment/raise-comment';
+
+    const data = {
+      paymentId: offlinePayment._id,
+      question: 'demo question 2',
+    };
+
+    beforeEach(async () => {
+      await addOfflinePayment(offlinePayment);
+    });
+
+    context('with a valid token is used', () => {
+      const ids = [regularUser._id, adminUser._id];
+      [...new Array(2)].map((_, index) =>
+        it('adds comment', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', [userToken, adminToken][index])
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Comment raised');
+              expect(res.body.payment.comments.length).to.be.eql(2);
+              expect(res.body.payment._id).to.be.eql(offlinePayment._id.toString());
+              expect(res.body.payment.comments[1].question).to.be.eql(data.question);
+              expect(res.body.payment.comments[1].askedBy).to.be.eql(ids[index].toString());
+              done();
+            });
+        }),
+      );
+    });
+
+    context('when payment has been resolved', () => {
+      beforeEach(async () => {
+        await OfflinePayment.findByIdAndUpdate(offlinePayment._id, { 'resolved.status': true });
+      });
+      it('returns error', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', userToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Payment has been resolved');
+            done();
+          });
+      });
+    });
+
+    context('when vendor token is used', () => {
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: vendorUser,
+        data,
+        useExistingUser: true,
+      });
+    });
+
+    context('when user token without access rights is used', () => {
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        data,
+        user: testUser,
+      });
+    });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: regularUser,
+      userId: regularUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method, data });
+
+    context('when raise comment service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(OfflinePayment, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          .put(endpoint)
+          .set('authorization', userToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            OfflinePayment.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
+
+  describe('Resolve Comment', () => {
+    const offlinePayment = OfflinePaymentFactory.build(
+      {
+        offerId: offer._id,
+        userId: regularUser._id,
+        amount: 10_000,
+        bank: 'GTB',
+        dateOfPayment: '2020-01-21',
+        type: 'bank transfer',
+        resolved: {
+          status: false,
+        },
+        comments: [
+          {
+            status: COMMENT_STATUS.RESOLVED,
+            _id: mongoose.Types.ObjectId(),
+            askedBy: adminUser._id,
+            question: 'demo question 1',
+          },
+          {
+            status: COMMENT_STATUS.PENDING,
+            _id: mongoose.Types.ObjectId(),
+            askedBy: regularUser._id,
+            question: 'demo question 2',
+          },
+        ],
+      },
+      { generateId: true },
+    );
+
+    const testUser = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
+
+    const method = 'put';
+    const endpoint = '/api/v1/offline-payment/resolve-comment';
+
+    const data = {
+      paymentId: offlinePayment._id,
+      commentId: offlinePayment.comments[1]._id,
+      response: 'demo response 2',
+    };
+
+    beforeEach(async () => {
+      await addOfflinePayment(offlinePayment);
+    });
+
+    context('with a valid token is used', () => {
+      const ids = [regularUser._id, adminUser._id];
+      [...new Array(2)].map((_, index) =>
+        it('resolves comment', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', [userToken, adminToken][index])
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Comment resolved');
+              expect(res.body.payment._id).to.be.eql(offlinePayment._id.toString());
+              expect(res.body.payment.comments.length).to.be.eql(2);
+              expect(res.body.payment.comments[1]._id).to.be.eql(data.commentId.toString());
+              expect(res.body.payment.comments[1].question).to.be.eql(
+                offlinePayment.comments[1].question,
+              );
+              expect(res.body.payment.comments[1].askedBy).to.be.eql(
+                offlinePayment.comments[1].askedBy.toString(),
+              );
+              expect(res.body.payment.comments[1].response).to.be.eql(data.response);
+              expect(res.body.payment.comments[1].respondedBy).to.be.eql(ids[index].toString());
+              done();
+            });
+        }),
+      );
+    });
+
+    context('when payment has been resolved', () => {
+      beforeEach(async () => {
+        await OfflinePayment.findByIdAndUpdate(offlinePayment._id, { 'resolved.status': true });
+      });
+      it('returns error', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', userToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Payment has been resolved');
+            done();
+          });
+      });
+    });
+
+    context('when vendor token is used', () => {
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user: vendorUser,
+        data,
+        useExistingUser: true,
+      });
+    });
+
+    context('when user token without access rights is used', () => {
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        data,
+        user: testUser,
+      });
+    });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: regularUser,
+      userId: regularUser._id,
+      data,
+      useExistingUser: true,
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method, data });
+
+    context('when resolve comment service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(OfflinePayment, 'findOneAndUpdate').throws(new Error('Type Error'));
+        request()
+          .put(endpoint)
+          .set('authorization', userToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            OfflinePayment.findOneAndUpdate.restore();
+          });
       });
     });
   });
