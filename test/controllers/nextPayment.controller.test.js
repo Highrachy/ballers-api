@@ -456,7 +456,7 @@ describe('Next Payments Controller', () => {
       });
     });
 
-    context.skip('when offer id is invalid', () => {
+    context('when offer id is invalid', () => {
       it('returns error', (done) => {
         request()
           [method](`/api/v1/next-payment/recalculate/${mongoose.Types.ObjectId()}`)
