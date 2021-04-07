@@ -2920,6 +2920,50 @@ describe('Property Controller', () => {
       });
     });
 
+    context('when mapLocation is not sent', () => {
+      it('successfully updates neighborhood', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send({
+            type: 'schools',
+            typeId: property.neighborhood.schools[0]._id,
+            neighborhood: {
+              name: 'unilorin',
+              distance: 15,
+            },
+          })
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Neighborhood updated');
+            expect(res.body.property.neighborhood.schools[0]._id).to.be.eql(data.typeId.toString());
+            expect(res.body.property.neighborhood.schools[0].name).to.be.eql(
+              data.neighborhood.name,
+            );
+            expect(res.body.property.neighborhood.schools[0].distance).to.be.eql(
+              data.neighborhood.distance,
+            );
+            expect(res.body.property.neighborhood.schools[0].mapLocation).to.be.eql(
+              property.neighborhood.schools[0].mapLocation,
+            );
+            expect(res.body.property.neighborhood.schools[1].name).to.be.eql(
+              property.neighborhood.schools[1].name,
+            );
+            expect(res.body.property.neighborhood.schools[2].name).to.be.eql(
+              property.neighborhood.schools[2].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[0].name).to.be.eql(
+              property.neighborhood.hospitals[0].name,
+            );
+            expect(res.body.property.neighborhood.hospitals[1].name).to.be.eql(
+              property.neighborhood.hospitals[1].name,
+            );
+            done();
+          });
+      });
+    });
+
     context('when property id is invalid', () => {
       const invalidPropertyId = mongoose.Types.ObjectId();
       it('returns successful payload', (done) => {
