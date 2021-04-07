@@ -2,8 +2,17 @@ import express from 'express';
 import {
   addOfflinePaymentSchema,
   updateOfflinePaymentSchema,
+  commentSchema,
+  resolveCommentSchema,
 } from '../schemas/offlinePayment.schema';
-import { schemaValidation, authenticate, isUser, isUserOrAdmin } from '../helpers/middleware';
+import {
+  schemaValidation,
+  authenticate,
+  isUser,
+  isAdmin,
+  hasValidObjectId,
+  isUserOrAdmin,
+} from '../helpers/middleware';
 import OfflinePaymentController from '../controllers/offlinePayment.controllers';
 
 const router = express.Router();
@@ -92,5 +101,98 @@ router.put(
  *       description: Internal server error
  */
 router.get('/all', authenticate, isUserOrAdmin, OfflinePaymentController.getAll);
+
+/**
+ * @swagger
+ * /offline-payment/resolve/:id:
+ *   put:
+ *     tags:
+ *       - OfflinePayment
+ *     description: Resolves an offline payment
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/OfflinePayment'
+ *      description: Resolves an offline payment
+ *     responses:
+ *      '200':
+ *        description: Offline payment resolved
+ *      '400':
+ *        description: Error resolving offline payment
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/resolve/:id',
+  authenticate,
+  hasValidObjectId,
+  isAdmin,
+  OfflinePaymentController.resolveOfflinePayment,
+);
+
+/**
+ * @swagger
+ * /offline-payment/raise-comment:
+ *   put:
+ *     tags:
+ *       - OfflinePayment
+ *     description: Raise a comment for a particular offline payment
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/OfflinePayment'
+ *      description: Raise a comment for a particular offline payment
+ *     responses:
+ *      '200':
+ *        description: Comment raised
+ *      '400':
+ *        description: Error raising comment
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/raise-comment',
+  authenticate,
+  isUserOrAdmin,
+  schemaValidation(commentSchema),
+  OfflinePaymentController.raiseComment,
+);
+
+/**
+ * @swagger
+ * /offline-payment/resolve-comment:
+ *   put:
+ *     tags:
+ *       - OfflinePayment
+ *     description: Respond to a comment for a particular offline payment
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/OfflinePayment'
+ *      description: Respond to a comment for a particular offline payment
+ *     responses:
+ *      '200':
+ *        description: Comment resolved
+ *      '400':
+ *        description: Error resolving comment
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/resolve-comment',
+  authenticate,
+  isUserOrAdmin,
+  schemaValidation(resolveCommentSchema),
+  OfflinePaymentController.resolveComment,
+);
 
 module.exports = router;

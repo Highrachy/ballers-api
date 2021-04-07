@@ -2,6 +2,9 @@ import {
   addOfflinePayment,
   updateOfflinePayment,
   getAllOfflinePayments,
+  resolveOfflinePayment,
+  raiseComment,
+  resolveComment,
 } from '../services/offlinePayment.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -37,6 +40,36 @@ const OfflinePaymentController = {
           pagination,
           result,
         });
+      })
+      .catch((error) => next(error));
+  },
+
+  resolveOfflinePayment(req, res, next) {
+    const offlinePaymentId = req.params.id;
+    const adminId = req.user._id;
+    resolveOfflinePayment({ offlinePaymentId, adminId })
+      .then((payment) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Payment resolved', payment });
+      })
+      .catch((error) => next(error));
+  },
+
+  raiseComment(req, res, next) {
+    const comment = req.locals;
+    const { user } = req;
+    raiseComment({ comment, user })
+      .then(({ payment }) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Comment raised', payment });
+      })
+      .catch((error) => next(error));
+  },
+
+  resolveComment(req, res, next) {
+    const comment = req.locals;
+    const { user } = req;
+    resolveComment({ comment, user })
+      .then(({ payment }) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Comment resolved', payment });
       })
       .catch((error) => next(error));
   },

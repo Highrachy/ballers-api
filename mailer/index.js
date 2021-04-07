@@ -68,6 +68,11 @@ const EMAIL_CONTENT = {
     contentTop: `A concern has been raised on your offer to [User name]. The question states [question].`,
     contentBottom: `Check your dashboard to resolve this concern.`,
   },
+  RAISE_COMMENT_FOR_OFFLINE_PAYMENT: {
+    subject: 'Comment Raised',
+    contentTop: `A comment has been raised on an offline payment. The comment goes [comment].`,
+    contentBottom: `Check your dashboard to respond to this comment.`,
+  },
   REFERRAL_INVITE: {
     subject: 'BALLERS Invite',
     contentTop: '[Referrer Name] just invited you to Become A LandLord on ballers.ng',
@@ -82,6 +87,10 @@ const EMAIL_CONTENT = {
   RESOLVE_CONCERN: {
     subject: 'Concern Resolved',
     contentTop: `Your raised concern has been resolved. Details below <br /> <strong>Question: </strong> [Question]<br /> <strong>Response: </strong>[Response]`,
+  },
+  RESOLVE_COMMENT_FOR_OFFLINE_PAYMENT: {
+    subject: 'Comment Resolved',
+    contentTop: `Your raised comment has been resolved. Details below <br /> <strong>Question: </strong> [Question]<br /> <strong>Response: </strong>[Response]`,
   },
   RESET_PASSWORD_LINK: {
     buttonText: 'Reset Password',

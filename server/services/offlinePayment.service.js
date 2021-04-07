@@ -5,11 +5,12 @@ import httpStatus from '../helpers/httpStatus';
 import { getOfferById } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
-import { USER_ROLE } from '../helpers/constants';
+import { COMMENT_STATUS, USER_ROLE } from '../helpers/constants';
+import { getTodaysDateStandard } from '../helpers/dates';
 import { buildFilterAndSortQuery, OFFLINE_PAYMENT_FILTERS } from '../helpers/filters';
+import { addTransaction } from './transaction.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
-
 export const getOfflinePaymentById = async (id) => OfflinePayment.findById(id).select();
 
 export const addOfflinePayment = async (offlinePayment) => {
@@ -117,4 +118,122 @@ export const getAllOfflinePayments = async (user, { page = 1, limit = 10, ...que
   const pagination = generatePagination(page, limit, total);
   const result = offlinePayments[0].data;
   return { pagination, result };
+};
+
+export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
+  const offlinePayment = await getOfflinePaymentById(offlinePaymentId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+  if (!offlinePayment) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
+  }
+
+  for (let i = 0; i < offlinePayment.comments.length; i += 1) {
+    if (offlinePayment.comments[i].status === COMMENT_STATUS.PENDING) {
+      throw new ErrorHandler(
+        httpStatus.PRECONDITION_FAILED,
+        'Offline payment still has an unresolved comment',
+      );
+    }
+  }
+
+  const transaction = {
+    offerId: offlinePayment.offerId,
+    paymentSource: offlinePayment.type,
+    amount: offlinePayment.amount,
+    paidOn: offlinePayment.dateOfPayment,
+    additionalInfo: `offlinePaymentId:${offlinePayment._id}`,
+    addedBy: adminId,
+    updatedBy: adminId,
+  };
+
+  try {
+    await addTransaction(transaction).catch((error) => {
+      throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+    });
+
+    return OfflinePayment.findByIdAndUpdate(
+      offlinePayment._id,
+      { $set: { 'resolved.by': adminId, 'resolved.date': Date.now(), 'resolved.status': true } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving offline payment', error);
+  }
+};
+
+export const raiseComment = async ({ comment, user }) => {
+  const offlinePayment = await getOfflinePaymentById(comment.paymentId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!offlinePayment) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
+  }
+
+  if (user.role === USER_ROLE.USER && offlinePayment.userId.toString() !== user._id.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  if (offlinePayment.resolved.status) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Payment has been resolved');
+  }
+
+  try {
+    const payment = await OfflinePayment.findByIdAndUpdate(
+      offlinePayment._id,
+      {
+        $push: {
+          comments: {
+            askedBy: user._id,
+            question: comment.question,
+            status: COMMENT_STATUS.PENDING,
+            dateAsked: getTodaysDateStandard(),
+          },
+        },
+      },
+      { new: true, safe: true, upsert: true },
+    );
+
+    return { payment };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error raising comment', error);
+  }
+};
+
+export const resolveComment = async ({ comment, user }) => {
+  const offlinePayment = await getOfflinePaymentById(comment.paymentId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!offlinePayment) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
+  }
+
+  if (user.role === USER_ROLE.USER && offlinePayment.userId.toString() !== user._id.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  if (offlinePayment.resolved.status) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Payment has been resolved');
+  }
+
+  try {
+    const payment = await OfflinePayment.findOneAndUpdate(
+      { _id: offlinePayment._id, 'comments._id': comment.commentId },
+      {
+        $set: {
+          'comments.$.response': comment.response,
+          'comments.$.dateResponded': getTodaysDateStandard(),
+          'comments.$.respondedBy': user._id,
+          'comments.$.status': COMMENT_STATUS.RESOLVED,
+        },
+      },
+      { new: true },
+    );
+
+    return { payment };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving comment', error);
+  }
 };
