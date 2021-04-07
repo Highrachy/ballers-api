@@ -2391,7 +2391,7 @@ describe('Property Controller', () => {
                 );
                 expect(res.body.portfolio.nextPaymentInfo[0].expectedAmount).to.be.eql(250_000);
                 expect(res.body.portfolio.nextPaymentInfo[0].expiresOn).to.have.string(
-                  '2020-03-31',
+                  '2020-03-01',
                 );
                 done();
               });
@@ -2422,14 +2422,15 @@ describe('Property Controller', () => {
       });
     });
 
-    context.skip('when no payment has been made', () => {
+    context('when no payment has been made', () => {
       beforeEach(async () => {
         fakeDate = sinon.useFakeTimers({
           now: new Date('2020-03-21'),
         });
+        await generateNextPaymentDate({ offerId: offer._id });
       });
 
-      it('does not return next payment', (done) => {
+      it('returns pending next payment', (done) => {
         request()
           .get(`/api/v1/property/portfolio/${offer._id}`)
           .set('authorization', userToken)

@@ -18,6 +18,7 @@ describe('NextPayment Service', () => {
     const expiresOnForFirstCycle = new Date('2020-03-01');
     const expiresOnForSecondCycle = new Date('2020-03-31');
     const expiresOnForThirdCycle = new Date('2020-04-30');
+    const expiresOnforFourthCycle = new Date('2020-05-30');
     const expiresOnForLastCycle = new Date('2020-06-29');
 
     const offer = OfferFactory.build(
@@ -77,6 +78,7 @@ describe('NextPayment Service', () => {
           expect(matchedNextPayments[0]._id).to.eql(nextPayment._id);
           expect(matchedNextPayments[0].resolved).to.eql(true);
           expect(matchedNextPayments[0].resolvedViaTransaction).to.eql(false);
+
           expect(matchedNextPayments[1].resolved).to.eql(false);
           expect(matchedNextPayments[1].expectedAmount).to.eql(2_000_000);
           expect(matchedNextPayments[1].expiresOn).to.eql(expiresOnForFirstCycle);
@@ -112,7 +114,7 @@ describe('NextPayment Service', () => {
         });
       });
 
-      context.skip('when user pays for first and second cycle', () => {
+      context('when user pays for first and second cycle', () => {
         beforeEach(async () => {
           await Transaction.create({ ...transaction, amount: 2_500_000 });
           await generateNextPaymentDate({ offerId: offer._id });
@@ -220,7 +222,7 @@ describe('NextPayment Service', () => {
           await NextPayment.create(nextPayment);
         });
 
-        context.skip('when user has not made payment', () => {
+        context('when user has not made payment', () => {
           beforeEach(async () => {
             await generateNextPaymentDate({ offerId: offer._id });
           });
@@ -257,7 +259,7 @@ describe('NextPayment Service', () => {
       });
 
       context('when a previous nextPayment record does not exist', () => {
-        context.skip('user has not made payment', () => {
+        context('user has not made payment', () => {
           beforeEach(async () => {
             await generateNextPaymentDate({ offerId: offer._id });
           });
@@ -420,7 +422,7 @@ describe('NextPayment Service', () => {
           expect(matchedNextPayments.length).to.eql(1);
           expect(matchedNextPayments[0].resolved).to.eql(false);
           expect(matchedNextPayments[0].expectedAmount).to.eql(1_000_000);
-          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForLastCycle);
+          expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnforFourthCycle);
         });
       });
 
@@ -467,7 +469,6 @@ describe('NextPayment Service', () => {
     let fakeDate;
     let countedNextPayments;
     const expiresOnForFirstCycle = new Date('2020-03-01');
-    const expiresOnForSecondCycle = new Date('2020-03-31');
 
     const unresolvedNextPaymentsOffers = OfferFactory.buildList(
       100,
@@ -495,7 +496,7 @@ describe('NextPayment Service', () => {
           vendorId: unresolvedNextPaymentsOffers[index].vendorId,
           resolved: false,
           expectedAmount: 2_000_000,
-          expiresOn: new Date('2020-03-01'),
+          expiresOn: expiresOnForFirstCycle,
         },
         { generateId: true },
       ),
@@ -558,11 +559,13 @@ describe('NextPayment Service', () => {
         );
 
         const generatedNextPayments = await NextPayment.find({
-          expiresOn: expiresOnForSecondCycle,
+          resolved: false,
         });
+
         expect(generatedNextPayments.length).to.eql(unresolvedNextPayments.length);
         generatedNextPayments.forEach((payment) => {
           expect(payment.expectedAmount).to.be.eql(2_500_000);
+          expect(payment.expiresOn).to.be.eql(expiresOnForFirstCycle);
         });
       });
     });
