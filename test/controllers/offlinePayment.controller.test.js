@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import querystring from 'querystring';
 import { expect, request, sinon } from '../config';
 import OfflinePayment from '../../server/models/offlinePayment.model';
 import Offer from '../../server/models/offer.model';
@@ -20,7 +21,14 @@ import {
   itReturnsAnErrorWhenServiceFails,
   expectResponseToExcludeSensitiveUserData,
   expectResponseToContainNecessaryVendorData,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
+  defaultPaginationResult,
+  expectsPaginationToReturnTheRightValues,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  filterTestForSingleParameter,
+  futureDate,
 } from '../helpers';
+import { OFFLINE_PAYMENT_FILTERS } from '../../server/helpers/filters';
 
 let userToken;
 let adminToken;
@@ -176,10 +184,7 @@ describe('Offline Payment Controller', () => {
       id: offlinePayment._id,
       amount: 100_000,
       bank: 'Access',
-      dateOfPayment: '2020-11-21',
-      offerId: offer._id,
       receipt: 'screenshot.jpg',
-      type: 'cash deposit',
     };
 
     beforeEach(async () => {
@@ -201,7 +206,27 @@ describe('Offline Payment Controller', () => {
             expect(res.body.payment.offerId).to.be.eql(offer._id.toString());
             expect(res.body.payment.amount).to.be.eql(updatedData.amount);
             expect(res.body.payment.bank).to.be.eql(updatedData.bank);
-            expect(res.body.payment.type).to.be.eql(updatedData.type);
+            expect(res.body.payment.receipt).to.be.eql(updatedData.receipt);
+            expect(res.body.payment.type).to.be.eql(offlinePayment.type);
+            expect(res.body.payment.dateOfPayment).to.have.string(offlinePayment.dateOfPayment);
+            done();
+          });
+      });
+    });
+
+    context('when payment is resolved', () => {
+      beforeEach(async () => {
+        await OfflinePayment.findByIdAndUpdate(offlinePayment._id, { 'resolved.status': true });
+      });
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/offline-payment')
+          .set('authorization', userToken)
+          .send(updatedData)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Payment has been resolved');
             done();
           });
       });
@@ -250,8 +275,26 @@ describe('Offline Payment Controller', () => {
     const endpoint = '/api/v1/offline-payment/all';
     const method = 'get';
 
+    const userOfflinePayment = OfflinePaymentFactory.build(
+      {
+        offerId: offer._id,
+        userId: regularUser._id,
+        amount: 25_000,
+        bank: 'Zenith',
+        dateOfPayment: '2020-11-01',
+        type: 'cheque',
+        resolved: {
+          status: true,
+          by: mongoose.Types.ObjectId(),
+          date: futureDate,
+        },
+        createdAt: futureDate,
+      },
+      { generateId: true },
+    );
+
     const userOfflinePayments = OfflinePaymentFactory.buildList(
-      10,
+      9,
       {
         offerId: offer._id,
         userId: regularUser._id,
@@ -259,6 +302,9 @@ describe('Offline Payment Controller', () => {
         bank: 'GTB',
         dateOfPayment: '2020-01-21',
         type: 'bank transfer',
+        resolved: {
+          status: false,
+        },
       },
       { generateId: true },
     );
@@ -286,12 +332,13 @@ describe('Offline Payment Controller', () => {
         bank: 'Access',
         dateOfPayment: '2020-01-21',
         type: 'online transfer',
+        createdAt: new Date(),
       },
       { generateId: true },
     );
 
     describe('Pagination Tests', () => {
-      context('when no offers exists in db', () => {
+      context('when no offline payments exists in db', () => {
         [adminUser, regularUser].map((user) =>
           itReturnsEmptyValuesWhenNoItemExistInDatabase({
             endpoint,
@@ -301,61 +348,164 @@ describe('Offline Payment Controller', () => {
           }),
         );
       });
+
+      describe('when offline payments exist in db', () => {
+        beforeEach(async () => {
+          await addUser(testUser);
+          await Offer.create(testUserOffer);
+          await OfflinePayment.insertMany([
+            userOfflinePayment,
+            ...userOfflinePayments,
+            ...testOfflinePayments,
+          ]);
+        });
+
+        itReturnsTheRightPaginationValue({
+          endpoint,
+          method,
+          user: adminUser,
+          useExistingUser: true,
+        });
+
+        context('when request is sent by user token', () => {
+          it('returns 10 payments', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', userToken)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.pagination.currentPage).to.be.eql(1);
+                expect(res.body.pagination.limit).to.be.eql(10);
+                expect(res.body.pagination.total).to.be.eql(10);
+                expect(res.body.pagination.offset).to.be.eql(0);
+                expect(res.body.result.length).to.be.eql(10);
+                expect(res.body.result[0]._id).to.be.eql(userOfflinePayment._id.toString());
+                expect(res.body.result[0].userInfo._id).to.be.eql(regularUser._id.toString());
+                expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
+                expectResponseToExcludeSensitiveUserData(res.body.result[0].userInfo);
+                expectResponseToExcludeSensitiveUserData(res.body.result[0].vendorInfo);
+                expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
+                done();
+              });
+          });
+        });
+
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user: vendorUser,
+          useExistingUser: true,
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        itReturnsAnErrorWhenServiceFails({
+          endpoint,
+          method,
+          user: regularUser,
+          model: OfflinePayment,
+          modelMethod: 'aggregate',
+          useExistingUser: true,
+        });
+      });
     });
 
-    describe('when payments exist in db', () => {
+    describe('Filter Tests', () => {
       beforeEach(async () => {
         await addUser(testUser);
         await Offer.create(testUserOffer);
-        await OfflinePayment.insertMany([...userOfflinePayments, ...testOfflinePayments]);
+        await OfflinePayment.insertMany([userOfflinePayment, ...testOfflinePayments]);
       });
 
-      itReturnsTheRightPaginationValue({
-        endpoint,
-        method,
-        user: adminUser,
-        useExistingUser: true,
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 9,
+            result: 9,
+            totalPage: 1,
+          },
+          useExistingUser: true,
+        });
+
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: regularUser,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 1,
+            result: 1,
+            totalPage: 1,
+          },
+          useExistingUser: true,
+        });
       });
 
-      context('when request is sent by user token', () => {
-        it('returns 10 payments', (done) => {
+      context('when multiple filters are used', () => {
+        const multipleFilters = {
+          amount: userOfflinePayment.amount,
+          bank: userOfflinePayment.bank,
+          resolved: userOfflinePayment.resolved.status,
+          type: userOfflinePayment.type,
+        };
+        const filteredParams = querystring.stringify(multipleFilters);
+
+        it('returns matched offline payment', (done) => {
           request()
-            [method](endpoint)
+            [method](`${endpoint}?${filteredParams}`)
             .set('authorization', userToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.pagination.currentPage).to.be.eql(1);
-              expect(res.body.pagination.limit).to.be.eql(10);
-              expect(res.body.pagination.total).to.be.eql(10);
-              expect(res.body.pagination.offset).to.be.eql(0);
-              expect(res.body.result.length).to.be.eql(10);
-              expect(res.body.result[0]._id).to.be.eql(userOfflinePayments[0]._id.toString());
-              expect(res.body.result[0].userInfo._id).to.be.eql(regularUser._id.toString());
-              expect(res.body.result[0].vendorInfo._id).to.be.eql(vendorUser._id.toString());
-              expectResponseToExcludeSensitiveUserData(res.body.result[0].userInfo);
-              expectResponseToExcludeSensitiveUserData(res.body.result[0].vendorInfo);
-              expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(userOfflinePayment._id.toString());
+              expect(res.body.result[0].amount).to.be.eql(multipleFilters.amount);
+              expect(res.body.result[0].bank).to.be.eql(multipleFilters.bank);
+              expect(res.body.result[0].resolved.status).to.be.eql(multipleFilters.resolved);
+              expect(res.body.result[0].type).to.be.eql(multipleFilters.type);
               done();
             });
         });
       });
 
-      itReturnsForbiddenForTokenWithInvalidAccess({
-        endpoint,
-        method,
-        user: vendorUser,
-        useExistingUser: true,
+      context('when no parameter is matched', () => {
+        const nonMatchingFilters = {
+          amount: 23_000,
+          bank: 'Polaris',
+          type: 'Direct deposit',
+        };
+
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
+          filter: nonMatchingFilters,
+          method,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
+        });
       });
 
-      itReturnsForbiddenForNoToken({ endpoint, method });
-
-      itReturnsAnErrorWhenServiceFails({
-        endpoint,
+      filterTestForSingleParameter({
+        filter: OFFLINE_PAYMENT_FILTERS,
         method,
-        user: regularUser,
-        model: OfflinePayment,
-        modelMethod: 'aggregate',
+        endpoint,
+        user: adminUser,
+        dataObject: userOfflinePayment,
         useExistingUser: true,
       });
     });
