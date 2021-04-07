@@ -24,7 +24,7 @@ import { buildFilterAndSortQuery, USER_FILTERS } from '../helpers/filters';
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getUserByEmail = async (email, fields = null) =>
-  User.findOne({ email }).select(fields);
+  User.findOne({ email }).select(fields).collation({ locale: 'en', strength: 2 });
 
 export const getUserById = async (id) => User.findById(id).select();
 

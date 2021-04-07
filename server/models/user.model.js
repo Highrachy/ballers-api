@@ -302,6 +302,7 @@ const UserSchema = new mongoose.Schema(
     },
   },
   { timestamps: true },
+  { collation: { locale: 'en', strength: 2 } },
 );
 
 const User = mongoose.model('User', UserSchema);
