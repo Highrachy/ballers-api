@@ -594,11 +594,12 @@ export const addGallery = async (imageDetails) => {
   if (gallery.length > 0) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Image with title already exists');
   }
+  const newGallery = [{ title: imageDetails.title, url: imageDetails.url }, ...property.gallery];
 
   try {
     return Property.findByIdAndUpdate(
       property._id,
-      { $push: { gallery: { title: imageDetails.title, url: imageDetails.url } } },
+      { $set: { gallery: newGallery } },
       { new: true },
     );
   } catch (error) {
