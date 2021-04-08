@@ -133,22 +133,40 @@ describe('User Controller', () => {
       context('when email exists in the db', () => {
         const user = UserFactory.build({ email: 'myemail@mail.com' });
 
-        before(async () => {
+        beforeEach(async () => {
           await User.create(user);
         });
 
-        it('returns error for an existing email', (done) => {
-          request()
-            .post('/api/v1/user/register')
-            .send(user)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Email is linked to another account');
-              expect(res.body.error).to.be.eql('Email is linked to another account');
-              expect(sendMailStub.callCount).to.eq(0);
-              done();
-            });
+        context('when email is in lower case', () => {
+          it('returns error for an existing email', (done) => {
+            request()
+              .post('/api/v1/user/register')
+              .send(user)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Email is linked to another account');
+                expect(res.body.error).to.be.eql('Email is linked to another account');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+
+        context('when email is in mixed case', () => {
+          it('returns error for an existing email', (done) => {
+            request()
+              .post('/api/v1/user/register')
+              .send({ ...user, email: 'MYemail@mail.coM' })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Email is linked to another account');
+                expect(res.body.error).to.be.eql('Email is linked to another account');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
         });
       });
 
@@ -398,11 +416,29 @@ describe('User Controller', () => {
           await addUser(user);
         });
 
-        context('with valid data', () => {
+        context('when email is in lower case', () => {
           it('returns successful payload', (done) => {
             request()
               .post('/api/v1/user/login')
               .send(userLogin)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.message).to.be.eql('Login successful');
+                expect(res.body.user.firstName).to.be.eql(user.firstName);
+                expect(res.body.user.lastName).to.be.eql(user.lastName);
+                expect(res.body.user.email).to.be.eql(user.email);
+                expect(res.body.user).to.have.property('token');
+                done();
+              });
+          });
+        });
+
+        context('when email is in mixed case', () => {
+          it('returns successful payload', (done) => {
+            request()
+              .post('/api/v1/user/login')
+              .send({ email: 'MyEMail@mail.coM', password: '123456' })
               .end((err, res) => {
                 expect(res).to.have.status(200);
                 expect(res.body.success).to.be.eql(true);
