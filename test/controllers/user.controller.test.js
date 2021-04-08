@@ -137,7 +137,7 @@ describe('User Controller', () => {
           await User.create(user);
         });
 
-        context('when email is case sensitive', () => {
+        context('when email is in lower case', () => {
           it('returns error for an existing email', (done) => {
             request()
               .post('/api/v1/user/register')
@@ -153,7 +153,7 @@ describe('User Controller', () => {
           });
         });
 
-        context('when email is case insensitive', () => {
+        context('when email is in mixed case', () => {
           it('returns error for an existing email', (done) => {
             request()
               .post('/api/v1/user/register')
@@ -416,7 +416,7 @@ describe('User Controller', () => {
           await addUser(user);
         });
 
-        context('with valid data', () => {
+        context('when email is in lower case', () => {
           it('returns successful payload', (done) => {
             request()
               .post('/api/v1/user/login')
@@ -434,7 +434,7 @@ describe('User Controller', () => {
           });
         });
 
-        context('with case insensitive email', () => {
+        context('when email is in mixed case', () => {
           it('returns successful payload', (done) => {
             request()
               .post('/api/v1/user/login')
