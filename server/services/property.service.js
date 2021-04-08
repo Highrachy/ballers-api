@@ -451,20 +451,33 @@ export const updateNeighborhood = async (updatedNeighborhood) => {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
+  let data = {
+    [`neighborhood.${updatedNeighborhood.type}.$.name`]: updatedNeighborhood.neighborhood.name,
+    [`neighborhood.${updatedNeighborhood.type}.$.distance`]: updatedNeighborhood.neighborhood
+      .distance,
+  };
+
+  if (updatedNeighborhood.neighborhood.mapLocation?.longitude) {
+    data = {
+      ...data,
+      [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.longitude`]: updatedNeighborhood
+        .neighborhood.mapLocation.longitude,
+    };
+  }
+
+  if (updatedNeighborhood.neighborhood.mapLocation?.latitude) {
+    data = {
+      ...data,
+      [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.latitude`]: updatedNeighborhood
+        .neighborhood.mapLocation.latitude,
+    };
+  }
+
   try {
     return Property.findOneAndUpdate(
       { [`neighborhood.${updatedNeighborhood.type}._id`]: updatedNeighborhood.typeId },
       {
-        $set: {
-          [`neighborhood.${updatedNeighborhood.type}.$.name`]: updatedNeighborhood.neighborhood
-            .name,
-          [`neighborhood.${updatedNeighborhood.type}.$.distance`]: updatedNeighborhood.neighborhood
-            .distance,
-          [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.latitude`]: updatedNeighborhood
-            .neighborhood.mapLocation.latitude,
-          [`neighborhood.${updatedNeighborhood.type}.$.mapLocation.longitude`]: updatedNeighborhood
-            .neighborhood.mapLocation.longitude,
-        },
+        $set: data,
       },
       { new: true },
     );
