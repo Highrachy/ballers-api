@@ -46,6 +46,8 @@ import { reportProperty } from '../../server/services/reportedProperty.service';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import { generateNextPaymentDate } from '../../server/services/nextPayment.service';
+import NextPayment from '../../server/models/nextPayment.model';
+import NextPaymentFactory from '../factories/nextPayment.factory';
 
 let adminToken;
 let vendorToken;
@@ -2530,7 +2532,6 @@ describe('Property Controller', () => {
       ...offerStatus,
       ...offerStatus,
       offerStatus[1],
-      offerStatus[7],
     ];
     const properties = allOfferStatus.map(() =>
       PropertyFactory.build(
@@ -2540,6 +2541,13 @@ describe('Property Controller', () => {
         },
         { generateId: true },
       ),
+    );
+    const property = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+      },
+      { generateId: true },
     );
 
     const enquiries = allOfferStatus.map((_, index) =>
@@ -2551,6 +2559,14 @@ describe('Property Controller', () => {
         },
         { generateId: true },
       ),
+    );
+    const enquiry = EnquiryFactory.build(
+      {
+        propertyId: property._id,
+        userId: regularUser._id,
+        vendorId: property.addedBy,
+      },
+      { generateId: true },
     );
 
     const offers = allOfferStatus.map((_, index) =>
@@ -2567,6 +2583,34 @@ describe('Property Controller', () => {
       ),
     );
 
+    const offer = OfferFactory.build(
+      {
+        propertyId: property._id,
+        enquiryId: enquiry._id,
+        userId: regularUser._id,
+        vendorId: vendorUser._id,
+        status: OFFER_STATUS.RESOLVED,
+        referenceCode: '123456XXX',
+      },
+      { generateId: true },
+    );
+
+    const resolvedNextPayments = NextPaymentFactory.buildList(3, {
+      offerId: offer._id,
+      userId: regularUser._id,
+      vendorId: vendorUser._id,
+      expectedAmount: 300_000,
+      resolved: true,
+    });
+
+    const unResolvedNextPayment = NextPaymentFactory.build({
+      offerId: offer._id,
+      userId: regularUser._id,
+      vendorId: vendorUser._id,
+      expectedAmount: 100_000,
+      resolved: false,
+    });
+
     describe('Portfolio Pagination', () => {
       context('when no portfolio exists in db', () => {
         [adminUser, vendorUser, regularUser].map((user) =>
@@ -2581,9 +2625,10 @@ describe('Property Controller', () => {
 
       describe('when portfolio exist in db', () => {
         beforeEach(async () => {
-          await Property.insertMany(properties);
-          await Enquiry.insertMany(enquiries);
-          await Offer.insertMany(offers);
+          await Property.insertMany([property, ...properties]);
+          await Enquiry.insertMany([enquiry, ...enquiries]);
+          await Offer.insertMany([offer, ...offers]);
+          await NextPayment.insertMany([...resolvedNextPayments, unResolvedNextPayment]);
         });
 
         itReturnsTheRightPaginationValue({
@@ -2603,6 +2648,14 @@ describe('Property Controller', () => {
                   expect(res).to.have.status(200);
                   expect(res.body.success).to.be.eql(true);
                   expect(res.body.pagination.total).to.be.eql(18);
+                  expect(res.body.result[0].nextPaymentInfo.length).to.be.eql(1);
+                  expect(res.body.result[0].nextPaymentInfo[0].resolved).to.be.eql(false);
+                  expect(res.body.result[0].nextPaymentInfo[0].expectedAmount).to.be.eql(
+                    unResolvedNextPayment.expectedAmount,
+                  );
+                  expect(res.body.result[0].nextPaymentInfo[0].offerId).to.be.eql(
+                    offer._id.toString(),
+                  );
                   res.body.result.forEach((portfolio) => {
                     expect(portfolio.userId).to.be.eql(regularUser._id.toString());
                     expect(portfolio.vendorId).to.be.eql(vendorUser._id.toString());

@@ -381,6 +381,22 @@ export const getAllPortfolios = async (user, { page = 1, limit = 10, ...query } 
         as: 'userInfo',
       },
     },
+    {
+      $lookup: {
+        from: 'nextpayments',
+        let: { oOfferId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ['$offerId', '$$oOfferId'] }, { $eq: ['$resolved', false] }],
+              },
+            },
+          },
+        ],
+        as: 'nextPaymentInfo',
+      },
+    },
     { $unwind: '$userInfo' },
     { $unwind: '$vendorInfo' },
     { $unwind: '$propertyInfo' },
