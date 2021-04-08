@@ -1,5 +1,4 @@
 import {
-  addTransaction,
   getAllTransactions,
   updateTransaction,
   getUserTransactionsByProperty,
@@ -10,18 +9,6 @@ import {
 import httpStatus from '../helpers/httpStatus';
 
 const TransactionController = {
-  add(req, res, next) {
-    const newTransaction = req.locals;
-    const { user } = req;
-    addTransaction({ ...newTransaction, addedBy: user._id, updatedBy: user._id })
-      .then((transaction) => {
-        res
-          .status(httpStatus.CREATED)
-          .json({ success: true, message: 'Transaction added', transaction });
-      })
-      .catch((error) => next(error));
-  },
-
   update(req, res, next) {
     const updatedInfo = req.locals;
     const { user } = req;
