@@ -1,7 +1,6 @@
 import { expect, request, sinon } from '../config';
 import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
-import User from '../../server/models/user.model';
 import Referral from '../../server/models/referral.model';
 import TransactionFactory from '../factories/transaction.factory';
 import OfferFactory from '../factories/offer.factory';
@@ -11,7 +10,7 @@ import UserFactory from '../factories/user.factory';
 import ReferralFactory from '../factories/referral.factory';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
-import { createOffer, acceptOffer } from '../../server/services/offer.service';
+import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addReferral } from '../../server/services/referral.service';
 import { OFFER_STATUS, REWARD_STATUS, USER_ROLE } from '../../server/helpers/constants';
@@ -87,140 +86,6 @@ describe('Transaction Controller', () => {
     await addProperty(property);
     await addEnquiry(enquiry);
     await createOffer(offer);
-  });
-
-  describe('Add Transaction Route', () => {
-    const transactionBody = { offerId: offer._id, amount: 100_000, paidOn: '2021-02-12' };
-    context('with valid data', () => {
-      context('when nextPayment does not exist', () => {
-        it('returns successful transaction', (done) => {
-          const transaction = TransactionFactory.build(transactionBody);
-          request()
-            .post('/api/v1/transaction/add')
-            .set('authorization', adminToken)
-            .send(transaction)
-            .end((err, res) => {
-              expect(res).to.have.status(201);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('Transaction added');
-              expect(res.body.transaction.offerId).to.be.eql(offer._id.toString());
-              expect(res.body.transaction.amount).to.be.eql(transaction.amount);
-              done();
-            });
-        });
-      });
-
-      context('when nextPayment exist', () => {
-        beforeEach(async () => {
-          await acceptOffer({ offerId: offer._id, user: regularUser });
-        });
-        it('returns successful transaction', (done) => {
-          const transaction = TransactionFactory.build(transactionBody);
-          request()
-            .post('/api/v1/transaction/add')
-            .set('authorization', adminToken)
-            .send(transaction)
-            .end((err, res) => {
-              expect(res).to.have.status(201);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.message).to.be.eql('Transaction added');
-              expect(res.body.transaction.offerId).to.be.eql(offer._id.toString());
-              expect(res.body.transaction.amount).to.be.eql(transaction.amount);
-              done();
-            });
-        });
-      });
-    });
-
-    context('when an invalid token is used', () => {
-      beforeEach(async () => {
-        await User.findByIdAndDelete(adminUser._id);
-      });
-      it('returns token error', (done) => {
-        const transaction = TransactionFactory.build(transactionBody);
-        request()
-          .post('/api/v1/transaction/add')
-          .set('authorization', adminToken)
-          .send(transaction)
-          .end((err, res) => {
-            expect(res).to.have.status(404);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Invalid token');
-            done();
-          });
-      });
-    });
-
-    context('with a token without access', () => {
-      [...new Array(2)].map((_, index) =>
-        it('returns successful payload', (done) => {
-          const transaction = TransactionFactory.build(transactionBody);
-          request()
-            .post('/api/v1/transaction/add')
-            .set('authorization', [userToken, vendorToken][index])
-            .send(transaction)
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-              done();
-            });
-        }),
-      );
-    });
-
-    context('with invalid data', () => {
-      context('when offer id is empty', () => {
-        it('returns an error', (done) => {
-          const transaction = TransactionFactory.build({ offerId: '' });
-          request()
-            .post('/api/v1/transaction/add')
-            .set('authorization', adminToken)
-            .send(transaction)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Offer Id" is not allowed to be empty');
-              done();
-            });
-        });
-      });
-      context('when payment source is empty', () => {
-        it('returns an error', (done) => {
-          const transaction = TransactionFactory.build({ paymentSource: '' });
-          request()
-            .post('/api/v1/transaction/add')
-            .set('authorization', adminToken)
-            .send(transaction)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql(
-                '"Transaction Payment Source" is not allowed to be empty',
-              );
-              done();
-            });
-        });
-      });
-      context('when amount is empty', () => {
-        it('returns an error', (done) => {
-          const transaction = TransactionFactory.build({ amount: '' });
-          request()
-            .post('/api/v1/transaction/add')
-            .set('authorization', adminToken)
-            .send(transaction)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Transaction Amount" must be a number');
-              done();
-            });
-        });
-      });
-    });
   });
 
   describe('Get all transactions', () => {
@@ -408,128 +273,6 @@ describe('Transaction Controller', () => {
               expect(res).to.have.status(500);
               done();
               Transaction.aggregate.restore();
-            });
-        });
-      });
-    });
-  });
-
-  describe('Update Transaction route', () => {
-    const transaction = TransactionFactory.build(
-      {
-        userId: regularUser._id,
-        propertyId: property._id,
-        offerId: offer._id,
-        vendorId: vendorUser._id,
-        addedBy: adminUser._id,
-        updatedBy: adminUser._id,
-      },
-      { generateId: true },
-    );
-
-    beforeEach(async () => {
-      await Transaction.create(transaction);
-    });
-
-    const updatedTransaction = {
-      transactionId: transaction._id,
-      paidOn: '2020-05-05',
-    };
-
-    context('with valid token', () => {
-      it('returns an updated transaction', (done) => {
-        request()
-          .put('/api/v1/transaction/update')
-          .set('authorization', adminToken)
-          .send(updatedTransaction)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Payment date updated');
-            expect(res.body).to.have.property('transaction');
-            expect(res.body.transaction.paidOn).to.be.eql(
-              `${updatedTransaction.paidOn}T00:00:00.000Z`,
-            );
-            expect(res.body.transaction._id).to.be.eql(updatedTransaction.transactionId.toString());
-            done();
-          });
-      });
-    });
-
-    context('without token', () => {
-      it('returns error', (done) => {
-        request()
-          .put('/api/v1/transaction/update')
-          .send(updatedTransaction)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
-            done();
-          });
-      });
-    });
-
-    context('with invalid transaction', () => {
-      it('returns validation error', (done) => {
-        request()
-          .put('/api/v1/transaction/update')
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Validation Error');
-            done();
-          });
-      });
-    });
-
-    context('when update service returns an error', () => {
-      it('returns the error', (done) => {
-        sinon.stub(Transaction, 'findOneAndUpdate').throws(new Error('Type Error'));
-        request()
-          .put('/api/v1/transaction/update')
-          .set('authorization', adminToken)
-          .send(updatedTransaction)
-          .end((err, res) => {
-            expect(res).to.have.status(400);
-            expect(res.body.success).to.be.eql(false);
-            done();
-            Transaction.findOneAndUpdate.restore();
-          });
-      });
-    });
-
-    context('with invalid data', () => {
-      context('when transaction id is empty', () => {
-        it('returns an error', (done) => {
-          const invalidTransaction = { transactionId: '', paidOn: Date.now() };
-          request()
-            .put('/api/v1/transaction/update')
-            .set('authorization', adminToken)
-            .send(invalidTransaction)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Transaction Id" is not allowed to be empty');
-              done();
-            });
-        });
-      });
-      context('when paid on is empty', () => {
-        it('returns an error', (done) => {
-          const invalidTransaction = { transactionId: transaction._id, paidOn: '' };
-          request()
-            .put('/api/v1/transaction/update')
-            .set('authorization', adminToken)
-            .send(invalidTransaction)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Payment Date" must be a valid date');
-              done();
             });
         });
       });

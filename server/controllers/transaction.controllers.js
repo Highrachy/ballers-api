@@ -1,7 +1,5 @@
 import {
-  addTransaction,
   getAllTransactions,
-  updateTransaction,
   getUserTransactionsByProperty,
   getReferralRewards,
   getContributionRewards,
@@ -10,30 +8,6 @@ import {
 import httpStatus from '../helpers/httpStatus';
 
 const TransactionController = {
-  add(req, res, next) {
-    const newTransaction = req.locals;
-    const { user } = req;
-    addTransaction({ ...newTransaction, addedBy: user._id, updatedBy: user._id })
-      .then((transaction) => {
-        res
-          .status(httpStatus.CREATED)
-          .json({ success: true, message: 'Transaction added', transaction });
-      })
-      .catch((error) => next(error));
-  },
-
-  update(req, res, next) {
-    const updatedInfo = req.locals;
-    const { user } = req;
-    updateTransaction({ ...updatedInfo, updatedBy: user._id })
-      .then((transaction) => {
-        res
-          .status(httpStatus.OK)
-          .json({ success: true, message: 'Payment date updated', transaction });
-      })
-      .catch((error) => next(error));
-  },
-
   getAll(req, res, next) {
     const { user } = req;
     const { page, limit } = req.query;

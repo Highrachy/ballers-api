@@ -61,26 +61,6 @@ export const addTransaction = async (transaction) => {
   }
 };
 
-export const updateTransaction = async ({ transactionId, paidOn, updatedBy }) => {
-  const transaction = await getTransactionById(transactionId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (!transaction) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid transaction');
-  }
-
-  try {
-    return Transaction.findByIdAndUpdate(
-      transaction.id,
-      { $set: { paidOn, updatedBy } },
-      { new: true },
-    );
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating transaction', error);
-  }
-};
-
 export const getAllTransactions = async (user, page = 1, limit = 10) => {
   const transactionOptions = [
     {
