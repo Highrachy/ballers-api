@@ -1,13 +1,10 @@
 import express from 'express';
 import {
   authenticate,
-  schemaValidation,
   isAdminOrUserOrVendor,
-  isAdmin,
   isUser,
   hasValidObjectId,
 } from '../helpers/middleware';
-import updateTransactionSchema from '../schemas/transaction.schema';
 import TransactionController from '../controllers/transaction.controllers';
 
 const router = express.Router();
@@ -34,35 +31,6 @@ const router = express.Router();
  *       description: Internal server error
  */
 router.get('/all', authenticate, isAdminOrUserOrVendor, TransactionController.getAll);
-
-/**
- * @swagger
- * /transaction/update:
- *   put:
- *     tags:
- *       - Transaction
- *     description: Updates payment date of existing transaction
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/Transaction'
- *      description: Updates payment date of existing transaction
- *     responses:
- *      '200':
- *        description: Transaction updated
- *      '404':
- *        description: Transaction not found
- */
-router.put(
-  '/update',
-  authenticate,
-  isAdmin,
-  schemaValidation(updateTransactionSchema),
-  TransactionController.update,
-);
 
 /**
  * @swagger

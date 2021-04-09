@@ -3,7 +3,6 @@ import {
   getTransactionById,
   addTransaction,
   getAllTransactions,
-  updateTransaction,
   getUserTransactionsByProperty,
 } from '../../server/services/transaction.service';
 import TransactionFactory from '../factories/transaction.factory';
@@ -221,55 +220,6 @@ describe('Transaction Service', () => {
         expect(multipleTransactions.pagination.limit).to.be.eql(10);
         expect(multipleTransactions.pagination.offset).to.be.eql(0);
         expect(multipleTransactions.pagination.totalPage).to.be.eql(2);
-      });
-    });
-  });
-
-  describe('#updateTransaction', () => {
-    const updatedDetails = {
-      transactionId: transaction._id,
-      paidOn: Date.now(),
-      updatedBy: admin._id,
-    };
-
-    beforeEach(async () => {
-      await addTransaction(transaction);
-    });
-
-    context('when transaction is updated', () => {
-      it('returns a valid updated transaction', async () => {
-        const updatedTransaction = updateTransaction(updatedDetails);
-        const validTransaction = getTransactionById(updatedDetails.id);
-        expect(validTransaction.amount).to.eql(updatedTransaction.amount);
-        expect(validTransaction.paidOn).to.eql(updatedTransaction.paidOn);
-      });
-    });
-
-    context('when getTransactionById fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Transaction, 'findById').throws(new Error('error msg'));
-        try {
-          await updateTransaction(updatedDetails);
-        } catch (err) {
-          expect(err.statusCode).to.eql(500);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Internal Server Error');
-        }
-        Transaction.findById.restore();
-      });
-    });
-
-    context('when findByIdAndUpdate fails', () => {
-      it('throws an error', async () => {
-        sinon.stub(Transaction, 'findByIdAndUpdate').throws(new Error('error msg'));
-        try {
-          await updateTransaction(updatedDetails);
-        } catch (err) {
-          expect(err.statusCode).to.eql(400);
-          expect(err.error).to.be.an('Error');
-          expect(err.message).to.be.eql('Error updating transaction');
-        }
-        Transaction.findByIdAndUpdate.restore();
       });
     });
   });
