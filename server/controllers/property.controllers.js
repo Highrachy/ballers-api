@@ -89,12 +89,10 @@ const PropertyController = {
   },
 
   search(req, res, next) {
-    const filter = req.locals;
-    const userId = req.user._id;
-
-    searchThroughProperties({ ...filter, userId })
-      .then((properties) => {
-        res.status(httpStatus.OK).json({ success: true, properties });
+    const { user, query } = req;
+    searchThroughProperties(user, query)
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },

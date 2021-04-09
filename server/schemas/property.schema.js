@@ -96,14 +96,6 @@ export const updatePropertySchema = Joi.object({
   paymentPlan: optionalArray('Payment plan'),
 });
 
-export const searchPropertySchema = Joi.object({
-  state: optionalString('Property State'),
-  city: optionalString('Property City'),
-  houseType: optionalString('Property Type'),
-  minPrice: optionalNumber('Property Minimum Price'),
-  maxPrice: optionalNumber('Property Maximum Price'),
-});
-
 export const addNeighborhoodSchema = Joi.object({
   type: neighborhoodType,
   neighborhood: neighborhoodInfoDetails,
