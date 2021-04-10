@@ -39,7 +39,7 @@ import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
 import VisitationFactory from '../factories/visitation.factory';
 import { scheduleVisitation } from '../../server/services/visitation.service';
-import { PROPERTY_FILTERS } from '../../server/helpers/filters';
+import { PROPERTY_FILTERS, SEARCH_FILTERS } from '../../server/helpers/filters';
 import ReportedProperty from '../../server/models/reportedProperty.model';
 import ReportedPropertyFactory from '../factories/reportedProperty.factory';
 import { reportProperty } from '../../server/services/reportedProperty.service';
@@ -1883,310 +1883,301 @@ describe('Property Controller', () => {
   });
 
   describe('Search Through Properties', () => {
-    const property1 = PropertyFactory.build(
+    const method = 'get';
+    const endpoint = '/api/v1/property/search';
+
+    const flaggedProperty = PropertyFactory.build(
       {
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
-        houseType: '3 bedroom duplex',
-        address: {
-          state: 'lagos',
-          city: 'lekki',
-        },
+        flagged: { status: true },
       },
       { generateId: true },
     );
-    const property2 = PropertyFactory.build(
+
+    const property = PropertyFactory.build(
       {
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
+        address: {
+          state: 'Lagos',
+          city: 'Lekki',
+          street1: 'miracle street',
+          street2: 'sesame street',
+          country: 'Nigeria',
+        },
+        bathrooms: 3,
+        bedrooms: 3,
+        features: ['swimming pool', 'estate park', 'electricity'],
+        houseType: '3 bedroom duplex',
+        price: 3_500_000,
+        toilets: 4,
+        units: 3,
+        flagged: { status: false },
+      },
+      { generateId: true },
+    );
+
+    const properties1 = PropertyFactory.buildList(
+      7,
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+        address: {
+          state: 'Ogun',
+          city: 'Abeokuta',
+          street1: 'makinde street',
+          street2: 'oduduwa street',
+          country: 'Ghana',
+        },
+        bathrooms: 4,
+        bedrooms: 4,
+        features: ['golf course', 'estate park', 'security'],
         houseType: '4 bedroom detatched duplex',
-        address: {
-          state: 'lagos',
-          city: 'epe',
-        },
+        price: 4_500_000,
+        toilets: 5,
+        units: 1,
+        flagged: { status: false },
       },
       { generateId: true },
     );
-    const property3 = PropertyFactory.build(
+
+    const properties2 = PropertyFactory.buildList(
+      10,
       {
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
-        houseType: '3 bedroom duplex',
         address: {
-          state: 'ogun',
+          state: 'Ogun',
           city: 'ajah',
+          street1: 'olumo street',
+          street2: 'baba street',
+          country: 'Ghana',
         },
+        bathrooms: 2,
+        bedrooms: 2,
+        features: ['electricity', 'university', 'security'],
+        houseType: '2 bedroom bungalow',
+        price: 2_500_000,
+        toilets: 2,
+        units: 2,
+        flagged: { status: false },
       },
       { generateId: true },
     );
 
-    const filter = {
-      houseType: '3 bedroom duplex',
-      state: 'lagos',
-      city: 'lekki',
-    };
+    describe('Pagination Tests', () => {
+      context('when no property exists in db', () => {
+        [adminUser, vendorUser, regularUser].map((user) =>
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
 
-    context('when no property is found', () => {
-      it('returns no property', (done) => {
-        request()
-          .post('/api/v1/property/search')
-          .set('authorization', userToken)
-          .send(filter)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.properties.length).to.be.eql(0);
-            done();
+      describe('when properties exist in db', () => {
+        beforeEach(async () => {
+          await Property.insertMany([property, flaggedProperty, ...properties1, ...properties2]);
+        });
+
+        [adminUser, vendorUser, regularUser].map((user) =>
+          itReturnsTheRightPaginationValue({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+
+        context('when 3 properties are assigned to user', () => {
+          beforeEach(async () => {
+            await assignPropertyToUser({
+              userId: regularUser._id,
+              propertyId: property._id,
+              vendor: vendorUser,
+            });
+            await assignPropertyToUser({
+              userId: regularUser._id,
+              propertyId: properties1[0]._id,
+              vendor: vendorUser,
+            });
+            await assignPropertyToUser({
+              userId: regularUser._id,
+              propertyId: properties2[0]._id,
+              vendor: vendorUser,
+            });
           });
+
+          context('with user token & id', () => {
+            it('returns 15 properties', (done) => {
+              request()
+                [method](endpoint)
+                .set('authorization', userToken)
+                .end((err, res) => {
+                  expectsPaginationToReturnTheRightValues(res, {
+                    ...defaultPaginationResult,
+                    total: 15,
+                    result: 10,
+                    totalPage: 2,
+                  });
+                  expectResponseToContainNecessaryPropertyData(res.body.result[0], properties1[1]);
+                  expectResponseToExcludeSensitiveUserData(res.body.result[0].vendorInfo);
+                  expectResponseToContainNecessaryVendorData(res.body.result[0].vendorInfo);
+                  done();
+                });
+            });
+          });
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        itReturnsNotFoundForInvalidToken({
+          endpoint,
+          method,
+          user: adminUser,
+          userId: adminUser._id,
+          useExistingUser: true,
+        });
+
+        itReturnsAnErrorWhenServiceFails({
+          endpoint,
+          method,
+          user: regularUser,
+          model: Property,
+          modelMethod: 'aggregate',
+          useExistingUser: true,
+        });
       });
     });
 
-    describe('when properties exist in db', () => {
+    describe('Filter Tests', () => {
       beforeEach(async () => {
-        await addProperty(property1);
-        await addProperty(property2);
-        await addProperty(property3);
+        await Property.insertMany([property, flaggedProperty, ...properties1, ...properties2]);
       });
 
-      context('with a valid token & id', () => {
-        it('returns a valid search result', (done) => {
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+
+        [adminUser, vendorUser, regularUser].map((user) =>
+          itReturnAllResultsWhenAnUnknownFilterIsUsed({
+            filter: unknownFilter,
+            method,
+            endpoint,
+            user,
+            expectedPagination: defaultPaginationResult,
+            useExistingUser: true,
+          }),
+        );
+      });
+
+      context('when multiple filters are used', () => {
+        const multiplePropertyDetails = {
+          bathrooms: property.bathrooms,
+          bedrooms: property.bedrooms,
+          price: property.price,
+          units: property.units,
+          country: property.address.country,
+        };
+        const filteredParams = querystring.stringify(multiplePropertyDetails);
+
+        it('returns matched property', (done) => {
           request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send(filter)
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]).to.have.property('name');
-              expect(res.body.properties[0]).to.have.property('address');
-              expect(res.body.properties[0]).to.have.property('mainImage');
-              expect(res.body.properties[0]).to.have.property('features');
-              expect(res.body.properties[0]).to.have.property('gallery');
-              expect(res.body.properties[0]).to.have.property('price');
-              expect(res.body.properties[0]).to.have.property('houseType');
-              expect(res.body.properties[0]).to.have.property('description');
-              expect(res.body.properties[0]).to.not.have.property('assignedTo');
-              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
-              expect(res.body.properties[0].assignedUsers).to.not.include(
-                regularUser._id.toString(),
-              );
-              expectResponseToExcludeSensitiveUserData(res.body.properties[0].assignedUsers);
-              expectResponseToExcludeSensitiveUserData(res.body.properties[0].vendorInfo);
-              expectResponseToContainNecessaryVendorData(res.body.properties[0].vendorInfo);
-
-              done();
-            });
-        });
-      });
-
-      context('when filter is empty', () => {
-        context('when no data is sent', () => {
-          it('returns all properties', (done) => {
-            request()
-              .post('/api/v1/property/search')
-              .set('authorization', userToken)
-              .send({})
-              .end((err, res) => {
-                expect(res).to.have.status(200);
-                expect(res.body.success).to.be.eql(true);
-                expect(res.body).to.have.property('properties');
-                expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
-                expect(res.body.properties.length).to.be.eql(3);
-                done();
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
               });
-          });
+              expect(res.body.result[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.result[0].bathrooms).to.be.eql(multiplePropertyDetails.bathrooms);
+              expect(res.body.result[0].bedrooms).to.be.eql(multiplePropertyDetails.bedrooms);
+              expect(res.body.result[0].price).to.be.eql(multiplePropertyDetails.price);
+              expect(res.body.result[0].units).to.be.eql(multiplePropertyDetails.units);
+              expect(res.body.result[0].address.country).to.be.eql(multiplePropertyDetails.country);
+              done();
+            });
         });
+      });
 
-        context('when one property is flagged', () => {
-          beforeEach(async () => {
-            await Property.findByIdAndUpdate(property1._id, { 'flagged.status': true });
-          });
-          it('returns 2 properties', (done) => {
-            request()
-              .post('/api/v1/property/search')
-              .set('authorization', userToken)
-              .send({})
-              .end((err, res) => {
-                expect(res).to.have.status(200);
-                expect(res.body.success).to.be.eql(true);
-                expect(res.body).to.have.property('properties');
-                expect(res.body.properties[0]._id).to.be.eql(property2._id.toString());
-                expect(res.body.properties.length).to.be.eql(2);
-                done();
+      context('when no parameter is matched', () => {
+        const nonMatchingFilters = {
+          bathrooms: 13,
+          bedrooms: 10,
+          price: 1500,
+          units: 22,
+          country: 'italy',
+        };
+
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
+          filter: nonMatchingFilters,
+          method,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
+        });
+      });
+
+      filterTestForSingleParameter({
+        filter: SEARCH_FILTERS,
+        method,
+        endpoint,
+        user: adminUser,
+        dataObject: property,
+        useExistingUser: true,
+      });
+    });
+
+    describe('Array filters', () => {
+      beforeEach(async () => {
+        await Property.insertMany([property, flaggedProperty, ...properties1, ...properties2]);
+      });
+
+      context('when a single entry is used', () => {
+        it('returns matched properties', (done) => {
+          request()
+            .get(`${endpoint}?features=security`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 10,
+                total: 17,
+                totalPage: 2,
               });
-          });
-        });
-      });
-
-      context('when only state is sent', () => {
-        it('returns similar properties', (done) => {
-          request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send({ state: filter.state })
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
+              expect(res.body.result[0].features).to.be.eql(properties1[0].features);
+              expect(res.body.result[9].features).to.be.eql(properties2[0].features);
               done();
             });
         });
       });
 
-      context('when only house type is sent', () => {
-        it('returns similar properties', (done) => {
+      context('when a multiple entries are used', () => {
+        it('returns matched property', (done) => {
           request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send({ houseType: filter.houseType })
+            .get(`${endpoint}?features=swimming pool,estate park,electricity`)
+            .set('authorization', adminToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
-              done();
-            });
-        });
-      });
-
-      context('when only city is sent', () => {
-        it('returns similar properties', (done) => {
-          request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send({ city: filter.city })
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .post('/api/v1/property/search')
-            .send(filter)
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when state is lagos', () => {
-        it('returns properties 1 & 2', (done) => {
-          request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send({ state: 'lagos' })
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(2);
-              expect(res.body.properties[0]._id).to.be.eql(property1._id.toString());
-              expect(res.body.properties[1].houseType).to.be.eql(property2.houseType);
-              done();
-            });
-        });
-      });
-
-      context('when searchThroughProperties service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Property, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send(filter)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Property.aggregate.restore();
-            });
-        });
-      });
-
-      context('when all properties have been assigned to user', () => {
-        beforeEach(async () => {
-          await assignPropertyToUser({
-            userId: regularUser._id,
-            propertyId: property1._id,
-            vendor: vendorUser,
-          });
-          await assignPropertyToUser({
-            userId: regularUser._id,
-            propertyId: property2._id,
-            vendor: vendorUser,
-          });
-          await assignPropertyToUser({
-            userId: regularUser._id,
-            propertyId: property3._id,
-            vendor: vendorUser,
-          });
-        });
-        it('returns no property', (done) => {
-          request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send({})
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(0);
-              done();
-            });
-        });
-      });
-
-      context('when no property has been assigned to user', () => {
-        it('returns all properties', (done) => {
-          request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send({})
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(3);
-              done();
-            });
-        });
-      });
-
-      context('when 2 properties have been assigned to user', () => {
-        beforeEach(async () => {
-          await assignPropertyToUser({
-            userId: regularUser._id,
-            propertyId: property1._id,
-            vendor: vendorUser,
-          });
-          await assignPropertyToUser({
-            userId: regularUser._id,
-            propertyId: property2._id,
-            vendor: vendorUser,
-          });
-        });
-        it('returns one property', (done) => {
-          request()
-            .post('/api/v1/property/search')
-            .set('authorization', userToken)
-            .send({})
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body).to.have.property('properties');
-              expect(res.body.properties.length).to.be.eql(1);
-              expect(res.body.properties[0]._id).to.be.eql(property3._id.toString());
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0].features).to.be.eql(property.features);
               done();
             });
         });
