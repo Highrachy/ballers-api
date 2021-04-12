@@ -34,6 +34,7 @@ import {
   itReturnsNoResultWhenNoFilterParameterIsMatched,
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
   itReturnsAnErrorWhenServiceFails,
+  currentDate,
 } from '../helpers';
 import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
@@ -1891,6 +1892,7 @@ describe('Property Controller', () => {
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
         flagged: { status: true },
+        createdAt: futureDate,
       },
       { generateId: true },
     );
@@ -1914,6 +1916,7 @@ describe('Property Controller', () => {
         toilets: 4,
         units: 3,
         flagged: { status: false },
+        createdAt: futureDate,
       },
       { generateId: true },
     );
@@ -1938,6 +1941,7 @@ describe('Property Controller', () => {
         toilets: 5,
         units: 1,
         flagged: { status: false },
+        createdAt: currentDate,
       },
       { generateId: true },
     );
@@ -1948,7 +1952,7 @@ describe('Property Controller', () => {
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
         address: {
-          state: 'Ogun',
+          state: 'Osun',
           city: 'ajah',
           street1: 'olumo street',
           street2: 'baba street',
@@ -1962,6 +1966,7 @@ describe('Property Controller', () => {
         toilets: 2,
         units: 2,
         flagged: { status: false },
+        createdAt: currentDate,
       },
       { generateId: true },
     );
@@ -2081,7 +2086,6 @@ describe('Property Controller', () => {
           bedrooms: property.bedrooms,
           price: property.price,
           units: property.units,
-          country: property.address.country,
         };
         const filteredParams = querystring.stringify(multiplePropertyDetails);
 
@@ -2103,7 +2107,6 @@ describe('Property Controller', () => {
               expect(res.body.result[0].bedrooms).to.be.eql(multiplePropertyDetails.bedrooms);
               expect(res.body.result[0].price).to.be.eql(multiplePropertyDetails.price);
               expect(res.body.result[0].units).to.be.eql(multiplePropertyDetails.units);
-              expect(res.body.result[0].address.country).to.be.eql(multiplePropertyDetails.country);
               done();
             });
         });
@@ -2115,7 +2118,7 @@ describe('Property Controller', () => {
           bedrooms: 10,
           price: 1500,
           units: 22,
-          country: 'italy',
+          state: 'ohio',
         };
 
         itReturnsNoResultWhenNoFilterParameterIsMatched({
@@ -2137,7 +2140,7 @@ describe('Property Controller', () => {
       });
     });
 
-    describe('Array filters', () => {
+    describe('Property feature filter', () => {
       beforeEach(async () => {
         await Property.insertMany([property, flaggedProperty, ...properties1, ...properties2]);
       });
@@ -2178,6 +2181,348 @@ describe('Property Controller', () => {
                 totalPage: 1,
               });
               expect(res.body.result[0].features).to.be.eql(property.features);
+              done();
+            });
+        });
+      });
+    });
+
+    describe('Sorting Tests', () => {
+      beforeEach(async () => {
+        await Property.insertMany([
+          property,
+          flaggedProperty,
+          properties1[0],
+          { ...properties2[0], createdAt: futureDate },
+        ]);
+      });
+
+      context('when an unknown filter is used', () => {
+        const sortQuery = {
+          sortBy: 'dob',
+        };
+        const filteredParams = querystring.stringify(sortQuery);
+        it('returns all properties', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 3,
+                total: 3,
+                totalPage: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(property._id.toString());
+              expect(res.body.result[1]._id).to.be.eql(properties1[0]._id.toString());
+              expect(res.body.result[2]._id).to.be.eql(properties2[0]._id.toString());
+              done();
+            });
+        });
+      });
+
+      context('when sorted by createdAt', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'createdAt',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched properties', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(properties1[0]._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(property._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(properties2[0]._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'createdAt',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched properties', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(property._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(properties2[0]._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(properties1[0]._id.toString());
+                done();
+              });
+          });
+        });
+      });
+
+      context('when sorted by price', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'price',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched properties', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(properties2[0]._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(property._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(properties1[0]._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'price',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched properties', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(properties1[0]._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(property._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(properties2[0]._id.toString());
+                done();
+              });
+          });
+        });
+      });
+
+      context('when sorted by state', () => {
+        context('in ascending order', () => {
+          const sortQuery = {
+            sortBy: 'state',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched properties', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(property._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(properties1[0]._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(properties2[0]._id.toString());
+                done();
+              });
+          });
+        });
+        context('in descending order', () => {
+          const sortQuery = {
+            sortBy: 'state',
+            sortDirection: 'desc',
+          };
+          const filteredParams = querystring.stringify(sortQuery);
+          it('returns matched properties', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 3,
+                  total: 3,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(properties2[0]._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(properties1[0]._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(property._id.toString());
+                done();
+              });
+          });
+        });
+      });
+    });
+
+    describe('Range Tests', () => {
+      beforeEach(async () => {
+        await Property.insertMany([property, flaggedProperty, properties1[0], properties2[0]]);
+      });
+
+      context('when unknown parameter is used', () => {
+        const unknownFilter = {
+          dob: '1997-12-15:2001-10-29',
+        };
+        const filteredParams = querystring.stringify(unknownFilter);
+
+        it('returns all properties', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 3,
+                total: 3,
+                totalPage: 1,
+              });
+              done();
+            });
+        });
+      });
+
+      describe('when parameter is a number', () => {
+        context('when the value is range', () => {
+          const queryFilter = {
+            price: '1000000:3000000',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched properties', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 1,
+                  total: 1,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(properties2[0]._id.toString());
+                done();
+              });
+          });
+        });
+
+        context('when the value is from', () => {
+          const queryFilter = {
+            price: '3000000:0',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched properties', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 2,
+                  total: 2,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(property._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(properties1[0]._id.toString());
+                done();
+              });
+          });
+        });
+
+        context('when the value is to', () => {
+          const queryFilter = {
+            price: '0:3000000',
+          };
+          const filteredParams = querystring.stringify(queryFilter);
+
+          it('returns matched properties', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 1,
+                  total: 1,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(properties2[0]._id.toString());
+                done();
+              });
+          });
+        });
+      });
+    });
+
+    describe('Combined  Searching, Filtering, $ Sorting Tests', () => {
+      beforeEach(async () => {
+        await Property.insertMany([property, flaggedProperty, properties1[0], properties2[0]]);
+      });
+
+      context('when the value is to', () => {
+        const queryFilter = {
+          state: 'un',
+          sortBy: 'state',
+          sortDirection: 'desc',
+          units: '1:2',
+        };
+        const filteredParams = querystring.stringify(queryFilter);
+
+        it('returns matched properties', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 2,
+                total: 2,
+                totalPage: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(properties2[0]._id.toString());
+              expect(res.body.result[1]._id).to.be.eql(properties1[0]._id.toString());
               done();
             });
         });

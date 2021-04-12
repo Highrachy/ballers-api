@@ -301,6 +301,7 @@ export const SEARCH_FILTERS = {
   ...ADDRESS_FILTERS,
   bathrooms: { type: FILTER_TYPE.INTEGER },
   bedrooms: { type: FILTER_TYPE.INTEGER },
+  createdAt: { type: FILTER_TYPE.DATE },
   features: { type: FILTER_TYPE.ARRAY },
   houseType: { type: FILTER_TYPE.STRING },
   price: { type: FILTER_TYPE.INTEGER },
