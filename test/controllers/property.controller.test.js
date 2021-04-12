@@ -35,6 +35,7 @@ import {
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
   itReturnsAnErrorWhenServiceFails,
   currentDate,
+  pastDate,
 } from '../helpers';
 import VendorFactory from '../factories/vendor.factory';
 import AddressFactory from '../factories/address.factory';
@@ -1945,7 +1946,6 @@ describe('Property Controller', () => {
       },
       { generateId: true },
     );
-
     const properties2 = PropertyFactory.buildList(
       10,
       {
@@ -1966,7 +1966,7 @@ describe('Property Controller', () => {
         toilets: 2,
         units: 2,
         flagged: { status: false },
-        createdAt: currentDate,
+        createdAt: pastDate,
       },
       { generateId: true },
     );
@@ -2187,14 +2187,9 @@ describe('Property Controller', () => {
       });
     });
 
-    describe('Sorting Tests', () => {
+    describe('Sorting Searched Properties', () => {
       beforeEach(async () => {
-        await Property.insertMany([
-          property,
-          flaggedProperty,
-          properties1[0],
-          { ...properties2[0], createdAt: futureDate },
-        ]);
+        await Property.insertMany([property, flaggedProperty, properties1[0], properties2[0]]);
       });
 
       context('when an unknown filter is used', () => {
@@ -2242,9 +2237,9 @@ describe('Property Controller', () => {
                   total: 3,
                   totalPage: 1,
                 });
-                expect(res.body.result[0]._id).to.be.eql(properties1[0]._id.toString());
-                expect(res.body.result[1]._id).to.be.eql(property._id.toString());
-                expect(res.body.result[2]._id).to.be.eql(properties2[0]._id.toString());
+                expect(res.body.result[0]._id).to.be.eql(properties2[0]._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(properties1[0]._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(property._id.toString());
                 done();
               });
           });
@@ -2269,8 +2264,8 @@ describe('Property Controller', () => {
                   totalPage: 1,
                 });
                 expect(res.body.result[0]._id).to.be.eql(property._id.toString());
-                expect(res.body.result[1]._id).to.be.eql(properties2[0]._id.toString());
-                expect(res.body.result[2]._id).to.be.eql(properties1[0]._id.toString());
+                expect(res.body.result[1]._id).to.be.eql(properties1[0]._id.toString());
+                expect(res.body.result[2]._id).to.be.eql(properties2[0]._id.toString());
                 done();
               });
           });
@@ -2386,7 +2381,7 @@ describe('Property Controller', () => {
       });
     });
 
-    describe('Range Tests', () => {
+    describe('Filtering Searched Properties by Range', () => {
       beforeEach(async () => {
         await Property.insertMany([property, flaggedProperty, properties1[0], properties2[0]]);
       });
@@ -2415,7 +2410,7 @@ describe('Property Controller', () => {
         });
       });
 
-      describe('when parameter is a number', () => {
+      describe('when a valid number parameter is used', () => {
         context('when the value is range', () => {
           const queryFilter = {
             price: '1000000:3000000',
@@ -2441,7 +2436,7 @@ describe('Property Controller', () => {
           });
         });
 
-        context('when the value is from', () => {
+        context('when the `from` value is given', () => {
           const queryFilter = {
             price: '3000000:0',
           };
@@ -2467,7 +2462,7 @@ describe('Property Controller', () => {
           });
         });
 
-        context('when the value is to', () => {
+        context('when the `to` value is given', () => {
           const queryFilter = {
             price: '0:3000000',
           };
@@ -2494,12 +2489,12 @@ describe('Property Controller', () => {
       });
     });
 
-    describe('Combined  Searching, Filtering, $ Sorting Tests', () => {
+    describe('Filtering and Sorting Search Properties', () => {
       beforeEach(async () => {
         await Property.insertMany([property, flaggedProperty, properties1[0], properties2[0]]);
       });
 
-      context('when the value is to', () => {
+      context('when the `to` value is given', () => {
         const queryFilter = {
           state: 'un',
           sortBy: 'state',

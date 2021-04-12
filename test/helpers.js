@@ -1,4 +1,4 @@
-import { format, add } from 'date-fns';
+import { format, add, sub } from 'date-fns';
 import querystring from 'querystring';
 import { addUser, loginUser } from '../server/services/user.service';
 import { expect, request, sinon } from './config';
@@ -470,6 +470,7 @@ export const expectResponseToContainNecessaryPropertyData = (response, property)
 
 export const futureDate = format(add(new Date(), { days: 5 }), 'yyyy-MM-dd');
 export const currentDate = format(new Date(), 'yyyy-MM-dd');
+export const pastDate = format(sub(new Date(), { days: 5 }), 'yyyy-MM-dd');
 
 export const filterTestForSingleParameter = ({
   filter,
