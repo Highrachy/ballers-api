@@ -1888,6 +1888,17 @@ describe('Property Controller', () => {
     const method = 'get';
     const endpoint = '/api/v1/property/search';
 
+    const testVendor = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        vendor: {
+          verified: true,
+        },
+      },
+      { generateId: true },
+    );
+
     const flaggedProperty = PropertyFactory.build(
       {
         addedBy: vendorUser._id,
@@ -1900,8 +1911,8 @@ describe('Property Controller', () => {
 
     const property = PropertyFactory.build(
       {
-        addedBy: invalidVendorUser._id,
-        updatedBy: invalidVendorUser._id,
+        addedBy: testVendor._id,
+        updatedBy: testVendor._id,
         address: {
           state: 'Lagos',
           city: 'Lekki',
@@ -1971,6 +1982,10 @@ describe('Property Controller', () => {
       { generateId: true },
     );
 
+    beforeEach(async () => {
+      await addUser(testVendor);
+    });
+
     describe('Pagination Tests', () => {
       context('when no property exists in db', () => {
         [adminUser, vendorUser, regularUser].map((user) =>
@@ -2002,7 +2017,7 @@ describe('Property Controller', () => {
             await assignPropertyToUser({
               userId: regularUser._id,
               propertyId: property._id,
-              vendor: invalidVendorUser,
+              vendor: testVendor,
             });
             await assignPropertyToUser({
               userId: regularUser._id,
