@@ -60,8 +60,8 @@ const ContentPropertyController = {
   },
 
   getAllContentProperties(req, res, next) {
-    const { page, limit } = req.query;
-    getAllContentProperties(page, limit)
+    const { query } = req;
+    getAllContentProperties(query)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
       })

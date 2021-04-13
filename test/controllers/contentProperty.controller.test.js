@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import querystring from 'querystring';
 import { expect, request, sinon } from '../config';
 import ContentProperty from '../../server/models/contentProperty.model';
 import ContentPropertyFactory from '../factories/contentProperty.factory';
@@ -8,23 +9,39 @@ import { addUser } from '../../server/services/user.service';
 import { addArea } from '../../server/services/area.service';
 import { addContentProperty } from '../../server/services/contentProperty.service';
 import { USER_ROLE } from '../../server/helpers/constants';
-import { expectsPaginationToReturnTheRightValues, defaultPaginationResult } from '../helpers';
+import { CONTENT_PROPERTY_FILTERS } from '../../server/helpers/filters';
+import {
+  itReturnsForbiddenForNoToken,
+  itReturnsForbiddenForTokenWithInvalidAccess,
+  itReturnsEmptyValuesWhenNoItemExistInDatabase,
+  itReturnsTheRightPaginationValue,
+  itReturnsAnErrorWhenServiceFails,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
+  defaultPaginationResult,
+  expectsPaginationToReturnTheRightValues,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  filterTestForSingleParameter,
+  futureDate,
+  currentDate,
+} from '../helpers';
 
 let userToken;
 let adminToken;
 let editorToken;
 
-const user = UserFactory.build({ role: USER_ROLE.USER, activated: true });
-const admin = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
-const editor = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
+const regularUser = UserFactory.build({ role: USER_ROLE.USER, activated: true });
+const adminUser = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
+const editorUser = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
+const vendorUser = UserFactory.build({ role: USER_ROLE.VENDOR, activated: true });
 const areaId = mongoose.Types.ObjectId();
 const area = AreaFactory.build({ _id: areaId, area: 'Ikoyi', state: 'Lagos' });
 
 describe('Content Property Controller', () => {
   beforeEach(async () => {
-    editorToken = await addUser(editor);
-    adminToken = await addUser(admin);
-    userToken = await addUser(user);
+    editorToken = await addUser(editorUser);
+    adminToken = await addUser(adminUser);
+    userToken = await addUser(regularUser);
+    await addUser(vendorUser);
     await addArea(area);
   });
 
@@ -616,129 +633,154 @@ describe('Content Property Controller', () => {
   });
 
   describe('Get all content properties', () => {
-    const dummyProperties = ContentPropertyFactory.buildList(18, { areaId });
+    const endpoint = '/api/v1/content-property/all';
+    const method = 'get';
+    const dummyArea = AreaFactory.build(
+      { area: 'Lekki Phase 1', state: 'Lagos' },
+      { generateId: true },
+    );
+
+    const dummyProperty = ContentPropertyFactory.build(
+      {
+        areaId: dummyArea._id,
+        category: 'For Rent',
+        houseType: 'Penthouse',
+        price: 10_000_000,
+        createdAt: futureDate,
+      },
+      { generateId: true },
+    );
+    const dummyProperties = ContentPropertyFactory.buildList(
+      17,
+      { areaId, createdAt: currentDate },
+      { generateId: true },
+    );
 
     beforeEach(async () => {
-      await ContentProperty.insertMany(dummyProperties);
+      await addArea(dummyArea);
     });
 
-    describe('when properties exist in db', () => {
-      context('when no parameters are passed', () => {
-        it('returns the default values', (done) => {
-          request()
-            .get('/api/v1/content-property/all')
-            .set('authorization', editorToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
-              done();
-            });
+    describe('Pagination Tests', () => {
+      context('when no content property exists in db', () => {
+        [adminUser, editorUser].map((user) =>
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
+
+      describe('when content properties exist in db', () => {
+        beforeEach(async () => {
+          await ContentProperty.insertMany([dummyProperty, ...dummyProperties]);
+        });
+
+        [adminUser, editorUser].map((user) =>
+          itReturnsTheRightPaginationValue({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+
+        [vendorUser, regularUser].map((user) =>
+          itReturnsForbiddenForTokenWithInvalidAccess({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        itReturnsAnErrorWhenServiceFails({
+          endpoint,
+          method,
+          user: editorUser,
+          model: ContentProperty,
+          modelMethod: 'aggregate',
+          useExistingUser: true,
+        });
+      });
+    });
+
+    describe('Filter Tests', () => {
+      beforeEach(async () => {
+        await ContentProperty.insertMany([dummyProperty, ...dummyProperties]);
+      });
+
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: defaultPaginationResult,
+          useExistingUser: true,
         });
       });
 
-      context('when parameters page and limit are passed', () => {
-        it('returns the given page and limit', (done) => {
+      context('when multiple filters are used', () => {
+        const multipleFilters = {
+          category: dummyProperty.category,
+          houseType: dummyProperty.houseType,
+          price: dummyProperty.price,
+        };
+        const filteredParams = querystring.stringify(multipleFilters);
+
+        it('returns matched content property', (done) => {
           request()
-            .get('/api/v1/content-property/all?page=2&limit=5')
+            [method](`${endpoint}?${filteredParams}`)
             .set('authorization', editorToken)
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                currentPage: 2,
-                limit: 5,
-                offset: 5,
-                result: 5,
-                totalPage: 4,
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
               });
+              expect(res.body.result[0]._id).to.be.eql(dummyProperty._id.toString());
+              expect(res.body.result[0].category).to.be.eql(multipleFilters.category);
+              expect(res.body.result[0].houseType).to.be.eql(multipleFilters.houseType);
+              expect(res.body.result[0].price).to.be.eql(multipleFilters.price);
               done();
             });
         });
       });
 
-      context('when admin token is used', () => {
-        it('returns the given page and limit', (done) => {
-          request()
-            .get('/api/v1/content-property/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
-              done();
-            });
+      context('when no parameter is matched', () => {
+        const nonMatchingFilters = {
+          category: 'For Lease',
+          houseType: 'self contain',
+          price: 100_000,
+        };
+
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
+          filter: nonMatchingFilters,
+          method,
+          endpoint,
+          user: editorUser,
+          useExistingUser: true,
         });
       });
 
-      context('when page is set to 2', () => {
-        it('returns the second page', (done) => {
-          request()
-            .get('/api/v1/content-property/all?page=2')
-            .set('authorization', editorToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                result: 8,
-                offset: 10,
-                currentPage: 2,
-              });
-              done();
-            });
-        });
-      });
-
-      context('when limit is set to 4', () => {
-        it('returns 4 properties', (done) => {
-          request()
-            .get('/api/v1/content-property/all?limit=4')
-            .set('authorization', editorToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                ...defaultPaginationResult,
-                limit: 4,
-                result: 4,
-                totalPage: 5,
-              });
-              done();
-            });
-        });
-      });
-
-      context('with a user access token', () => {
-        it('returns successful payload', (done) => {
-          request()
-            .get('/api/v1/content-property/all')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/content-property/all')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when getAllProperties service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(ContentProperty, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/content-property/all')
-            .set('authorization', editorToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              ContentProperty.aggregate.restore();
-            });
-        });
+      filterTestForSingleParameter({
+        filter: CONTENT_PROPERTY_FILTERS,
+        method,
+        endpoint,
+        user: editorUser,
+        dataObject: dummyProperty,
+        useExistingUser: true,
       });
     });
   });
