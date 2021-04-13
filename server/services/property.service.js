@@ -12,7 +12,13 @@ import {
   NON_PROJECTED_USER_INFO,
 } from '../helpers/projectedSchemaInfo';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { buildFilterQuery, PROPERTY_FILTERS, OFFER_FILTERS } from '../helpers/filters';
+import {
+  buildFilterQuery,
+  PROPERTY_FILTERS,
+  OFFER_FILTERS,
+  SEARCH_FILTERS,
+  buildFilterAndSortQuery,
+} from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { resolveReport, getReportById } from './reportedProperty.service';
 // eslint-disable-next-line import/no-cycle
@@ -251,32 +257,13 @@ export const getOneProperty = async (propertyId, user = {}) => {
   return property;
 };
 
-export const searchThroughProperties = async ({
-  userId,
-  state,
-  city,
-  houseType,
-  minPrice,
-  maxPrice,
-}) =>
-  Property.aggregate([
-    { $match: { assignedTo: { $nin: [ObjectId(userId)] } } },
+export const searchThroughProperties = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(SEARCH_FILTERS, query);
+
+  const propertyOptions = [
+    { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     { $match: { 'flagged.status': false } },
-    {
-      $match: {
-        $and: [
-          { 'address.state': state || /.*/ },
-          { 'address.city': city || /.*/ },
-          { houseType: houseType || /.*/ },
-          {
-            price: {
-              $gte: minPrice || 0,
-              $lte: maxPrice || 10000000000000,
-            },
-          },
-        ],
-      },
-    },
     {
       $lookup: {
         from: 'users',
@@ -303,7 +290,33 @@ export const searchThroughProperties = async ({
         ...PROJECTED_ASSIGNED_USER_INFO,
       },
     },
-  ]);
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+  ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    propertyOptions.splice(1, 1);
+  }
+
+  if (filterQuery.length < 1) {
+    propertyOptions.shift();
+  }
+
+  if (user.role === USER_ROLE.USER) {
+    propertyOptions.unshift({ $match: { assignedTo: { $nin: [ObjectId(user._id)] } } });
+  }
+
+  const properties = await Property.aggregate(propertyOptions);
+
+  const total = getPaginationTotal(properties);
+  const pagination = generatePagination(page, limit, total);
+  const result = properties[0].data;
+  return { pagination, result };
+};
 
 export const getAvailablePropertyOptions = async () =>
   Property.aggregate([

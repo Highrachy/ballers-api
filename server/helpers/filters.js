@@ -297,6 +297,19 @@ export const OFFLINE_PAYMENT_FILTERS = {
   type: { type: FILTER_TYPE.STRING },
 };
 
+export const SEARCH_FILTERS = {
+  ...ADDRESS_FILTERS,
+  addedBy: { type: FILTER_TYPE.OBJECT_ID },
+  bathrooms: { type: FILTER_TYPE.INTEGER },
+  bedrooms: { type: FILTER_TYPE.INTEGER },
+  createdAt: { type: FILTER_TYPE.DATE },
+  features: { type: FILTER_TYPE.ARRAY },
+  houseType: { type: FILTER_TYPE.STRING },
+  price: { type: FILTER_TYPE.INTEGER },
+  toilets: { type: FILTER_TYPE.INTEGER },
+  units: { type: FILTER_TYPE.INTEGER },
+};
+
 export const CONTENT_PROPERTY_FILTERS = {
   areaId: { type: FILTER_TYPE.OBJECT_ID },
   category: { type: FILTER_TYPE.STRING },

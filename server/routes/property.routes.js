@@ -11,7 +11,6 @@ import {
 import {
   addPropertySchema,
   updatePropertySchema,
-  searchPropertySchema,
   updateNeighborhoodSchema,
   addNeighborhoodSchema,
   deleteNeighborhoodSchema,
@@ -174,7 +173,7 @@ router.get('/all', authenticate, isVendorOrAdmin, PropertyController.getAllPrope
 /**
  * @swagger
  * /property/search:
- *   post:
+ *   get:
  *     tags:
  *       - Property
  *     description: Search for properties based on state, area & location
@@ -187,17 +186,12 @@ router.get('/all', authenticate, isVendorOrAdmin, PropertyController.getAllPrope
  *            $ref: '#/components/schemas/Property'
  *      description: Search for properties based on state, area & location
  *     responses:
- *      '201':
- *        description: Properties found
+ *      '200':
+ *        description: returns object of properties
  *      '500':
  *       description: Internal server error
  */
-router.post(
-  '/search',
-  authenticate,
-  schemaValidation(searchPropertySchema),
-  PropertyController.search,
-);
+router.get('/search', authenticate, PropertyController.search);
 
 /**
  * @swagger
