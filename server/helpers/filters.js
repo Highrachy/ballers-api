@@ -299,6 +299,7 @@ export const OFFLINE_PAYMENT_FILTERS = {
 
 export const SEARCH_FILTERS = {
   ...ADDRESS_FILTERS,
+  addedBy: { type: FILTER_TYPE.OBJECT_ID },
   bathrooms: { type: FILTER_TYPE.INTEGER },
   bedrooms: { type: FILTER_TYPE.INTEGER },
   createdAt: { type: FILTER_TYPE.DATE },

@@ -1900,8 +1900,8 @@ describe('Property Controller', () => {
 
     const property = PropertyFactory.build(
       {
-        addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
+        addedBy: invalidVendorUser._id,
+        updatedBy: invalidVendorUser._id,
         address: {
           state: 'Lagos',
           city: 'Lekki',
@@ -2002,7 +2002,7 @@ describe('Property Controller', () => {
             await assignPropertyToUser({
               userId: regularUser._id,
               propertyId: property._id,
-              vendor: vendorUser,
+              vendor: invalidVendorUser,
             });
             await assignPropertyToUser({
               userId: regularUser._id,
