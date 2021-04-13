@@ -296,3 +296,11 @@ export const OFFLINE_PAYMENT_FILTERS = {
   resolvedOn: { key: 'resolved.date', type: FILTER_TYPE.DATE },
   type: { type: FILTER_TYPE.STRING },
 };
+
+export const CONTENT_PROPERTY_FILTERS = {
+  areaId: { type: FILTER_TYPE.OBJECT_ID },
+  category: { type: FILTER_TYPE.STRING },
+  createdAt: { type: FILTER_TYPE.DATE },
+  houseType: { type: FILTER_TYPE.STRING },
+  price: { type: FILTER_TYPE.INTEGER },
+};
