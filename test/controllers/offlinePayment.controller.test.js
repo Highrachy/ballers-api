@@ -133,7 +133,6 @@ describe('Offline Payment Controller', () => {
         offerId: '"Offer id" is not allowed to be empty',
         dateOfPayment: '"Payment Date" must be a valid date',
         type: '"Payment Type" is not allowed to be empty',
-        receipt: '"Receipt" is not allowed to be empty',
       };
 
       itReturnsErrorForEmptyFields({
@@ -143,6 +142,24 @@ describe('Offline Payment Controller', () => {
         data: invalidEmptyData,
         factory: OfflinePaymentFactory,
         useExistingUser: true,
+      });
+
+      context('when receipt is an empty string', () => {
+        it('successfully adds payment', (done) => {
+          const offlinePayment = OfflinePaymentFactory.build({ offerId: offer._id });
+          request()
+            .post('/api/v1/offline-payment')
+            .set('authorization', userToken)
+            .send({ ...offlinePayment, receipt: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(201);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Payment added successfully');
+              expect(res.body.payment.userId).to.be.eql(regularUser._id.toString());
+              expect(res.body.payment.offerId).to.be.eql(offer._id.toString());
+              done();
+            });
+        });
       });
     });
 
@@ -207,6 +224,29 @@ describe('Offline Payment Controller', () => {
             expect(res.body.payment.amount).to.be.eql(updatedData.amount);
             expect(res.body.payment.bank).to.be.eql(updatedData.bank);
             expect(res.body.payment.receipt).to.be.eql(updatedData.receipt);
+            expect(res.body.payment.type).to.be.eql(offlinePayment.type);
+            expect(res.body.payment.dateOfPayment).to.have.string(offlinePayment.dateOfPayment);
+            done();
+          });
+      });
+    });
+
+    context('when receipt is empty', () => {
+      it('successfully updates payment', (done) => {
+        request()
+          .put('/api/v1/offline-payment')
+          .set('authorization', userToken)
+          .send({ ...updatedData, receipt: '' })
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Payment updated');
+            expect(res.body.payment._id).to.be.eql(offlinePayment._id.toString());
+            expect(res.body.payment.userId).to.be.eql(regularUser._id.toString());
+            expect(res.body.payment.offerId).to.be.eql(offer._id.toString());
+            expect(res.body.payment.amount).to.be.eql(updatedData.amount);
+            expect(res.body.payment.bank).to.be.eql(updatedData.bank);
+            expect(res.body.payment.receipt).to.be.eql('');
             expect(res.body.payment.type).to.be.eql(offlinePayment.type);
             expect(res.body.payment.dateOfPayment).to.have.string(offlinePayment.dateOfPayment);
             done();

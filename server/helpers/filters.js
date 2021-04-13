@@ -309,3 +309,11 @@ export const SEARCH_FILTERS = {
   toilets: { type: FILTER_TYPE.INTEGER },
   units: { type: FILTER_TYPE.INTEGER },
 };
+
+export const CONTENT_PROPERTY_FILTERS = {
+  areaId: { type: FILTER_TYPE.OBJECT_ID },
+  category: { type: FILTER_TYPE.STRING },
+  createdAt: { type: FILTER_TYPE.DATE },
+  houseType: { type: FILTER_TYPE.STRING },
+  price: { type: FILTER_TYPE.INTEGER },
+};

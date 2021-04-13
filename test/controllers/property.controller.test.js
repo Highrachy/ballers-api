@@ -3959,10 +3959,10 @@ describe('Property Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Image added');
             expect(res.body.property.gallery.length).to.be.eql(2);
-            expect(res.body.property.gallery[0].title).to.be.eql(property.gallery[0].title);
-            expect(res.body.property.gallery[0].url).to.be.eql(property.gallery[0].url);
-            expect(res.body.property.gallery[1].title).to.be.eql(data.title);
-            expect(res.body.property.gallery[1].url).to.be.eql(data.url);
+            expect(res.body.property.gallery[0].title).to.be.eql(data.title);
+            expect(res.body.property.gallery[0].url).to.be.eql(data.url);
+            expect(res.body.property.gallery[1].title).to.be.eql(property.gallery[0].title);
+            expect(res.body.property.gallery[1].url).to.be.eql(property.gallery[0].url);
             done();
           });
       });
