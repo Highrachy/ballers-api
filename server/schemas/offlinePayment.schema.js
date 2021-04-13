@@ -7,6 +7,7 @@ import {
   optionalString,
   optionalNumber,
   optionalObjectId,
+  nonRequiredString,
 } from './helper.schema';
 
 export const addOfflinePaymentSchema = Joi.object({
@@ -14,7 +15,7 @@ export const addOfflinePaymentSchema = Joi.object({
   bank: requiredString('Bank'),
   dateOfPayment: requiredDate('Payment Date'),
   offerId: requiredObjectId('Offer id'),
-  receipt: optionalString('Receipt'),
+  receipt: nonRequiredString('Receipt'),
   type: requiredString('Payment Type'),
 });
 
@@ -24,7 +25,7 @@ export const updateOfflinePaymentSchema = Joi.object({
   bank: optionalString('Bank'),
   dateOfPayment: optionalString('Payment Date'),
   offerId: optionalObjectId('Offer Id'),
-  receipt: optionalString('Receipt'),
+  receipt: nonRequiredString('Receipt'),
   type: optionalString('Payment Type'),
 });
 
