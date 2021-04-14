@@ -9,6 +9,7 @@ import {
   raiseConcern,
   resolveConcern,
   getAllUserOffers,
+  reactivateOffer,
 } from '../services/offer.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -165,6 +166,25 @@ const OfferController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Concern resolved', offer: offerResponse });
+      })
+      .catch((error) => next(error));
+  },
+
+  reactivateOffer(req, res, next) {
+    const offerInfo = req.locals;
+    const vendorId = req.user._id;
+    reactivateOffer({ ...offerInfo, vendorId })
+      .then((offer) => {
+        const user = offer.userInfo;
+        const contentTop = `Your expired offer for the ${offer.propertyInfo.houseType} ${
+          offer.propertyInfo.name
+        } has been reactivated. And is now valid till ${new Date(
+          Date.parse(offer.expires),
+        ).toUTCString()}. Check your dashboard for more details.`;
+
+        sendMail(EMAIL_CONTENT.OFFER_REACTIVATED, user, { contentTop });
+
+        res.status(httpStatus.CREATED).json({ success: true, message: 'Offer reactivated', offer });
       })
       .catch((error) => next(error));
   },

@@ -645,3 +645,52 @@ export const resolveOffer = async (offerId) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving offer', error);
   }
 };
+
+export const reactivateOffer = async (offerInfo) => {
+  const offer = await getOfferById(offerInfo.offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (offer.vendorId.toString() !== offerInfo.vendorId.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  if (Date.now() < offer.expires) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Only expired offers can be reactivated',
+    );
+  }
+
+  if (offer.status !== OFFER_STATUS.GENERATED) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Only unprocessed offers can be reactivated',
+    );
+  }
+
+  const user = await getUserById(offer.userId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+  const userInfo = {
+    firstName: user.firstName,
+    email: user.email,
+  };
+
+  const updatedOffer = {
+    ...offer.toObject(),
+    initialPaymentDate: offerInfo.initialPaymentDate,
+    expires: offerInfo.expires,
+  };
+
+  delete updatedOffer._id;
+
+  try {
+    const newOffer = await new Offer(updatedOffer).save();
+
+    const reactivatedOffer = await getOffer(newOffer._id, user);
+    return { ...reactivatedOffer[0], userInfo };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error reactivating offer', error);
+  }
+};
