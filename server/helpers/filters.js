@@ -317,3 +317,9 @@ export const CONTENT_PROPERTY_FILTERS = {
   houseType: { type: FILTER_TYPE.STRING },
   price: { type: FILTER_TYPE.INTEGER },
 };
+
+export const AREA_FILTERS = {
+  area: { type: FILTER_TYPE.STRING },
+  createdAt: { type: FILTER_TYPE.DATE },
+  state: { type: FILTER_TYPE.STRING },
+};

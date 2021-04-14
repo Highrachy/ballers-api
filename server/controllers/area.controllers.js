@@ -58,9 +58,10 @@ const AreaController = {
   },
 
   getAllAreas(req, res, next) {
-    getAllAreas()
-      .then((areas) => {
-        res.status(httpStatus.OK).json({ success: true, areas });
+    const { query } = req;
+    getAllAreas(query)
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },

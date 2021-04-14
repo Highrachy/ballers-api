@@ -4,6 +4,8 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 // eslint-disable-next-line import/no-cycle
 import { getContentPropertyByAreaId } from './contentProperty.service';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { buildFilterAndSortQuery, AREA_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -108,8 +110,12 @@ export const deleteArea = async (id) => {
   }
 };
 
-export const getAllAreas = async () => {
-  return Area.aggregate([
+export const getAllAreas = async ({ page = 1, limit = 10, ...query } = {}) => {
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(AREA_FILTERS, query);
+
+  const areaOptions = [
+    { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     {
       $lookup: {
         from: 'contentproperties',
@@ -132,7 +138,27 @@ export const getAllAreas = async () => {
         averagePrice: { $avg: '$linkedProperties.price' },
       },
     },
-  ]);
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+  ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    areaOptions.splice(1, 1);
+  }
+
+  if (filterQuery.length < 1) {
+    areaOptions.shift();
+  }
+
+  const areas = await Area.aggregate(areaOptions);
+
+  const total = getPaginationTotal(areas);
+  const pagination = generatePagination(page, limit, total);
+  return { pagination, result: areas[0].data };
 };
 
 export const getAreaAndContentPropertiesByAreaId = async (areaId) =>
