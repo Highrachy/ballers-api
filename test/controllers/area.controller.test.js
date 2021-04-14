@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import querystring from 'querystring';
 import { expect, request, sinon } from '../config';
 import Area from '../../server/models/area.model';
 import ContentProperty from '../../server/models/contentProperty.model';
@@ -9,20 +10,37 @@ import { addUser } from '../../server/services/user.service';
 import { addArea } from '../../server/services/area.service';
 import { addContentProperty } from '../../server/services/contentProperty.service';
 import { USER_ROLE } from '../../server/helpers/constants';
+import { AREA_FILTERS } from '../../server/helpers/filters';
+import {
+  itReturnsForbiddenForNoToken,
+  itReturnsForbiddenForTokenWithInvalidAccess,
+  itReturnsEmptyValuesWhenNoItemExistInDatabase,
+  itReturnsTheRightPaginationValue,
+  itReturnsAnErrorWhenServiceFails,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
+  defaultPaginationResult,
+  expectsPaginationToReturnTheRightValues,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  filterTestForSingleParameter,
+  futureDate,
+  currentDate,
+} from '../helpers';
 
 let userToken;
 let adminToken;
 let editorToken;
 
-const user = UserFactory.build({ role: USER_ROLE.USER, activated: true });
-const admin = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
-const editor = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
+const regularUser = UserFactory.build({ role: USER_ROLE.USER, activated: true });
+const adminUser = UserFactory.build({ role: USER_ROLE.ADMIN, activated: true });
+const editorUser = UserFactory.build({ role: USER_ROLE.EDITOR, activated: true });
+const vendorUser = UserFactory.build({ role: USER_ROLE.VENDOR, activated: true });
 
 describe('Area Controller', () => {
   beforeEach(async () => {
-    editorToken = await addUser(editor);
-    userToken = await addUser(user);
-    adminToken = await addUser(admin);
+    editorToken = await addUser(editorUser);
+    userToken = await addUser(regularUser);
+    adminToken = await addUser(adminUser);
+    await addUser(vendorUser);
   });
 
   describe('Add Area Route', () => {
@@ -569,87 +587,187 @@ describe('Area Controller', () => {
   });
 
   describe('Get all areas and corresponding properties', () => {
-    const ajah = AreaFactory.build({ area: 'Ajah' });
-    const lekkiId = mongoose.Types.ObjectId();
-    const lekki = AreaFactory.build({ _id: lekkiId, area: 'Lekki' });
-    const lekkiProperty = ContentPropertyFactory.build({ areaId: lekkiId, price: 500000 });
-    const lekkiProperties = ContentPropertyFactory.buildList(4, {
-      areaId: lekkiId,
-      price: 100000,
+    const endpoint = '/api/v1/area/all';
+    const method = 'get';
+
+    const ajahArea = AreaFactory.build(
+      { area: 'Ajah', state: 'Abuja', createdAt: futureDate },
+      { generateId: true },
+    );
+    const ajahAreaProperty = ContentPropertyFactory.build(
+      { areaId: ajahArea._id, price: 500_000 },
+      { generateId: true },
+    );
+
+    const dummyArea = AreaFactory.build(
+      { area: 'Ikeja', state: 'Ogun', createdAt: currentDate },
+      { generateId: true },
+    );
+    const dummyAreaProperties = ContentPropertyFactory.buildList(
+      5,
+      { areaId: dummyArea._id },
+      { generateId: true },
+    );
+
+    const dummyAreas = AreaFactory.buildList(9, { createdAt: currentDate }, { generateId: true });
+    const dummyAreasProperties = dummyAreas.map((_, index) =>
+      ContentPropertyFactory.build({ areaId: dummyAreas[index]._id }, { generateId: true }),
+    );
+
+    const emptyAreas = AreaFactory.buildList(7, {}, { generateId: true });
+
+    describe('Pagination Tests', () => {
+      context('when no area exists in db', () => {
+        [adminUser, editorUser].map((user) =>
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
+
+      describe('when areas exist in db', () => {
+        beforeEach(async () => {
+          await Area.insertMany([ajahArea, dummyArea, ...dummyAreas, ...emptyAreas]);
+          await ContentProperty.insertMany([
+            ajahAreaProperty,
+            ...dummyAreaProperties,
+            ...dummyAreasProperties,
+          ]);
+        });
+
+        itReturnsTheRightPaginationValue({
+          endpoint,
+          method,
+          user: adminUser,
+          useExistingUser: true,
+        });
+
+        context('when a valid token is used', () => {
+          it('returns all areas and properties', (done) => {
+            request()
+              .get(endpoint)
+              .set('authorization', editorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+                expect(res.body.result[0]._id).to.be.eql(ajahArea._id.toString());
+                expect(res.body.result[0].area).to.be.eql(ajahArea.area);
+                expect(res.body.result[0].numOfProperties).to.be.eql(1);
+                expect(res.body.result[0].minimumPrice).to.be.eql(500_000);
+                expect(res.body.result[0].maximumPrice).to.be.eql(500_000);
+                expect(res.body.result[0].averagePrice).to.be.eql(500_000);
+                expect(res.body.result[1]._id).to.be.eql(dummyArea._id.toString());
+                expect(res.body.result[1].area).to.be.eql(dummyArea.area);
+                expect(res.body.result[1].numOfProperties).to.be.eql(5);
+                expect(res.body.result[1].minimumPrice).to.be.eql(4_000_010);
+                expect(res.body.result[1].maximumPrice).to.be.eql(4_000_014);
+                expect(res.body.result[1].averagePrice).to.be.eql(4_000_012);
+                done();
+              });
+          });
+        });
+
+        [vendorUser, regularUser].map((user) =>
+          itReturnsForbiddenForTokenWithInvalidAccess({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        itReturnsAnErrorWhenServiceFails({
+          endpoint,
+          method,
+          user: editorUser,
+          model: Area,
+          modelMethod: 'aggregate',
+          useExistingUser: true,
+        });
+      });
     });
 
-    beforeEach(async () => {
-      await addArea(lekki);
-      await addArea(ajah);
-      await addContentProperty(lekkiProperty);
-      await ContentProperty.insertMany(lekkiProperties);
-    });
+    describe('Filter Tests', () => {
+      beforeEach(async () => {
+        await Area.insertMany([ajahArea, dummyArea, ...dummyAreas, ...emptyAreas]);
+        await ContentProperty.insertMany([
+          ajahAreaProperty,
+          ...dummyAreaProperties,
+          ...dummyAreasProperties,
+        ]);
+      });
 
-    context('when a valid token is used', () => {
-      [...new Array(2)].map((_, index) =>
-        it('returns all areas and properties', (done) => {
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: defaultPaginationResult,
+          useExistingUser: true,
+        });
+      });
+
+      context('when multiple filters are used', () => {
+        const multipleFilters = {
+          area: ajahArea.area,
+          createdAt: ajahArea.createdAt,
+          state: ajahArea.state,
+        };
+        const filteredParams = querystring.stringify(multipleFilters);
+
+        it('returns matched area', (done) => {
           request()
-            .get('/api/v1/area/all')
-            .set('authorization', [editorToken, adminToken][index])
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', editorToken)
             .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.areas.length).to.be.eql(2);
-              expect(res.body.areas[0].area).to.be.eql(ajah.area);
-              expect(res.body.areas[0].numOfProperties).to.be.eql(0);
-              expect(res.body.areas[0].minimumPrice).to.be.eql(null);
-              expect(res.body.areas[0].maximumPrice).to.be.eql(null);
-              expect(res.body.areas[0].averagePrice).to.be.eql(null);
-              expect(res.body.areas[1]._id).to.be.eql(lekkiId.toString());
-              expect(res.body.areas[1].area).to.be.eql(lekki.area);
-              expect(res.body.areas[1].numOfProperties).to.be.eql(5);
-              expect(res.body.areas[1].minimumPrice).to.be.eql(100000);
-              expect(res.body.areas[1].maximumPrice).to.be.eql(500000);
-              expect(res.body.areas[1].averagePrice).to.be.eql(180000);
+              expectsPaginationToReturnTheRightValues(res, {
+                currentPage: 1,
+                limit: 10,
+                offset: 0,
+                result: 1,
+                total: 1,
+                totalPage: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(ajahArea._id.toString());
+              expect(res.body.result[0].area).to.be.eql(multipleFilters.area);
+              expect(res.body.result[0].state).to.be.eql(multipleFilters.state);
               done();
             });
-        }),
-      );
-    });
-
-    context('when user token is is used', () => {
-      it('returns forbidden', (done) => {
-        request()
-          .get('/api/v1/area/all')
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('You are not permitted to perform this action');
-            done();
-          });
+        });
       });
-    });
 
-    context('without token', () => {
-      it('returns error', (done) => {
-        request()
-          .get('/api/v1/area/all')
-          .end((err, res) => {
-            expect(res).to.have.status(403);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Token needed to access resources');
-            done();
-          });
+      context('when no parameter is matched', () => {
+        const nonMatchingFilters = {
+          area: 'Houston',
+          createdAt: '2020-11-12',
+          state: 'Texas',
+        };
+
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
+          filter: nonMatchingFilters,
+          method,
+          endpoint,
+          user: editorUser,
+          useExistingUser: true,
+        });
       });
-    });
 
-    context('when getAllAreas service fails', () => {
-      it('returns the error', (done) => {
-        sinon.stub(Area, 'aggregate').throws(new Error('Type Error'));
-        request()
-          .get('/api/v1/area/all')
-          .set('authorization', editorToken)
-          .end((err, res) => {
-            expect(res).to.have.status(500);
-            done();
-            Area.aggregate.restore();
-          });
+      filterTestForSingleParameter({
+        filter: AREA_FILTERS,
+        method,
+        endpoint,
+        user: editorUser,
+        dataObject: ajahArea,
+        useExistingUser: true,
       });
     });
   });

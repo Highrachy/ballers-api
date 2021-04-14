@@ -7,6 +7,6 @@ export default new Factory()
     options.generateId ? { _id: mongoose.Types.ObjectId(), ...area } : area,
   )
   .sequence('area', (i) => `lekki phase ${i}`)
-  .attr('state', 'lagos')
+  .sequence('state', (i) => `lagos ${i}`)
   .attr('longitude', 6.7783)
   .attr('latitude', 119.4179);
