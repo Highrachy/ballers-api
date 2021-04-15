@@ -651,6 +651,10 @@ export const reactivateOffer = async (offerInfo) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  if (!offer) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offer');
+  }
+
   if (offer.vendorId.toString() !== offerInfo.vendorId.toString()) {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }

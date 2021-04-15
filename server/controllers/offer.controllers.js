@@ -184,7 +184,7 @@ const OfferController = {
 
         sendMail(EMAIL_CONTENT.OFFER_REACTIVATED, user, { contentTop });
 
-        res.status(httpStatus.CREATED).json({ success: true, message: 'Offer reactivated', offer });
+        res.status(httpStatus.OK).json({ success: true, message: 'Offer reactivated', offer });
       })
       .catch((error) => next(error));
   },
