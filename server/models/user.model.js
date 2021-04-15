@@ -299,6 +299,10 @@ const UserSchema = new mongoose.Schema(
           updatedAt: Date,
         },
       ],
+      remittancePercentage: {
+        type: Number,
+        default: 5,
+      },
     },
   },
   { timestamps: true },

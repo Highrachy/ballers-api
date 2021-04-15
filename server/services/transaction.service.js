@@ -11,6 +11,8 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import { NON_PROJECTED_USER_INFO, EXCLUDED_PROPERTY_INFO } from '../helpers/projectedSchemaInfo';
 // eslint-disable-next-line import/no-cycle
 import { generateNextPaymentDate } from './nextPayment.service';
+// eslint-disable-next-line import/no-cycle
+import { getUserById } from './user.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -269,4 +271,35 @@ export const getOneTransaction = async (transactionId, user) => {
 
   const transaction = await Transaction.aggregate(transactionOptions);
   return transaction;
+};
+
+export const addRemittance = async (remittanceInfo) => {
+  const transaction = await getTransactionById(remittanceInfo.transactionId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!transaction) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid transaction');
+  }
+
+  const vendor = await getUserById(transaction.vendorId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  try {
+    return Transaction.findByIdAndUpdate(
+      transaction.id,
+      {
+        $set: {
+          'remittance.amount': remittanceInfo.amount,
+          'remittance.by': remittanceInfo.adminId,
+          'remittance.date': remittanceInfo.date,
+          'remittance.percentage': remittanceInfo.percentage || vendor.vendor.remittancePercentage,
+        },
+      },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding remittance', error);
+  }
 };

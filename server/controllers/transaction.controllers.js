@@ -4,6 +4,7 @@ import {
   getReferralRewards,
   getContributionRewards,
   getOneTransaction,
+  addRemittance,
 } from '../services/transaction.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -67,6 +68,16 @@ const TransactionController = {
             .status(httpStatus.NOT_FOUND)
             .json({ success: false, message: 'Transaction not found' });
         }
+      })
+      .catch((error) => next(error));
+  },
+
+  addRemittance(req, res, next) {
+    const remittanceInfo = req.locals;
+    const adminId = req.user._id;
+    addRemittance({ ...remittanceInfo, adminId })
+      .then((transaction) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Remittance added', transaction });
       })
       .catch((error) => next(error));
   },

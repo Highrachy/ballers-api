@@ -89,6 +89,20 @@ const TransactionSchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
+    remittance: {
+      amount: {
+        type: Number,
+      },
+      by: {
+        type: ObjectId,
+      },
+      date: {
+        type: Date,
+      },
+      percentage: {
+        type: Number,
+      },
+    },
   },
   { timestamps: true },
 );
