@@ -49,7 +49,7 @@ const EMAIL_CONTENT = {
   OFFER_REACTIVATED: {
     subject: 'Offer Reactivated',
     contentTop:
-      'Your expired offer for [Property name] has been reactivated. And is now valid till [expiry date]. Check your dashboard for more details.',
+      'Your offer for [Property name] has been reactivated and is now valid till [expiry date]. Check your dashboard for more details.',
   },
   OFFER_RESPONSE_VENDOR: {
     subject: 'Offer Accepted',

@@ -15,6 +15,7 @@ import {
   cancelOffer,
   getPropertyInitials,
   generatePaymentSchedules,
+  reactivateOffer,
 } from '../../server/services/offer.service';
 import OfferFactory from '../factories/offer.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -25,6 +26,7 @@ import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
+import { futureDate } from '../helpers';
 
 describe('Offer Service', () => {
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
@@ -691,6 +693,47 @@ describe('Offer Service', () => {
         expect(paymentDates[1].date).to.eql(new Date('2021-03-15'));
         expect(paymentDates[2].date).to.eql(new Date('2021-03-29'));
         expect(paymentDates[3].date).to.eql(new Date('2021-04-12'));
+      });
+    });
+  });
+
+  describe('#reactivateOffer', () => {
+    const property = PropertyFactory.build(
+      { addedBy: vendor._id, updatedBy: vendor._id },
+      { generateId: true },
+    );
+    const enquiry = EnquiryFactory.build(
+      { userId: user._id, propertyId: property._id },
+      { generateId: true },
+    );
+    const offer = OfferFactory.build(
+      { enquiryId: enquiry._id, vendorId: vendor._id, expires: '2020-12-11T00:00:00.000+00:00' },
+      { generateId: true },
+    );
+
+    const offerInfo = {
+      offerId: offer._id,
+      initialPaymentDate: futureDate,
+      expires: futureDate,
+      vendorId: vendor._id,
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+      await addEnquiry(enquiry);
+      await createOffer(offer);
+    });
+
+    context('when offer is valid', () => {
+      it('returns reactivated offer', async () => {
+        const reactivatedOffer = await reactivateOffer(offerInfo);
+        const oldOffer = await getOfferById(offer._id);
+        expect(oldOffer.status).to.eql(OFFER_STATUS.REACTIVATED);
+        expect(oldOffer._id).to.eql(offer._id);
+        expect(reactivatedOffer._id).to.not.equal(offer._id);
+        expect(reactivatedOffer.propertyId).to.eql(property._id);
+        expect(reactivatedOffer.enquiryId).to.eql(enquiry._id);
+        expect(reactivatedOffer.status).to.eql(OFFER_STATUS.GENERATED);
       });
     });
   });

@@ -35,6 +35,7 @@ import {
   filterTestForSingleParameter,
   itReturnsNoResultWhenNoFilterParameterIsMatched,
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
+  pastDate,
 } from '../helpers';
 import Property from '../../server/models/property.model';
 import AddressFactory from '../factories/address.factory';
@@ -1467,9 +1468,7 @@ describe('Offer Controller', () => {
         {
           role: USER_ROLE.VENDOR,
           activated: true,
-          vendor: {
-            verified: true,
-          },
+          vendor: { verified: true },
         },
         { generateId: true },
       );
@@ -1491,6 +1490,8 @@ describe('Offer Controller', () => {
           totalAmountPayable: 1_000_000,
           userId: regularUser._id,
           vendorId: vendorUser._id,
+          createdAt: pastDate,
+          updatedAt: pastDate,
         },
         { generateId: true },
       );
@@ -1517,6 +1518,7 @@ describe('Offer Controller', () => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
               expect(res.body.message).to.be.eql('Offer reactivated');
+              expect(res.body.offer._id).to.not.equal(offer._id.toString());
               expect(res.body.offer.enquiryId).to.be.eql(offer.enquiryId.toString());
               expect(res.body.offer.propertyId).to.be.eql(offer.propertyId.toString());
               expect(res.body.offer.userId).to.be.eql(offer.userId.toString());
@@ -1528,6 +1530,8 @@ describe('Offer Controller', () => {
               expect(res.body.offer.referenceCode).to.be.eql(offer.referenceCode);
               expect(res.body.offer.expires).to.have.string(data.expires);
               expect(res.body.offer.initialPaymentDate).to.have.string(data.initialPaymentDate);
+              expect(res.body.offer.createdAt).to.not.have.string(offer.createdAt);
+              expect(res.body.offer.updatedAt).to.not.have.string(offer.updatedAt);
               expect(sendMailStub.callCount).to.eq(1);
               expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_REACTIVATED);
               done();

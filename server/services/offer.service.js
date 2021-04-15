@@ -676,10 +676,6 @@ export const reactivateOffer = async (offerInfo) => {
   const user = await getUserById(offer.userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
-  const userInfo = {
-    firstName: user.firstName,
-    email: user.email,
-  };
 
   const updatedOffer = {
     ...offer.toObject(),
@@ -688,12 +684,15 @@ export const reactivateOffer = async (offerInfo) => {
   };
 
   delete updatedOffer._id;
+  delete updatedOffer.createdAt;
+  delete updatedOffer.updatedAt;
 
   try {
+    await Offer.findByIdAndUpdate(offer._id, { status: OFFER_STATUS.REACTIVATED });
     const newOffer = await new Offer(updatedOffer).save();
 
     const reactivatedOffer = await getOffer(newOffer._id, user);
-    return { ...reactivatedOffer[0], userInfo };
+    return reactivatedOffer[0];
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error reactivating offer', error);
   }

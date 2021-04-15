@@ -176,9 +176,9 @@ const OfferController = {
     reactivateOffer({ ...offerInfo, vendorId })
       .then((offer) => {
         const user = offer.userInfo;
-        const contentTop = `Your expired offer for the ${offer.propertyInfo.houseType} ${
+        const contentTop = `Your offer for the ${offer.propertyInfo.houseType} ${
           offer.propertyInfo.name
-        } has been reactivated. And is now valid till ${new Date(
+        } has been reactivated and is now valid till ${new Date(
           Date.parse(offer.expires),
         ).toUTCString()}. Check your dashboard for more details.`;
 

@@ -11,7 +11,7 @@ export const OFFER_STATUS = {
   ASSIGNED: 'Assigned',
   ALLOCATED: 'Allocated',
   REJECTED: 'Rejected',
-  NEGLECTED: 'Neglected',
+  REACTIVATED: 'Reactivated',
   CANCELLED: 'Cancelled',
   RESOLVED: 'Resolved',
 };
