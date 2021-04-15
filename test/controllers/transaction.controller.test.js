@@ -469,18 +469,18 @@ describe('Transaction Controller', () => {
       { generateId: true },
     );
 
-    const neglectedEnquiry = EnquiryFactory.build(
+    const reactivatedEnquiry = EnquiryFactory.build(
       {
         userId: testUser._id,
         propertyId: property2._id,
       },
       { generateId: true },
     );
-    const neglectedOffer = OfferFactory.build(
+    const reactivatedOffer = OfferFactory.build(
       {
-        enquiryId: neglectedEnquiry._id,
+        enquiryId: reactivatedEnquiry._id,
         vendorId: adminUser._id,
-        status: OFFER_STATUS.NEGLECTED,
+        status: OFFER_STATUS.REACTIVATED,
       },
       { generateId: true },
     );
@@ -528,8 +528,8 @@ describe('Transaction Controller', () => {
         await addProperty(property3);
         await addEnquiry(allocatedEnquiry);
         await createOffer(allocatedOffer);
-        await addEnquiry(neglectedEnquiry);
-        await createOffer(neglectedOffer);
+        await addEnquiry(reactivatedEnquiry);
+        await createOffer(reactivatedOffer);
         await addEnquiry(assignedEnquiry);
         await createOffer(assignedOffer);
       });
