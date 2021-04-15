@@ -1022,7 +1022,7 @@ describe('Offer Controller', () => {
         {
           enquiryId: enquiry3._id,
           vendorId: vendorUser._id,
-          status: OFFER_STATUS.NEGLECTED,
+          status: OFFER_STATUS.REACTIVATED,
         },
         { generateId: true },
       );

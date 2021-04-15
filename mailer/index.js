@@ -46,6 +46,11 @@ const EMAIL_CONTENT = {
     contentTop:
       'You have received an offer via ballers.ng for a [Property type] in [Property name]. This offer is Valid till [expiry date]. Check your dashboard for more details.',
   },
+  OFFER_REACTIVATED: {
+    subject: 'Offer Reactivated',
+    contentTop:
+      'Your offer for [Property name] has been reactivated and is now valid till [expiry date]. Check your dashboard for more details.',
+  },
   OFFER_RESPONSE_VENDOR: {
     subject: 'Offer Accepted',
     contentTop:

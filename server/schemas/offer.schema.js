@@ -40,3 +40,9 @@ export const resolveConcernSchema = Joi.object({
   concernId: requiredObjectId('Concern Id'),
   response: requiredString('Response'),
 });
+
+export const reactivateOfferSchema = Joi.object({
+  offerId: requiredObjectId('Offer Id'),
+  initialPaymentDate: requiredFutureDate('Initial Payment Date'),
+  expires: requiredFutureDate('Expiry Date'),
+});

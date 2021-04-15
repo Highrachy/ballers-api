@@ -12,6 +12,7 @@ import {
   validateOfferIdSchema,
   raiseConcernSchema,
   resolveConcernSchema,
+  reactivateOfferSchema,
 } from '../schemas/offer.schema';
 import OfferController from '../controllers/offer.controllers';
 
@@ -291,5 +292,36 @@ router.get('/active', authenticate, OfferController.getAllActive);
  *          description: Internal server error
  */
 router.get('/:id', authenticate, isAdminOrUserOrVendor, hasValidObjectId, OfferController.getOne);
+
+/**
+ * @swagger
+ * /offer/reactivate:
+ *   put:
+ *     tags:
+ *       - Offer
+ *     description: Reactivates an expired offer
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Offer'
+ *      description: Reactivates an expired offer
+ *     responses:
+ *      '201':
+ *        description: Offer reactivated
+ *      '400':
+ *        description: Error reactivating offer
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/reactivate',
+  authenticate,
+  isVendor,
+  schemaValidation(reactivateOfferSchema),
+  OfferController.reactivateOffer,
+);
 
 module.exports = router;
