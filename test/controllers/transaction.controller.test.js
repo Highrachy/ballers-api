@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { expect, request, sinon } from '../config';
 import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
@@ -22,6 +23,7 @@ import {
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
   expectsPaginationToReturnTheRightValues,
   itReturnsAnErrorWhenServiceFails,
+  defaultPaginationResult,
 } from '../helpers';
 
 let adminToken;
@@ -105,6 +107,12 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -152,6 +160,12 @@ describe('Transaction Controller', () => {
         vendorId: vendor2._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -207,6 +221,7 @@ describe('Transaction Controller', () => {
               expect(res.body.result[0].offerId).to.be.eql(
                 vendor2Transactions[0].offerId.toString(),
               );
+              expect(res.body.result[0]).to.have.property('remittance');
               done();
             });
         });
@@ -234,6 +249,20 @@ describe('Transaction Controller', () => {
               expect(res.body.result[0].offerId).to.be.eql(
                 vendorTransactions[0].offerId.toString(),
               );
+              expect(res.body.result[0]).to.have.property('remittance');
+              done();
+            });
+        });
+      });
+
+      context('when user token is used', () => {
+        it('returns matched transactons', (done) => {
+          request()
+            .get('/api/v1/transaction/all')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+              expect(res.body.result[0]).to.not.have.property('remittance');
               done();
             });
         });
@@ -300,6 +329,12 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -326,6 +361,12 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -387,6 +428,7 @@ describe('Transaction Controller', () => {
                 userTransactions[0].propertyId.toString(),
               );
               expect(res.body.result[0].offerId).to.be.eql(userTransactions[0].offerId.toString());
+              expect(res.body.result[0]).to.not.have.property('remittance');
               done();
             });
         });
@@ -696,6 +738,12 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -719,11 +767,11 @@ describe('Transaction Controller', () => {
     });
 
     context('with valid token', () => {
-      [...new Array(3)].map((_, index) =>
+      [...new Array(2)].map((_, index) =>
         it('returns related transaction', (done) => {
           request()
             .get(`/api/v1/transaction/${transaction._id}`)
-            .set('authorization', [userToken, vendorToken, adminToken][index])
+            .set('authorization', [vendorToken, adminToken][index])
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
@@ -731,10 +779,29 @@ describe('Transaction Controller', () => {
               expect(res.body.transaction.propertyId).to.be.eql(transaction.propertyId.toString());
               expect(res.body.transaction.userId).to.be.eql(transaction.userId.toString());
               expect(res.body.transaction.offerId).to.be.eql(transaction.offerId.toString());
+              expect(res.body.transaction).to.have.property('remittance');
               done();
             });
         }),
       );
+    });
+
+    context('with user token', () => {
+      it('returns related transaction', (done) => {
+        request()
+          .get(`/api/v1/transaction/${transaction._id}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.transaction._id).to.be.eql(transaction._id.toString());
+            expect(res.body.transaction.propertyId).to.be.eql(transaction.propertyId.toString());
+            expect(res.body.transaction.userId).to.be.eql(transaction.userId.toString());
+            expect(res.body.transaction.offerId).to.be.eql(transaction.offerId.toString());
+            expect(res.body.transaction).to.not.have.property('remittance');
+            done();
+          });
+      });
     });
 
     context('with token with invalid access', () => {
@@ -774,6 +841,105 @@ describe('Transaction Controller', () => {
       model: Transaction,
       modelMethod: 'aggregate',
       useExistingUser: true,
+    });
+  });
+
+  describe('Add Remittance Route', () => {
+    const method = 'put';
+    const endpoint = '/api/v1/transaction/remittance';
+
+    const transaction = TransactionFactory.build(
+      {
+        userId: regularUser._id,
+        propertyId: property._id,
+        offerId: offer._id,
+        vendorId: vendorUser._id,
+        addedBy: adminUser._id,
+        updatedBy: adminUser._id,
+      },
+      { generateId: true },
+    );
+
+    const data = {
+      transactionId: transaction._id,
+      amount: 1_000_000,
+      date: '2021-02-12',
+    };
+
+    beforeEach(async () => {
+      await Transaction.create(transaction);
+    });
+
+    context('with valid token and data', () => {
+      it('adds remittance', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Remittance added');
+            expect(res.body.transaction._id).to.be.eql(transaction._id.toString());
+            expect(res.body.transaction.remittance.amount).to.be.eql(data.amount);
+            expect(res.body.transaction.remittance.by).to.be.eql(adminUser._id.toString());
+            expect(res.body.transaction.remittance.date).to.have.string(data.date);
+            expect(res.body.transaction.remittance.percentage).to.be.eql(5);
+            done();
+          });
+      });
+    });
+
+    context('with invalid transaction id', () => {
+      it('returns not found', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send({ ...data, transactionId: mongoose.Types.ObjectId() })
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid transaction');
+            done();
+          });
+      });
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method, data });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: adminUser,
+      userId: adminUser._id,
+      useExistingUser: true,
+      data,
+    });
+
+    [vendorUser, regularUser].map((user) =>
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user,
+        data,
+        useExistingUser: true,
+      }),
+    );
+
+    context('when addRemittance service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Transaction, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Transaction.findByIdAndUpdate.restore();
+          });
+      });
     });
   });
 });

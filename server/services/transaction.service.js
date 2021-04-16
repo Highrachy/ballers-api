@@ -8,7 +8,11 @@ import Referral from '../models/referral.model';
 // eslint-disable-next-line import/no-cycle
 import { getOfferById } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { NON_PROJECTED_USER_INFO, EXCLUDED_PROPERTY_INFO } from '../helpers/projectedSchemaInfo';
+import {
+  NON_PROJECTED_USER_INFO,
+  EXCLUDED_PROPERTY_INFO,
+  EXCLUDED_TRANSACTION_INFO,
+} from '../helpers/projectedSchemaInfo';
 // eslint-disable-next-line import/no-cycle
 import { generateNextPaymentDate } from './nextPayment.service';
 // eslint-disable-next-line import/no-cycle
@@ -89,12 +93,8 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
         as: 'vendorInfo',
       },
     },
-    {
-      $unwind: '$propertyInfo',
-    },
-    {
-      $unwind: '$userInfo',
-    },
+    { $unwind: '$propertyInfo' },
+    { $unwind: '$userInfo' },
     {
       $unwind: {
         path: '$vendorInfo',
@@ -122,6 +122,10 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
 
   if (user.role === USER_ROLE.USER) {
     transactionOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+    transactionOptions[7].$project = {
+      ...transactionOptions[7].$project,
+      ...EXCLUDED_TRANSACTION_INFO,
+    };
   }
 
   const transactions = await Transaction.aggregate(transactionOptions);
@@ -151,12 +155,8 @@ export const getUserTransactionsByProperty = async (propertyId, user, page = 1, 
         as: 'userInfo',
       },
     },
-    {
-      $unwind: '$propertyInfo',
-    },
-    {
-      $unwind: '$userInfo',
-    },
+    { $unwind: '$propertyInfo' },
+    { $unwind: '$userInfo' },
     {
       $project: {
         ...NON_PROJECTED_USER_INFO('userInfo'),
@@ -177,6 +177,10 @@ export const getUserTransactionsByProperty = async (propertyId, user, page = 1, 
 
   if (user.role === USER_ROLE.USER) {
     transactionOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+    transactionOptions[6].$project = {
+      ...transactionOptions[6].$project,
+      ...EXCLUDED_TRANSACTION_INFO,
+    };
   }
 
   const transactions = await Transaction.aggregate(transactionOptions);
@@ -243,15 +247,9 @@ export const getOneTransaction = async (transactionId, user) => {
         as: 'vendorInfo',
       },
     },
-    {
-      $unwind: '$propertyInfo',
-    },
-    {
-      $unwind: '$userInfo',
-    },
-    {
-      $unwind: '$vendorInfo',
-    },
+    { $unwind: '$propertyInfo' },
+    { $unwind: '$userInfo' },
+    { $unwind: '$vendorInfo' },
     {
       $project: {
         ...NON_PROJECTED_USER_INFO('userInfo'),
@@ -267,6 +265,10 @@ export const getOneTransaction = async (transactionId, user) => {
 
   if (user.role === USER_ROLE.USER) {
     transactionOptions.unshift({ $match: { userId: ObjectId(user._id) } });
+    transactionOptions[8].$project = {
+      ...transactionOptions[8].$project,
+      ...EXCLUDED_TRANSACTION_INFO,
+    };
   }
 
   const transaction = await Transaction.aggregate(transactionOptions);
@@ -282,7 +284,7 @@ export const addRemittance = async (remittanceInfo) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid transaction');
   }
 
-  const vendor = await getUserById(transaction.vendorId).catch((error) => {
+  const user = await getUserById(transaction.vendorId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
@@ -294,7 +296,7 @@ export const addRemittance = async (remittanceInfo) => {
           'remittance.amount': remittanceInfo.amount,
           'remittance.by': remittanceInfo.adminId,
           'remittance.date': remittanceInfo.date,
-          'remittance.percentage': remittanceInfo.percentage || vendor.vendor.remittancePercentage,
+          'remittance.percentage': remittanceInfo.percentage || user.vendor.remittancePercentage,
         },
       },
       { new: true },

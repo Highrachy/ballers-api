@@ -72,3 +72,7 @@ export const NON_PROJECTED_USER_INFO = (infoType) => {
     [`${infoType}.vendor.taxCertificate`]: 0,
   };
 };
+
+export const EXCLUDED_TRANSACTION_INFO = {
+  remittance: 0,
+};
