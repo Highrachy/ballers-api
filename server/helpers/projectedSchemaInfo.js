@@ -1,3 +1,5 @@
+import { USER_ROLE } from './constants';
+
 export const PROJECTED_PROPERTY_INFO = {
   name: 1,
   titleDocument: 1,
@@ -73,6 +75,9 @@ export const NON_PROJECTED_USER_INFO = (infoType) => {
   };
 };
 
-export const EXCLUDED_TRANSACTION_INFO = {
-  remittance: 0,
+export const GET_EXCLUDED_TRANSACTION_INFO = (userRole) => {
+  if (userRole === USER_ROLE.USER) {
+    return { remittance: 0 };
+  }
+  return {};
 };

@@ -79,6 +79,11 @@ const EMAIL_CONTENT = {
     contentBottom: `Click on the link below to accept their invitation`,
     buttonText: 'Join BALLERS',
   },
+  REMITTANCE_PAID: {
+    subject: 'Remittance Paid',
+    contentTop:
+      'You have received [amount] as payment on one of your properties. Visit your dashboard for more information.',
+  },
   RESCHEDULE_VISIT: {
     subject: 'Visitation Rescheduled',
     contentTop:

@@ -11,7 +11,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import {
   NON_PROJECTED_USER_INFO,
   EXCLUDED_PROPERTY_INFO,
-  EXCLUDED_TRANSACTION_INFO,
+  GET_EXCLUDED_TRANSACTION_INFO,
 } from '../helpers/projectedSchemaInfo';
 // eslint-disable-next-line import/no-cycle
 import { generateNextPaymentDate } from './nextPayment.service';
@@ -106,6 +106,7 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...NON_PROJECTED_USER_INFO('vendorInfo'),
         ...EXCLUDED_PROPERTY_INFO,
+        ...GET_EXCLUDED_TRANSACTION_INFO(user.role),
       },
     },
     {
@@ -122,10 +123,6 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
 
   if (user.role === USER_ROLE.USER) {
     transactionOptions.unshift({ $match: { userId: ObjectId(user._id) } });
-    transactionOptions[7].$project = {
-      ...transactionOptions[7].$project,
-      ...EXCLUDED_TRANSACTION_INFO,
-    };
   }
 
   const transactions = await Transaction.aggregate(transactionOptions);
@@ -161,6 +158,7 @@ export const getUserTransactionsByProperty = async (propertyId, user, page = 1, 
       $project: {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...EXCLUDED_PROPERTY_INFO,
+        ...GET_EXCLUDED_TRANSACTION_INFO(user.role),
       },
     },
     {
@@ -177,10 +175,6 @@ export const getUserTransactionsByProperty = async (propertyId, user, page = 1, 
 
   if (user.role === USER_ROLE.USER) {
     transactionOptions.unshift({ $match: { userId: ObjectId(user._id) } });
-    transactionOptions[6].$project = {
-      ...transactionOptions[6].$project,
-      ...EXCLUDED_TRANSACTION_INFO,
-    };
   }
 
   const transactions = await Transaction.aggregate(transactionOptions);
@@ -255,6 +249,7 @@ export const getOneTransaction = async (transactionId, user) => {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...NON_PROJECTED_USER_INFO('vendorInfo'),
         ...EXCLUDED_PROPERTY_INFO,
+        ...GET_EXCLUDED_TRANSACTION_INFO(user.role),
       },
     },
   ];
@@ -265,10 +260,6 @@ export const getOneTransaction = async (transactionId, user) => {
 
   if (user.role === USER_ROLE.USER) {
     transactionOptions.unshift({ $match: { userId: ObjectId(user._id) } });
-    transactionOptions[8].$project = {
-      ...transactionOptions[8].$project,
-      ...EXCLUDED_TRANSACTION_INFO,
-    };
   }
 
   const transaction = await Transaction.aggregate(transactionOptions);
@@ -288,19 +279,23 @@ export const addRemittance = async (remittanceInfo) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  const percentage = remittanceInfo.percentage || user.vendor.remittancePercentage;
+
   try {
-    return Transaction.findByIdAndUpdate(
+    const remittedTransaction = await Transaction.findByIdAndUpdate(
       transaction.id,
       {
         $set: {
-          'remittance.amount': remittanceInfo.amount,
+          'remittance.amount': Math.round(((100 - percentage) / 100) * transaction.amount),
           'remittance.by': remittanceInfo.adminId,
           'remittance.date': remittanceInfo.date,
-          'remittance.percentage': remittanceInfo.percentage || user.vendor.remittancePercentage,
+          'remittance.percentage': percentage,
         },
       },
       { new: true },
     );
+
+    return { transaction: remittedTransaction, user };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding remittance', error);
   }

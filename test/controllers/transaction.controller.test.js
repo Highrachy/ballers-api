@@ -25,7 +25,11 @@ import {
   itReturnsAnErrorWhenServiceFails,
   defaultPaginationResult,
 } from '../helpers';
+import * as MailService from '../../server/services/mailer.service';
+import EMAIL_CONTENT from '../../mailer';
 
+let sendMailStub;
+const sandbox = sinon.createSandbox();
 let adminToken;
 let userToken;
 let vendorToken;
@@ -81,6 +85,14 @@ const offer = OfferFactory.build(
 );
 
 describe('Transaction Controller', () => {
+  beforeEach(() => {
+    sendMailStub = sandbox.stub(MailService, 'sendMail');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
@@ -221,7 +233,18 @@ describe('Transaction Controller', () => {
               expect(res.body.result[0].offerId).to.be.eql(
                 vendor2Transactions[0].offerId.toString(),
               );
-              expect(res.body.result[0]).to.have.property('remittance');
+              expect(res.body.result[0].remittance.amount).to.be.eql(
+                vendor2Transactions[0].remittance.amount,
+              );
+              expect(res.body.result[0].remittance.by).to.be.eql(
+                vendor2Transactions[0].remittance.by.toString(),
+              );
+              expect(res.body.result[0].remittance.percentage).to.be.eql(
+                vendor2Transactions[0].remittance.percentage,
+              );
+              expect(res.body.result[0].remittance.date).to.have.string(
+                vendor2Transactions[0].remittance.date,
+              );
               done();
             });
         });
@@ -249,7 +272,18 @@ describe('Transaction Controller', () => {
               expect(res.body.result[0].offerId).to.be.eql(
                 vendorTransactions[0].offerId.toString(),
               );
-              expect(res.body.result[0]).to.have.property('remittance');
+              expect(res.body.result[0].remittance.amount).to.be.eql(
+                vendorTransactions[0].remittance.amount,
+              );
+              expect(res.body.result[0].remittance.by).to.be.eql(
+                vendorTransactions[0].remittance.by.toString(),
+              );
+              expect(res.body.result[0].remittance.percentage).to.be.eql(
+                vendorTransactions[0].remittance.percentage,
+              );
+              expect(res.body.result[0].remittance.date).to.have.string(
+                vendorTransactions[0].remittance.date,
+              );
               done();
             });
         });
@@ -779,7 +813,18 @@ describe('Transaction Controller', () => {
               expect(res.body.transaction.propertyId).to.be.eql(transaction.propertyId.toString());
               expect(res.body.transaction.userId).to.be.eql(transaction.userId.toString());
               expect(res.body.transaction.offerId).to.be.eql(transaction.offerId.toString());
-              expect(res.body.transaction).to.have.property('remittance');
+              expect(res.body.transaction.remittance.amount).to.be.eql(
+                transaction.remittance.amount,
+              );
+              expect(res.body.transaction.remittance.by).to.be.eql(
+                transaction.remittance.by.toString(),
+              );
+              expect(res.body.transaction.remittance.percentage).to.be.eql(
+                transaction.remittance.percentage,
+              );
+              expect(res.body.transaction.remittance.date).to.have.string(
+                transaction.remittance.date,
+              );
               done();
             });
         }),
@@ -848,6 +893,18 @@ describe('Transaction Controller', () => {
     const method = 'put';
     const endpoint = '/api/v1/transaction/remittance';
 
+    const testVendor = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        vendor: {
+          verified: true,
+          remittancePercentage: 10,
+        },
+      },
+      { generateId: true },
+    );
+
     const transaction = TransactionFactory.build(
       {
         userId: regularUser._id,
@@ -856,37 +913,99 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        amount: 1_000_000,
+      },
+      { generateId: true },
+    );
+
+    const testVendorTransaction = TransactionFactory.build(
+      {
+        userId: regularUser._id,
+        propertyId: property._id,
+        offerId: offer._id,
+        vendorId: testVendor._id,
+        addedBy: adminUser._id,
+        updatedBy: adminUser._id,
+        amount: 1_000_000,
       },
       { generateId: true },
     );
 
     const data = {
       transactionId: transaction._id,
-      amount: 1_000_000,
       date: '2021-02-12',
     };
 
     beforeEach(async () => {
-      await Transaction.create(transaction);
+      await addUser(testVendor);
+      await Transaction.insertMany([transaction, testVendorTransaction]);
     });
 
     context('with valid token and data', () => {
-      it('adds remittance', (done) => {
-        request()
-          [method](endpoint)
-          .set('authorization', adminToken)
-          .send(data)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Remittance added');
-            expect(res.body.transaction._id).to.be.eql(transaction._id.toString());
-            expect(res.body.transaction.remittance.amount).to.be.eql(data.amount);
-            expect(res.body.transaction.remittance.by).to.be.eql(adminUser._id.toString());
-            expect(res.body.transaction.remittance.date).to.have.string(data.date);
-            expect(res.body.transaction.remittance.percentage).to.be.eql(5);
-            done();
-          });
+      context('when percentage is not given', () => {
+        it('calculates amount using default percentage', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Remittance added');
+              expect(res.body.transaction._id).to.be.eql(transaction._id.toString());
+              expect(res.body.transaction.remittance.amount).to.be.eql(950_000);
+              expect(res.body.transaction.remittance.by).to.be.eql(adminUser._id.toString());
+              expect(res.body.transaction.remittance.date).to.have.string(data.date);
+              expect(res.body.transaction.remittance.percentage).to.be.eql(5);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.REMITTANCE_PAID);
+              done();
+            });
+        });
+      });
+
+      context('with user with different remittance percentage', () => {
+        it('calculates amount using vendor percentage', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...data, transactionId: testVendorTransaction._id })
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Remittance added');
+              expect(res.body.transaction._id).to.be.eql(testVendorTransaction._id.toString());
+              expect(res.body.transaction.remittance.amount).to.be.eql(900_000);
+              expect(res.body.transaction.remittance.by).to.be.eql(adminUser._id.toString());
+              expect(res.body.transaction.remittance.date).to.have.string(data.date);
+              expect(res.body.transaction.remittance.percentage).to.be.eql(10);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.REMITTANCE_PAID);
+              done();
+            });
+        });
+      });
+
+      context('when percentage is given', () => {
+        it('calculates amount using given percentage', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...data, percentage: 10 })
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Remittance added');
+              expect(res.body.transaction._id).to.be.eql(transaction._id.toString());
+              expect(res.body.transaction.remittance.amount).to.be.eql(900_000);
+              expect(res.body.transaction.remittance.by).to.be.eql(adminUser._id.toString());
+              expect(res.body.transaction.remittance.date).to.have.string(data.date);
+              expect(res.body.transaction.remittance.percentage).to.be.eql(10);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.REMITTANCE_PAID);
+              done();
+            });
+        });
       });
     });
 
@@ -900,6 +1019,7 @@ describe('Transaction Controller', () => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Invalid transaction');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -936,6 +1056,7 @@ describe('Transaction Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(400);
             expect(res.body.success).to.be.eql(false);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
             Transaction.findByIdAndUpdate.restore();
           });

@@ -7,6 +7,8 @@ import {
   addRemittance,
 } from '../services/transaction.service';
 import httpStatus from '../helpers/httpStatus';
+import EMAIL_CONTENT from '../../mailer';
+import { sendMail } from '../services/mailer.service';
 
 const TransactionController = {
   getAll(req, res, next) {
@@ -76,7 +78,10 @@ const TransactionController = {
     const remittanceInfo = req.locals;
     const adminId = req.user._id;
     addRemittance({ ...remittanceInfo, adminId })
-      .then((transaction) => {
+      .then(({ transaction, user }) => {
+        const contentTop = `You have received ${transaction.remittance.amount} as payment on one of your properties. Visit your dashboard for more information.`;
+        sendMail(EMAIL_CONTENT.REMITTANCE_PAID, user, { contentTop });
+
         res.status(httpStatus.OK).json({ success: true, message: 'Remittance added', transaction });
       })
       .catch((error) => next(error));
