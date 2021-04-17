@@ -4,9 +4,9 @@ import { addTransaction, getTransactionByInfo } from '../services/transaction.se
 
 const PaymentController = {
   paymentInitiation(req, res, next) {
-    const { amount, propertyId, offerId } = req.locals;
+    const { amount, offerId } = req.locals;
     const { user } = req;
-    initiatePaystackPayment({ amount, user, propertyId, offerId })
+    initiatePaystackPayment({ amount, user, offerId })
       .then((payment) => {
         res
           .status(httpStatus.CREATED)
@@ -14,6 +14,7 @@ const PaymentController = {
       })
       .catch((error) => next(error));
   },
+
   paymentVerification(req, res, next) {
     const { ref } = req.params;
     verifyPaystackPayment(ref)
@@ -24,6 +25,7 @@ const PaymentController = {
       })
       .catch((error) => next(error));
   },
+
   async addPaymentToTransaction(req, res, next) {
     const { ref } = req.params;
 
@@ -46,8 +48,6 @@ const PaymentController = {
             paystackResponse.metadata.custom_fields[0].value,
           [paystackResponse.metadata.custom_fields[1].variable_name]:
             paystackResponse.metadata.custom_fields[1].value,
-          [paystackResponse.metadata.custom_fields[2].variable_name]:
-            paystackResponse.metadata.custom_fields[2].value,
           paymentSource: 'Paystack',
           amount: paystackResponse.amount / 100,
           additionalInfo: paystackResponse.reference,
