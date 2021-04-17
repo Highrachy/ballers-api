@@ -8,9 +8,15 @@ import Referral from '../models/referral.model';
 // eslint-disable-next-line import/no-cycle
 import { getOfferById } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { NON_PROJECTED_USER_INFO, EXCLUDED_PROPERTY_INFO } from '../helpers/projectedSchemaInfo';
+import {
+  NON_PROJECTED_USER_INFO,
+  EXCLUDED_PROPERTY_INFO,
+  getExcludedTransactionInfo,
+} from '../helpers/projectedSchemaInfo';
 // eslint-disable-next-line import/no-cycle
 import { generateNextPaymentDate } from './nextPayment.service';
+// eslint-disable-next-line import/no-cycle
+import { getUserById } from './user.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -89,12 +95,8 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
         as: 'vendorInfo',
       },
     },
-    {
-      $unwind: '$propertyInfo',
-    },
-    {
-      $unwind: '$userInfo',
-    },
+    { $unwind: '$propertyInfo' },
+    { $unwind: '$userInfo' },
     {
       $unwind: {
         path: '$vendorInfo',
@@ -106,6 +108,7 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...NON_PROJECTED_USER_INFO('vendorInfo'),
         ...EXCLUDED_PROPERTY_INFO,
+        ...getExcludedTransactionInfo(user.role),
       },
     },
     {
@@ -151,16 +154,13 @@ export const getUserTransactionsByProperty = async (propertyId, user, page = 1, 
         as: 'userInfo',
       },
     },
-    {
-      $unwind: '$propertyInfo',
-    },
-    {
-      $unwind: '$userInfo',
-    },
+    { $unwind: '$propertyInfo' },
+    { $unwind: '$userInfo' },
     {
       $project: {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...EXCLUDED_PROPERTY_INFO,
+        ...getExcludedTransactionInfo(user.role),
       },
     },
     {
@@ -243,20 +243,15 @@ export const getOneTransaction = async (transactionId, user) => {
         as: 'vendorInfo',
       },
     },
-    {
-      $unwind: '$propertyInfo',
-    },
-    {
-      $unwind: '$userInfo',
-    },
-    {
-      $unwind: '$vendorInfo',
-    },
+    { $unwind: '$propertyInfo' },
+    { $unwind: '$userInfo' },
+    { $unwind: '$vendorInfo' },
     {
       $project: {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...NON_PROJECTED_USER_INFO('vendorInfo'),
         ...EXCLUDED_PROPERTY_INFO,
+        ...getExcludedTransactionInfo(user.role),
       },
     },
   ];
@@ -271,4 +266,39 @@ export const getOneTransaction = async (transactionId, user) => {
 
   const transaction = await Transaction.aggregate(transactionOptions);
   return transaction;
+};
+
+export const addRemittance = async (remittanceInfo) => {
+  const transaction = await getTransactionById(remittanceInfo.transactionId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!transaction) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid transaction');
+  }
+
+  const user = await getUserById(transaction.vendorId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  const percentage = remittanceInfo.percentage || user.vendor.remittancePercentage;
+
+  try {
+    const remittedTransaction = await Transaction.findByIdAndUpdate(
+      transaction.id,
+      {
+        $set: {
+          'remittance.amount': Math.round(((100 - percentage) / 100) * transaction.amount),
+          'remittance.by': remittanceInfo.adminId,
+          'remittance.date': remittanceInfo.date,
+          'remittance.percentage': percentage,
+        },
+      },
+      { new: true },
+    );
+
+    return { transaction: remittedTransaction, user };
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding remittance', error);
+  }
 };

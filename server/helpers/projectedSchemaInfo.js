@@ -1,3 +1,5 @@
+import { USER_ROLE } from './constants';
+
 export const PROJECTED_PROPERTY_INFO = {
   name: 1,
   titleDocument: 1,
@@ -69,6 +71,10 @@ export const NON_PROJECTED_USER_INFO = (infoType) => {
     [`${infoType}.vendor.verification`]: 0,
     [`${infoType}.vendor.entity`]: 0,
     [`${infoType}.vendor.redanNumber`]: 0,
+    [`${infoType}.vendor.remittancePercentage`]: 0,
     [`${infoType}.vendor.taxCertificate`]: 0,
   };
 };
+
+export const getExcludedTransactionInfo = (userRole) =>
+  userRole === USER_ROLE.USER ? { remittance: 0 } : {};

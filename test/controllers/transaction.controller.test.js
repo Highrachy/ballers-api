@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { expect, request, sinon } from '../config';
 import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
@@ -22,8 +23,13 @@ import {
   itReturnsEmptyValuesWhenNoItemExistInDatabase,
   expectsPaginationToReturnTheRightValues,
   itReturnsAnErrorWhenServiceFails,
+  defaultPaginationResult,
 } from '../helpers';
+import * as MailService from '../../server/services/mailer.service';
+import EMAIL_CONTENT from '../../mailer';
 
+let sendMailStub;
+const sandbox = sinon.createSandbox();
 let adminToken;
 let userToken;
 let vendorToken;
@@ -79,6 +85,14 @@ const offer = OfferFactory.build(
 );
 
 describe('Transaction Controller', () => {
+  beforeEach(() => {
+    sendMailStub = sandbox.stub(MailService, 'sendMail');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
@@ -105,6 +119,12 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -152,6 +172,12 @@ describe('Transaction Controller', () => {
         vendorId: vendor2._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -207,6 +233,18 @@ describe('Transaction Controller', () => {
               expect(res.body.result[0].offerId).to.be.eql(
                 vendor2Transactions[0].offerId.toString(),
               );
+              expect(res.body.result[0].remittance.amount).to.be.eql(
+                vendor2Transactions[0].remittance.amount,
+              );
+              expect(res.body.result[0].remittance.by).to.be.eql(
+                vendor2Transactions[0].remittance.by.toString(),
+              );
+              expect(res.body.result[0].remittance.percentage).to.be.eql(
+                vendor2Transactions[0].remittance.percentage,
+              );
+              expect(res.body.result[0].remittance.date).to.have.string(
+                vendor2Transactions[0].remittance.date,
+              );
               done();
             });
         });
@@ -234,6 +272,31 @@ describe('Transaction Controller', () => {
               expect(res.body.result[0].offerId).to.be.eql(
                 vendorTransactions[0].offerId.toString(),
               );
+              expect(res.body.result[0].remittance.amount).to.be.eql(
+                vendorTransactions[0].remittance.amount,
+              );
+              expect(res.body.result[0].remittance.by).to.be.eql(
+                vendorTransactions[0].remittance.by.toString(),
+              );
+              expect(res.body.result[0].remittance.percentage).to.be.eql(
+                vendorTransactions[0].remittance.percentage,
+              );
+              expect(res.body.result[0].remittance.date).to.have.string(
+                vendorTransactions[0].remittance.date,
+              );
+              done();
+            });
+        });
+      });
+
+      context('when user token is used', () => {
+        it('returns matched transactons', (done) => {
+          request()
+            .get('/api/v1/transaction/all')
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+              expect(res.body.result[0]).to.not.have.property('remittance');
               done();
             });
         });
@@ -300,6 +363,12 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -326,6 +395,12 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -387,6 +462,7 @@ describe('Transaction Controller', () => {
                 userTransactions[0].propertyId.toString(),
               );
               expect(res.body.result[0].offerId).to.be.eql(userTransactions[0].offerId.toString());
+              expect(res.body.result[0]).to.not.have.property('remittance');
               done();
             });
         });
@@ -696,6 +772,12 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        remittance: {
+          amount: 100_000,
+          by: adminUser._id,
+          percentage: 5,
+          date: '2020-11-11',
+        },
       },
       { generateId: true },
     );
@@ -719,11 +801,11 @@ describe('Transaction Controller', () => {
     });
 
     context('with valid token', () => {
-      [...new Array(3)].map((_, index) =>
+      [...new Array(2)].map((_, index) =>
         it('returns related transaction', (done) => {
           request()
             .get(`/api/v1/transaction/${transaction._id}`)
-            .set('authorization', [userToken, vendorToken, adminToken][index])
+            .set('authorization', [vendorToken, adminToken][index])
             .end((err, res) => {
               expect(res).to.have.status(200);
               expect(res.body.success).to.be.eql(true);
@@ -731,10 +813,40 @@ describe('Transaction Controller', () => {
               expect(res.body.transaction.propertyId).to.be.eql(transaction.propertyId.toString());
               expect(res.body.transaction.userId).to.be.eql(transaction.userId.toString());
               expect(res.body.transaction.offerId).to.be.eql(transaction.offerId.toString());
+              expect(res.body.transaction.remittance.amount).to.be.eql(
+                transaction.remittance.amount,
+              );
+              expect(res.body.transaction.remittance.by).to.be.eql(
+                transaction.remittance.by.toString(),
+              );
+              expect(res.body.transaction.remittance.percentage).to.be.eql(
+                transaction.remittance.percentage,
+              );
+              expect(res.body.transaction.remittance.date).to.have.string(
+                transaction.remittance.date,
+              );
               done();
             });
         }),
       );
+    });
+
+    context('with user token', () => {
+      it('returns related transaction', (done) => {
+        request()
+          .get(`/api/v1/transaction/${transaction._id}`)
+          .set('authorization', userToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.transaction._id).to.be.eql(transaction._id.toString());
+            expect(res.body.transaction.propertyId).to.be.eql(transaction.propertyId.toString());
+            expect(res.body.transaction.userId).to.be.eql(transaction.userId.toString());
+            expect(res.body.transaction.offerId).to.be.eql(transaction.offerId.toString());
+            expect(res.body.transaction).to.not.have.property('remittance');
+            done();
+          });
+      });
     });
 
     context('with token with invalid access', () => {
@@ -774,6 +886,181 @@ describe('Transaction Controller', () => {
       model: Transaction,
       modelMethod: 'aggregate',
       useExistingUser: true,
+    });
+  });
+
+  describe('Add Remittance Route', () => {
+    const method = 'post';
+    const endpoint = '/api/v1/transaction/remittance';
+
+    const testVendor = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        activated: true,
+        vendor: {
+          verified: true,
+          remittancePercentage: 10,
+        },
+      },
+      { generateId: true },
+    );
+
+    const transaction = TransactionFactory.build(
+      {
+        userId: regularUser._id,
+        propertyId: property._id,
+        offerId: offer._id,
+        vendorId: vendorUser._id,
+        addedBy: adminUser._id,
+        updatedBy: adminUser._id,
+        amount: 1_000_000,
+      },
+      { generateId: true },
+    );
+
+    const testVendorTransaction = TransactionFactory.build(
+      {
+        userId: regularUser._id,
+        propertyId: property._id,
+        offerId: offer._id,
+        vendorId: testVendor._id,
+        addedBy: adminUser._id,
+        updatedBy: adminUser._id,
+        amount: 1_000_000,
+      },
+      { generateId: true },
+    );
+
+    const data = {
+      transactionId: transaction._id,
+      date: '2021-02-12',
+    };
+
+    beforeEach(async () => {
+      await addUser(testVendor);
+      await Transaction.insertMany([transaction, testVendorTransaction]);
+    });
+
+    context('with valid token and data', () => {
+      context('when percentage is not given', () => {
+        it('calculates amount using default percentage', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Remittance added');
+              expect(res.body.transaction._id).to.be.eql(transaction._id.toString());
+              expect(res.body.transaction.remittance.amount).to.be.eql(950_000);
+              expect(res.body.transaction.remittance.by).to.be.eql(adminUser._id.toString());
+              expect(res.body.transaction.remittance.date).to.have.string(data.date);
+              expect(res.body.transaction.remittance.percentage).to.be.eql(5);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.REMITTANCE_PAID);
+              done();
+            });
+        });
+      });
+
+      context('with user with different remittance percentage', () => {
+        it('calculates amount using vendor percentage', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...data, transactionId: testVendorTransaction._id })
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Remittance added');
+              expect(res.body.transaction._id).to.be.eql(testVendorTransaction._id.toString());
+              expect(res.body.transaction.remittance.amount).to.be.eql(900_000);
+              expect(res.body.transaction.remittance.by).to.be.eql(adminUser._id.toString());
+              expect(res.body.transaction.remittance.date).to.have.string(data.date);
+              expect(res.body.transaction.remittance.percentage).to.be.eql(10);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.REMITTANCE_PAID);
+              done();
+            });
+        });
+      });
+
+      context('when percentage is given', () => {
+        it('calculates amount using given percentage', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...data, percentage: 10 })
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Remittance added');
+              expect(res.body.transaction._id).to.be.eql(transaction._id.toString());
+              expect(res.body.transaction.remittance.amount).to.be.eql(900_000);
+              expect(res.body.transaction.remittance.by).to.be.eql(adminUser._id.toString());
+              expect(res.body.transaction.remittance.date).to.have.string(data.date);
+              expect(res.body.transaction.remittance.percentage).to.be.eql(10);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.REMITTANCE_PAID);
+              done();
+            });
+        });
+      });
+    });
+
+    context('with invalid transaction id', () => {
+      it('returns not found', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send({ ...data, transactionId: mongoose.Types.ObjectId() })
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid transaction');
+            expect(sendMailStub.callCount).to.eq(0);
+            done();
+          });
+      });
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method, data });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: adminUser,
+      userId: adminUser._id,
+      useExistingUser: true,
+      data,
+    });
+
+    [vendorUser, regularUser].map((user) =>
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user,
+        data,
+        useExistingUser: true,
+      }),
+    );
+
+    context('when addRemittance service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Transaction, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send(data)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            expect(sendMailStub.callCount).to.eq(0);
+            done();
+            Transaction.findByIdAndUpdate.restore();
+          });
+      });
     });
   });
 });

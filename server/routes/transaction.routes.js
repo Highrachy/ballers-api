@@ -1,11 +1,14 @@
 import express from 'express';
 import {
   authenticate,
+  schemaValidation,
   isAdminOrUserOrVendor,
   isUser,
   hasValidObjectId,
+  isAdmin,
 } from '../helpers/middleware';
 import TransactionController from '../controllers/transaction.controllers';
+import addRemittanceSchema from '../schemas/transaction.schema';
 
 const router = express.Router();
 
@@ -140,6 +143,37 @@ router.get(
   isAdminOrUserOrVendor,
   hasValidObjectId,
   TransactionController.getOneTransaction,
+);
+
+/**
+ * @swagger
+ * /transaction/remittance:
+ *   post:
+ *     tags:
+ *       - Transaction
+ *     description: Adds remittance for a specific transaction
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Transaction'
+ *      description: Adds remittance for a specific transaction
+ *     responses:
+ *      '200':
+ *        description: Remittance added
+ *      '400':
+ *        description: Error adding remittance
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/remittance',
+  authenticate,
+  isAdmin,
+  schemaValidation(addRemittanceSchema),
+  TransactionController.addRemittance,
 );
 
 module.exports = router;

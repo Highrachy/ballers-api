@@ -32,6 +32,8 @@ export const optionalBoolean = (label) => Joi.boolean().label(label).optional();
 export const optionalEmail = (label) => Joi.string().label(label).email().optional();
 export const optionalNumber = (label) => Joi.number().label(label).optional();
 export const optionalObjectId = (label) => Joi.objectId().label(label).optional();
+export const optionalPercentage = (label) =>
+  Joi.number().min(0).max(100).label(`${label} In Percentage`).optional();
 export const optionalPhoneNumber = (label) => Joi.string().label(label).min(6).max(14).optional();
 export const optionalString = (label) => Joi.string().label(label).optional();
 
