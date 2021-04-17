@@ -148,7 +148,7 @@ router.get(
 /**
  * @swagger
  * /transaction/remittance:
- *   put:
+ *   post:
  *     tags:
  *       - Transaction
  *     description: Adds remittance for a specific transaction
@@ -168,7 +168,7 @@ router.get(
  *      '500':
  *       description: Internal server error
  */
-router.put(
+router.post(
   '/remittance',
   authenticate,
   isAdmin,

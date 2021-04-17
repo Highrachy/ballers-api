@@ -412,7 +412,7 @@ describe('Next Payments Controller', () => {
         now: new Date('2020-03-24'),
       });
 
-      Offer.create(offer);
+      await Offer.create(offer);
     });
 
     context('with a valid token & id', () => {

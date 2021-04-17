@@ -890,7 +890,7 @@ describe('Transaction Controller', () => {
   });
 
   describe('Add Remittance Route', () => {
-    const method = 'put';
+    const method = 'post';
     const endpoint = '/api/v1/transaction/remittance';
 
     const testVendor = UserFactory.build(

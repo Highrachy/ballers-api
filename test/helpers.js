@@ -374,6 +374,7 @@ export const expectResponseToExcludeSensitiveUserData = (data) => {
     expect(data.vendor).to.not.have.property('identification');
     expect(data.vendor).to.not.have.property('entity');
     expect(data.vendor).to.not.have.property('redanNumber');
+    expect(data.vendor).to.not.have.property('remittancePercentage');
     expect(data.vendor).to.not.have.property('taxCertificate');
   }
 };

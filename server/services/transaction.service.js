@@ -11,7 +11,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import {
   NON_PROJECTED_USER_INFO,
   EXCLUDED_PROPERTY_INFO,
-  GET_EXCLUDED_TRANSACTION_INFO,
+  getExcludedTransactionInfo,
 } from '../helpers/projectedSchemaInfo';
 // eslint-disable-next-line import/no-cycle
 import { generateNextPaymentDate } from './nextPayment.service';
@@ -106,7 +106,7 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...NON_PROJECTED_USER_INFO('vendorInfo'),
         ...EXCLUDED_PROPERTY_INFO,
-        ...GET_EXCLUDED_TRANSACTION_INFO(user.role),
+        ...getExcludedTransactionInfo(user.role),
       },
     },
     {
@@ -158,7 +158,7 @@ export const getUserTransactionsByProperty = async (propertyId, user, page = 1, 
       $project: {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...EXCLUDED_PROPERTY_INFO,
-        ...GET_EXCLUDED_TRANSACTION_INFO(user.role),
+        ...getExcludedTransactionInfo(user.role),
       },
     },
     {
@@ -249,7 +249,7 @@ export const getOneTransaction = async (transactionId, user) => {
         ...NON_PROJECTED_USER_INFO('userInfo'),
         ...NON_PROJECTED_USER_INFO('vendorInfo'),
         ...EXCLUDED_PROPERTY_INFO,
-        ...GET_EXCLUDED_TRANSACTION_INFO(user.role),
+        ...getExcludedTransactionInfo(user.role),
       },
     },
   ];

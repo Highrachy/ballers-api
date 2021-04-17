@@ -71,13 +71,10 @@ export const NON_PROJECTED_USER_INFO = (infoType) => {
     [`${infoType}.vendor.verification`]: 0,
     [`${infoType}.vendor.entity`]: 0,
     [`${infoType}.vendor.redanNumber`]: 0,
+    [`${infoType}.vendor.remittancePercentage`]: 0,
     [`${infoType}.vendor.taxCertificate`]: 0,
   };
 };
 
-export const GET_EXCLUDED_TRANSACTION_INFO = (userRole) => {
-  if (userRole === USER_ROLE.USER) {
-    return { remittance: 0 };
-  }
-  return {};
-};
+export const getExcludedTransactionInfo = (userRole) =>
+  userRole === USER_ROLE.USER ? { remittance: 0 } : {};

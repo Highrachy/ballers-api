@@ -1,10 +1,10 @@
 import Joi from '@hapi/joi';
-import { requiredObjectId, requiredDate, optionalNumber } from './helper.schema';
+import { requiredObjectId, requiredDate, optionalPercentage } from './helper.schema';
 
 const addRemittanceSchema = Joi.object({
   transactionId: requiredObjectId('Transaction Id'),
   date: requiredDate('Date'),
-  percentage: optionalNumber('Percentage'),
+  percentage: optionalPercentage('Remittance'),
 });
 
 export default addRemittanceSchema;

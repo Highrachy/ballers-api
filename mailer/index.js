@@ -80,7 +80,7 @@ const EMAIL_CONTENT = {
     buttonText: 'Join BALLERS',
   },
   REMITTANCE_PAID: {
-    subject: 'Remittance Paid',
+    subject: 'Remittance Information',
     contentTop:
       'You have received [amount] as payment on one of your properties. Visit your dashboard for more information.',
   },
