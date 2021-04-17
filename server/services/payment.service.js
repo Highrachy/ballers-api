@@ -10,7 +10,7 @@ export const PAYSTACK_URL = {
   ALL_CUSTOMERS: 'https://api.paystack.co/customer',
 };
 
-export const initiatePaystackPayment = async ({ amount, user, propertyId, offerId }) => {
+export const initiatePaystackPayment = async ({ amount, user, offerId }) => {
   try {
     const response = await axios.post(
       PAYSTACK_URL.INITIALIZE,
@@ -20,11 +20,6 @@ export const initiatePaystackPayment = async ({ amount, user, propertyId, offerI
         email: user.email,
         metadata: {
           custom_fields: [
-            {
-              display_name: 'Property Id',
-              variable_name: 'propertyId',
-              value: propertyId,
-            },
             {
               display_name: 'User Id',
               variable_name: 'userId',

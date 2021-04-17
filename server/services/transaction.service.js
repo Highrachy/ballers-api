@@ -46,6 +46,8 @@ export const addTransaction = async (transaction) => {
       userId: offer.userId,
       propertyId: offer.propertyId,
       vendorId: offer.vendorId,
+      addedBy: offer.vendorId,
+      updatedBy: offer.vendorId,
     }).save();
 
     await generateNextPaymentDate({

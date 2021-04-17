@@ -72,7 +72,7 @@ describe('Offline Payment Service', () => {
         } catch (err) {
           const currentCountedTransactions = await Transaction.countDocuments({});
           expect(err.statusCode).to.eql(400);
-          expect(err.message).to.be.eql('Error resolving offline payment');
+          expect(err.message).to.be.eql('Request is only available to an admin');
           expect(currentCountedTransactions).to.eql(countedTransactions);
         }
       });

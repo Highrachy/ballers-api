@@ -128,6 +128,10 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offline payment');
   }
 
+  if (!adminId) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Request is only available to an admin');
+  }
+
   for (let i = 0; i < offlinePayment.comments.length; i += 1) {
     if (offlinePayment.comments[i].status === COMMENT_STATUS.PENDING) {
       throw new ErrorHandler(
