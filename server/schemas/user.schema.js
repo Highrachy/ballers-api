@@ -7,6 +7,7 @@ import {
   requiredString,
   requiredPassword,
   requiredConfirmPassword,
+  requiredPercentage,
   optionalPhoneNumber,
   optionalString,
   optionalBoolean,
@@ -162,4 +163,9 @@ export const unbanUserSchema = Joi.object({
   caseId: requiredObjectId('Case id'),
   userId: requiredObjectId('User id'),
   reason: requiredString('Reason'),
+});
+
+export const updateRemittancePercentageSchema = Joi.object({
+  vendorId: requiredObjectId('Vendor id'),
+  percentage: requiredPercentage('Remittance'),
 });

@@ -15,6 +15,7 @@ import {
   resolveCommentVendorSchema,
   unbanUserSchema,
   banUserSchema,
+  updateRemittancePercentageSchema,
 } from '../schemas/user.schema';
 import {
   schemaValidation,
@@ -872,5 +873,42 @@ router.put(
  *          description: Internal server error
  */
 router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOneUser);
+
+/**
+ * @swagger
+ * /user/remittance-percentage:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to update the remittance percentage of a vendor
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              vendorId:
+ *                  type: string
+ *              percentage:
+ *                  type: integer
+ *     responses:
+ *      '200':
+ *        description: Remittance percentage updated
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/remittance-percentage',
+  authenticate,
+  isAdmin,
+  schemaValidation(updateRemittancePercentageSchema),
+  UserController.updateRemittancePercentage,
+);
 
 module.exports = router;
