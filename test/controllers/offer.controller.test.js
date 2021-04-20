@@ -11,7 +11,12 @@ import { createOffer, raiseConcern } from '../../server/services/offer.service';
 import { addEnquiry, getEnquiryById } from '../../server/services/enquiry.service';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
-import { OFFER_STATUS, CONCERN_STATUS, USER_ROLE } from '../../server/helpers/constants';
+import {
+  OFFER_STATUS,
+  CONCERN_STATUS,
+  USER_ROLE,
+  PAYMENT_FREQUENCIES,
+} from '../../server/helpers/constants';
 import {
   getTodaysDateShortCode,
   getTodaysDateStandard,
@@ -192,7 +197,6 @@ describe('Offer Controller', () => {
           expires: '"Expiry Date" must be a valid date',
           initialPayment: '"Initial Payment" must be a number',
           periodicPayment: '"Periodic Payment" must be a number',
-          paymentFrequency: '"Payment Frequency" must be a number',
         };
 
         itReturnsErrorForEmptyFields({
@@ -201,6 +205,25 @@ describe('Offer Controller', () => {
           user: testVendor,
           data: invalidEmptyData,
           factory: OfferFactory,
+        });
+
+        context('when payment frequency is empty', () => {
+          it('returns an error', (done) => {
+            const offer = OfferFactory.build({ paymentFrequency: '' });
+            request()
+              .post('/api/v1/offer/create')
+              .set('authorization', vendorToken)
+              .send(offer)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  `"Payment Frequency" must be one of [${PAYMENT_FREQUENCIES.join(', ')}]`,
+                );
+                done();
+              });
+          });
         });
 
         context('when hand over date is todays date', () => {

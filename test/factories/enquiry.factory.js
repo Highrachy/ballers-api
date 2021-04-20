@@ -23,7 +23,7 @@ export default new Factory()
   })
   .sequence('email', (i) => `email-${i}@mail.com`)
   .attr('nameOnTitleDocument', 'John F. Doe')
-  .attr('investmentFrequency', 'weekly')
+  .attr('investmentFrequency', 30)
   .attr('initialInvestmentAmount', 20000000)
   .attr('periodicInvestmentAmount', 500000)
   .attr('investmentStartDate', '2090-09-08');

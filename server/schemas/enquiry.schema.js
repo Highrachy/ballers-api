@@ -9,6 +9,7 @@ import {
   nonRequiredString,
   nonRequiredPhoneNumber,
   requiredEmail,
+  requiredPaymentFrequency,
 } from './helper.schema';
 
 export const addEnquirySchema = Joi.object({
@@ -23,7 +24,7 @@ export const addEnquirySchema = Joi.object({
   occupation: requiredString('Occupation'),
   email: requiredEmail('Email Address'),
   nameOnTitleDocument: requiredString('Name on Title Document'),
-  investmentFrequency: requiredString('Investment Frequency'),
+  investmentFrequency: requiredPaymentFrequency('Investment Frequency'),
   initialInvestmentAmount: requiredNumber('Initial Investment Amount'),
   periodicInvestmentAmount: requiredNumber('Periodic Investment Amount'),
   investmentStartDate: requiredFutureDate('Investment Start Date'),

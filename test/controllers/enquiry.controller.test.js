@@ -10,7 +10,7 @@ import PropertyFactory from '../factories/property.factory';
 import { addUser, loginUser } from '../../server/services/user.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { addProperty } from '../../server/services/property.service';
-import { USER_ROLE } from '../../server/helpers/constants';
+import { USER_ROLE, PAYMENT_FREQUENCIES } from '../../server/helpers/constants';
 import {
   itReturnsForbiddenForNoToken,
   itReturnsTheRightPaginationValue,
@@ -460,7 +460,9 @@ describe('Enquiry Controller', () => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Investment Frequency" is not allowed to be empty');
+              expect(res.body.error).to.be.eql(
+                `"Investment Frequency" must be one of [${PAYMENT_FREQUENCIES.join(', ')}]`,
+              );
               done();
             });
         });
@@ -914,7 +916,7 @@ describe('Enquiry Controller', () => {
         createdAt: futureDate,
         email: 'aj@gmail.com',
         firstName: 'Anthony',
-        investmentFrequency: 'bi-annualy',
+        investmentFrequency: 14,
         initialInvestmentAmount: 1230000,
         investmentStartDate: futureDate,
         lastName: 'Joshua',

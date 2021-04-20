@@ -250,7 +250,7 @@ export const ENQUIRY_FILTERS = {
   email: { type: FILTER_TYPE.STRING },
   firstName: { type: FILTER_TYPE.STRING },
   initialInvestmentAmount: { type: FILTER_TYPE.INTEGER },
-  investmentFrequency: { type: FILTER_TYPE.STRING },
+  investmentFrequency: { type: FILTER_TYPE.INTEGER },
   investmentStartDate: { type: FILTER_TYPE.DATE },
   lastName: { type: FILTER_TYPE.STRING },
   nameOnTitleDocument: { type: FILTER_TYPE.STRING },

@@ -83,3 +83,5 @@ export const NEIGHBORHOOD_STEPS = [
   'schools',
   'shoppingMalls',
 ];
+
+export const PAYMENT_FREQUENCIES = [1, 14, 30, 90];
