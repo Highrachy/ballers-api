@@ -1,6 +1,5 @@
 import Joi from '@hapi/joi';
 import { getTodaysDateInWords, getTodaysDateStandard } from '../helpers/dates';
-import { PAYMENT_FREQUENCIES } from '../helpers/constants';
 
 Joi.objectId = require('joi-objectid')(Joi);
 
@@ -27,11 +26,6 @@ export const requiredFutureDate = (label) =>
     .messages({
       'date.greater': `"${label}" should a date later than ${getTodaysDateInWords()}`,
     });
-export const requiredPaymentFrequency = (label) =>
-  Joi.number()
-    .valid(...PAYMENT_FREQUENCIES)
-    .label(label)
-    .required();
 
 export const optionalArray = (label) => Joi.array().label(label).optional();
 export const optionalBoolean = (label) => Joi.boolean().label(label).optional();

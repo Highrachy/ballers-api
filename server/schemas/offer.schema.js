@@ -5,7 +5,6 @@ import {
   requiredNumber,
   requiredFutureDate,
   requiredPercentage,
-  requiredPaymentFrequency,
 } from './helper.schema';
 
 export const createOfferSchema = Joi.object({
@@ -16,7 +15,7 @@ export const createOfferSchema = Joi.object({
   initialPayment: requiredNumber('Initial Payment'),
   initialPaymentDate: requiredFutureDate('Initial Payment Date'),
   periodicPayment: requiredNumber('Periodic Payment'),
-  paymentFrequency: requiredPaymentFrequency('Payment Frequency'),
+  paymentFrequency: requiredNumber('Payment Frequency'),
   allocationInPercentage: requiredPercentage('Allocation'),
   handOverDate: requiredFutureDate('Handover Date'),
   expires: requiredFutureDate('Expiry Date'),
