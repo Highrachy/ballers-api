@@ -46,7 +46,7 @@ import { addressSchema } from '../helpers/constants';
  *          nameOnTitleDocument:
  *            type: string
  *          investmentFrequency:
- *            type: string
+ *            type: number
  *          initialInvestmentAmount:
  *            type: number
  *          periodicInvestmentAmount:
@@ -65,7 +65,7 @@ import { addressSchema } from '../helpers/constants';
  *           occupation: Lawyer
  *           email: johndoe@email.com
  *           nameOnTitleDocument: John F. Doe
- *           investmentFrequency: Monthly
+ *           investmentFrequency: 30
  *           initialInvestmentAmount: 25000000
  *           periodicInvestmentAmount: 5000000
  *           investmentStartDate: 2020-01-01
@@ -122,7 +122,7 @@ const EnquirySchema = new mongoose.Schema(
       required: true,
     },
     investmentFrequency: {
-      type: String,
+      type: Number,
       required: true,
     },
     initialInvestmentAmount: {

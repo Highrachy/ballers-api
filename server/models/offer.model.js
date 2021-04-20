@@ -72,7 +72,7 @@ import { OFFER_STATUS, CONCERN_STATUS } from '../helpers/constants';
  *           dateAccepted: 2020-01-01
  *           initialPayment: 10000000
  *           periodicPayment: 500000
- *           paymentFrequency: 1
+ *           paymentFrequency: 14
  */
 
 const { ObjectId } = mongoose.Schema.Types;
