@@ -3174,7 +3174,7 @@ describe('User Controller', () => {
         },
         { generateId: true },
       );
-      const endpoint = '/api/v1/user/remittance-percentage';
+      const endpoint = '/api/v1/user/remittance';
       const method = 'put';
 
       const data = {

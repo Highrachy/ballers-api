@@ -876,7 +876,7 @@ router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOn
 
 /**
  * @swagger
- * /user/remittance-percentage:
+ * /user/remittance:
  *   put:
  *     tags:
  *       - User
@@ -904,7 +904,7 @@ router.get('/:id', hasValidObjectId, authenticate, isAdmin, UserController.getOn
  *       description: Internal server error
  */
 router.put(
-  '/remittance-percentage',
+  '/remittance',
   authenticate,
   isAdmin,
   schemaValidation(updateRemittancePercentageSchema),
