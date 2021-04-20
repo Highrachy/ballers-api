@@ -150,6 +150,7 @@ describe('Offer Controller', () => {
               expect(res.body.offer).to.have.property('userInfo');
               expect(res.body.offer.vendorInfo._id).to.be.eql(vendorUser._id.toString());
               expect(res.body.offer.propertyInfo._id).to.be.eql(newProperty._id.toString());
+              expect(res.body.offer.expires).to.have.string('22:59:59.999');
               expect(res.body.offer.referenceCode).to.be.eql(
                 `HIG/LVE/OLM/01/${getTodaysDateShortCode()}`,
               );
@@ -1449,6 +1450,166 @@ describe('Offer Controller', () => {
                 Offer.findOneAndUpdate.restore();
               });
           });
+        });
+      });
+    });
+
+    describe('Reactivate Expired Offer', () => {
+      let vendor2Token;
+      const method = 'put';
+      const endpoint = '/api/v1/offer/reactivate';
+
+      const vendor2 = UserFactory.build(
+        {
+          role: USER_ROLE.VENDOR,
+          activated: true,
+          vendor: {
+            verified: true,
+          },
+        },
+        { generateId: true },
+      );
+
+      const enquiry = EnquiryFactory.build(
+        { userId: regularUser._id, propertyId: properties[0]._id },
+        { generateId: true },
+      );
+
+      const offer = OfferFactory.build(
+        {
+          enquiryId: enquiry._id,
+          expires: '2020-12-11T00:00:00.000+00:00',
+          initialPayment: 500_000,
+          paymentFrequency: 14,
+          periodicPayment: 100_000,
+          propertyId: properties[0]._id,
+          referenceCode: 'HIG/P/OLP/02/28022021',
+          totalAmountPayable: 1_000_000,
+          userId: regularUser._id,
+          vendorId: vendorUser._id,
+        },
+        { generateId: true },
+      );
+
+      const data = {
+        offerId: offer._id,
+        initialPaymentDate: futureDate,
+        expires: futureDate,
+      };
+
+      beforeEach(async () => {
+        vendor2Token = await addUser(vendor2);
+        await addEnquiry(enquiry);
+        await Offer.create(offer);
+      });
+
+      context('when valid vendor token is sent', () => {
+        it('reactivates offer', (done) => {
+          request()
+            .put(endpoint)
+            .set('authorization', vendorToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Offer reactivated');
+              expect(res.body.offer.enquiryId).to.be.eql(offer.enquiryId.toString());
+              expect(res.body.offer.propertyId).to.be.eql(offer.propertyId.toString());
+              expect(res.body.offer.userId).to.be.eql(offer.userId.toString());
+              expect(res.body.offer.vendorId).to.be.eql(offer.vendorId.toString());
+              expect(res.body.offer.initialPayment).to.be.eql(offer.initialPayment);
+              expect(res.body.offer.paymentFrequency).to.be.eql(offer.paymentFrequency);
+              expect(res.body.offer.periodicPayment).to.be.eql(offer.periodicPayment);
+              expect(res.body.offer.totalAmountPayable).to.be.eql(offer.totalAmountPayable);
+              expect(res.body.offer.referenceCode).to.be.eql(offer.referenceCode);
+              expect(res.body.offer.expires).to.have.string(data.expires);
+              expect(res.body.offer.expires).to.have.string('22:59:59.999');
+              expect(res.body.offer.initialPaymentDate).to.have.string(data.initialPaymentDate);
+              expect(sendMailStub.callCount).to.eq(1);
+              expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_REACTIVATED);
+              done();
+            });
+        });
+      });
+
+      context('with invalid offer id', () => {
+        it('returns not found', (done) => {
+          request()
+            .put(endpoint)
+            .set('authorization', vendorToken)
+            .send({ ...data, offerId: mongoose.Types.ObjectId() })
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Invalid offer');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('with invalid vendor token', () => {
+        it('returns forbidden', (done) => {
+          request()
+            .put(endpoint)
+            .set('authorization', vendor2Token)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(403);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('when offer has not expired', () => {
+        beforeEach(async () => {
+          await Offer.findByIdAndUpdate(offer._id, { expires: futureDate });
+        });
+        it('returns error', (done) => {
+          request()
+            .put(endpoint)
+            .set('authorization', vendorToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Only expired offers can be reactivated');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      [adminUser, regularUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+
+      itReturnsForbiddenForNoToken({ endpoint, method, data });
+
+      context('when reactivated offer fails to save', () => {
+        it('returns the error', (done) => {
+          sinon.stub(Offer.prototype, 'save').throws(new Error('Type Error'));
+          request()
+            .put(endpoint)
+            .set('authorization', vendorToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Error reactivating offer');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+              Offer.prototype.save.restore();
+            });
         });
       });
     });
