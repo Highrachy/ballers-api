@@ -3162,6 +3162,141 @@ describe('User Controller', () => {
         });
       });
     });
+
+    describe('Update Vendor Remittance Percentage', () => {
+      const vendorUser = UserFactory.build(
+        {
+          role: USER_ROLE.USER,
+          activated: true,
+          vendor: {
+            remittancePercentage: 5,
+          },
+        },
+        { generateId: true },
+      );
+      const endpoint = '/api/v1/user/remittance';
+      const method = 'put';
+
+      const data = {
+        vendorId: vendorUser._id,
+        percentage: 12,
+      };
+
+      beforeEach(async () => {
+        await addUser(vendorUser);
+      });
+
+      context('when a valid token is used', () => {
+        it('returns vendor with updated percentage', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Remittance Percentage Updated');
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user.vendor.remittancePercentage).to.be.eql(data.percentage);
+              done();
+            });
+        });
+      });
+
+      context('with invalid data', () => {
+        context('when invalid vendor id', () => {
+          it('returns not found', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, vendorId: mongoose.Types.ObjectId() })
+              .end((err, res) => {
+                expect(res).to.have.status(404);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('User not found');
+                done();
+              });
+          });
+        });
+
+        context('when percentage is less than 1', () => {
+          it('returns error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, percentage: 0 })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  '"Remittance In Percentage" must be larger than or equal to 1',
+                );
+                done();
+              });
+          });
+        });
+
+        context('when percentage is more than 100', () => {
+          it('returns error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ ...data, percentage: 101 })
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Validation Error');
+                expect(res.body.error).to.be.eql(
+                  '"Remittance In Percentage" must be less than or equal to 100',
+                );
+                done();
+              });
+          });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({
+        endpoint,
+        method,
+        data,
+      });
+
+      [vendorUser, regularUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data,
+          useExistingUser: true,
+        }),
+      );
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        userId: adminUser._id,
+        data,
+        useExistingUser: true,
+      });
+
+      context('when findByIdAndUpdate returns an error', () => {
+        it('returns error', (done) => {
+          sinon.stub(User, 'findByIdAndUpdate').throws(new Error('Type Error'));
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(400);
+              expect(res.body.success).to.be.eql(false);
+              done();
+              User.findByIdAndUpdate.restore();
+            });
+        });
+      });
+    });
   });
 
   describe('Get all users', () => {

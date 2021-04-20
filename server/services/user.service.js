@@ -827,3 +827,25 @@ export const unbanUser = async ({ adminId, userId, caseId, reason }) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error unbanning user', error);
   }
 };
+
+export const updateRemittancePercentage = async (remittanceInfo) => {
+  const user = await getUserById(remittanceInfo.vendorId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    return User.findByIdAndUpdate(
+      user._id,
+      { $set: { 'vendor.remittancePercentage': remittanceInfo.percentage } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(
+      httpStatus.BAD_REQUEST,
+      'Error updating remittance percentage user',
+      error,
+    );
+  }
+};
