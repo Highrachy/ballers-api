@@ -22,11 +22,11 @@ import { futureDate } from '../helpers';
 describe('NextPayment Service', () => {
   describe('#generateNextPaymentDate', () => {
     let fakeDate;
-    const expiresOnForFirstCycle = new Date('2020-03-01');
-    const expiresOnForSecondCycle = new Date('2020-03-31');
-    const expiresOnForThirdCycle = new Date('2020-04-30');
-    const expiresOnforFourthCycle = new Date('2020-05-30');
-    const expiresOnForLastCycle = new Date('2020-06-29');
+    const expiresOnForFirstCycle = new Date('2020-03-01T22:59:59.999Z');
+    const expiresOnForSecondCycle = new Date('2020-03-31T22:59:59.999Z');
+    const expiresOnForThirdCycle = new Date('2020-04-30T22:59:59.999Z');
+    const expiresOnforFourthCycle = new Date('2020-05-30T22:59:59.999Z');
+    const expiresOnForLastCycle = new Date('2020-06-29T22:59:59.999Z');
 
     const offer = OfferFactory.build(
       {
@@ -475,7 +475,7 @@ describe('NextPayment Service', () => {
   describe('#resolveExpiredNextPayments', () => {
     let fakeDate;
     let countedNextPayments;
-    const expiresOnForFirstCycle = new Date('2020-03-01');
+    const expiresOnForFirstCycle = new Date('2020-03-01T22:59:59.999Z');
 
     const unresolvedNextPaymentsOffers = OfferFactory.buildList(
       100,

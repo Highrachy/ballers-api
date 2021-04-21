@@ -12,4 +12,4 @@ export const convertDateToLongHumanFormat = (date) => format(date, `EEEE, do 'of
 
 export const convertDateToShortHumanFormat = (date) => format(date, 'EEE MMM d, yyyy');
 
-export const getEndOfDay = (date) => endOfDay(date);
+export const getEndOfDay = (date) => endOfDay(new Date(date));

@@ -1001,7 +1001,7 @@ describe('Offer Controller', () => {
         {
           enquiryId: enquiry2._id,
           vendorId: vendorUser._id,
-          expires: '2005-11-12T00:00:00.000Z',
+          expires: '2005-11-12',
           status: OFFER_STATUS.INTERESTED,
         },
         { generateId: true },
@@ -1034,7 +1034,7 @@ describe('Offer Controller', () => {
         {
           enquiryId: enquiry4._id,
           vendorId: vendorUser._id,
-          expires: '2030-02-12T00:00:00.000Z',
+          expires: '2030-02-12',
           status: OFFER_STATUS.INTERESTED,
         },
         { generateId: true },
@@ -1051,7 +1051,7 @@ describe('Offer Controller', () => {
         {
           enquiryId: enquiry5._id,
           vendorId: vendorUser._id,
-          expires: '2030-11-21T00:00:00.000Z',
+          expires: '2030-11-21',
           status: OFFER_STATUS.ASSIGNED,
         },
         { generateId: true },

@@ -12,6 +12,7 @@ import { USER_ROLE } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
+import { getEndOfDay } from '../helpers/dates';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -22,7 +23,7 @@ export const getLastPendingNextPayment = async (offerId) =>
 
 export const addNextPayment = async (payment) => {
   try {
-    return await new NextPayment(payment).save();
+    return await new NextPayment({ ...payment, expiresOn: getEndOfDay(payment.expiresOn) }).save();
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding next payment', error);
   }
@@ -89,7 +90,7 @@ export const generateNextPaymentDate = async ({ transactionId = null, offerId })
   });
 
   const expectedAmount = expectedTotal - totalPaid;
-  const expiresOn = validSchedules[0].date;
+  const expiresOn = getEndOfDay(validSchedules[0].date);
 
   const nextPayment = {
     expectedAmount: expectedAmount === 0 ? offer.periodicPayment : expectedAmount,
