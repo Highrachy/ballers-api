@@ -849,3 +849,41 @@ export const updateRemittancePercentage = async (remittanceInfo) => {
     );
   }
 };
+
+export const addNotification = async (userId, notification) => {
+  const user = await getUserById(userId);
+
+  const existingNotifications = user.notifications;
+
+  const newNotification = [
+    {
+      description: notification.description,
+      type: notification.type,
+      URL: notification.URL,
+      dateAdded: Date.now(),
+    },
+    ...existingNotifications,
+  ];
+
+  try {
+    return User.findByIdAndUpdate(
+      user._id,
+      { $set: { notifications: newNotification } },
+      { new: true, fields: '-password' },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding notification', error);
+  }
+};
+
+export const markNotificationAsRead = async ({ userId, notificationId }) => {
+  try {
+    return User.findOneAndUpdate(
+      { _id: userId, 'notifications._id': notificationId },
+      { $set: { 'notifications.$.status': 1 } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error marking notification as read', error);
+  }
+};

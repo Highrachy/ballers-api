@@ -25,6 +25,7 @@ import {
   banUser,
   unbanUser,
   updateRemittancePercentage,
+  markNotificationAsRead,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -334,6 +335,18 @@ const UserController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Remittance Percentage Updated', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  markNotificationAsRead(req, res, next) {
+    const notificationId = req.params.id;
+    const userId = req.user._id;
+    markNotificationAsRead({ userId, notificationId })
+      .then((user) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Notification marked as read', user });
       })
       .catch((error) => next(error));
   },
