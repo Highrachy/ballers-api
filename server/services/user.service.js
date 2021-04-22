@@ -20,6 +20,7 @@ import {
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
 import { buildFilterAndSortQuery, USER_FILTERS } from '../helpers/filters';
+import { createNotification } from './notification.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -112,6 +113,12 @@ export const addUser = async (user) => {
   try {
     const password = await hashPassword(user.password);
     const savedUser = await new User({ ...user, password, referralCode, role }).save();
+
+    await createNotification({ userId: savedUser._id, description: 'WELCOME_MESSAGE' }).catch(
+      (error) => {
+        throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+      },
+    );
 
     if (referrer) {
       await addReferral({
@@ -873,17 +880,5 @@ export const addNotification = async (userId, notification) => {
     );
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding notification', error);
-  }
-};
-
-export const markNotificationAsRead = async ({ userId, notificationId }) => {
-  try {
-    return User.findOneAndUpdate(
-      { _id: userId, 'notifications._id': notificationId },
-      { $set: { 'notifications.$.status': 1 } },
-      { new: true },
-    );
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error marking notification as read', error);
   }
 };

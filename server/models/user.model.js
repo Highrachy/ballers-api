@@ -35,8 +35,6 @@ import { USER_ROLE, VENDOR_INFO_STATUS, addressSchema, COMMENT_STATUS } from '..
  *            type: object
  *          preferences:
  *            type: object
- *          notifications:
- *            type: array
  *          favourites:
  *            type: array
  *        example:
@@ -49,7 +47,6 @@ import { USER_ROLE, VENDOR_INFO_STATUS, addressSchema, COMMENT_STATUS } from '..
  *           phone2: 08012345678
  *           address: {street1: 1 sesame street, street2: 12 solomon close, city: Ikeja, state: Lagos, country: Nigeria}
  *           preferences: {houseType: 3 bedroom apartment, location: lekki phase 1, maxPrice: 50000000, minPrice: 15000000, paymentPlan: Outright Payment}
- *           notifications: [description: Your account has been activated, type: info, URL: app.ballers.ng/dashboard, status: 0, dateAdded: 2021-03-22]
  *           favourites: []
  */
 
@@ -142,24 +139,6 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    notifications: [
-      {
-        description: {
-          type: String,
-        },
-        type: {
-          type: String,
-        },
-        URL: {
-          type: String,
-        },
-        status: {
-          type: Number,
-          default: 0,
-        },
-        dateAdded: Date,
-      },
-    ],
     password: {
       type: String,
       required: true,

@@ -911,37 +911,4 @@ router.put(
   UserController.updateRemittancePercentage,
 );
 
-/**
- * @swagger
- * /user/notification/:id:
- *   put:
- *     tags:
- *       - User
- *     description: Marks a notification as read
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            type: object
- *            properties:
- *              notificationId:
- *                  type: string
- *     responses:
- *      '200':
- *        description: Notification marked as read
- *      '400':
- *        description: Bad request
- *      '500':
- *       description: Internal server error
- */
-router.put(
-  '/notification/:id',
-  authenticate,
-  hasValidObjectId,
-  isAdmin,
-  UserController.markNotificationAsRead,
-);
-
 module.exports = router;

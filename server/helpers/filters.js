@@ -323,3 +323,10 @@ export const AREA_FILTERS = {
   createdAt: { type: FILTER_TYPE.DATE },
   state: { type: FILTER_TYPE.STRING },
 };
+
+export const NOTIFICATION_FILTERS = {
+  createdAt: { type: FILTER_TYPE.DATE },
+  status: { type: FILTER_TYPE.INTEGER },
+  type: { type: FILTER_TYPE.INTEGER },
+  userId: { type: FILTER_TYPE.OBJECT_ID },
+};
