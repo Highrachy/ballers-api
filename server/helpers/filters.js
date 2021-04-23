@@ -326,7 +326,7 @@ export const AREA_FILTERS = {
 
 export const NOTIFICATION_FILTERS = {
   createdAt: { type: FILTER_TYPE.DATE },
-  status: { type: FILTER_TYPE.INTEGER },
+  read: { type: FILTER_TYPE.BOOLEAN },
   type: { type: FILTER_TYPE.INTEGER },
   userId: { type: FILTER_TYPE.OBJECT_ID },
 };

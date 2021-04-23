@@ -92,6 +92,6 @@ export const NOTIFICATION_TYPE = {
 };
 
 export const NOTIFICATION_STATUS = {
-  UNREAD: 0,
-  READ: 1,
+  UNREAD: false,
+  READ: true,
 };

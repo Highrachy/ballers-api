@@ -2,6 +2,7 @@ import {
   markNotificationAsRead,
   getAllNotifications,
   getOneNotification,
+  markAllNotificationsAsRead,
 } from '../services/notification.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -43,6 +44,17 @@ const NotificationController = {
             .status(httpStatus.NOT_FOUND)
             .json({ success: false, message: 'Notification not found' });
         }
+      })
+      .catch((error) => next(error));
+  },
+
+  markAllNotificationsAsRead(req, res, next) {
+    const userId = req.user._id;
+    markAllNotificationsAsRead(userId)
+      .then((notifications) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'All notifications marked as read', notifications });
       })
       .catch((error) => next(error));
   },

@@ -11,25 +11,25 @@ import { NOTIFICATION_TYPE, NOTIFICATION_STATUS } from '../helpers/constants';
  *          - userId
  *          - description
  *          - type
- *          - URL
+ *          - url
  *          - status
  *        properties:
  *          userId:
  *            type: string
  *          description:
- *            type: number
+ *            type: string
  *          type:
  *            type: number
- *          URL:
+ *          url:
  *            type: string
- *          status:
- *            type: number
+ *          read:
+ *            type: boolean
  *        example:
  *           userId: Lekki Phase 1
  *           description: Your account has been activated
  *           type: 1
- *           URL: app.ballers.ng/dashboard
- *           status: 0
+ *           url: app.ballers.ng/dashboard
+ *           read: false
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -48,11 +48,11 @@ const NotificationSchema = new mongoose.Schema(
       type: Number,
       default: NOTIFICATION_TYPE.DANGER,
     },
-    URL: {
+    url: {
       type: String,
     },
-    status: {
-      type: Number,
+    read: {
+      type: Boolean,
       default: NOTIFICATION_STATUS.UNREAD,
     },
   },

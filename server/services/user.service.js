@@ -21,6 +21,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import { getDateWithTimestamp } from '../helpers/dates';
 import { buildFilterAndSortQuery, USER_FILTERS } from '../helpers/filters';
 import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../../notifications/index';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -114,11 +115,7 @@ export const addUser = async (user) => {
     const password = await hashPassword(user.password);
     const savedUser = await new User({ ...user, password, referralCode, role }).save();
 
-    await createNotification({ userId: savedUser._id, description: 'WELCOME_MESSAGE' }).catch(
-      (error) => {
-        throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-      },
-    );
+    await createNotification(NOTIFICATIONS.WELCOME_MESSAGE, savedUser._id);
 
     if (referrer) {
       await addReferral({
@@ -854,31 +851,5 @@ export const updateRemittancePercentage = async (remittanceInfo) => {
       'Error updating remittance percentage user',
       error,
     );
-  }
-};
-
-export const addNotification = async (userId, notification) => {
-  const user = await getUserById(userId);
-
-  const existingNotifications = user.notifications;
-
-  const newNotification = [
-    {
-      description: notification.description,
-      type: notification.type,
-      URL: notification.URL,
-      dateAdded: Date.now(),
-    },
-    ...existingNotifications,
-  ];
-
-  try {
-    return User.findByIdAndUpdate(
-      user._id,
-      { $set: { notifications: newNotification } },
-      { new: true, fields: '-password' },
-    );
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding notification', error);
   }
 };

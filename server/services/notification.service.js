@@ -5,7 +5,6 @@ import httpStatus from '../helpers/httpStatus';
 import { NOTIFICATION_STATUS } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterAndSortQuery, NOTIFICATION_FILTERS } from '../helpers/filters';
-import NOTIFICATIONS from '../../notifications/index';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -13,15 +12,10 @@ export const getOneNotification = async ({ notificationId, userId }) => {
   return Notification.findOne({ _id: notificationId, userId });
 };
 
-export const createNotification = async (data) => {
+export const createNotification = async ({ description, type, url }, userId) => {
   try {
-    const notification = await new Notification({
-      userId: data.userId,
-      description: NOTIFICATIONS[data.description].description,
-      type: NOTIFICATIONS[data.description].type,
-      URL: NOTIFICATIONS[data.description].url,
-    }).save();
-    return notification;
+    const generatedNotification = await new Notification({ userId, description, type, url }).save();
+    return generatedNotification;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error creating notification', error);
   }
@@ -31,7 +25,7 @@ export const markNotificationAsRead = async ({ userId, notificationId }) => {
   try {
     return Notification.findOneAndUpdate(
       { _id: notificationId, userId },
-      { $set: { status: NOTIFICATION_STATUS.READ } },
+      { $set: { read: NOTIFICATION_STATUS.READ } },
       { new: true },
     );
   } catch (error) {
@@ -68,4 +62,20 @@ export const getAllNotifications = async (user, { page = 1, limit = 10, ...query
   const pagination = generatePagination(page, limit, total);
   const result = notifications[0].data;
   return { pagination, result };
+};
+
+export const markAllNotificationsAsRead = async (userId) => {
+  try {
+    return Notification.updateMany(
+      { userId },
+      { $set: { read: NOTIFICATION_STATUS.READ } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(
+      httpStatus.BAD_REQUEST,
+      'Error marking all notifications as read',
+      error,
+    );
+  }
 };
