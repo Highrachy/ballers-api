@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { NOTIFICATION_TYPE, NOTIFICATION_STATUS } from '../helpers/constants';
+import { NOTIFICATION_TYPE } from '../helpers/constants';
 
 /**
  * @swagger
@@ -53,7 +53,7 @@ const NotificationSchema = new mongoose.Schema(
     },
     read: {
       type: Boolean,
-      default: NOTIFICATION_STATUS.UNREAD,
+      default: false,
     },
   },
   { timestamps: true },

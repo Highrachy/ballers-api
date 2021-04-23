@@ -2,7 +2,7 @@ import { NOTIFICATION_TYPE } from '../server/helpers/constants';
 
 const NOTIFICATIONS = {
   ACTIVATE_YOUR_ACCOUNT: {
-    description: 'Complete your registration by verifying your email',
+    description: 'Your account has been successfully created',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
@@ -12,13 +12,13 @@ const NOTIFICATIONS = {
     url: '/',
   },
   CANCEL_VISIT: {
-    description: 'Visitation to property cancelled',
-    type: NOTIFICATION_TYPE.INFO,
+    description: 'The visitation to [property] property has been cancelled',
+    type: NOTIFICATION_TYPE.DANGER,
     url: '/',
   },
   CERTIFY_VENDOR: {
     description: 'Your account has been certified',
-    type: NOTIFICATION_TYPE.INFO,
+    type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
   CHANGED_PASSWORD: {
@@ -27,7 +27,7 @@ const NOTIFICATIONS = {
     url: '/',
   },
   FLAG_PROPERTY: {
-    description: 'Your prperty has been flagged',
+    description: 'Your property has been flagged',
     type: NOTIFICATION_TYPE.DANGER,
     url: '/',
   },
@@ -103,7 +103,7 @@ const NOTIFICATIONS = {
   },
   VERIFY_VENDOR: {
     description: 'Your account has been verified',
-    type: NOTIFICATION_TYPE.INFO,
+    type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
   WELCOME_MESSAGE: {

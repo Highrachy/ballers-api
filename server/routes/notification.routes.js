@@ -29,29 +29,6 @@ router.get('/all', authenticate, NotificationController.getAllNotifications);
 
 /**
  * @swagger
- * path:
- *  /notification/:id:
- *    get:
- *      parameters:
- *        - in: query
- *          name: token
- *          schema:
- *            type: string
- *          description: verifies user access
- *      summary: Get a notification based by its id
- *      tags: [Notification]
- *      responses:
- *        '200':
- *          description: Notification found
- *        '404':
- *          description: Notification not found
- *        '500':
- *          description: Internal server error
- */
-router.get('/:id', authenticate, hasValidObjectId, NotificationController.getOneNotification);
-
-/**
- * @swagger
  * /notification/mark-all-as-read:
  *   put:
  *     tags:

@@ -90,8 +90,3 @@ export const NOTIFICATION_TYPE = {
   INFO: 2,
   SUCCESS: 3,
 };
-
-export const NOTIFICATION_STATUS = {
-  UNREAD: false,
-  READ: true,
-};

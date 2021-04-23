@@ -2,15 +2,10 @@ import mongoose from 'mongoose';
 import Notification from '../models/notification.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { NOTIFICATION_STATUS } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterAndSortQuery, NOTIFICATION_FILTERS } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
-
-export const getOneNotification = async ({ notificationId, userId }) => {
-  return Notification.findOne({ _id: notificationId, userId });
-};
 
 export const createNotification = async ({ description, type, url }, userId) => {
   try {
@@ -25,7 +20,7 @@ export const markNotificationAsRead = async ({ userId, notificationId }) => {
   try {
     return Notification.findOneAndUpdate(
       { _id: notificationId, userId },
-      { $set: { read: NOTIFICATION_STATUS.READ } },
+      { $set: { read: true } },
       { new: true },
     );
   } catch (error) {
@@ -66,11 +61,7 @@ export const getAllNotifications = async (user, { page = 1, limit = 10, ...query
 
 export const markAllNotificationsAsRead = async (userId) => {
   try {
-    return Notification.updateMany(
-      { userId },
-      { $set: { read: NOTIFICATION_STATUS.READ } },
-      { new: true },
-    );
+    return Notification.updateMany({ userId }, { $set: { read: true } }, { new: true });
   } catch (error) {
     throw new ErrorHandler(
       httpStatus.BAD_REQUEST,

@@ -1,7 +1,6 @@
 import {
   markNotificationAsRead,
   getAllNotifications,
-  getOneNotification,
   markAllNotificationsAsRead,
 } from '../services/notification.service';
 import httpStatus from '../helpers/httpStatus';
@@ -28,22 +27,6 @@ const NotificationController = {
           pagination,
           result,
         });
-      })
-      .catch((error) => next(error));
-  },
-
-  getOneNotification(req, res, next) {
-    const notificationId = req.params.id;
-    const userId = req.user._id;
-    getOneNotification({ notificationId, userId })
-      .then((notification) => {
-        if (notification) {
-          res.status(httpStatus.OK).json({ success: true, notification });
-        } else {
-          res
-            .status(httpStatus.NOT_FOUND)
-            .json({ success: false, message: 'Notification not found' });
-        }
       })
       .catch((error) => next(error));
   },
