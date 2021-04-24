@@ -10,10 +10,10 @@ const NotificationController = {
     const notificationId = req.params.id;
     const userId = req.user._id;
     markNotificationAsRead({ userId, notificationId })
-      .then((user) => {
+      .then((notification) => {
         res
           .status(httpStatus.OK)
-          .json({ success: true, message: 'Notification marked as read', user });
+          .json({ success: true, message: 'Notification marked as read', notification });
       })
       .catch((error) => next(error));
   },

@@ -328,5 +328,4 @@ export const NOTIFICATION_FILTERS = {
   createdAt: { type: FILTER_TYPE.DATE },
   read: { type: FILTER_TYPE.BOOLEAN },
   type: { type: FILTER_TYPE.INTEGER },
-  userId: { type: FILTER_TYPE.OBJECT_ID },
 };

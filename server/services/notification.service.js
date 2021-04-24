@@ -18,11 +18,15 @@ export const createNotification = async ({ description, type, url }, userId) => 
 
 export const markNotificationAsRead = async ({ userId, notificationId }) => {
   try {
-    return Notification.findOneAndUpdate(
+    const readNotification = await Notification.findOneAndUpdate(
       { _id: notificationId, userId },
       { $set: { read: true } },
       { new: true },
     );
+    if (!readNotification) {
+      throw new ErrorHandler(httpStatus.NOT_FOUND, 'Notification not found');
+    }
+    return readNotification;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error marking notification as read', error);
   }
