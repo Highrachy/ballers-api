@@ -29,7 +29,7 @@ router.get('/all', authenticate, NotificationController.getAllNotifications);
 
 /**
  * @swagger
- * /notification/mark-all-as-read:
+ * /notification/read/all:
  *   put:
  *     tags:
  *       - Notification
@@ -49,11 +49,11 @@ router.get('/all', authenticate, NotificationController.getAllNotifications);
  *      '500':
  *       description: Internal server error
  */
-router.put('/mark-all-as-read', authenticate, NotificationController.markAllNotificationsAsRead);
+router.put('/read/all', authenticate, NotificationController.markAllNotificationsAsRead);
 
 /**
  * @swagger
- * /notification/:id:
+ * /notification/read/:id:
  *   put:
  *     tags:
  *       - Notification
@@ -76,6 +76,11 @@ router.put('/mark-all-as-read', authenticate, NotificationController.markAllNoti
  *      '500':
  *       description: Internal server error
  */
-router.put('/:id', authenticate, hasValidObjectId, NotificationController.markNotificationAsRead);
+router.put(
+  '/read/:id',
+  authenticate,
+  hasValidObjectId,
+  NotificationController.markNotificationAsRead,
+);
 
 module.exports = router;

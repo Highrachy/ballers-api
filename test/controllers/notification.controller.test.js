@@ -23,9 +23,6 @@ import {
 } from '../helpers';
 
 let userToken;
-let adminToken;
-let vendorToken;
-let editorToken;
 
 const regularUser = UserFactory.build(
   { role: USER_ROLE.USER, activated: true },
@@ -47,9 +44,6 @@ const vendorUser = UserFactory.build(
 describe('Notification Controller', () => {
   beforeEach(async () => {
     userToken = await addUser(regularUser);
-    adminToken = await addUser(adminUser);
-    vendorToken = await addUser(vendorUser);
-    editorToken = await addUser(editorUser);
   });
 
   describe('Mark Notification as Read', () => {
@@ -57,34 +51,112 @@ describe('Notification Controller', () => {
       { userId: regularUser._id, read: false },
       { generateId: true },
     );
+    const adminNotification = NotificationFactory.build(
+      { userId: adminUser._id, read: false },
+      { generateId: true },
+    );
+    const vendorNotification = NotificationFactory.build(
+      { userId: vendorUser._id, read: false },
+      { generateId: true },
+    );
+    const editorNotification = NotificationFactory.build(
+      { userId: editorUser._id, read: false },
+      { generateId: true },
+    );
     const method = 'put';
-    const endpoint = `/api/v1/notification/${userNotification._id}`;
+    const endpoint = `/api/v1/notification/read/${userNotification._id}`;
+
+    let adminToken;
+    let vendorToken;
+    let editorToken;
 
     beforeEach(async () => {
-      await Notification.create(userNotification);
+      adminToken = await addUser(adminUser);
+      vendorToken = await addUser(vendorUser);
+      editorToken = await addUser(editorUser);
+
+      await Notification.insertMany([
+        userNotification,
+        adminNotification,
+        vendorNotification,
+        editorNotification,
+      ]);
     });
 
     context('with valid data', () => {
-      it('returns notification as read', (done) => {
-        request()
-          [method](endpoint)
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Notification marked as read');
-            expect(res.body.notification._id).to.be.eql(userNotification._id.toString());
-            expect(res.body.notification.userId).to.be.eql(regularUser._id.toString());
-            expect(res.body.notification.read).to.be.eql(true);
-            done();
-          });
+      context('when user is a user', () => {
+        it('marks notification as read', (done) => {
+          request()
+            [method](`/api/v1/notification/read/${userNotification._id}`)
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Notification marked as read');
+              expect(res.body.notification._id).to.be.eql(userNotification._id.toString());
+              expect(res.body.notification.userId).to.be.eql(regularUser._id.toString());
+              expect(res.body.notification.read).to.be.eql(true);
+              done();
+            });
+        });
+      });
+
+      context('when user is an admin', () => {
+        it('marks notification as read', (done) => {
+          request()
+            [method](`/api/v1/notification/read/${adminNotification._id}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Notification marked as read');
+              expect(res.body.notification._id).to.be.eql(adminNotification._id.toString());
+              expect(res.body.notification.userId).to.be.eql(adminUser._id.toString());
+              expect(res.body.notification.read).to.be.eql(true);
+              done();
+            });
+        });
+      });
+
+      context('when user is a vendor', () => {
+        it('marks notification as read', (done) => {
+          request()
+            [method](`/api/v1/notification/read/${vendorNotification._id}`)
+            .set('authorization', vendorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Notification marked as read');
+              expect(res.body.notification._id).to.be.eql(vendorNotification._id.toString());
+              expect(res.body.notification.userId).to.be.eql(vendorUser._id.toString());
+              expect(res.body.notification.read).to.be.eql(true);
+              done();
+            });
+        });
+      });
+
+      context('when user is an editor', () => {
+        it('marks notification as read', (done) => {
+          request()
+            [method](`/api/v1/notification/read/${editorNotification._id}`)
+            .set('authorization', editorToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Notification marked as read');
+              expect(res.body.notification._id).to.be.eql(editorNotification._id.toString());
+              expect(res.body.notification.userId).to.be.eql(editorUser._id.toString());
+              expect(res.body.notification.read).to.be.eql(true);
+              done();
+            });
+        });
       });
     });
 
     context('with invalid notification id', () => {
       it('returns not found', (done) => {
         request()
-          [method](`/api/v1/notification/${mongoose.Types.ObjectId()}`)
+          [method](`/api/v1/notification/read/${mongoose.Types.ObjectId()}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -99,7 +171,7 @@ describe('Notification Controller', () => {
       [...new Array(3)].map((_, index) =>
         it('returns successful payload', (done) => {
           request()
-            [method](endpoint)
+            [method](`/api/v1/notification/read/${userNotification._id}`)
             .set('authorization', [adminToken, vendorToken, editorToken][index])
             .end((err, res) => {
               expect(res).to.have.status(400);
@@ -125,7 +197,7 @@ describe('Notification Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Notification, 'findOneAndUpdate').throws(new Error('Type Error'));
         request()
-          [method](endpoint)
+          [method](`/api/v1/notification/read/${userNotification._id}`)
           .set('authorization', userToken)
           .end((err, res) => {
             expect(res).to.have.status(400);
@@ -140,7 +212,7 @@ describe('Notification Controller', () => {
 
   describe('Mark all Notifications as Read', () => {
     const method = 'put';
-    const endpoint = '/api/v1/notification/mark-all-as-read';
+    const endpoint = '/api/v1/notification/read/all';
 
     const userNotifications = NotificationFactory.buildList(7, {
       userId: regularUser._id,
@@ -152,7 +224,10 @@ describe('Notification Controller', () => {
       read: false,
     });
 
+    let adminToken;
+
     beforeEach(async () => {
+      adminToken = await addUser(adminUser);
       await Notification.insertMany([...userNotifications, ...adminNotifications]);
     });
 
@@ -165,7 +240,7 @@ describe('Notification Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('All notifications marked as read');
-            expect(res.body.notifications.n).to.be.eql(userNotifications.length + 1);
+            expect(res.body.noOfMarkedNotifications).to.be.eql(userNotifications.length + 1);
             done();
           });
       });
@@ -180,7 +255,7 @@ describe('Notification Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('All notifications marked as read');
-            expect(res.body.notifications.n).to.be.eql(adminNotifications.length + 1);
+            expect(res.body.noOfMarkedNotifications).to.be.eql(adminNotifications.length + 1);
             done();
           });
       });
@@ -242,6 +317,12 @@ describe('Notification Controller', () => {
       },
       { generateId: true },
     );
+
+    let adminToken;
+
+    beforeEach(async () => {
+      adminToken = await addUser(adminUser);
+    });
 
     describe('Notification Pagination', () => {
       describe('when notifications exist in db', () => {
@@ -364,7 +445,6 @@ describe('Notification Controller', () => {
         endpoint,
         user: editorUser,
         dataObject: editorNotification,
-        useExistingUser: true,
       });
     });
   });

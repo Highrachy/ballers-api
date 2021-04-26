@@ -65,7 +65,8 @@ export const getAllNotifications = async (user, { page = 1, limit = 10, ...query
 
 export const markAllNotificationsAsRead = async (userId) => {
   try {
-    return Notification.updateMany({ userId }, { $set: { read: true } }, { new: true });
+    const markedNotifications = await Notification.updateMany({ userId }, { $set: { read: true } });
+    return { noOfMarkedNotifications: markedNotifications.nModified };
   } catch (error) {
     throw new ErrorHandler(
       httpStatus.BAD_REQUEST,

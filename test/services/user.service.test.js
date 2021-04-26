@@ -28,6 +28,7 @@ import ReferralFactory from '../factories/referral.factory';
 import TransactionFactory from '../factories/transaction.factory';
 import { USER_SECRET } from '../../server/config';
 import User from '../../server/models/user.model';
+import Notification from '../../server/models/notification.model';
 import Property from '../../server/models/property.model';
 import PropertyFactory from '../factories/property.factory';
 import { addProperty, updateProperty } from '../../server/services/property.service';
@@ -152,11 +153,13 @@ describe('User Service', () => {
 
   describe('#addUser', () => {
     let countedUsers;
+    let countedNotifications;
     const email = 'myemail@mail.com';
     const user = UserFactory.build({ email });
 
     beforeEach(async () => {
       countedUsers = await User.countDocuments({});
+      countedNotifications = await Notification.countDocuments({});
     });
 
     context('when a valid user is entered', () => {
@@ -166,7 +169,9 @@ describe('User Service', () => {
 
       it('adds a new user', async () => {
         const currentCountedUsers = await User.countDocuments({});
+        const currentCountedNotifications = await Notification.countDocuments({});
         expect(currentCountedUsers).to.eql(countedUsers + 1);
+        expect(currentCountedNotifications).to.eql(countedNotifications + 1);
       });
 
       it('returns the user token', async () => {
@@ -189,7 +194,9 @@ describe('User Service', () => {
 
       it('adds a new vendor', async () => {
         const currentCountedUsers = await User.countDocuments({});
+        const currentCountedNotifications = await Notification.countDocuments({});
         expect(currentCountedUsers).to.eql(countedUsers + 1);
+        expect(currentCountedNotifications).to.eql(countedNotifications + 1);
       });
 
       it('user role should be 2', async () => {

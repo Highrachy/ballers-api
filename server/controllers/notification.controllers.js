@@ -34,10 +34,12 @@ const NotificationController = {
   markAllNotificationsAsRead(req, res, next) {
     const userId = req.user._id;
     markAllNotificationsAsRead(userId)
-      .then((notifications) => {
-        res
-          .status(httpStatus.OK)
-          .json({ success: true, message: 'All notifications marked as read', notifications });
+      .then(({ noOfMarkedNotifications }) => {
+        res.status(httpStatus.OK).json({
+          success: true,
+          message: 'All notifications marked as read',
+          noOfMarkedNotifications,
+        });
       })
       .catch((error) => next(error));
   },
