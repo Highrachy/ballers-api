@@ -83,3 +83,10 @@ export const NEIGHBORHOOD_STEPS = [
   'schools',
   'shoppingMalls',
 ];
+
+export const NOTIFICATION_TYPE = {
+  DANGER: 0,
+  CONTENT: 1,
+  INFO: 2,
+  SUCCESS: 3,
+};

@@ -3,6 +3,7 @@ import querystring from 'querystring';
 import { addUser, loginUser } from '../server/services/user.service';
 import { expect, request, sinon } from './config';
 import User from '../server/models/user.model';
+import Notification from '../server/models/notification.model';
 
 export const expectsPaginationToReturnTheRightValues = (
   res,
@@ -588,6 +589,22 @@ export const itReturnAllResultsWhenAnUnknownFilterIsUsed = ({
           expectsPaginationToReturnTheRightValues(res, expectedPagination);
           done();
         });
+    });
+  });
+};
+
+export const expectNewNotificationToBeAdded = (userId, notification) => {
+  let userLatestNotification;
+
+  beforeEach(async () => {
+    userLatestNotification = await Notification.find({ userId }).sort({ _id: -1 }).limit(1);
+  });
+
+  context('when new notification is added', () => {
+    it('adds a new notification for user', () => {
+      expect(userLatestNotification[0].type).to.eql(notification.type);
+      expect(userLatestNotification[0].read).to.eql(false);
+      expect(userLatestNotification[0].description).to.eql(notification.description);
     });
   });
 };

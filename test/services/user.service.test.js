@@ -39,6 +39,8 @@ import { addTransaction } from '../../server/services/transaction.service';
 import { addReferral } from '../../server/services/referral.service';
 import Referral from '../../server/models/referral.model';
 import { USER_ROLE } from '../../server/helpers/constants';
+import NOTIFICATIONS from '../../notifications/index';
+import { expectNewNotificationToBeAdded } from '../helpers';
 
 const expectsReturnedTokenToBeValid = (token, id) => {
   const decodedToken = jwt.verify(token, USER_SECRET);
@@ -153,7 +155,7 @@ describe('User Service', () => {
   describe('#addUser', () => {
     let countedUsers;
     const email = 'myemail@mail.com';
-    const user = UserFactory.build({ email });
+    const user = UserFactory.build({ email }, { generateId: true });
 
     beforeEach(async () => {
       countedUsers = await User.countDocuments({});
@@ -169,6 +171,8 @@ describe('User Service', () => {
         expect(currentCountedUsers).to.eql(countedUsers + 1);
       });
 
+      expectNewNotificationToBeAdded(user._id, NOTIFICATIONS.WELCOME_MESSAGE);
+
       it('returns the user token', async () => {
         const _id = mongoose.Types.ObjectId();
         const token = await addUser(UserFactory.build({ _id }));
@@ -177,11 +181,10 @@ describe('User Service', () => {
     });
 
     context('when user registers as a vendor', () => {
-      const vendorId = mongoose.Types.ObjectId();
-      const vendor = UserFactory.build({
-        _id: vendorId,
-        vendor: { companyName: 'Highrachy Investment' },
-      });
+      const vendor = UserFactory.build(
+        { vendor: { companyName: 'Highrachy Investment' } },
+        { generateId: true },
+      );
 
       beforeEach(async () => {
         await addUser(vendor);
@@ -192,8 +195,10 @@ describe('User Service', () => {
         expect(currentCountedUsers).to.eql(countedUsers + 1);
       });
 
+      expectNewNotificationToBeAdded(vendor._id, NOTIFICATIONS.WELCOME_MESSAGE);
+
       it('user role should be 2', async () => {
-        const registeredVendor = await getUserById(vendorId);
+        const registeredVendor = await getUserById(vendor._id);
         expect(registeredVendor.role).to.eql(2);
       });
     });

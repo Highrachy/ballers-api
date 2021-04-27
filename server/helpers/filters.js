@@ -323,3 +323,9 @@ export const AREA_FILTERS = {
   createdAt: { type: FILTER_TYPE.DATE },
   state: { type: FILTER_TYPE.STRING },
 };
+
+export const NOTIFICATION_FILTERS = {
+  createdAt: { type: FILTER_TYPE.DATE },
+  read: { type: FILTER_TYPE.BOOLEAN },
+  type: { type: FILTER_TYPE.INTEGER },
+};

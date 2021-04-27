@@ -20,6 +20,8 @@ import {
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
 import { buildFilterAndSortQuery, USER_FILTERS } from '../helpers/filters';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../../notifications/index';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -112,6 +114,8 @@ export const addUser = async (user) => {
   try {
     const password = await hashPassword(user.password);
     const savedUser = await new User({ ...user, password, referralCode, role }).save();
+
+    await createNotification(NOTIFICATIONS.WELCOME_MESSAGE, savedUser._id);
 
     if (referrer) {
       await addReferral({
