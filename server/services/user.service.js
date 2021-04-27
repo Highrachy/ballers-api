@@ -131,8 +131,8 @@ export const addUser = async (user) => {
   }
 };
 
-export const getUserInfo = async (key, value) =>
-  User.aggregate([
+export const getUserInfo = async (key, value) => {
+  const user = await User.aggregate([
     { $match: { [key]: value } },
     {
       $lookup: {
@@ -151,6 +151,56 @@ export const getUserInfo = async (key, value) =>
       },
     },
     {
+      $lookup: {
+        from: 'notifications',
+        let: { userId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ['$userId', '$$userId'] }, { $eq: ['$read', false] }],
+              },
+            },
+          },
+        ],
+        as: 'notifications',
+      },
+    },
+    { $unwind: '$notifications' },
+    { $sort: { 'notifications.type': -1 } },
+    {
+      $group: {
+        _id: '$_id',
+        notifications: { $addToSet: '$notifications' },
+      },
+    },
+    // {
+    //   $group: {
+    //     // _id: '$_id',
+    //     _id: { _id: '$_id' },
+    //     notifications: { $push: '$notifications' },
+    //     doc: { $addToSet: '$$ROOT' },
+    //   },
+    // },
+    // { $replaceRoot: { newRoot: '$doc' } },
+    // { $sort: { 'notifications.createdAt': -1 } },
+    // {
+    //   $group: {
+    //     _id: '$_id',
+    //     // _id: { _id: '$_id', notifications: '$notifications' },
+    //     doc: { $first: '$$ROOT' },
+    //   },
+    // },
+
+    // {
+    //   $group: {
+    //     _id: '$_id',
+    //     notifications: {
+    //       $push: '$notifications',
+    //     },
+    //   },
+    // },
+    {
       $project: {
         password: 0,
         'assignedProperties.assignedTo': 0,
@@ -161,9 +211,10 @@ export const getUserInfo = async (key, value) =>
         'favorites.updatedBy': 0,
       },
     },
-  ]).then((user) => {
-    return Promise.resolve(user[0]);
-  });
+  ]);
+
+  return user[0];
+};
 
 export const loginUser = async (user) => {
   const existingUser = await getUserByEmail(user.email, '+password').catch((error) => {
