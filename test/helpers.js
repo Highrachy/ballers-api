@@ -601,7 +601,7 @@ export const expectNewNotificationToBeAdded = (userId, notification) => {
   });
 
   context('when new notification is added', () => {
-    it('adds a new notification for user', async () => {
+    it('adds a new notification for user', () => {
       expect(userLatestNotification[0].type).to.eql(notification.type);
       expect(userLatestNotification[0].read).to.eql(false);
       expect(userLatestNotification[0].description).to.eql(notification.description);
