@@ -166,54 +166,34 @@ export const getUserInfo = async (key, value) => {
         as: 'notifications',
       },
     },
-    { $unwind: '$notifications' },
-    { $sort: { 'notifications.type': -1 } },
+    {
+      $unwind: {
+        path: '$notifications',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    { $sort: { 'notifications.createdAt': -1 } },
     {
       $group: {
         _id: '$_id',
-        notifications: { $addToSet: '$notifications' },
+        notifications: { $push: '$notifications' },
+        user: { $first: '$$ROOT' },
       },
     },
-    // {
-    //   $group: {
-    //     // _id: '$_id',
-    //     _id: { _id: '$_id' },
-    //     notifications: { $push: '$notifications' },
-    //     doc: { $addToSet: '$$ROOT' },
-    //   },
-    // },
-    // { $replaceRoot: { newRoot: '$doc' } },
-    // { $sort: { 'notifications.createdAt': -1 } },
-    // {
-    //   $group: {
-    //     _id: '$_id',
-    //     // _id: { _id: '$_id', notifications: '$notifications' },
-    //     doc: { $first: '$$ROOT' },
-    //   },
-    // },
-
-    // {
-    //   $group: {
-    //     _id: '$_id',
-    //     notifications: {
-    //       $push: '$notifications',
-    //     },
-    //   },
-    // },
     {
       $project: {
-        password: 0,
-        'assignedProperties.assignedTo': 0,
-        'assignedProperties.addedBy': 0,
-        'assignedProperties.updatedBy': 0,
-        'favorites.assignedTo': 0,
-        'favorites.addedBy': 0,
-        'favorites.updatedBy': 0,
+        'user.password': 0,
+        'user.assignedProperties.assignedTo': 0,
+        'user.assignedProperties.addedBy': 0,
+        'user.assignedProperties.updatedBy': 0,
+        'user.favorites.assignedTo': 0,
+        'user.favorites.addedBy': 0,
+        'user.favorites.updatedBy': 0,
       },
     },
   ]);
 
-  return user[0];
+  return { ...user[0].user, notifications: user[0].notifications };
 };
 
 export const loginUser = async (user) => {
