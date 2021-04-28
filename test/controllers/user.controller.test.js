@@ -37,6 +37,7 @@ import {
   filterTestForSingleParameter,
   itReturnsNoResultWhenNoFilterParameterIsMatched,
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
+  pastDate,
 } from '../helpers';
 import {
   USER_ROLE,
@@ -47,6 +48,8 @@ import {
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
 import { USER_FILTERS } from '../../server/helpers/filters';
+import Notification from '../../server/models/notification.model';
+import NotificationFactory from '../factories/notification.factory';
 
 let adminToken;
 let userToken;
@@ -730,31 +733,36 @@ describe('User Controller', () => {
     });
 
     describe('Current User', () => {
-      context('with no token', () => {
-        it('returns a forbidden error', (done) => {
-          request()
-            .get('/api/v1/user/who-am-i')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
+      const method = 'get';
+      const endpoint = '/api/v1/user/who-am-i';
 
-      context('with invalid token', () => {
-        it('returns an authorization error', (done) => {
-          request()
-            .get('/api/v1/user/who-am-i')
-            .set('authorization', 'invalid-token')
-            .end((err, res) => {
-              expect(res).to.have.status(401);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Authentication Failed');
-              done();
-            });
-        });
+      const userNotification1 = NotificationFactory.build(
+        { userId: regularUser._id, read: false, createdAt: pastDate },
+        { generateId: true },
+      );
+
+      const userNotification2 = NotificationFactory.build(
+        { userId: regularUser._id, read: true, createdAt: currentDate },
+        { generateId: true },
+      );
+
+      const userNotification3 = NotificationFactory.build(
+        { userId: regularUser._id, read: false, createdAt: futureDate },
+        { generateId: true },
+      );
+
+      const adminNotification = NotificationFactory.build(
+        { userId: adminUser._id, read: false, createdAt: currentDate },
+        { generateId: true },
+      );
+
+      beforeEach(async () => {
+        await Notification.insertMany([
+          userNotification1,
+          userNotification2,
+          userNotification3,
+          adminNotification,
+        ]);
       });
 
       context('with valid token', () => {
@@ -768,10 +776,41 @@ describe('User Controller', () => {
               expect(res.body.user.firstName).to.be.eql(regularUser.firstName);
               expect(res.body.user.lastName).to.be.eql(regularUser.lastName);
               expect(res.body.user.email).to.be.eql(regularUser.email);
+              expect(res.body.user.notifications.length).to.be.eql(3);
+              expect(res.body.user.notifications[0]._id).to.be.eql(
+                userNotification3._id.toString(),
+              );
+              expect(res.body.user.notifications[0].read).to.be.eql(false);
+              expect(res.body.user.notifications[1]._id).to.not.eql(
+                userNotification2._id.toString(),
+              );
+              expect(res.body.user.notifications[2]._id).to.be.eql(
+                userNotification1._id.toString(),
+              );
+              expect(res.body.user.notifications[2].read).to.be.eql(false);
               expect(res.body.user).to.not.have.property('password');
               done();
             });
         });
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      itReturnsAnErrorWhenServiceFails({
+        endpoint,
+        method,
+        user: regularUser,
+        model: User,
+        modelMethod: 'aggregate',
+        useExistingUser: true,
+      });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: regularUser,
+        userId: regularUser._id,
+        useExistingUser: true,
       });
 
       context('when a user is banned', () => {
@@ -792,23 +831,6 @@ describe('User Controller', () => {
               expect(res.body.message).to.be.eql(
                 'Your account has been locked. Kindly contact Ballers Support for more information',
               );
-              done();
-            });
-        });
-      });
-
-      context('when user is not found', () => {
-        beforeEach(async () => {
-          await User.findByIdAndDelete(regularUser._id);
-        });
-        it('returns token error', (done) => {
-          request()
-            .get('/api/v1/user/who-am-i')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(404);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Invalid token');
               done();
             });
         });
