@@ -26,7 +26,8 @@ import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
-import { futureDate } from '../helpers';
+import { futureDate, expectNewNotificationToBeAdded } from '../helpers';
+import NOTIFICATIONS from '../../notifications/index';
 
 describe('Offer Service', () => {
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
@@ -159,6 +160,13 @@ describe('Offer Service', () => {
         expect(newOffer.vendorInfo).to.not.have.property('assignedProperties');
         expect(newOffer.vendorInfo).to.not.have.property('password');
         expect(newOffer.vendorInfo).to.not.have.property('referralCode');
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await createOffer(offer);
+        });
+        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_CREATED, user._id);
       });
     });
 
@@ -462,6 +470,14 @@ describe('Offer Service', () => {
         expect(acceptedOffer.contributionReward).to.eql(2000000);
         expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
       });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await acceptOffer(toAcceptValid);
+        });
+        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, vendor._id);
+        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_USER, user1._id);
+      });
     });
 
     context('when offer price is higher than property price', () => {
@@ -734,6 +750,13 @@ describe('Offer Service', () => {
         expect(reactivatedOffer.propertyId).to.eql(property._id);
         expect(reactivatedOffer.enquiryId).to.eql(enquiry._id);
         expect(reactivatedOffer.status).to.eql(OFFER_STATUS.GENERATED);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await reactivateOffer(offerInfo);
+        });
+        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_REACTIVATED, user._id);
       });
     });
   });

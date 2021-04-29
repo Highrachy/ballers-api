@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 import { expect, sinon } from '../config';
-import { scheduleVisitation, getAllVisitations } from '../../server/services/visitation.service';
+import {
+  scheduleVisitation,
+  getAllVisitations,
+  processVisitation,
+} from '../../server/services/visitation.service';
 import VisitationFactory from '../factories/visitation.factory';
 import PropertyFactory from '../factories/property.factory';
 import UserFactory from '../factories/user.factory';
@@ -8,7 +12,9 @@ import Visitation from '../../server/models/visitation.model';
 import Property from '../../server/models/property.model';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
-import { USER_ROLE } from '../../server/helpers/constants';
+import { USER_ROLE, PROCESS_VISITATION_ACTION } from '../../server/helpers/constants';
+import { expectNewNotificationToBeAdded } from '../helpers';
+import NOTIFICATIONS from '../../notifications/index';
 
 describe('Visitation Service', () => {
   const vendor = UserFactory.build(
@@ -35,16 +41,25 @@ describe('Visitation Service', () => {
     });
 
     context('when a valid schedule is entered', () => {
+      const validBooking = VisitationFactory.build({
+        propertyId: property._id,
+        userId: user._id,
+      });
+
       it('adds a new scheduled visit', async () => {
-        const validBooking = VisitationFactory.build({
-          propertyId: property._id,
-          userId: user._id,
-        });
         const schedule = await scheduleVisitation(validBooking);
         const currentcountedVisitations = await Visitation.countDocuments({});
         expect(schedule.schedule.propertyId).to.eql(validBooking.propertyId);
         expect(schedule.vendor.email).to.eql(vendor.email);
         expect(currentcountedVisitations).to.eql(countedVisitations + 1);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await scheduleVisitation(validBooking);
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.SCHEDULE_VISIT, vendor._id);
       });
     });
 
@@ -174,6 +189,49 @@ describe('Visitation Service', () => {
         const schedule = await getAllVisitations(vendor);
         expect(schedule.result).to.be.an('array');
         expect(schedule.result.length).to.be.eql(3);
+      });
+    });
+  });
+
+  describe('#processVisitation', () => {
+    const visitation = VisitationFactory.build(
+      { propertyId: property._id, userId: user._id },
+      { generateId: true },
+    );
+
+    const visitationInfo = {
+      visitationId: visitation._id,
+      visitDate: new Date('2020-11-11'),
+      reason: 'Reason',
+    };
+
+    context('when a valid data is entered', () => {
+      beforeEach(async () => {
+        await scheduleVisitation(visitation);
+      });
+
+      context('when visitation is rescheduled', () => {
+        beforeEach(async () => {
+          await processVisitation({
+            user: vendor,
+            visitationInfo,
+            action: PROCESS_VISITATION_ACTION.RESCHEDULE,
+          });
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.RESCHEDULE_VISIT, user._id);
+      });
+
+      context('when visitation is cancelled', () => {
+        beforeEach(async () => {
+          await processVisitation({
+            user,
+            visitationInfo,
+            action: PROCESS_VISITATION_ACTION.CANCEL,
+          });
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.CANCEL_VISIT, vendor._id);
       });
     });
   });
