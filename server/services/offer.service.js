@@ -17,6 +17,8 @@ import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { addNextPayment } from './nextPayment.service';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../../notifications/index';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -339,6 +341,7 @@ export const createOffer = async (offer) => {
       referenceCode,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, vendor });
+    await createNotification(NOTIFICATIONS.OFFER_CREATED, user._id);
     const offerInfo = await getOffer(newOffer._id, user);
     return { ...offerInfo[0], userInfo };
   } catch (error) {
@@ -418,6 +421,10 @@ export const acceptOffer = async (offerToAccept) => {
       },
       { new: true },
     );
+
+    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, offer[0].vendorId);
+    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_USER, offer[0].userId);
+
     const acceptedoffer = await getOffer(offerToAccept.offerId, offerToAccept.user);
     return { ...acceptedoffer[0], paymentSchedule };
   } catch (error) {
@@ -524,6 +531,9 @@ export const raiseConcern = async (concern) => {
       },
       { new: true, safe: true, upsert: true },
     );
+
+    await createNotification(NOTIFICATIONS.RAISE_CONCERN, offer.userId);
+
     return await getOffer(concern.offerId, concern.user);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error raising concern', error);
@@ -551,6 +561,7 @@ export const resolveConcern = async (concern) => {
       },
       { new: true },
     );
+    await createNotification(NOTIFICATIONS.RESOLVE_CONCERN, offer.userId);
     return await getOffer(concern.offerId, concern.vendor);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving concern', error);
@@ -690,6 +701,8 @@ export const reactivateOffer = async (offerInfo) => {
   try {
     await Offer.findByIdAndUpdate(offer._id, { status: OFFER_STATUS.REACTIVATED });
     const newOffer = await new Offer(updatedOffer).save();
+
+    await createNotification(NOTIFICATIONS.OFFER_REACTIVATED, offer.userId);
 
     const reactivatedOffer = await getOffer(newOffer._id, user);
     return reactivatedOffer[0];

@@ -8,6 +8,8 @@ import { USER_ROLE, VISITATION_STATUS, PROCESS_VISITATION_ACTION } from '../help
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp } from '../helpers/dates';
 import { buildFilterQuery, VISITATION_FILTERS } from '../helpers/filters';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../../notifications/index';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -25,6 +27,7 @@ export const scheduleVisitation = async (schedule) => {
 
     try {
       const newSchedule = await new Visitation({ ...schedule, vendorId: property.addedBy }).save();
+      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT, vendor._id);
       return { schedule: newSchedule, vendor };
     } catch (error) {
       throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error scheduling visit', error);
@@ -155,6 +158,12 @@ export const processVisitation = async ({ user, visitationInfo, action }) => {
       { $set: processedVisitation },
       { new: true },
     );
+
+    if (action === PROCESS_VISITATION_ACTION.RESCHEDULE) {
+      await createNotification(NOTIFICATIONS.RESCHEDULE_VISIT, mailDetails._id);
+    } else {
+      await createNotification(NOTIFICATIONS.CANCEL_VISIT, mailDetails._id);
+    }
 
     return { visitation: updatedVisitation, mailDetails, property };
   } catch (error) {

@@ -4,6 +4,7 @@ import {
   addTransaction,
   getAllTransactions,
   getUserTransactionsByProperty,
+  addRemittance,
 } from '../../server/services/transaction.service';
 import TransactionFactory from '../factories/transaction.factory';
 import Transaction from '../../server/models/transaction.model';
@@ -17,6 +18,8 @@ import { createOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { USER_ROLE } from '../../server/helpers/constants';
 import NextPayment from '../../server/models/nextPayment.model';
+import { expectNewNotificationToBeAdded } from '../helpers';
+import NOTIFICATIONS from '../../notifications/index';
 
 describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -233,6 +236,29 @@ describe('Transaction Service', () => {
       it('returns a valid updated transaction', async () => {
         const searchResult = await getUserTransactionsByProperty(property._id, admin);
         expect(searchResult.result[0].propertyInfo._id).to.eql(property._id);
+      });
+    });
+  });
+
+  describe('#addRemittance', () => {
+    const remittanceInfo = {
+      transactionId: transaction._id,
+      percentage: 5,
+      adminId: admin._id,
+      date: new Date('2020-11-11'),
+    };
+
+    context('when a valid data is entered', () => {
+      beforeEach(async () => {
+        await addTransaction(transaction);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await addRemittance(remittanceInfo);
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.REMITTANCE_PAID, vendor._id);
       });
     });
   });

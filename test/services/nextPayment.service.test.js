@@ -6,11 +6,18 @@ import Transaction from '../../server/models/transaction.model';
 import {
   generateNextPaymentDate,
   resolveExpiredNextPayments,
+  sendReminder,
 } from '../../server/services/nextPayment.service';
 import OfferFactory from '../factories/offer.factory';
 import NextPaymentFactory from '../factories/nextPayment.factory';
 import TransactionFactory from '../factories/transaction.factory';
-import { OFFER_STATUS } from '../../server/helpers/constants';
+import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
+import Notification from '../../server/models/notification.model';
+import UserFactory from '../factories/user.factory';
+import PropertyFactory from '../factories/property.factory';
+import { addUser } from '../../server/services/user.service';
+import { addProperty } from '../../server/services/property.service';
+import { futureDate } from '../helpers';
 
 describe('NextPayment Service', () => {
   describe('#generateNextPaymentDate', () => {
@@ -566,6 +573,99 @@ describe('NextPayment Service', () => {
         generatedNextPayments.forEach((payment) => {
           expect(payment.expectedAmount).to.be.eql(2_500_000);
           expect(payment.expiresOn).to.be.eql(expiresOnForFirstCycle);
+        });
+      });
+    });
+  });
+
+  describe('#sendReminder', () => {
+    let fakeDate;
+    let countedNotifications;
+
+    const regularUser = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
+
+    const vendorProperty = PropertyFactory.build(
+      { addedBy: mongoose.Types.ObjectId(), updatedBy: mongoose.Types.ObjectId() },
+      { generateId: true },
+    );
+
+    const unresolvedNextPayments = NextPaymentFactory.buildList(2, {
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorProperty.addedBy,
+      resolved: false,
+      expiresOn: futureDate,
+    });
+
+    const resolvedNextPayments = NextPaymentFactory.buildList(3, {
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorProperty.addedBy,
+      resolved: true,
+      expiresOn: futureDate,
+    });
+
+    const oneDayAway = NextPaymentFactory.build({
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorProperty.addedBy,
+      resolved: false,
+      expiresOn: new Date('2020-03-25'),
+    });
+
+    const sevenDaysAway = NextPaymentFactory.build({
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorProperty.addedBy,
+      resolved: false,
+      expiresOn: new Date('2020-03-31'),
+    });
+
+    const thirtyDaysAway = NextPaymentFactory.build({
+      propertyId: vendorProperty._id,
+      userId: regularUser._id,
+      vendorId: vendorProperty.addedBy,
+      resolved: false,
+      expiresOn: new Date('2020-04-23'),
+    });
+
+    const allNextPayments = [
+      ...unresolvedNextPayments,
+      ...resolvedNextPayments,
+      oneDayAway,
+      sevenDaysAway,
+      thirtyDaysAway,
+    ];
+
+    afterEach(() => {
+      fakeDate.restore();
+    });
+
+    context('when a valid data is entered', () => {
+      beforeEach(async () => {
+        fakeDate = sinon.useFakeTimers({
+          now: new Date('2020-03-24'),
+        });
+      });
+
+      beforeEach(async () => {
+        await addUser(regularUser);
+        await addProperty(vendorProperty);
+        await NextPayment.insertMany(allNextPayments);
+        countedNotifications = await Notification.countDocuments({});
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await sendReminder();
+        });
+
+        it('3 notifications are added', async () => {
+          const currentCountedNotifications = await Notification.countDocuments({});
+          expect(currentCountedNotifications).to.eql(countedNotifications + 3);
         });
       });
     });

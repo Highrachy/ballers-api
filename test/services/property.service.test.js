@@ -15,6 +15,8 @@ import Property from '../../server/models/property.model';
 import { USER_ROLE } from '../../server/helpers/constants';
 import ReportedPropertyFactory from '../factories/reportedProperty.factory';
 import { getReportById, reportProperty } from '../../server/services/reportedProperty.service';
+import { expectNewNotificationToBeAdded } from '../helpers';
+import NOTIFICATIONS from '../../notifications/index';
 
 describe('Property Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -212,14 +214,24 @@ describe('Property Service', () => {
       await reportProperty(report);
     });
 
-    it('returns a flagged prperty', async () => {
-      const flaggedProperty = await flagProperty(propertyInfo);
-      expect(flaggedProperty.property.flagged.status).to.eql(true);
-      expect(flaggedProperty.property.flagged.case[0].flaggedBy).to.eql(adminId);
+    context('when data is valid', () => {
+      it('returns a flagged prperty', async () => {
+        const flaggedProperty = await flagProperty(propertyInfo);
+        expect(flaggedProperty.property.flagged.status).to.eql(true);
+        expect(flaggedProperty.property.flagged.case[0].flaggedBy).to.eql(adminId);
 
-      const resolvedReport = await getReportById(report._id);
-      expect(resolvedReport.resolved.status).to.eql(true);
-      expect(resolvedReport.resolved.by).to.eql(adminId);
+        const resolvedReport = await getReportById(report._id);
+        expect(resolvedReport.resolved.status).to.eql(true);
+        expect(resolvedReport.resolved.by).to.eql(adminId);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await flagProperty(propertyInfo);
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.FLAG_PROPERTY, vendor._id);
+      });
     });
   });
 });

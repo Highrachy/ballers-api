@@ -23,6 +23,8 @@ import {
 import { resolveReport, getReportById } from './reportedProperty.service';
 // eslint-disable-next-line import/no-cycle
 import { getUserById } from './user.service';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../../notifications/index';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -762,6 +764,8 @@ export const flagProperty = async (propertyInfo) => {
       { new: true },
     );
 
+    await createNotification(NOTIFICATIONS.FLAG_PROPERTY, vendor._id);
+
     return { property: flaggedProperty, vendor };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error flagging property', error);
@@ -798,6 +802,8 @@ export const unflagProperty = async (propertyInfo) => {
       { $set: { 'flagged.status': false } },
       { new: true },
     );
+
+    await createNotification(NOTIFICATIONS.UNFLAG_PROPERTY, vendor._id);
 
     return { property: unflaggedProperty, vendor };
   } catch (error) {
