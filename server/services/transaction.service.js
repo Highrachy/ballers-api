@@ -17,6 +17,8 @@ import {
 import { generateNextPaymentDate } from './nextPayment.service';
 // eslint-disable-next-line import/no-cycle
 import { getUserById } from './user.service';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../../notifications/index';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -296,6 +298,8 @@ export const addRemittance = async (remittanceInfo) => {
       },
       { new: true },
     );
+
+    await createNotification(NOTIFICATIONS.REMITTANCE_PAID, user._id);
 
     return { transaction: remittedTransaction, user };
   } catch (error) {

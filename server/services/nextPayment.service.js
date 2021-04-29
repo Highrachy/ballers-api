@@ -10,6 +10,8 @@ import { getTotalTransactionByOfferId } from './transaction.service';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { USER_ROLE } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../../notifications/index';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -191,7 +193,7 @@ export const getUnresolvedNextPayments = async (user, { page = 1, limit = 10 } =
 
 export const sendReminder = async () => {
   const today = new Date();
-  return NextPayment.aggregate([
+  const reminders = await NextPayment.aggregate([
     { $match: { resolved: false } },
     {
       $match: {
@@ -221,6 +223,14 @@ export const sendReminder = async () => {
     { $unwind: '$userInfo' },
     { $unwind: '$propertyInfo' },
   ]);
+
+  await Promise.all(
+    reminders.map(async (reminder) => {
+      await createNotification(NOTIFICATIONS.PAYMENT_REMINDER, reminder.userId);
+    }),
+  );
+
+  return reminders;
 };
 
 export const resolveExpiredNextPayments = async () => {

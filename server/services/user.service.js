@@ -195,11 +195,15 @@ export const loginUser = async (user) => {
 export const activateUser = async (token) => {
   try {
     const decoded = await decodeToken(token);
-    return User.findOneAndUpdate(
+    const user = await User.findOneAndUpdate(
       { _id: decoded.id },
       { $set: { activated: true, activationDate: Date.now() } },
       { new: true, fields: '-password' },
     );
+
+    await createNotification(NOTIFICATIONS.WELCOME_MESSAGE, user._id);
+
+    return user;
   } catch (error) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found', error);
   }
@@ -245,11 +249,15 @@ export const resetPasswordViaToken = async (password, token) => {
   try {
     const decoded = await decodeToken(token);
     const hashedPassword = await hashPassword(password);
-    return User.findOneAndUpdate(
+    const user = await User.findOneAndUpdate(
       { _id: decoded.id },
       { $set: { password: hashedPassword } },
       { new: true, fields: '-password' },
     );
+
+    await createNotification(NOTIFICATIONS.CHANGED_PASSWORD, decoded.id);
+
+    return user;
   } catch (error) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found', error);
   }
@@ -462,7 +470,7 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
   });
 
   try {
-    return User.findByIdAndUpdate(
+    const verifiedVendor = await User.findByIdAndUpdate(
       vendorId,
       {
         $set: {
@@ -473,6 +481,10 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
       },
       { new: true, fields: '-password' },
     );
+
+    await createNotification(NOTIFICATIONS.VERIFY_VENDOR, vendor._id);
+
+    return verifiedVendor;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error verifying vendor', error);
   }
@@ -726,7 +738,7 @@ export const certifyVendor = async ({ vendorId, adminId }) => {
   }
 
   try {
-    return User.findByIdAndUpdate(
+    const certifiedVendor = await User.findByIdAndUpdate(
       vendorId,
       {
         $set: {
@@ -737,6 +749,10 @@ export const certifyVendor = async ({ vendorId, adminId }) => {
       },
       { new: true, fields: '-password' },
     );
+
+    await createNotification(NOTIFICATIONS.CERTIFY_VENDOR, vendorId);
+
+    return certifiedVendor;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error certifying vendor', error);
   }
@@ -784,7 +800,7 @@ export const banUser = async ({ adminId, userId, reason }) => {
   }
 
   try {
-    return User.findByIdAndUpdate(
+    const bannedUser = await User.findByIdAndUpdate(
       userId,
       {
         $set: { 'banned.status': true },
@@ -798,6 +814,10 @@ export const banUser = async ({ adminId, userId, reason }) => {
       },
       { new: true, fields: '-password' },
     );
+
+    await createNotification(NOTIFICATIONS.BAN_USER, userId);
+
+    return bannedUser;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error banning user', error);
   }
@@ -822,11 +842,15 @@ export const unbanUser = async ({ adminId, userId, caseId, reason }) => {
       },
     );
 
-    return User.findByIdAndUpdate(
+    const unbannedUser = await User.findByIdAndUpdate(
       userId,
       { $set: { 'banned.status': false } },
       { new: true, fields: '-password' },
     );
+
+    await createNotification(NOTIFICATIONS.UNBAN_USER, userId);
+
+    return unbannedUser;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error unbanning user', error);
   }
