@@ -22,6 +22,10 @@ import {
   addPropertyToFavorites,
   removePropertyFromFavorites,
   getAccountOverview,
+  verifyVendor,
+  certifyVendor,
+  banUser,
+  unbanUser,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import ReferralFactory from '../factories/referral.factory';
@@ -38,7 +42,7 @@ import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addTransaction } from '../../server/services/transaction.service';
 import { addReferral } from '../../server/services/referral.service';
 import Referral from '../../server/models/referral.model';
-import { USER_ROLE } from '../../server/helpers/constants';
+import { USER_ROLE, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
 import NOTIFICATIONS from '../../notifications/index';
 import { expectNewNotificationToBeAdded } from '../helpers';
 
@@ -171,7 +175,7 @@ describe('User Service', () => {
         expect(currentCountedUsers).to.eql(countedUsers + 1);
       });
 
-      expectNewNotificationToBeAdded(user._id, NOTIFICATIONS.WELCOME_MESSAGE);
+      expectNewNotificationToBeAdded(NOTIFICATIONS.WELCOME_MESSAGE, user._id);
 
       it('returns the user token', async () => {
         const _id = mongoose.Types.ObjectId();
@@ -195,7 +199,7 @@ describe('User Service', () => {
         expect(currentCountedUsers).to.eql(countedUsers + 1);
       });
 
-      expectNewNotificationToBeAdded(vendor._id, NOTIFICATIONS.WELCOME_MESSAGE);
+      expectNewNotificationToBeAdded(NOTIFICATIONS.WELCOME_MESSAGE, vendor._id);
 
       it('user role should be 2', async () => {
         const registeredVendor = await getUserById(vendor._id);
@@ -378,20 +382,31 @@ describe('User Service', () => {
   });
 
   describe('#activateUser', () => {
+    let token;
+    const user = UserFactory.build({ activated: false }, { generateId: true });
+
+    beforeEach(async () => {
+      token = await addUser(user);
+    });
+
     context('when a valid token', () => {
-      const user = UserFactory.build({ activated: false });
       it('activates the user account', async () => {
-        const token = await addUser(user);
         const activatedUser = await activateUser(token);
         expect(activatedUser.activated).to.eql(true);
         expect(activatedUser).to.have.property('activationDate');
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await activateUser(token);
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.WELCOME_MESSAGE, user._id);
       });
     });
 
     context('when an invalid token', () => {
       it('activates the user account', async () => {
-        const user = UserFactory.build({ activated: false });
-        const token = await addUser(user);
         try {
           await activateUser(`${token}1234567`);
         } catch (err) {
@@ -403,8 +418,6 @@ describe('User Service', () => {
 
     context('when no token is given', () => {
       it('activates the user account', async () => {
-        const user = UserFactory.build({ activated: false });
-        await addUser(user);
         try {
           await activateUser('');
         } catch (err) {
@@ -469,16 +482,28 @@ describe('User Service', () => {
   });
 
   describe('#resetPasswordViaToken', () => {
-    const user = UserFactory.build();
+    let token;
+    const user = UserFactory.build({}, { generateId: true });
     const oldPassword = user.password;
+    const newPassword = `${oldPassword}123#`;
 
     context('when a valid user is request for forgot password token', () => {
+      beforeEach(async () => {
+        token = await addUser(user);
+      });
+
       it('returns the user token', async () => {
-        const token = await addUser(user);
-        const newPassword = `${oldPassword}123#`;
         const response = await resetPasswordViaToken(newPassword, token);
         expect(response.firstName).be.eql(user.firstName);
         expect(response.email).be.eql(user.email);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await resetPasswordViaToken(newPassword, token);
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.CHANGED_PASSWORD, user._id);
       });
     });
 
@@ -898,6 +923,152 @@ describe('User Service', () => {
         expect(overview.contributionReward).to.eql(property.price - offer.totalAmountPayable);
         expect(overview.totalAmountPaid).to.eql(transaction.amount);
         expect(overview.referralRewards).to.eql(referral.reward.amount);
+      });
+    });
+  });
+
+  describe('#verifyVendor', () => {
+    const vendor = UserFactory.build(
+      {
+        role: USER_ROLE.VENDOR,
+        vendor: {
+          verified: false,
+          verification: {
+            companyInfo: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+            bankDetails: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+            directorInfo: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+            documentUpload: {
+              status: VENDOR_INFO_STATUS.VERIFIED,
+            },
+          },
+        },
+      },
+      { generateId: true },
+    );
+    let verifiedVendor;
+
+    context('when a valid data is entered', () => {
+      beforeEach(async () => {
+        await addUser(vendor);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          verifiedVendor = await verifyVendor({
+            vendorId: vendor._id,
+            adminId: mongoose.Types.ObjectId(),
+          });
+        });
+
+        it('returns the verified vendor', async () => {
+          expect(verifiedVendor.vendor.verified).be.eql(true);
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.VERIFY_VENDOR, vendor._id);
+      });
+    });
+  });
+
+  describe('#certifyVendor', () => {
+    const vendor = UserFactory.build(
+      { role: USER_ROLE.VENDOR, vendor: { verified: true, certified: false } },
+      { generateId: true },
+    );
+    let certifiedVendor;
+
+    context('when a valid data is entered', () => {
+      beforeEach(async () => {
+        await addUser(vendor);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          certifiedVendor = await certifyVendor({
+            vendorId: vendor._id,
+            adminId: mongoose.Types.ObjectId(),
+          });
+        });
+
+        it('returns the certified vendor', async () => {
+          expect(certifiedVendor.vendor.certified).be.eql(true);
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.CERTIFY_VENDOR, vendor._id);
+      });
+    });
+  });
+
+  describe('#banUser', () => {
+    const user = UserFactory.build({ banned: { status: false } }, { generateId: true });
+    let bannedUser;
+
+    context('when a valid data is entered', () => {
+      beforeEach(async () => {
+        await addUser(user);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          bannedUser = await banUser({
+            userId: user._id,
+            adminId: mongoose.Types.ObjectId(),
+            reason: 'test reason',
+          });
+        });
+
+        it('returns the banned user', async () => {
+          expect(bannedUser.banned.status).be.eql(true);
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.BAN_USER, user._id);
+      });
+    });
+  });
+
+  describe('#unbanUser', () => {
+    const user = UserFactory.build(
+      {
+        banned: {
+          status: true,
+          case: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              bannedBy: mongoose.Types.ObjectId(),
+              bannedReason: 'Suspected fraud',
+            },
+          ],
+        },
+      },
+      { generateId: true },
+    );
+    let unbannedUser;
+
+    context('when a valid data is entered', () => {
+      beforeEach(async () => {
+        await addUser(user);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          unbannedUser = await unbanUser({
+            userId: user._id,
+            adminId: mongoose.Types.ObjectId(),
+            caseId: user.banned.case[0]._id,
+            reason: 'test reason',
+          });
+        });
+
+        it('returns the unbanned user', async () => {
+          expect(unbannedUser.banned.status).be.eql(false);
+        });
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.UNBAN_USER, user._id);
       });
     });
   });
