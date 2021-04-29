@@ -131,8 +131,8 @@ export const addUser = async (user) => {
   }
 };
 
-export const getUserInfo = async (key, value) =>
-  User.aggregate([
+export const getUserInfo = async (key, value) => {
+  const user = await User.aggregate([
     { $match: { [key]: value } },
     {
       $lookup: {
@@ -151,19 +151,50 @@ export const getUserInfo = async (key, value) =>
       },
     },
     {
-      $project: {
-        password: 0,
-        'assignedProperties.assignedTo': 0,
-        'assignedProperties.addedBy': 0,
-        'assignedProperties.updatedBy': 0,
-        'favorites.assignedTo': 0,
-        'favorites.addedBy': 0,
-        'favorites.updatedBy': 0,
+      $lookup: {
+        from: 'notifications',
+        let: { userId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ['$userId', '$$userId'] }, { $eq: ['$read', false] }],
+              },
+            },
+          },
+        ],
+        as: 'notifications',
       },
     },
-  ]).then((user) => {
-    return Promise.resolve(user[0]);
-  });
+    {
+      $unwind: {
+        path: '$notifications',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    { $sort: { 'notifications.createdAt': -1 } },
+    {
+      $group: {
+        _id: '$_id',
+        notifications: { $push: '$notifications' },
+        user: { $first: '$$ROOT' },
+      },
+    },
+    {
+      $project: {
+        'user.password': 0,
+        'user.assignedProperties.assignedTo': 0,
+        'user.assignedProperties.addedBy': 0,
+        'user.assignedProperties.updatedBy': 0,
+        'user.favorites.assignedTo': 0,
+        'user.favorites.addedBy': 0,
+        'user.favorites.updatedBy': 0,
+      },
+    },
+  ]);
+
+  return { ...user[0].user, notifications: user[0].notifications };
+};
 
 export const loginUser = async (user) => {
   const existingUser = await getUserByEmail(user.email, '+password').catch((error) => {
