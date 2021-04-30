@@ -24,7 +24,7 @@ import { resolveReport, getReportById } from './reportedProperty.service';
 // eslint-disable-next-line import/no-cycle
 import { getUserById } from './user.service';
 import { createNotification } from './notification.service';
-import NOTIFICATIONS from '../../notifications/index';
+import NOTIFICATIONS from '../helpers/notifications';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 

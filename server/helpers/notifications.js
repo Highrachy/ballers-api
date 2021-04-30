@@ -1,4 +1,4 @@
-import { NOTIFICATION_TYPE } from '../server/helpers/constants';
+import { NOTIFICATION_TYPE } from './constants';
 
 const NOTIFICATIONS = {
   ACTIVATE_YOUR_ACCOUNT: {

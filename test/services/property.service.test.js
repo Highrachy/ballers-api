@@ -16,7 +16,7 @@ import { USER_ROLE } from '../../server/helpers/constants';
 import ReportedPropertyFactory from '../factories/reportedProperty.factory';
 import { getReportById, reportProperty } from '../../server/services/reportedProperty.service';
 import { expectNewNotificationToBeAdded } from '../helpers';
-import NOTIFICATIONS from '../../notifications/index';
+import NOTIFICATIONS from '../../server/helpers/notifications';
 
 describe('Property Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });

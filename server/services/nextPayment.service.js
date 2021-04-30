@@ -11,7 +11,7 @@ import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { USER_ROLE } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { createNotification } from './notification.service';
-import NOTIFICATIONS from '../../notifications/index';
+import NOTIFICATIONS from '../helpers/notifications';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
