@@ -21,7 +21,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import { getDateWithTimestamp } from '../helpers/dates';
 import { buildFilterAndSortQuery, USER_FILTERS } from '../helpers/filters';
 import { createNotification } from './notification.service';
-import NOTIFICATIONS from '../../notifications/index';
+import NOTIFICATIONS from '../helpers/notifications';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 

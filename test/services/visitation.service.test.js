@@ -14,7 +14,7 @@ import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { USER_ROLE, PROCESS_VISITATION_ACTION } from '../../server/helpers/constants';
 import { expectNewNotificationToBeAdded } from '../helpers';
-import NOTIFICATIONS from '../../notifications/index';
+import NOTIFICATIONS from '../../server/helpers/notifications';
 
 describe('Visitation Service', () => {
   const vendor = UserFactory.build(

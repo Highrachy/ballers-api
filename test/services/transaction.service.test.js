@@ -19,7 +19,7 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import { USER_ROLE } from '../../server/helpers/constants';
 import NextPayment from '../../server/models/nextPayment.model';
 import { expectNewNotificationToBeAdded } from '../helpers';
-import NOTIFICATIONS from '../../notifications/index';
+import NOTIFICATIONS from '../../server/helpers/notifications';
 
 describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });

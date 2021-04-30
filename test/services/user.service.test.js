@@ -43,7 +43,7 @@ import { addTransaction } from '../../server/services/transaction.service';
 import { addReferral } from '../../server/services/referral.service';
 import Referral from '../../server/models/referral.model';
 import { USER_ROLE, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
-import NOTIFICATIONS from '../../notifications/index';
+import NOTIFICATIONS from '../../server/helpers/notifications';
 import { expectNewNotificationToBeAdded } from '../helpers';
 
 const expectsReturnedTokenToBeValid = (token, id) => {

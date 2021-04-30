@@ -18,7 +18,7 @@ import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { addNextPayment } from './nextPayment.service';
 import { createNotification } from './notification.service';
-import NOTIFICATIONS from '../../notifications/index';
+import NOTIFICATIONS from '../helpers/notifications';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
