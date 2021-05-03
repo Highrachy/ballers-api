@@ -5,10 +5,12 @@ import VendorFactory from '../test/factories/vendor.factory';
 import AddressFactory from '../test/factories/address.factory';
 import User from '../server/models/user.model';
 import { USER_ROLE } from '../server/helpers/constants';
-// eslint-disable-next-line import/no-cycle
-import { logLoading, logError } from './index';
+import { logLoading, logError } from './seed-helpers';
+import { ROLE } from './seed-constants';
 
-const seedUsers = async (limit, role) => {
+const seedUsers = async (limit, role, defaultValues = {}) => {
+  const roleValue = Object.keys(ROLE).find((key) => ROLE[key] === role);
+
   const vendor = VendorFactory.build({
     companyName: faker.company.companyName(),
     companyLogo: faker.image.abstract(),
@@ -30,13 +32,17 @@ const seedUsers = async (limit, role) => {
   });
 
   const users = UserFactory.buildList(limit, {
-    role: USER_ROLE[role.toUpperCase()],
+    role: roleValue,
     activated: true,
+    activationDate: new Date(),
     firstName: faker.name.firstName(),
     lastName: faker.name.lastName(),
-    email: faker.internet.email(),
+    email: defaultValues.email || faker.internet.email(),
+    password: 'passworded',
+    confirmPassword: 'passworded',
     phone: faker.phone.phoneNumber(),
-    referralCode: faker.random.alphaNumeric(),
+    referralCode: faker.lorem.word(),
+    profileImage: faker.image.avatar(),
     address: AddressFactory.build({
       city: faker.address.city(),
       country: faker.address.country(),
@@ -44,12 +50,16 @@ const seedUsers = async (limit, role) => {
       street1: faker.address.streetName(),
       street2: faker.address.streetName(),
     }),
-    vendor: role === 'vendor' ? vendor : {},
+    vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? vendor : {},
   });
 
   try {
-    await User.insertMany(users);
-    logLoading(`${limit} ${parseInt(limit, 10) === 1 ? role : `${role}s`} created`);
+    if (!roleValue) {
+      logError(`Invalid role input. Available roles are: ${Object.values(ROLE)}`);
+    } else {
+      await User.insertMany(users);
+      logLoading(`${limit} ${parseInt(limit, 10) === 1 ? role : `${role}s`} created`);
+    }
   } catch (error) {
     logError(error);
   }
