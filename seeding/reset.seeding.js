@@ -1,7 +1,6 @@
 import { clearDB } from '../server/config';
 import { logLoading, logError, logInfo } from './seed-helpers';
-import { ROLE } from './seed-constants';
-import seedUsers from './user.seeding';
+import { addDefaultUsers } from './user.seeding';
 
 const resetDB = async () => {
   clearDB();
@@ -12,11 +11,7 @@ const resetDB = async () => {
   });
 
   try {
-    await Promise.all(
-      Object.values(ROLE).map(async (role) => {
-        await seedUsers(1, role, { email: `${role}1@highrachy.com` });
-      }),
-    );
+    await addDefaultUsers();
 
     logLoading('DB reset complete');
   } catch (error) {

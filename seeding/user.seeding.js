@@ -7,9 +7,12 @@ import User from '../server/models/user.model';
 import { USER_ROLE } from '../server/helpers/constants';
 import { logLoading, logError } from './seed-helpers';
 import { ROLE } from './seed-constants';
+import { hashPassword } from '../server/services/user.service';
 
-const seedUsers = async (limit, role, defaultValues = {}) => {
+export const seedUsers = async (limit, role, defaultValues = {}) => {
   const roleValue = Object.keys(ROLE).find((key) => ROLE[key] === role);
+
+  const hashedPassword = await hashPassword('passworded');
 
   const vendor = VendorFactory.build({
     companyName: faker.company.companyName(),
@@ -38,8 +41,7 @@ const seedUsers = async (limit, role, defaultValues = {}) => {
     firstName: faker.name.firstName(),
     lastName: faker.name.lastName(),
     email: defaultValues.email || faker.internet.email(),
-    password: 'passworded',
-    confirmPassword: 'passworded',
+    password: hashedPassword,
     phone: faker.phone.phoneNumber(),
     referralCode: faker.lorem.word(),
     profileImage: faker.image.avatar(),
@@ -65,4 +67,10 @@ const seedUsers = async (limit, role, defaultValues = {}) => {
   }
 };
 
-export default seedUsers;
+export const addDefaultUsers = async () => {
+  await Promise.all(
+    Object.values(ROLE).map(async (role) => {
+      await seedUsers(1, role, { email: `${role}1@highrachy.com` });
+    }),
+  );
+};
