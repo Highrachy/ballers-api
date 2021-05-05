@@ -19,6 +19,7 @@ import { generateNextPaymentDate } from './nextPayment.service';
 import { getUserById } from './user.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
+import { TRANSACTION_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -71,8 +72,12 @@ export const addTransaction = async (transaction) => {
   }
 };
 
-export const getAllTransactions = async (user, page = 1, limit = 10) => {
+export const getAllTransactions = async (user, { page = 1, limit = 10, ...query } = {}) => {
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(TRANSACTION_FILTERS, query);
+
   const transactionOptions = [
+    { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     {
       $lookup: {
         from: 'properties',
@@ -120,6 +125,14 @@ export const getAllTransactions = async (user, page = 1, limit = 10) => {
       },
     },
   ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    transactionOptions.splice(1, 1);
+  }
+
+  if (filterQuery.length < 1) {
+    transactionOptions.shift();
+  }
 
   if (user.role === USER_ROLE.VENDOR) {
     transactionOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });

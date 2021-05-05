@@ -12,9 +12,8 @@ import { sendMail } from '../services/mailer.service';
 
 const TransactionController = {
   getAll(req, res, next) {
-    const { user } = req;
-    const { page, limit } = req.query;
-    getAllTransactions(user, page, limit)
+    const { user, query } = req;
+    getAllTransactions(user, query)
       .then(({ pagination, result }) => {
         res.status(httpStatus.OK).json({
           success: true,
