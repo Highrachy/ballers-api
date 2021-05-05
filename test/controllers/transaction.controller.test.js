@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import querystring from 'querystring';
 import { expect, request, sinon } from '../config';
 import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
@@ -24,9 +25,15 @@ import {
   expectsPaginationToReturnTheRightValues,
   itReturnsAnErrorWhenServiceFails,
   defaultPaginationResult,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
+  futureDate,
+  pastDate,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  filterTestForSingleParameter,
 } from '../helpers';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import { TRANSACTION_FILTERS } from '../../server/helpers/filters';
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();
@@ -110,6 +117,15 @@ describe('Transaction Controller', () => {
       { role: USER_ROLE.EDITOR, activated: true },
       { generateId: true },
     );
+    const testAdmin = UserFactory.build(
+      { role: USER_ROLE.ADMIN, activated: true },
+      { generateId: true },
+    );
+
+    const testUser = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
     const vendorTransactions = TransactionFactory.buildList(
       10,
       {
@@ -119,6 +135,10 @@ describe('Transaction Controller', () => {
         vendorId: vendorUser._id,
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
+        createdAt: futureDate,
+        amount: 100_000,
+        paidOn: futureDate,
+        paymentSource: 'flutterwave',
         remittance: {
           amount: 100_000,
           by: adminUser._id,
@@ -178,166 +198,279 @@ describe('Transaction Controller', () => {
           percentage: 5,
           date: '2020-11-11',
         },
+        createdAt: pastDate,
       },
       { generateId: true },
     );
 
-    context('when no transaction exists in db', () => {
-      [adminUser, vendorUser, regularUser].map((user) =>
-        itReturnsEmptyValuesWhenNoItemExistInDatabase({
+    describe('Pagination Tests', () => {
+      context('when no transaction exists in db', () => {
+        [adminUser, vendorUser, regularUser].map((user) =>
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
+
+      describe('when transactions exist in db', () => {
+        beforeEach(async () => {
+          vendor2Token = await addUser(vendor2);
+          await addProperty(vendor2Property);
+          await addEnquiry(vendor2Enquiry);
+          await createOffer(vendor2Offer);
+          await Transaction.insertMany([...vendorTransactions, ...vendor2Transactions]);
+        });
+
+        [adminUser, regularUser].map((user) =>
+          itReturnsTheRightPaginationValue({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+
+        context('when vendor2Token is used', () => {
+          it('returns matched transactons', (done) => {
+            request()
+              .get('/api/v1/transaction/all')
+              .set('authorization', vendor2Token)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 8,
+                  total: 8,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(vendor2Transactions[0]._id.toString());
+                expect(res.body.result[0].vendorId).to.be.eql(vendor2._id.toString());
+                expect(res.body.result[0].propertyId).to.be.eql(
+                  vendor2Transactions[0].propertyId.toString(),
+                );
+                expect(res.body.result[0].offerId).to.be.eql(
+                  vendor2Transactions[0].offerId.toString(),
+                );
+                expect(res.body.result[0].remittance.amount).to.be.eql(
+                  vendor2Transactions[0].remittance.amount,
+                );
+                expect(res.body.result[0].remittance.by).to.be.eql(
+                  vendor2Transactions[0].remittance.by.toString(),
+                );
+                expect(res.body.result[0].remittance.percentage).to.be.eql(
+                  vendor2Transactions[0].remittance.percentage,
+                );
+                expect(res.body.result[0].remittance.date).to.have.string(
+                  vendor2Transactions[0].remittance.date,
+                );
+                done();
+              });
+          });
+        });
+
+        context('when vendorToken is used', () => {
+          it('returns matched transactons', (done) => {
+            request()
+              .get('/api/v1/transaction/all')
+              .set('authorization', vendorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 10,
+                  total: 10,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(vendorTransactions[0]._id.toString());
+                expect(res.body.result[0].vendorId).to.be.eql(vendorUser._id.toString());
+                expect(res.body.result[0].propertyId).to.be.eql(
+                  vendorTransactions[0].propertyId.toString(),
+                );
+                expect(res.body.result[0].offerId).to.be.eql(
+                  vendorTransactions[0].offerId.toString(),
+                );
+                expect(res.body.result[0].remittance.amount).to.be.eql(
+                  vendorTransactions[0].remittance.amount,
+                );
+                expect(res.body.result[0].remittance.by).to.be.eql(
+                  vendorTransactions[0].remittance.by.toString(),
+                );
+                expect(res.body.result[0].remittance.percentage).to.be.eql(
+                  vendorTransactions[0].remittance.percentage,
+                );
+                expect(res.body.result[0].remittance.date).to.have.string(
+                  vendorTransactions[0].remittance.date,
+                );
+                done();
+              });
+          });
+        });
+
+        context('when user token is used', () => {
+          it('returns matched transactons', (done) => {
+            request()
+              .get('/api/v1/transaction/all')
+              .set('authorization', userToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+                expect(res.body.result[0]).to.not.have.property('remittance');
+                done();
+              });
+          });
+        });
+
+        itReturnsForbiddenForTokenWithInvalidAccess({
           endpoint,
           method,
-          user,
+          user: editorUser,
+        });
+
+        itReturnsForbiddenForNoToken({ endpoint, method });
+
+        context('when vendor token without access is used', () => {
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user: testVendor,
+          });
+        });
+
+        itReturnsNotFoundForInvalidToken({
+          endpoint,
+          method,
+          user: regularUser,
+          userId: regularUser._id,
           useExistingUser: true,
-        }),
-      );
+        });
+
+        context('when getAllTransactions service fails', () => {
+          it('returns the error', (done) => {
+            sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
+            request()
+              .get('/api/v1/transaction/all')
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expect(res).to.have.status(500);
+                done();
+                Transaction.aggregate.restore();
+              });
+          });
+        });
+      });
     });
 
-    describe('when transactions exist in db', () => {
+    describe('Filter Tests', () => {
+      const transactionForFilter = {
+        ...vendorTransactions[0],
+        addedBy: testAdmin._id,
+        userId: testUser._id,
+      };
       beforeEach(async () => {
+        await addUser(testAdmin);
+        await addUser(testUser);
         vendor2Token = await addUser(vendor2);
         await addProperty(vendor2Property);
         await addEnquiry(vendor2Enquiry);
         await createOffer(vendor2Offer);
-        await Transaction.insertMany([...vendorTransactions, ...vendor2Transactions]);
+        await Transaction.insertMany([transactionForFilter, ...vendor2Transactions]);
       });
 
-      [adminUser, regularUser].map((user) =>
-        itReturnsTheRightPaginationValue({
-          endpoint,
-          method,
-          user,
-          useExistingUser: true,
-        }),
-      );
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
 
-      context('when vendor2Token is used', () => {
-        it('returns matched transactons', (done) => {
-          request()
-            .get('/api/v1/transaction/all')
-            .set('authorization', vendor2Token)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, {
-                currentPage: 1,
-                limit: 10,
-                offset: 0,
-                result: 8,
-                total: 8,
-                totalPage: 1,
-              });
-              expect(res.body.result[0]._id).to.be.eql(vendor2Transactions[0]._id.toString());
-              expect(res.body.result[0].vendorId).to.be.eql(vendor2._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(
-                vendor2Transactions[0].propertyId.toString(),
-              );
-              expect(res.body.result[0].offerId).to.be.eql(
-                vendor2Transactions[0].offerId.toString(),
-              );
-              expect(res.body.result[0].remittance.amount).to.be.eql(
-                vendor2Transactions[0].remittance.amount,
-              );
-              expect(res.body.result[0].remittance.by).to.be.eql(
-                vendor2Transactions[0].remittance.by.toString(),
-              );
-              expect(res.body.result[0].remittance.percentage).to.be.eql(
-                vendor2Transactions[0].remittance.percentage,
-              );
-              expect(res.body.result[0].remittance.date).to.have.string(
-                vendor2Transactions[0].remittance.date,
-              );
-              done();
-            });
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 9,
+            result: 9,
+            totalPage: 1,
+          },
+          useExistingUser: true,
+        });
+
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: vendor2,
+          expectedPagination: {
+            ...defaultPaginationResult,
+            total: 8,
+            result: 8,
+            totalPage: 1,
+          },
+          useExistingUser: true,
         });
       });
 
-      context('when vendorToken is used', () => {
-        it('returns matched transactons', (done) => {
+      context('when multiple filters are used', () => {
+        const multipleTransactionDetails = {
+          amount: vendorTransactions[0].amount,
+          vendorId: vendorTransactions[0].vendorId,
+          paymentSource: vendorTransactions[0].paymentSource,
+        };
+        const filteredParams = querystring.stringify(multipleTransactionDetails);
+
+        it('returns matched transaction', (done) => {
           request()
-            .get('/api/v1/transaction/all')
-            .set('authorization', vendorToken)
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, {
                 currentPage: 1,
                 limit: 10,
                 offset: 0,
-                result: 10,
-                total: 10,
+                result: 1,
+                total: 1,
                 totalPage: 1,
               });
               expect(res.body.result[0]._id).to.be.eql(vendorTransactions[0]._id.toString());
-              expect(res.body.result[0].vendorId).to.be.eql(vendorUser._id.toString());
-              expect(res.body.result[0].propertyId).to.be.eql(
-                vendorTransactions[0].propertyId.toString(),
+              expect(res.body.result[0].amount).to.be.eql(multipleTransactionDetails.amount);
+              expect(res.body.result[0].paymentSource).to.be.eql(
+                multipleTransactionDetails.paymentSource,
               );
-              expect(res.body.result[0].offerId).to.be.eql(
-                vendorTransactions[0].offerId.toString(),
-              );
-              expect(res.body.result[0].remittance.amount).to.be.eql(
-                vendorTransactions[0].remittance.amount,
-              );
-              expect(res.body.result[0].remittance.by).to.be.eql(
-                vendorTransactions[0].remittance.by.toString(),
-              );
-              expect(res.body.result[0].remittance.percentage).to.be.eql(
-                vendorTransactions[0].remittance.percentage,
-              );
-              expect(res.body.result[0].remittance.date).to.have.string(
-                vendorTransactions[0].remittance.date,
+              expect(res.body.result[0].vendorId).to.be.eql(
+                multipleTransactionDetails.vendorId.toString(),
               );
               done();
             });
         });
       });
 
-      context('when user token is used', () => {
-        it('returns matched transactons', (done) => {
-          request()
-            .get('/api/v1/transaction/all')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
-              expect(res.body.result[0]).to.not.have.property('remittance');
-              done();
-            });
-        });
-      });
+      context('when no parameter is matched', () => {
+        const nonMatchingFilters = {
+          amount: 100,
+          vendorId: mongoose.Types.ObjectId(),
+          paymentSource: 'credit card',
+        };
 
-      itReturnsForbiddenForTokenWithInvalidAccess({
-        endpoint,
-        method,
-        user: editorUser,
-      });
-
-      itReturnsForbiddenForNoToken({ endpoint, method });
-
-      context('when vendor token without access is used', () => {
-        itReturnsEmptyValuesWhenNoItemExistInDatabase({
-          endpoint,
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
+          filter: nonMatchingFilters,
           method,
-          user: testVendor,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
         });
       });
 
-      itReturnsNotFoundForInvalidToken({
-        endpoint,
+      filterTestForSingleParameter({
+        filter: TRANSACTION_FILTERS,
         method,
-        user: regularUser,
-        userId: regularUser._id,
+        endpoint,
+        user: adminUser,
+        dataObject: transactionForFilter,
         useExistingUser: true,
-      });
-
-      context('when getAllTransactions service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Transaction, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/transaction/all')
-            .set('authorization', adminToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Transaction.aggregate.restore();
-            });
-        });
       });
     });
   });

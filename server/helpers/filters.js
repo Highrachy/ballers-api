@@ -329,3 +329,15 @@ export const NOTIFICATION_FILTERS = {
   read: { type: FILTER_TYPE.BOOLEAN },
   type: { type: FILTER_TYPE.INTEGER },
 };
+
+export const TRANSACTION_FILTERS = {
+  createdAt: { type: FILTER_TYPE.DATE },
+  addedBy: { type: FILTER_TYPE.OBJECT_ID },
+  amount: { type: FILTER_TYPE.INTEGER },
+  offerId: { type: FILTER_TYPE.OBJECT_ID },
+  paidOn: { type: FILTER_TYPE.DATE },
+  paymentSource: { type: FILTER_TYPE.STRING },
+  propertyId: { type: FILTER_TYPE.OBJECT_ID },
+  userId: { type: FILTER_TYPE.OBJECT_ID },
+  vendorId: { type: FILTER_TYPE.OBJECT_ID },
+};
