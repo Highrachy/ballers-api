@@ -340,4 +340,8 @@ export const TRANSACTION_FILTERS = {
   propertyId: { type: FILTER_TYPE.OBJECT_ID },
   userId: { type: FILTER_TYPE.OBJECT_ID },
   vendorId: { type: FILTER_TYPE.OBJECT_ID },
+  remittedAmount: { key: 'remittance.amount', type: FILTER_TYPE.INTEGER },
+  remittedBy: { key: 'remittance.by', type: FILTER_TYPE.OBJECT_ID },
+  remittedDate: { key: 'remittance.date', type: FILTER_TYPE.DATE },
+  remittedPercentage: { key: 'remittance.percentage', type: FILTER_TYPE.INTEGER },
 };

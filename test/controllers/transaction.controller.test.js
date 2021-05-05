@@ -142,7 +142,7 @@ describe('Transaction Controller', () => {
         remittance: {
           amount: 100_000,
           by: adminUser._id,
-          percentage: 5,
+          percentage: 7,
           date: '2020-11-11',
         },
       },
@@ -193,10 +193,10 @@ describe('Transaction Controller', () => {
         addedBy: adminUser._id,
         updatedBy: adminUser._id,
         remittance: {
-          amount: 100_000,
+          amount: 50_000,
           by: adminUser._id,
-          percentage: 5,
-          date: '2020-11-11',
+          percentage: 14,
+          date: '2002-11-11',
         },
         createdAt: pastDate,
       },
@@ -427,6 +427,12 @@ describe('Transaction Controller', () => {
         ...vendorTransactions[0],
         addedBy: testAdmin._id,
         userId: testUser._id,
+        remittance: {
+          amount: 100_000,
+          by: testAdmin._id,
+          percentage: 7,
+          date: '2020-11-11',
+        },
       };
       beforeEach(async () => {
         await addUser(testAdmin);
@@ -500,9 +506,6 @@ describe('Transaction Controller', () => {
               );
               expect(res.body.result[0].vendorId).to.be.eql(
                 multipleTransactionDetails.vendorId.toString(),
-              );
-              expect(res.body.result[0].vendorInfo.vendor).to.not.have.property(
-                'remittancePercentage',
               );
               done();
             });
