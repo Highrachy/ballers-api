@@ -113,7 +113,7 @@ export const getAllTransactions = async (user, { page = 1, limit = 10, ...query 
     {
       $project: {
         ...NON_PROJECTED_USER_INFO('userInfo'),
-        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO('vendorInfo', user.role),
         ...EXCLUDED_PROPERTY_INFO,
         ...getExcludedTransactionInfo(user.role),
       },
@@ -264,7 +264,7 @@ export const getOneTransaction = async (transactionId, user) => {
     {
       $project: {
         ...NON_PROJECTED_USER_INFO('userInfo'),
-        ...NON_PROJECTED_USER_INFO('vendorInfo'),
+        ...NON_PROJECTED_USER_INFO('vendorInfo', user.role),
         ...EXCLUDED_PROPERTY_INFO,
         ...getExcludedTransactionInfo(user.role),
       },

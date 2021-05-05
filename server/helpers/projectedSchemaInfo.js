@@ -54,7 +54,10 @@ export const PROJECTED_ASSIGNED_USER_INFO = {
   'assignedUsers.email': 1,
 };
 
-export const NON_PROJECTED_USER_INFO = (infoType) => {
+export const NON_PROJECTED_USER_INFO = (infoType, userRole = null) => {
+  const remittance =
+    userRole !== USER_ROLE.ADMIN ? { [`${infoType}.vendor.remittancePercentage`]: 0 } : {};
+
   return {
     'propertyInfo.assignedTo': 0,
     [`${infoType}.assignedProperties`]: 0,
@@ -71,8 +74,8 @@ export const NON_PROJECTED_USER_INFO = (infoType) => {
     [`${infoType}.vendor.verification`]: 0,
     [`${infoType}.vendor.entity`]: 0,
     [`${infoType}.vendor.redanNumber`]: 0,
-    [`${infoType}.vendor.remittancePercentage`]: 0,
     [`${infoType}.vendor.taxCertificate`]: 0,
+    ...remittance,
   };
 };
 
