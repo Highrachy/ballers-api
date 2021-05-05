@@ -245,6 +245,9 @@ describe('Transaction Controller', () => {
               expect(res.body.result[0].remittance.date).to.have.string(
                 vendor2Transactions[0].remittance.date,
               );
+              expect(res.body.result[0].vendorInfo.vendor).to.not.have.property(
+                'remittancePercentage',
+              );
               done();
             });
         });
@@ -284,6 +287,9 @@ describe('Transaction Controller', () => {
               expect(res.body.result[0].remittance.date).to.have.string(
                 vendorTransactions[0].remittance.date,
               );
+              expect(res.body.result[0].vendorInfo.vendor).to.not.have.property(
+                'remittancePercentage',
+              );
               done();
             });
         });
@@ -297,6 +303,22 @@ describe('Transaction Controller', () => {
             .end((err, res) => {
               expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
               expect(res.body.result[0]).to.not.have.property('remittance');
+              expect(res.body.result[0].vendorInfo.vendor).to.not.have.property(
+                'remittancePercentage',
+              );
+              done();
+            });
+        });
+      });
+
+      context('when admin token is used', () => {
+        it('returns matched transactons', (done) => {
+          request()
+            .get('/api/v1/transaction/all')
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+              expect(res.body.result[0].vendorInfo.vendor.remittancePercentage).to.be.eql(5);
               done();
             });
         });
@@ -844,6 +866,39 @@ describe('Transaction Controller', () => {
             expect(res.body.transaction.userId).to.be.eql(transaction.userId.toString());
             expect(res.body.transaction.offerId).to.be.eql(transaction.offerId.toString());
             expect(res.body.transaction).to.not.have.property('remittance');
+            expect(res.body.transaction.vendorInfo.vendor).to.not.have.property(
+              'remittancePercentage',
+            );
+            done();
+          });
+      });
+    });
+
+    context('with vendor token', () => {
+      it('returns related transaction', (done) => {
+        request()
+          .get(`/api/v1/transaction/${transaction._id}`)
+          .set('authorization', vendorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.transaction.vendorInfo.vendor).to.not.have.property(
+              'remittancePercentage',
+            );
+            done();
+          });
+      });
+    });
+
+    context('with admin token', () => {
+      it('returns related transaction', (done) => {
+        request()
+          .get(`/api/v1/transaction/${transaction._id}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.transaction.vendorInfo.vendor.remittancePercentage).to.be.eql(5);
             done();
           });
       });
