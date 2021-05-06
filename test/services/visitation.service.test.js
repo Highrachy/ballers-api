@@ -59,7 +59,8 @@ describe('Visitation Service', () => {
           await scheduleVisitation(validBooking);
         });
 
-        expectNewNotificationToBeAdded(NOTIFICATIONS.SCHEDULE_VISIT, vendor._id);
+        expectNewNotificationToBeAdded(NOTIFICATIONS.SCHEDULE_VISIT_VENDOR, vendor._id);
+        expectNewNotificationToBeAdded(NOTIFICATIONS.SCHEDULE_VISIT_USER, user._id);
       });
     });
 

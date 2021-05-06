@@ -26,6 +26,11 @@ const NOTIFICATIONS = {
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
+  ENQUIRY_ADDED: {
+    description: 'You have received a new enquiry',
+    type: NOTIFICATION_TYPE.INFO,
+    url: '/',
+  },
   FLAG_PROPERTY: {
     description: 'Your property has been flagged',
     type: NOTIFICATION_TYPE.DANGER,
@@ -48,6 +53,16 @@ const NOTIFICATIONS = {
   },
   OFFER_RESPONSE_USER: {
     description: 'Congratulations on signing your offer',
+    type: NOTIFICATION_TYPE.SUCCESS,
+    url: '/',
+  },
+  OFFLINE_PAYMENT_ADDED: {
+    description: 'Your offline payment has been added successfully',
+    type: NOTIFICATION_TYPE.INFO,
+    url: '/',
+  },
+  OFFLINE_PAYMENT_RESOLVED: {
+    description: 'Your offline payment has been confirmed',
     type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
@@ -86,7 +101,12 @@ const NOTIFICATIONS = {
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
-  SCHEDULE_VISIT: {
+  SCHEDULE_VISIT_USER: {
+    description: 'Your visitation has been requested successfully',
+    type: NOTIFICATION_TYPE.INFO,
+    url: '/',
+  },
+  SCHEDULE_VISIT_VENDOR: {
     description: 'A new propery visit has been requested',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',

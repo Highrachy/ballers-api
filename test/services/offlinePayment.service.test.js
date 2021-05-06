@@ -1,11 +1,16 @@
 import mongoose from 'mongoose';
 import { expect } from '../config';
-import { resolveOfflinePayment } from '../../server/services/offlinePayment.service';
+import {
+  resolveOfflinePayment,
+  addOfflinePayment,
+} from '../../server/services/offlinePayment.service';
 import OfflinePaymentFactory from '../factories/offlinePayment.factory';
 import OfflinePayment from '../../server/models/offlinePayment.model';
 import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
 import OfferFactory from '../factories/offer.factory';
+import NOTIFICATIONS from '../../server/helpers/notifications';
+import { expectNewNotificationToBeAdded } from '../helpers';
 
 describe('Offline Payment Service', () => {
   const offer = OfferFactory.build(
@@ -23,35 +28,45 @@ describe('Offline Payment Service', () => {
     { generateId: true },
   );
 
-  const offlinePayment = OfflinePaymentFactory.build(
-    {
-      offerId: offer._id,
-      userId: mongoose.Types.ObjectId(),
-      amount: 10_000,
-      bank: 'GTB',
-      dateOfPayment: '2020-01-21',
-      type: 'bank transfer',
-      resolved: {
-        status: false,
-      },
-    },
-    { generateId: true },
-  );
-
   beforeEach(async () => {
     await Offer.create(offer);
-    await OfflinePayment.create(offlinePayment);
   });
 
   describe('#resolveOfflinePayment', () => {
     let countedTransactions;
+    const offlinePayment = OfflinePaymentFactory.build(
+      {
+        offerId: offer._id,
+        userId: mongoose.Types.ObjectId(),
+        amount: 10_000,
+        bank: 'GTB',
+        dateOfPayment: '2020-01-21',
+        type: 'bank transfer',
+        resolved: {
+          status: false,
+        },
+      },
+      { generateId: true },
+    );
+
     const data = {
       adminId: mongoose.Types.ObjectId(),
       offlinePaymentId: offlinePayment._id,
     };
 
     beforeEach(async () => {
+      await OfflinePayment.create(offlinePayment);
+    });
+
+    beforeEach(async () => {
       countedTransactions = await Transaction.countDocuments({});
+    });
+
+    context('when new notification is added', () => {
+      beforeEach(async () => {
+        await resolveOfflinePayment(data);
+      });
+      expectNewNotificationToBeAdded(NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED, offlinePayment.userId);
     });
 
     context('when offline payment is resolved', () => {
@@ -89,6 +104,20 @@ describe('Offline Payment Service', () => {
           expect(currentCountedTransactions).to.eql(countedTransactions);
         }
       });
+    });
+  });
+
+  describe('#addOfflinePayment', () => {
+    const offlinePayment = OfflinePaymentFactory.build(
+      { offerId: offer._id, userId: mongoose.Types.ObjectId() },
+      { generateId: true },
+    );
+
+    context('when new notification is added', () => {
+      beforeEach(async () => {
+        await addOfflinePayment(offlinePayment);
+      });
+      expectNewNotificationToBeAdded(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId);
     });
   });
 });

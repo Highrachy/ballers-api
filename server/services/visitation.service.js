@@ -27,7 +27,10 @@ export const scheduleVisitation = async (schedule) => {
 
     try {
       const newSchedule = await new Visitation({ ...schedule, vendorId: property.addedBy }).save();
-      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT, vendor._id);
+
+      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_VENDOR, vendor._id);
+      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_USER, schedule.userId);
+
       return { schedule: newSchedule, vendor };
     } catch (error) {
       throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error scheduling visit', error);

@@ -9,6 +9,8 @@ import { COMMENT_STATUS, USER_ROLE } from '../helpers/constants';
 import { getTodaysDateStandard } from '../helpers/dates';
 import { buildFilterAndSortQuery, OFFLINE_PAYMENT_FILTERS } from '../helpers/filters';
 import { addTransaction } from './transaction.service';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../helpers/notifications';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 export const getOfflinePaymentById = async (id) => OfflinePayment.findById(id).select();
@@ -23,7 +25,9 @@ export const addOfflinePayment = async (offlinePayment) => {
   }
 
   try {
-    return await new OfflinePayment(offlinePayment).save();
+    const payment = await new OfflinePayment(offlinePayment).save();
+    await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId);
+    return payment;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding offline payment', error);
   }
@@ -156,6 +160,7 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
 
+    await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED, offlinePayment.userId);
     return OfflinePayment.findByIdAndUpdate(
       offlinePayment._id,
       { $set: { 'resolved.by': adminId, 'resolved.date': Date.now(), 'resolved.status': true } },
