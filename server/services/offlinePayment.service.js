@@ -11,6 +11,7 @@ import { buildFilterAndSortQuery, OFFLINE_PAYMENT_FILTERS } from '../helpers/fil
 import { addTransaction } from './transaction.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
+import { getPropertyById } from './property.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 export const getOfflinePaymentById = async (id) => OfflinePayment.findById(id).select();
@@ -24,9 +25,14 @@ export const addOfflinePayment = async (offlinePayment) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offer');
   }
 
+  const property = await getPropertyById(offer.propertyId);
+
   try {
     const payment = await new OfflinePayment(offlinePayment).save();
-    await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId);
+    const description = `You added an offline payment of N${payment.amount} for ${property.name}`;
+    await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId, {
+      description,
+    });
     return payment;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding offline payment', error);
@@ -160,7 +166,11 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
 
-    await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED, offlinePayment.userId);
+    const description = `Your payment of N${offlinePayment.amount} has been confirmed`;
+
+    await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED, offlinePayment.userId, {
+      description,
+    });
     return OfflinePayment.findByIdAndUpdate(
       offlinePayment._id,
       { $set: { 'resolved.by': adminId, 'resolved.date': Date.now(), 'resolved.status': true } },

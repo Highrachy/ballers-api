@@ -20,6 +20,8 @@ import { getUserById } from './user.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { TRANSACTION_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
+// eslint-disable-next-line import/no-cycle
+import { getPropertyById } from './property.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -292,18 +294,22 @@ export const addRemittance = async (remittanceInfo) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid transaction');
   }
 
+  const property = await getPropertyById(transaction.propertyId);
+
   const user = await getUserById(transaction.vendorId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
   const percentage = remittanceInfo.percentage || user.vendor.remittancePercentage;
 
+  const amount = Math.round(((100 - percentage) / 100) * transaction.amount);
+
   try {
     const remittedTransaction = await Transaction.findByIdAndUpdate(
       transaction.id,
       {
         $set: {
-          'remittance.amount': Math.round(((100 - percentage) / 100) * transaction.amount),
+          'remittance.amount': amount,
           'remittance.by': remittanceInfo.adminId,
           'remittance.date': remittanceInfo.date,
           'remittance.percentage': percentage,
@@ -312,7 +318,8 @@ export const addRemittance = async (remittanceInfo) => {
       { new: true },
     );
 
-    await createNotification(NOTIFICATIONS.REMITTANCE_PAID, user._id);
+    const description = `You have received N${amount} for your property ${property.name}`;
+    await createNotification(NOTIFICATIONS.REMITTANCE_PAID, user._id, { description });
 
     return { transaction: remittedTransaction, user };
   } catch (error) {

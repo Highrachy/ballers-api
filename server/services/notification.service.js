@@ -7,9 +7,15 @@ import { buildFilterAndSortQuery, NOTIFICATION_FILTERS } from '../helpers/filter
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
-export const createNotification = async ({ description, type, url }, userId) => {
+export const createNotification = async ({ description, type, url }, userId, options = {}) => {
   try {
-    const generatedNotification = await new Notification({ userId, description, type, url }).save();
+    const generatedNotification = await new Notification({
+      userId,
+      description,
+      type,
+      url,
+      ...options,
+    }).save();
     return generatedNotification;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error creating notification', error);

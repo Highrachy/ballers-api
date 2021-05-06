@@ -12,7 +12,7 @@ const NOTIFICATIONS = {
     url: '/',
   },
   CANCEL_VISIT: {
-    description: 'The visitation to [property] property has been cancelled',
+    description: 'Your visitation to [property] for [date] has been cancelled',
     type: NOTIFICATION_TYPE.DANGER,
     url: '/',
   },
@@ -27,8 +27,13 @@ const NOTIFICATIONS = {
     url: '/',
   },
   ENQUIRY_ADDED: {
-    description: 'You have received a new enquiry',
+    description: 'You have received a new enquiry for [property]',
     type: NOTIFICATION_TYPE.INFO,
+    url: '/',
+  },
+  FIRST_LAST_PAYMENT: {
+    description: 'Hooray, you have made your [first/last] payment for [property]',
+    type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
   FLAG_PROPERTY: {
@@ -57,12 +62,12 @@ const NOTIFICATIONS = {
     url: '/',
   },
   OFFLINE_PAYMENT_ADDED: {
-    description: 'Your offline payment has been added successfully',
+    description: 'You added an offline payment of N[amount] for [property]',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
   OFFLINE_PAYMENT_RESOLVED: {
-    description: 'Your offline payment has been confirmed',
+    description: 'Your payment of N[amount] for [property] has been confirmed',
     type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
@@ -82,12 +87,12 @@ const NOTIFICATIONS = {
     url: '/',
   },
   REMITTANCE_PAID: {
-    description: 'You have received payment on one of your properties',
+    description: 'You have received N[amount] for your property [property]',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
   RESCHEDULE_VISIT: {
-    description: 'Your visitation has been rescheduled',
+    description: 'Your visitation to [property] for [old date] has been rescheduled to [new date]',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
@@ -102,12 +107,12 @@ const NOTIFICATIONS = {
     url: '/',
   },
   SCHEDULE_VISIT_USER: {
-    description: 'Your visitation has been requested successfully',
+    description: 'Your visitation to [property] has been scheduled for [date]',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
   SCHEDULE_VISIT_VENDOR: {
-    description: 'A new propery visit has been requested',
+    description: 'A new propery visit has been requested for [property]',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },

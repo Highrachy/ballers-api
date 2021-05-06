@@ -28,8 +28,15 @@ export const scheduleVisitation = async (schedule) => {
     try {
       const newSchedule = await new Visitation({ ...schedule, vendorId: property.addedBy }).save();
 
-      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_VENDOR, vendor._id);
-      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_USER, schedule.userId);
+      const descriptionVendor = `A new propery visit has been requested for ${property.name}`;
+      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_VENDOR, vendor._id, {
+        description: descriptionVendor,
+      });
+
+      const descriptionUser = `Your visitation to ${property.name} has been scheduled for ${schedule.visitDate}`;
+      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_USER, schedule.userId, {
+        description: descriptionUser,
+      });
 
       return { schedule: newSchedule, vendor };
     } catch (error) {
@@ -163,9 +170,11 @@ export const processVisitation = async ({ user, visitationInfo, action }) => {
     );
 
     if (action === PROCESS_VISITATION_ACTION.RESCHEDULE) {
-      await createNotification(NOTIFICATIONS.RESCHEDULE_VISIT, mailDetails._id);
+      const description = `Your visitation to ${property.name} for ${visitation.visitDate} has been rescheduled to ${visitationInfo?.visitDate}`;
+      await createNotification(NOTIFICATIONS.RESCHEDULE_VISIT, mailDetails._id, { description });
     } else {
-      await createNotification(NOTIFICATIONS.CANCEL_VISIT, mailDetails._id);
+      const description = `Your visitation to ${property.name} for ${visitation.visitDate} has been cancelled`;
+      await createNotification(NOTIFICATIONS.CANCEL_VISIT, mailDetails._id, { description });
     }
 
     return { visitation: updatedVisitation, mailDetails, property };
