@@ -12,7 +12,8 @@ import { hashPassword } from '../server/services/user.service';
 export const seedUsers = async (limit, role, customValues = {}) => {
   const roleValue = Object.keys(ROLE).find((key) => ROLE[key] === role);
 
-  const hashedPassword = await hashPassword(customValues.password || DEFAULT_PASSWORD);
+  const password = customValues.password || DEFAULT_PASSWORD;
+  const hashedPassword = await hashPassword(password);
 
   const vendor = VendorFactory.build({
     companyName: faker.company.companyName(),
@@ -34,27 +35,29 @@ export const seedUsers = async (limit, role, customValues = {}) => {
     ],
   });
 
-  const users = UserFactory.buildList(limit, {
-    role: roleValue,
-    activated: true,
-    activationDate: new Date(),
-    firstName: faker.name.firstName(),
-    lastName: faker.name.lastName(),
-    email: faker.internet.email(),
-    phone: faker.phone.phoneNumber(),
-    referralCode: `${faker.lorem.word()}${faker.lorem.word()}`,
-    profileImage: faker.image.avatar(),
-    address: AddressFactory.build({
-      city: faker.address.city(),
-      country: faker.address.country(),
-      state: faker.address.state(),
-      street1: faker.address.streetName(),
-      street2: faker.address.streetName(),
+  const users = [...new Array(parseInt(limit, 10))].map((_, index) =>
+    UserFactory.build({
+      role: roleValue,
+      activated: true,
+      activationDate: new Date(),
+      firstName: faker.name.firstName(),
+      lastName: faker.name.lastName(),
+      email: faker.internet.email(),
+      phone: faker.phone.phoneNumber(),
+      referralCode: `${faker.lorem.word()}${index}`,
+      profileImage: faker.image.avatar(),
+      address: AddressFactory.build({
+        city: faker.address.city(),
+        country: faker.address.country(),
+        state: faker.address.state(),
+        street1: faker.address.streetName(),
+        street2: faker.address.streetName(),
+      }),
+      vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? vendor : {},
+      ...customValues,
+      password: hashedPassword,
     }),
-    vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? vendor : {},
-    ...customValues,
-    password: hashedPassword,
-  });
+  );
 
   try {
     if (!roleValue) {
@@ -65,7 +68,7 @@ export const seedUsers = async (limit, role, customValues = {}) => {
 
       const table = [];
       users.forEach((user) => {
-        table.push({ email: user.email, password: customValues.password || DEFAULT_PASSWORD });
+        table.push({ Email: user.email, Password: customValues.password || DEFAULT_PASSWORD });
       });
       logTable(table);
     }

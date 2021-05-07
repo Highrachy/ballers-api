@@ -4,19 +4,13 @@ import { addDefaultUsers } from './user.seeding';
 
 const resetDB = async () => {
   clearDB();
+  logInfo('Clearing database');
 
-  await new Promise((resolve) => {
-    logInfo('Clearing database');
-    return setTimeout(resolve, 5000);
-  });
-
-  try {
-    await addDefaultUsers();
-
-    logLoading('DB reset complete');
-  } catch (error) {
-    logError(error);
-  }
+  await addDefaultUsers()
+    .then(logLoading('DB reset complete'))
+    .catch((error) => {
+      logError(error);
+    });
 };
 
 export default resetDB;

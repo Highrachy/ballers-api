@@ -38,5 +38,5 @@ const seedDB = async () => {
 if (NODE_ENV === 'development') {
   seedDB();
 } else {
-  logError('Seeding is only available in development');
+  logError('Seeding is only available in `development environment`');
 }
