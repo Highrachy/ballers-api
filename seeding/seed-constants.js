@@ -11,3 +11,5 @@ export const ROLE = {
   [USER_ROLE.VENDOR]: 'vendor',
   [USER_ROLE.EDITOR]: 'editor',
 };
+
+export const DEFAULT_PASSWORD = 'passworded';

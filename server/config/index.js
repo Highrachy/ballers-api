@@ -42,4 +42,8 @@ const clearDB = () => {
   });
 };
 
-export { startDBConnection, clearDB, PORT, USER_SECRET, HOST };
+const closeDBConnection = () => {
+  mongoose.connection.close();
+};
+
+export { startDBConnection, clearDB, closeDBConnection, PORT, USER_SECRET, HOST };

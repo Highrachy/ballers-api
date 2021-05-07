@@ -1,19 +1,25 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
+/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable no-console */
 import chalk from 'chalk';
-import logger from '../server/config/winston';
+// eslint-disable-next-line no-unused-vars
+import cTable from 'console.table';
 
 export const logSuccess = (data) => {
-  logger.info(chalk.greenBright(data));
+  console.log(chalk.greenBright(data));
 };
 
 export const logLoading = (data) => {
-  logger.info(chalk.yellowBright(data));
+  console.log(chalk.yellowBright(data));
 };
 
 export const logInfo = (data) => {
-  logger.info(chalk.blueBright(data));
+  console.log(chalk.blueBright(data));
 };
 
 export const logError = (data) => {
-  logger.error(chalk.redBright(data));
+  console.log(chalk.redBright(data));
+};
+
+export const logTable = (table) => {
+  console.table(table);
 };

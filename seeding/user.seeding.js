@@ -1,18 +1,18 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
+/* eslint-disable import/no-extraneous-dependencies */
 import faker from 'faker';
 import UserFactory from '../test/factories/user.factory';
 import VendorFactory from '../test/factories/vendor.factory';
 import AddressFactory from '../test/factories/address.factory';
 import User from '../server/models/user.model';
 import { USER_ROLE } from '../server/helpers/constants';
-import { logLoading, logError } from './seed-helpers';
-import { ROLE } from './seed-constants';
+import { logLoading, logError, logTable } from './seed-helpers';
+import { ROLE, DEFAULT_PASSWORD } from './seed-constants';
 import { hashPassword } from '../server/services/user.service';
 
-export const seedUsers = async (limit, role, defaultValues = {}) => {
+export const seedUsers = async (limit, role, customValues = {}) => {
   const roleValue = Object.keys(ROLE).find((key) => ROLE[key] === role);
 
-  const hashedPassword = await hashPassword('passworded');
+  const hashedPassword = await hashPassword(customValues.password || DEFAULT_PASSWORD);
 
   const vendor = VendorFactory.build({
     companyName: faker.company.companyName(),
@@ -40,10 +40,9 @@ export const seedUsers = async (limit, role, defaultValues = {}) => {
     activationDate: new Date(),
     firstName: faker.name.firstName(),
     lastName: faker.name.lastName(),
-    email: defaultValues.email || faker.internet.email(),
-    password: hashedPassword,
+    email: faker.internet.email(),
     phone: faker.phone.phoneNumber(),
-    referralCode: faker.lorem.word(),
+    referralCode: `${faker.lorem.word()}${faker.lorem.word()}`,
     profileImage: faker.image.avatar(),
     address: AddressFactory.build({
       city: faker.address.city(),
@@ -53,6 +52,8 @@ export const seedUsers = async (limit, role, defaultValues = {}) => {
       street2: faker.address.streetName(),
     }),
     vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? vendor : {},
+    ...customValues,
+    password: hashedPassword,
   });
 
   try {
@@ -61,6 +62,12 @@ export const seedUsers = async (limit, role, defaultValues = {}) => {
     } else {
       await User.insertMany(users);
       logLoading(`${limit} ${parseInt(limit, 10) === 1 ? role : `${role}s`} created`);
+
+      const table = [];
+      users.forEach((user) => {
+        table.push({ email: user.email, password: customValues.password || DEFAULT_PASSWORD });
+      });
+      logTable(table);
     }
   } catch (error) {
     logError(error);

@@ -1,8 +1,10 @@
-import { startDBConnection } from '../server/config';
+import { startDBConnection, closeDBConnection } from '../server/config';
 import { logSuccess, logError } from './seed-helpers';
 import { MODEL, ROLE } from './seed-constants';
 import { seedUsers } from './user.seeding';
 import resetDB from './reset.seeding';
+
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 const seedDB = async () => {
   const model = process.env.MODEL?.toUpperCase();
@@ -29,6 +31,12 @@ const seedDB = async () => {
   } catch (error) {
     logError(error);
   }
+
+  closeDBConnection();
 };
 
-seedDB();
+if (NODE_ENV === 'development') {
+  seedDB();
+} else {
+  logError('Seeding is only available in development');
+}
