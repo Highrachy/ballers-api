@@ -20,8 +20,7 @@ import { getUserById } from './user.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { TRANSACTION_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
-// eslint-disable-next-line import/no-cycle
-import { getPropertyById } from './property.service';
+import { getMoneyFormat, getFormattedPropertyName } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -286,27 +285,29 @@ export const getOneTransaction = async (transactionId, user) => {
 };
 
 export const addRemittance = async (remittanceInfo) => {
-  const transaction = await getTransactionById(remittanceInfo.transactionId).catch((error) => {
+  const transaction = await getOneTransaction(remittanceInfo.transactionId, {
+    role: USER_ROLE.ADMIN,
+  }).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (!transaction) {
+  if (transaction.length < 1) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid transaction');
   }
 
-  const property = await getPropertyById(transaction.propertyId);
+  const property = transaction[0].propertyInfo;
 
-  const user = await getUserById(transaction.vendorId).catch((error) => {
+  const user = await getUserById(transaction[0].vendorId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
   const percentage = remittanceInfo.percentage || user.vendor.remittancePercentage;
 
-  const amount = Math.round(((100 - percentage) / 100) * transaction.amount);
+  const amount = Math.round(((100 - percentage) / 100) * transaction[0].amount);
 
   try {
     const remittedTransaction = await Transaction.findByIdAndUpdate(
-      transaction.id,
+      transaction[0]._id,
       {
         $set: {
           'remittance.amount': amount,
@@ -318,7 +319,10 @@ export const addRemittance = async (remittanceInfo) => {
       { new: true },
     );
 
-    const description = `You have received N${amount} for your property ${property.name}`;
+    const description = `You have received ${getMoneyFormat(
+      amount,
+    )} for your property ${getFormattedPropertyName(property)}`;
+
     await createNotification(NOTIFICATIONS.REMITTANCE_PAID, user._id, { description });
 
     return { transaction: remittedTransaction, user };

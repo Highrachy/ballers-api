@@ -16,6 +16,7 @@ import UserFactory from '../factories/user.factory';
 import { USER_ROLE } from '../../server/helpers/constants';
 import NOTIFICATIONS from '../../server/helpers/notifications';
 import { expectNewNotificationToBeAdded } from '../helpers';
+import { getFormattedPropertyName } from '../../server/helpers/funtions';
 
 describe('Enquiry Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -75,8 +76,12 @@ describe('Enquiry Service', () => {
         const currentCountedEnquiries = await Enquiry.countDocuments({});
         expect(currentCountedEnquiries).to.eql(countedEnquiries + 1);
       });
-
-      expectNewNotificationToBeAdded(NOTIFICATIONS.ENQUIRY_ADDED, property.addedBy);
+      const description = `You have received a new enquiry for ${getFormattedPropertyName(
+        property,
+      )}`;
+      expectNewNotificationToBeAdded(NOTIFICATIONS.ENQUIRY_ADDED, property.addedBy, {
+        description,
+      });
     });
 
     context('when an invalid data is entered', () => {

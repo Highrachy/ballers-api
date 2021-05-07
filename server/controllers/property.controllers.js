@@ -24,6 +24,7 @@ import {
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
+import { getFormattedPropertyName } from '../helpers/funtions';
 
 const PropertyController = {
   add(req, res, next) {
@@ -226,7 +227,9 @@ const PropertyController = {
     const adminId = req.user._id;
     flagProperty({ ...propertyInfo, adminId })
       .then(({ property, vendor }) => {
-        const contentTop = `Your property ${property.name} has been flagged, and is now unavailable for viewing. Kindly visit your dashboard to resolve the issue.`;
+        const contentTop = `Your property ${getFormattedPropertyName(
+          property,
+        )} has been flagged, and is now unavailable for viewing. Kindly visit your dashboard to resolve the issue.`;
         sendMail(EMAIL_CONTENT.FLAG_PROPERTY, vendor, { contentTop });
 
         res.status(httpStatus.OK).json({ success: true, message: 'Property flagged', property });
@@ -239,7 +242,9 @@ const PropertyController = {
     const adminId = req.user._id;
     unflagProperty({ ...propertyInfo, adminId })
       .then(({ property, vendor }) => {
-        const contentTop = `Your property ${property.name} has been unflagged, and is now available for viewing.`;
+        const contentTop = `Your property ${getFormattedPropertyName(
+          property,
+        )} has been unflagged, and is now available for viewing.`;
         sendMail(EMAIL_CONTENT.UNFLAG_PROPERTY, vendor, { contentTop });
 
         res.status(httpStatus.OK).json({ success: true, message: 'Property unflagged', property });

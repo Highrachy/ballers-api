@@ -11,8 +11,15 @@ import Offer from '../../server/models/offer.model';
 import OfferFactory from '../factories/offer.factory';
 import NOTIFICATIONS from '../../server/helpers/notifications';
 import { expectNewNotificationToBeAdded } from '../helpers';
+import { getMoneyFormat, getFormattedPropertyName } from '../../server/helpers/funtions';
+import PropertyFactory from '../factories/property.factory';
+import { addProperty } from '../../server/services/property.service';
 
 describe('Offline Payment Service', () => {
+  const property = PropertyFactory.build(
+    { addedBy: mongoose.Types.ObjectId(), updatedBy: mongoose.Types.ObjectId() },
+    { generateId: true },
+  );
   const offer = OfferFactory.build(
     {
       totalAmountPayable: 4_000_000,
@@ -21,7 +28,7 @@ describe('Offline Payment Service', () => {
       paymentFrequency: 30,
       initialPaymentDate: new Date('2020-03-01'),
       referenceCode: 'HIG/P/OLP/02/28022021',
-      propertyId: mongoose.Types.ObjectId(),
+      propertyId: property._id,
       vendorId: mongoose.Types.ObjectId(),
       userId: mongoose.Types.ObjectId(),
     },
@@ -29,6 +36,7 @@ describe('Offline Payment Service', () => {
   );
 
   beforeEach(async () => {
+    await addProperty(property);
     await Offer.create(offer);
   });
 
@@ -66,7 +74,14 @@ describe('Offline Payment Service', () => {
       beforeEach(async () => {
         await resolveOfflinePayment(data);
       });
-      expectNewNotificationToBeAdded(NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED, offlinePayment.userId);
+      const description = `Your payment of ${getMoneyFormat(
+        offlinePayment.amount,
+      )} has been confirmed`;
+      expectNewNotificationToBeAdded(
+        NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED,
+        offlinePayment.userId,
+        { description },
+      );
     });
 
     context('when offline payment is resolved', () => {
@@ -117,7 +132,12 @@ describe('Offline Payment Service', () => {
       beforeEach(async () => {
         await addOfflinePayment(offlinePayment);
       });
-      expectNewNotificationToBeAdded(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId);
+      const description = `You added an offline payment of ${getMoneyFormat(
+        offlinePayment.amount,
+      )} for ${getFormattedPropertyName(property)}`;
+      expectNewNotificationToBeAdded(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId, {
+        description,
+      });
     });
   });
 });

@@ -6,10 +6,11 @@ import { getPropertyById } from './property.service';
 import { getUserById } from './user.service';
 import { USER_ROLE, VISITATION_STATUS, PROCESS_VISITATION_ACTION } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { getDateWithTimestamp } from '../helpers/dates';
+import { getDateWithTimestamp, convertDateToLongHumanFormat } from '../helpers/dates';
 import { buildFilterQuery, VISITATION_FILTERS } from '../helpers/filters';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
+import { getFormattedPropertyName } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -28,12 +29,18 @@ export const scheduleVisitation = async (schedule) => {
     try {
       const newSchedule = await new Visitation({ ...schedule, vendorId: property.addedBy }).save();
 
-      const descriptionVendor = `A new propery visit has been requested for ${property.name}`;
+      const descriptionVendor = `Your propery ${getFormattedPropertyName(
+        property,
+      )}, has been scheduled for a visit on ${convertDateToLongHumanFormat(
+        new Date(schedule.visitDate),
+      )}`;
       await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_VENDOR, vendor._id, {
         description: descriptionVendor,
       });
 
-      const descriptionUser = `Your visitation to ${property.name} has been scheduled for ${schedule.visitDate}`;
+      const descriptionUser = `Your visitation to ${getFormattedPropertyName(
+        property,
+      )} has been scheduled for ${convertDateToLongHumanFormat(new Date(schedule.visitDate))}`;
       await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_USER, schedule.userId, {
         description: descriptionUser,
       });
@@ -170,10 +177,16 @@ export const processVisitation = async ({ user, visitationInfo, action }) => {
     );
 
     if (action === PROCESS_VISITATION_ACTION.RESCHEDULE) {
-      const description = `Your visitation to ${property.name} for ${visitation.visitDate} has been rescheduled to ${visitationInfo?.visitDate}`;
+      const description = `Your visitation to ${getFormattedPropertyName(
+        property,
+      )} for ${convertDateToLongHumanFormat(
+        visitation.visitDate,
+      )} has been rescheduled to ${convertDateToLongHumanFormat(visitationInfo?.visitDate)}`;
       await createNotification(NOTIFICATIONS.RESCHEDULE_VISIT, mailDetails._id, { description });
     } else {
-      const description = `Your visitation to ${property.name} for ${visitation.visitDate} has been cancelled`;
+      const description = `Your visitation to ${getFormattedPropertyName(
+        property,
+      )} for ${convertDateToLongHumanFormat(visitation.visitDate)} has been cancelled`;
       await createNotification(NOTIFICATIONS.CANCEL_VISIT, mailDetails._id, { description });
     }
 

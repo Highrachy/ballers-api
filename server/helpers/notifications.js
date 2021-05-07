@@ -67,7 +67,7 @@ const NOTIFICATIONS = {
     url: '/',
   },
   OFFLINE_PAYMENT_RESOLVED: {
-    description: 'Your payment of N[amount] for [property] has been confirmed',
+    description: 'Your payment of N[amount] has been confirmed',
     type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
@@ -112,7 +112,7 @@ const NOTIFICATIONS = {
     url: '/',
   },
   SCHEDULE_VISIT_VENDOR: {
-    description: 'A new propery visit has been requested for [property]',
+    description: 'Your propery [property], has been scheduled for a visit on [date]',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },

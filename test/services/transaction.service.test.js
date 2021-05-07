@@ -20,6 +20,7 @@ import { USER_ROLE } from '../../server/helpers/constants';
 import NextPayment from '../../server/models/nextPayment.model';
 import { expectNewNotificationToBeAdded } from '../helpers';
 import NOTIFICATIONS from '../../server/helpers/notifications';
+import { getMoneyFormat, getFormattedPropertyName } from '../../server/helpers/funtions';
 
 describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -257,8 +258,10 @@ describe('Transaction Service', () => {
         beforeEach(async () => {
           await addRemittance(remittanceInfo);
         });
-
-        expectNewNotificationToBeAdded(NOTIFICATIONS.REMITTANCE_PAID, vendor._id);
+        const description = `You have received ${getMoneyFormat(
+          Math.round(((100 - remittanceInfo.percentage) / 100) * transaction.amount),
+        )} for your property ${getFormattedPropertyName(property)}`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.REMITTANCE_PAID, vendor._id, { description });
       });
     });
   });

@@ -593,7 +593,8 @@ export const itReturnAllResultsWhenAnUnknownFilterIsUsed = ({
   });
 };
 
-export const expectNewNotificationToBeAdded = (notification, userId) => {
+export const expectNewNotificationToBeAdded = (notificationType, userId, options = {}) => {
+  const notification = { ...notificationType, ...options };
   let userLatestNotification;
 
   beforeEach(async () => {
