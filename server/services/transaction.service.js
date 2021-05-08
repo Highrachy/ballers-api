@@ -20,6 +20,7 @@ import { getUserById } from './user.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { TRANSACTION_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
+import { getMoneyFormat, getFormattedName } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -280,11 +281,18 @@ export const getOneTransaction = async (transactionId, user) => {
   }
 
   const transaction = await Transaction.aggregate(transactionOptions);
-  return transaction;
+
+  if (transaction.length < 1) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Transaction not found');
+  }
+
+  return transaction[0];
 };
 
 export const addRemittance = async (remittanceInfo) => {
-  const transaction = await getTransactionById(remittanceInfo.transactionId).catch((error) => {
+  const transaction = await getOneTransaction(remittanceInfo.transactionId, {
+    role: USER_ROLE.ADMIN,
+  }).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
@@ -298,12 +306,14 @@ export const addRemittance = async (remittanceInfo) => {
 
   const percentage = remittanceInfo.percentage || user.vendor.remittancePercentage;
 
+  const amount = Math.round(((100 - percentage) / 100) * transaction.amount);
+
   try {
     const remittedTransaction = await Transaction.findByIdAndUpdate(
-      transaction.id,
+      transaction._id,
       {
         $set: {
-          'remittance.amount': Math.round(((100 - percentage) / 100) * transaction.amount),
+          'remittance.amount': amount,
           'remittance.by': remittanceInfo.adminId,
           'remittance.date': remittanceInfo.date,
           'remittance.percentage': percentage,
@@ -312,7 +322,11 @@ export const addRemittance = async (remittanceInfo) => {
       { new: true },
     );
 
-    await createNotification(NOTIFICATIONS.REMITTANCE_PAID, user._id);
+    const description = `You have received ${getMoneyFormat(
+      amount,
+    )} for your property ${getFormattedName(transaction.propertyInfo.name)}`;
+
+    await createNotification(NOTIFICATIONS.REMITTANCE_PAID, user._id, { description });
 
     return { transaction: remittedTransaction, user };
   } catch (error) {

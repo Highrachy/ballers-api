@@ -15,6 +15,8 @@ import { addProperty } from '../../server/services/property.service';
 import { USER_ROLE, PROCESS_VISITATION_ACTION } from '../../server/helpers/constants';
 import { expectNewNotificationToBeAdded } from '../helpers';
 import NOTIFICATIONS from '../../server/helpers/notifications';
+import { getFormattedName } from '../../server/helpers/funtions';
+import { convertDateToLongHumanFormat } from '../../server/helpers/dates';
 
 describe('Visitation Service', () => {
   const vendor = UserFactory.build(
@@ -59,7 +61,23 @@ describe('Visitation Service', () => {
           await scheduleVisitation(validBooking);
         });
 
-        expectNewNotificationToBeAdded(NOTIFICATIONS.SCHEDULE_VISIT, vendor._id);
+        const vendorDescription = `Your propery ${getFormattedName(
+          property.name,
+        )}, has been scheduled for a visit on ${convertDateToLongHumanFormat(
+          new Date(validBooking.visitDate),
+        )}`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.SCHEDULE_VISIT_VENDOR, vendor._id, {
+          description: vendorDescription,
+        });
+
+        const userDescription = `Your visitation to ${getFormattedName(
+          property.name,
+        )} has been scheduled for ${convertDateToLongHumanFormat(
+          new Date(validBooking.visitDate),
+        )}`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.SCHEDULE_VISIT_USER, user._id, {
+          description: userDescription,
+        });
       });
     });
 
@@ -219,7 +237,13 @@ describe('Visitation Service', () => {
           });
         });
 
-        expectNewNotificationToBeAdded(NOTIFICATIONS.RESCHEDULE_VISIT, user._id);
+        const description = `Your visitation to ${getFormattedName(
+          property.name,
+        )} for ${convertDateToLongHumanFormat(
+          new Date(visitation.visitDate),
+        )} has been rescheduled to ${convertDateToLongHumanFormat(visitationInfo.visitDate)}`;
+
+        expectNewNotificationToBeAdded(NOTIFICATIONS.RESCHEDULE_VISIT, user._id, { description });
       });
 
       context('when visitation is cancelled', () => {
@@ -231,7 +255,10 @@ describe('Visitation Service', () => {
           });
         });
 
-        expectNewNotificationToBeAdded(NOTIFICATIONS.CANCEL_VISIT, vendor._id);
+        const description = `Your visitation to ${getFormattedName(
+          property.name,
+        )} for ${convertDateToLongHumanFormat(new Date(visitation.visitDate))} has been cancelled`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.CANCEL_VISIT, vendor._id, { description });
       });
     });
   });

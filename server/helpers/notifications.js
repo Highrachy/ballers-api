@@ -1,9 +1,9 @@
 import { NOTIFICATION_TYPE } from './constants';
 
 const NOTIFICATIONS = {
-  ACTIVATE_YOUR_ACCOUNT: {
-    description: 'Your account has been successfully created',
-    type: NOTIFICATION_TYPE.INFO,
+  ACCOUNT_ACTIVATED: {
+    description: 'Your account has been activated successfully',
+    type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
   BAN_USER: {
@@ -12,7 +12,7 @@ const NOTIFICATIONS = {
     url: '/',
   },
   CANCEL_VISIT: {
-    description: 'The visitation to [property] property has been cancelled',
+    description: 'Your visitation to [property] for [date] has been cancelled',
     type: NOTIFICATION_TYPE.DANGER,
     url: '/',
   },
@@ -24,6 +24,16 @@ const NOTIFICATIONS = {
   CHANGED_PASSWORD: {
     description: 'Password changed sucessfully',
     type: NOTIFICATION_TYPE.INFO,
+    url: '/',
+  },
+  ENQUIRY_ADDED: {
+    description: 'You have received a new enquiry for [property]',
+    type: NOTIFICATION_TYPE.INFO,
+    url: '/',
+  },
+  FIRST_LAST_PAYMENT: {
+    description: 'Hooray, you have made your [first/last] payment for [property]',
+    type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
   FLAG_PROPERTY: {
@@ -51,6 +61,16 @@ const NOTIFICATIONS = {
     type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
+  OFFLINE_PAYMENT_ADDED: {
+    description: 'You added an offline payment of N[amount] for [property]',
+    type: NOTIFICATION_TYPE.INFO,
+    url: '/',
+  },
+  OFFLINE_PAYMENT_RESOLVED: {
+    description: 'Your payment of N[amount] for [property] has been confirmed',
+    type: NOTIFICATION_TYPE.SUCCESS,
+    url: '/',
+  },
   PAYMENT_REMINDER: {
     description: 'You have a pending payment due',
     type: NOTIFICATION_TYPE.INFO,
@@ -67,12 +87,12 @@ const NOTIFICATIONS = {
     url: '/',
   },
   REMITTANCE_PAID: {
-    description: 'You have received payment on one of your properties',
+    description: 'You have received N[amount] for your property [property]',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
   RESCHEDULE_VISIT: {
-    description: 'Your visitation has been rescheduled',
+    description: 'Your visitation to [property] for [old date] has been rescheduled to [new date]',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
@@ -86,8 +106,13 @@ const NOTIFICATIONS = {
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
-  SCHEDULE_VISIT: {
-    description: 'A new propery visit has been requested',
+  SCHEDULE_VISIT_USER: {
+    description: 'Your visitation to [property] has been scheduled for [date]',
+    type: NOTIFICATION_TYPE.INFO,
+    url: '/',
+  },
+  SCHEDULE_VISIT_VENDOR: {
+    description: 'Your propery [property], has been scheduled for a visit on [date]',
     type: NOTIFICATION_TYPE.INFO,
     url: '/',
   },
@@ -108,7 +133,7 @@ const NOTIFICATIONS = {
   },
   WELCOME_MESSAGE: {
     description: `Congratulations you're officially a BALLer.`,
-    type: NOTIFICATION_TYPE.INFO,
+    type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
 };

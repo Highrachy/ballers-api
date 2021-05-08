@@ -14,6 +14,9 @@ import Enquiry from '../../server/models/enquiry.model';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import { USER_ROLE } from '../../server/helpers/constants';
+import NOTIFICATIONS from '../../server/helpers/notifications';
+import { expectNewNotificationToBeAdded } from '../helpers';
+import { getFormattedName } from '../../server/helpers/funtions';
 
 describe('Enquiry Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -72,6 +75,10 @@ describe('Enquiry Service', () => {
       it('adds a new enquiry', async () => {
         const currentCountedEnquiries = await Enquiry.countDocuments({});
         expect(currentCountedEnquiries).to.eql(countedEnquiries + 1);
+      });
+      const description = `You have received a new enquiry for ${getFormattedName(property.name)}`;
+      expectNewNotificationToBeAdded(NOTIFICATIONS.ENQUIRY_ADDED, property.addedBy, {
+        description,
       });
     });
 

@@ -6,10 +6,11 @@ import { getPropertyById } from './property.service';
 import { getUserById } from './user.service';
 import { USER_ROLE, VISITATION_STATUS, PROCESS_VISITATION_ACTION } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { getDateWithTimestamp } from '../helpers/dates';
+import { getDateWithTimestamp, convertDateToLongHumanFormat } from '../helpers/dates';
 import { buildFilterQuery, VISITATION_FILTERS } from '../helpers/filters';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
+import { getFormattedName } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -27,7 +28,23 @@ export const scheduleVisitation = async (schedule) => {
 
     try {
       const newSchedule = await new Visitation({ ...schedule, vendorId: property.addedBy }).save();
-      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT, vendor._id);
+
+      const descriptionVendor = `Your propery ${getFormattedName(
+        property.name,
+      )}, has been scheduled for a visit on ${convertDateToLongHumanFormat(
+        new Date(schedule.visitDate),
+      )}`;
+      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_VENDOR, vendor._id, {
+        description: descriptionVendor,
+      });
+
+      const descriptionUser = `Your visitation to ${getFormattedName(
+        property.name,
+      )} has been scheduled for ${convertDateToLongHumanFormat(new Date(schedule.visitDate))}`;
+      await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_USER, schedule.userId, {
+        description: descriptionUser,
+      });
+
       return { schedule: newSchedule, vendor };
     } catch (error) {
       throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error scheduling visit', error);
@@ -160,9 +177,17 @@ export const processVisitation = async ({ user, visitationInfo, action }) => {
     );
 
     if (action === PROCESS_VISITATION_ACTION.RESCHEDULE) {
-      await createNotification(NOTIFICATIONS.RESCHEDULE_VISIT, mailDetails._id);
+      const description = `Your visitation to ${getFormattedName(
+        property.name,
+      )} for ${convertDateToLongHumanFormat(
+        visitation.visitDate,
+      )} has been rescheduled to ${convertDateToLongHumanFormat(visitationInfo?.visitDate)}`;
+      await createNotification(NOTIFICATIONS.RESCHEDULE_VISIT, mailDetails._id, { description });
     } else {
-      await createNotification(NOTIFICATIONS.CANCEL_VISIT, mailDetails._id);
+      const description = `Your visitation to ${getFormattedName(
+        property.name,
+      )} for ${convertDateToLongHumanFormat(visitation.visitDate)} has been cancelled`;
+      await createNotification(NOTIFICATIONS.CANCEL_VISIT, mailDetails._id, { description });
     }
 
     return { visitation: updatedVisitation, mailDetails, property };

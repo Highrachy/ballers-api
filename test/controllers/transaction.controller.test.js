@@ -1246,9 +1246,10 @@ describe('Transaction Controller', () => {
           .set('authorization', adminToken)
           .send({ ...data, transactionId: mongoose.Types.ObjectId() })
           .end((err, res) => {
-            expect(res).to.have.status(404);
+            expect(res).to.have.status(500);
             expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Invalid transaction');
+            expect(res.body.error.statusCode).to.be.eql(404);
+            expect(res.body.error.message).to.be.eql('Transaction not found');
             expect(sendMailStub.callCount).to.eq(0);
             done();
           });

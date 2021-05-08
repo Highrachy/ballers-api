@@ -9,6 +9,10 @@ import { COMMENT_STATUS, USER_ROLE } from '../helpers/constants';
 import { getTodaysDateStandard } from '../helpers/dates';
 import { buildFilterAndSortQuery, OFFLINE_PAYMENT_FILTERS } from '../helpers/filters';
 import { addTransaction } from './transaction.service';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../helpers/notifications';
+import { getPropertyById } from './property.service';
+import { getMoneyFormat, getFormattedName } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 export const getOfflinePaymentById = async (id) => OfflinePayment.findById(id).select();
@@ -22,8 +26,17 @@ export const addOfflinePayment = async (offlinePayment) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid offer');
   }
 
+  const property = await getPropertyById(offer.propertyId);
+
   try {
-    return await new OfflinePayment(offlinePayment).save();
+    const payment = await new OfflinePayment(offlinePayment).save();
+    const description = `You added an offline payment of ${getMoneyFormat(
+      payment.amount,
+    )} for ${getFormattedName(property.name)}`;
+    await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId, {
+      description,
+    });
+    return payment;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding offline payment', error);
   }
@@ -141,7 +154,7 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
     }
   }
 
-  const transaction = {
+  const transactionInfo = {
     offerId: offlinePayment.offerId,
     paymentSource: offlinePayment.type,
     amount: offlinePayment.amount,
@@ -152,10 +165,19 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
   };
 
   try {
-    await addTransaction(transaction).catch((error) => {
+    const transaction = await addTransaction(transactionInfo).catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
 
+    const property = await getPropertyById(transaction.propertyId);
+
+    const description = `Your payment of ${getMoneyFormat(
+      offlinePayment.amount,
+    )} for ${getFormattedName(property.name)} has been confirmed`;
+
+    await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED, offlinePayment.userId, {
+      description,
+    });
     return OfflinePayment.findByIdAndUpdate(
       offlinePayment._id,
       { $set: { 'resolved.by': adminId, 'resolved.date': Date.now(), 'resolved.status': true } },

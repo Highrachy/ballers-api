@@ -1,13 +1,25 @@
 import mongoose from 'mongoose';
 import { expect } from '../config';
-import { resolveOfflinePayment } from '../../server/services/offlinePayment.service';
+import {
+  resolveOfflinePayment,
+  addOfflinePayment,
+} from '../../server/services/offlinePayment.service';
 import OfflinePaymentFactory from '../factories/offlinePayment.factory';
 import OfflinePayment from '../../server/models/offlinePayment.model';
 import Transaction from '../../server/models/transaction.model';
 import Offer from '../../server/models/offer.model';
 import OfferFactory from '../factories/offer.factory';
+import NOTIFICATIONS from '../../server/helpers/notifications';
+import { expectNewNotificationToBeAdded } from '../helpers';
+import { getMoneyFormat, getFormattedName } from '../../server/helpers/funtions';
+import PropertyFactory from '../factories/property.factory';
+import { addProperty } from '../../server/services/property.service';
 
 describe('Offline Payment Service', () => {
+  const property = PropertyFactory.build(
+    { addedBy: mongoose.Types.ObjectId(), updatedBy: mongoose.Types.ObjectId() },
+    { generateId: true },
+  );
   const offer = OfferFactory.build(
     {
       totalAmountPayable: 4_000_000,
@@ -16,42 +28,60 @@ describe('Offline Payment Service', () => {
       paymentFrequency: 30,
       initialPaymentDate: new Date('2020-03-01'),
       referenceCode: 'HIG/P/OLP/02/28022021',
-      propertyId: mongoose.Types.ObjectId(),
+      propertyId: property._id,
       vendorId: mongoose.Types.ObjectId(),
       userId: mongoose.Types.ObjectId(),
     },
     { generateId: true },
   );
 
-  const offlinePayment = OfflinePaymentFactory.build(
-    {
-      offerId: offer._id,
-      userId: mongoose.Types.ObjectId(),
-      amount: 10_000,
-      bank: 'GTB',
-      dateOfPayment: '2020-01-21',
-      type: 'bank transfer',
-      resolved: {
-        status: false,
-      },
-    },
-    { generateId: true },
-  );
-
   beforeEach(async () => {
+    await addProperty(property);
     await Offer.create(offer);
-    await OfflinePayment.create(offlinePayment);
   });
 
   describe('#resolveOfflinePayment', () => {
     let countedTransactions;
+    const offlinePayment = OfflinePaymentFactory.build(
+      {
+        offerId: offer._id,
+        userId: mongoose.Types.ObjectId(),
+        amount: 10_000,
+        bank: 'GTB',
+        dateOfPayment: '2020-01-21',
+        type: 'bank transfer',
+        resolved: {
+          status: false,
+        },
+      },
+      { generateId: true },
+    );
+
     const data = {
       adminId: mongoose.Types.ObjectId(),
       offlinePaymentId: offlinePayment._id,
     };
 
     beforeEach(async () => {
+      await OfflinePayment.create(offlinePayment);
+    });
+
+    beforeEach(async () => {
       countedTransactions = await Transaction.countDocuments({});
+    });
+
+    context('when new notification is added', () => {
+      beforeEach(async () => {
+        await resolveOfflinePayment(data);
+      });
+      const description = `Your payment of ${getMoneyFormat(
+        offlinePayment.amount,
+      )} for ${getFormattedName(property.name)} has been confirmed`;
+      expectNewNotificationToBeAdded(
+        NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED,
+        offlinePayment.userId,
+        { description },
+      );
     });
 
     context('when offline payment is resolved', () => {
@@ -88,6 +118,25 @@ describe('Offline Payment Service', () => {
           expect(err.message).to.be.eql('Invalid offline payment');
           expect(currentCountedTransactions).to.eql(countedTransactions);
         }
+      });
+    });
+  });
+
+  describe('#addOfflinePayment', () => {
+    const offlinePayment = OfflinePaymentFactory.build(
+      { offerId: offer._id, userId: mongoose.Types.ObjectId() },
+      { generateId: true },
+    );
+
+    context('when new notification is added', () => {
+      beforeEach(async () => {
+        await addOfflinePayment(offlinePayment);
+      });
+      const description = `You added an offline payment of ${getMoneyFormat(
+        offlinePayment.amount,
+      )} for ${getFormattedName(property.name)}`;
+      expectNewNotificationToBeAdded(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId, {
+        description,
       });
     });
   });

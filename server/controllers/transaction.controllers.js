@@ -62,13 +62,7 @@ const TransactionController = {
     const { user } = req;
     getOneTransaction(transactionId, user)
       .then((transaction) => {
-        if (transaction.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, transaction: transaction[0] });
-        } else {
-          res
-            .status(httpStatus.NOT_FOUND)
-            .json({ success: false, message: 'Transaction not found' });
-        }
+        res.status(httpStatus.OK).json({ success: true, transaction });
       })
       .catch((error) => next(error));
   },

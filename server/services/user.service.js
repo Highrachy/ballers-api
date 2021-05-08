@@ -232,7 +232,7 @@ export const activateUser = async (token) => {
       { new: true, fields: '-password' },
     );
 
-    await createNotification(NOTIFICATIONS.WELCOME_MESSAGE, user._id);
+    await createNotification(NOTIFICATIONS.ACCOUNT_ACTIVATED, user._id);
 
     return user;
   } catch (error) {
