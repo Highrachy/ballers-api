@@ -29,6 +29,8 @@ import {
   futureDate,
 } from '../helpers';
 import { OFFLINE_PAYMENT_FILTERS } from '../../server/helpers/filters';
+import PropertyFactory from '../factories/property.factory';
+import { addProperty } from '../../server/services/property.service';
 
 let userToken;
 let adminToken;
@@ -59,6 +61,10 @@ const vendorUser = UserFactory.build(
   },
   { generateId: true },
 );
+const property = PropertyFactory.build(
+  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+  { generateId: true },
+);
 const offer = OfferFactory.build(
   {
     totalAmountPayable: 4_000_000,
@@ -67,7 +73,7 @@ const offer = OfferFactory.build(
     paymentFrequency: 30,
     initialPaymentDate: new Date('2020-03-01'),
     referenceCode: 'HIG/P/OLP/02/28022021',
-    propertyId: mongoose.Types.ObjectId(),
+    propertyId: property._id,
     vendorId: vendorUser._id,
     userId: regularUser._id,
   },
@@ -79,6 +85,7 @@ describe('Offline Payment Controller', () => {
     await addUser(vendorUser);
     userToken = await addUser(regularUser);
     adminToken = await addUser(adminUser);
+    await addProperty(property);
     await Offer.create(offer);
   });
 
