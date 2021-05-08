@@ -1,9 +1,9 @@
 import { NOTIFICATION_TYPE } from './constants';
 
 const NOTIFICATIONS = {
-  ACTIVATE_YOUR_ACCOUNT: {
-    description: 'Your account has been successfully created',
-    type: NOTIFICATION_TYPE.INFO,
+  ACCOUNT_ACTIVATED: {
+    description: 'Your account has been activated successfully',
+    type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
   BAN_USER: {
@@ -67,7 +67,7 @@ const NOTIFICATIONS = {
     url: '/',
   },
   OFFLINE_PAYMENT_RESOLVED: {
-    description: 'Your payment of N[amount] has been confirmed',
+    description: 'Your payment of N[amount] for [property] has been confirmed',
     type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
@@ -133,7 +133,7 @@ const NOTIFICATIONS = {
   },
   WELCOME_MESSAGE: {
     description: `Congratulations you're officially a BALLer.`,
-    type: NOTIFICATION_TYPE.INFO,
+    type: NOTIFICATION_TYPE.SUCCESS,
     url: '/',
   },
 };

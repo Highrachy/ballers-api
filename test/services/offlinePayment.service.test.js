@@ -11,7 +11,7 @@ import Offer from '../../server/models/offer.model';
 import OfferFactory from '../factories/offer.factory';
 import NOTIFICATIONS from '../../server/helpers/notifications';
 import { expectNewNotificationToBeAdded } from '../helpers';
-import { getMoneyFormat, getFormattedPropertyName } from '../../server/helpers/funtions';
+import { getMoneyFormat, getFormattedName } from '../../server/helpers/funtions';
 import PropertyFactory from '../factories/property.factory';
 import { addProperty } from '../../server/services/property.service';
 
@@ -76,7 +76,7 @@ describe('Offline Payment Service', () => {
       });
       const description = `Your payment of ${getMoneyFormat(
         offlinePayment.amount,
-      )} has been confirmed`;
+      )} for ${getFormattedName(property.name)} has been confirmed`;
       expectNewNotificationToBeAdded(
         NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED,
         offlinePayment.userId,
@@ -134,7 +134,7 @@ describe('Offline Payment Service', () => {
       });
       const description = `You added an offline payment of ${getMoneyFormat(
         offlinePayment.amount,
-      )} for ${getFormattedPropertyName(property)}`;
+      )} for ${getFormattedName(property.name)}`;
       expectNewNotificationToBeAdded(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId, {
         description,
       });

@@ -312,7 +312,7 @@ describe('Notification Controller', () => {
       {
         userId: editorUser._id,
         read: true,
-        type: 3,
+        type: 1,
         createdAt: futureDate,
       },
       { generateId: true },

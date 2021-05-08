@@ -401,7 +401,7 @@ describe('User Service', () => {
           await activateUser(token);
         });
 
-        expectNewNotificationToBeAdded(NOTIFICATIONS.WELCOME_MESSAGE, user._id);
+        expectNewNotificationToBeAdded(NOTIFICATIONS.ACCOUNT_ACTIVATED, user._id);
       });
     });
 

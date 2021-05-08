@@ -8,7 +8,7 @@ import EMAIL_CONTENT from '../../mailer';
 import { sendMail } from '../services/mailer.service';
 import httpStatus from '../helpers/httpStatus';
 import { convertDateToLongHumanFormat } from '../helpers/dates';
-import { getUserName, getFormattedPropertyName } from '../helpers/funtions';
+import { getUserName, getFormattedName } from '../helpers/funtions';
 import { PROCESS_VISITATION_ACTION } from '../helpers/constants';
 
 const VisitationController = {
@@ -60,8 +60,8 @@ const VisitationController = {
     const action = PROCESS_VISITATION_ACTION.RESCHEDULE;
     processVisitation({ user, visitationInfo, action })
       .then(({ visitation, mailDetails, property }) => {
-        const contentTop = `The visitation to ${getFormattedPropertyName(
-          property,
+        const contentTop = `The visitation to ${getFormattedName(
+          property.name,
         )} on ${convertDateToLongHumanFormat(
           visitation.rescheduleLog[0].rescheduleFrom,
         )}, has been rescheduled for ${convertDateToLongHumanFormat(
@@ -84,8 +84,8 @@ const VisitationController = {
     const action = PROCESS_VISITATION_ACTION.CANCEL;
     processVisitation({ user, visitationInfo, action })
       .then(({ visitation, mailDetails, property }) => {
-        const contentTop = `The visitation to ${getFormattedPropertyName(
-          property,
+        const contentTop = `The visitation to ${getFormattedName(
+          property.name,
         )} on ${convertDateToLongHumanFormat(
           visitation.visitDate,
         )}, has been cancelled by ${getUserName(user)}. Reason: ${

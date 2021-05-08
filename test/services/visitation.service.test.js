@@ -15,7 +15,7 @@ import { addProperty } from '../../server/services/property.service';
 import { USER_ROLE, PROCESS_VISITATION_ACTION } from '../../server/helpers/constants';
 import { expectNewNotificationToBeAdded } from '../helpers';
 import NOTIFICATIONS from '../../server/helpers/notifications';
-import { getFormattedPropertyName } from '../../server/helpers/funtions';
+import { getFormattedName } from '../../server/helpers/funtions';
 import { convertDateToLongHumanFormat } from '../../server/helpers/dates';
 
 describe('Visitation Service', () => {
@@ -61,8 +61,8 @@ describe('Visitation Service', () => {
           await scheduleVisitation(validBooking);
         });
 
-        const vendorDescription = `Your propery ${getFormattedPropertyName(
-          property,
+        const vendorDescription = `Your propery ${getFormattedName(
+          property.name,
         )}, has been scheduled for a visit on ${convertDateToLongHumanFormat(
           new Date(validBooking.visitDate),
         )}`;
@@ -70,8 +70,8 @@ describe('Visitation Service', () => {
           description: vendorDescription,
         });
 
-        const userDescription = `Your visitation to ${getFormattedPropertyName(
-          property,
+        const userDescription = `Your visitation to ${getFormattedName(
+          property.name,
         )} has been scheduled for ${convertDateToLongHumanFormat(
           new Date(validBooking.visitDate),
         )}`;
@@ -237,8 +237,8 @@ describe('Visitation Service', () => {
           });
         });
 
-        const description = `Your visitation to ${getFormattedPropertyName(
-          property,
+        const description = `Your visitation to ${getFormattedName(
+          property.name,
         )} for ${convertDateToLongHumanFormat(
           new Date(visitation.visitDate),
         )} has been rescheduled to ${convertDateToLongHumanFormat(visitationInfo.visitDate)}`;
@@ -255,8 +255,8 @@ describe('Visitation Service', () => {
           });
         });
 
-        const description = `Your visitation to ${getFormattedPropertyName(
-          property,
+        const description = `Your visitation to ${getFormattedName(
+          property.name,
         )} for ${convertDateToLongHumanFormat(new Date(visitation.visitDate))} has been cancelled`;
         expectNewNotificationToBeAdded(NOTIFICATIONS.CANCEL_VISIT, vendor._id, { description });
       });

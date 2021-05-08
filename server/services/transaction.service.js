@@ -20,7 +20,7 @@ import { getUserById } from './user.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { TRANSACTION_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
-import { getMoneyFormat, getFormattedPropertyName } from '../helpers/funtions';
+import { getMoneyFormat, getFormattedName } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -281,7 +281,12 @@ export const getOneTransaction = async (transactionId, user) => {
   }
 
   const transaction = await Transaction.aggregate(transactionOptions);
-  return transaction;
+
+  if (transaction.length < 1) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Transaction not found');
+  }
+
+  return transaction[0];
 };
 
 export const addRemittance = async (remittanceInfo) => {
@@ -291,23 +296,21 @@ export const addRemittance = async (remittanceInfo) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (transaction.length < 1) {
+  if (!transaction) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid transaction');
   }
 
-  const property = transaction[0].propertyInfo;
-
-  const user = await getUserById(transaction[0].vendorId).catch((error) => {
+  const user = await getUserById(transaction.vendorId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
   const percentage = remittanceInfo.percentage || user.vendor.remittancePercentage;
 
-  const amount = Math.round(((100 - percentage) / 100) * transaction[0].amount);
+  const amount = Math.round(((100 - percentage) / 100) * transaction.amount);
 
   try {
     const remittedTransaction = await Transaction.findByIdAndUpdate(
-      transaction[0]._id,
+      transaction._id,
       {
         $set: {
           'remittance.amount': amount,
@@ -321,7 +324,7 @@ export const addRemittance = async (remittanceInfo) => {
 
     const description = `You have received ${getMoneyFormat(
       amount,
-    )} for your property ${getFormattedPropertyName(property)}`;
+    )} for your property ${getFormattedName(transaction.propertyInfo.name)}`;
 
     await createNotification(NOTIFICATIONS.REMITTANCE_PAID, user._id, { description });
 

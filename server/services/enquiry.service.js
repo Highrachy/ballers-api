@@ -10,7 +10,7 @@ import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { buildFilterQuery, ENQUIRY_FILTERS } from '../helpers/filters';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
-import { getFormattedPropertyName } from '../helpers/funtions';
+import { getFormattedName } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -35,7 +35,7 @@ export const addEnquiry = async (enquiry) => {
   }
   try {
     const newEnquiry = await new Enquiry({ ...enquiry, vendorId: property.addedBy }).save();
-    const description = `You have received a new enquiry for ${getFormattedPropertyName(property)}`;
+    const description = `You have received a new enquiry for ${getFormattedName(property.name)}`;
     await createNotification(NOTIFICATIONS.ENQUIRY_ADDED, property.addedBy, { description });
 
     return newEnquiry;
