@@ -36,4 +36,14 @@ const startDBConnection = () => {
   }
 };
 
-export { startDBConnection, PORT, USER_SECRET, HOST };
+const clearDB = () => {
+  mongoose.connect(DB_URL, () => {
+    mongoose.connection.db.dropDatabase();
+  });
+};
+
+const closeDBConnection = () => {
+  mongoose.connection.close();
+};
+
+export { startDBConnection, clearDB, closeDBConnection, PORT, USER_SECRET, HOST };
