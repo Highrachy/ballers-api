@@ -764,7 +764,7 @@ export const flagProperty = async (propertyInfo) => {
       { new: true },
     );
 
-    await createNotification(NOTIFICATIONS.FLAG_PROPERTY, vendor._id);
+    await createNotification(NOTIFICATIONS.FLAG_PROPERTY, vendor._id, { actionId: property._id });
 
     return { property: flaggedProperty, vendor };
   } catch (error) {
@@ -803,7 +803,7 @@ export const unflagProperty = async (propertyInfo) => {
       { new: true },
     );
 
-    await createNotification(NOTIFICATIONS.UNFLAG_PROPERTY, vendor._id);
+    await createNotification(NOTIFICATIONS.UNFLAG_PROPERTY, vendor._id, { actionId: property._id });
 
     return { property: unflaggedProperty, vendor };
   } catch (error) {

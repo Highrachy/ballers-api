@@ -36,7 +36,10 @@ export const addEnquiry = async (enquiry) => {
   try {
     const newEnquiry = await new Enquiry({ ...enquiry, vendorId: property.addedBy }).save();
     const description = `You have received a new enquiry for ${getFormattedName(property.name)}`;
-    await createNotification(NOTIFICATIONS.ENQUIRY_ADDED, property.addedBy, { description });
+    await createNotification(NOTIFICATIONS.ENQUIRY_ADDED, property.addedBy, {
+      description,
+      actionId: newEnquiry._id,
+    });
 
     return newEnquiry;
   } catch (error) {

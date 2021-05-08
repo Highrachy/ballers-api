@@ -341,7 +341,7 @@ export const createOffer = async (offer) => {
       referenceCode,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, vendor });
-    await createNotification(NOTIFICATIONS.OFFER_CREATED, user._id);
+    await createNotification(NOTIFICATIONS.OFFER_CREATED, user._id, { actionId: newOffer._id });
     const offerInfo = await getOffer(newOffer._id, user);
     return { ...offerInfo[0], userInfo };
   } catch (error) {
@@ -422,8 +422,12 @@ export const acceptOffer = async (offerToAccept) => {
       { new: true },
     );
 
-    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, offer[0].vendorId);
-    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_USER, offer[0].userId);
+    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, offer[0].vendorId, {
+      actionId: offer[0]._id,
+    });
+    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_USER, offer[0].userId, {
+      actionId: offer[0]._id,
+    });
 
     const acceptedoffer = await getOffer(offerToAccept.offerId, offerToAccept.user);
     return { ...acceptedoffer[0], paymentSchedule };
@@ -532,7 +536,7 @@ export const raiseConcern = async (concern) => {
       { new: true, safe: true, upsert: true },
     );
 
-    await createNotification(NOTIFICATIONS.RAISE_CONCERN, offer.userId);
+    await createNotification(NOTIFICATIONS.RAISE_CONCERN, offer.userId, { actionId: offer._id });
 
     return await getOffer(concern.offerId, concern.user);
   } catch (error) {
@@ -561,7 +565,7 @@ export const resolveConcern = async (concern) => {
       },
       { new: true },
     );
-    await createNotification(NOTIFICATIONS.RESOLVE_CONCERN, offer.userId);
+    await createNotification(NOTIFICATIONS.RESOLVE_CONCERN, offer.userId, { actionId: offer._id });
     return await getOffer(concern.offerId, concern.vendor);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving concern', error);
@@ -702,7 +706,9 @@ export const reactivateOffer = async (offerInfo) => {
     await Offer.findByIdAndUpdate(offer._id, { status: OFFER_STATUS.REACTIVATED });
     const newOffer = await new Offer(updatedOffer).save();
 
-    await createNotification(NOTIFICATIONS.OFFER_REACTIVATED, offer.userId);
+    await createNotification(NOTIFICATIONS.OFFER_REACTIVATED, offer.userId, {
+      actionId: offer._id,
+    });
 
     const reactivatedOffer = await getOffer(newOffer._id, user);
     return reactivatedOffer[0];

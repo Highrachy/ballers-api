@@ -35,6 +35,7 @@ export const addOfflinePayment = async (offlinePayment) => {
     )} for ${getFormattedName(property.name)}`;
     await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId, {
       description,
+      actionId: payment._id,
     });
     return payment;
   } catch (error) {
@@ -177,6 +178,7 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
 
     await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED, offlinePayment.userId, {
       description,
+      actionId: offlinePayment._id,
     });
     return OfflinePayment.findByIdAndUpdate(
       offlinePayment._id,

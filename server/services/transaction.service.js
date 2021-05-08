@@ -326,7 +326,10 @@ export const addRemittance = async (remittanceInfo) => {
       amount,
     )} for your property ${getFormattedName(transaction.propertyInfo.name)}`;
 
-    await createNotification(NOTIFICATIONS.REMITTANCE_PAID, user._id, { description });
+    await createNotification(NOTIFICATIONS.REMITTANCE_PAID, user._id, {
+      description,
+      actionId: transaction._id,
+    });
 
     return { transaction: remittedTransaction, user };
   } catch (error) {

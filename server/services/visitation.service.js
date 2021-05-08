@@ -36,6 +36,7 @@ export const scheduleVisitation = async (schedule) => {
       )}`;
       await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_VENDOR, vendor._id, {
         description: descriptionVendor,
+        actionId: newSchedule._id,
       });
 
       const descriptionUser = `Your visitation to ${getFormattedName(
@@ -43,6 +44,7 @@ export const scheduleVisitation = async (schedule) => {
       )} has been scheduled for ${convertDateToLongHumanFormat(new Date(schedule.visitDate))}`;
       await createNotification(NOTIFICATIONS.SCHEDULE_VISIT_USER, schedule.userId, {
         description: descriptionUser,
+        actionId: newSchedule._id,
       });
 
       return { schedule: newSchedule, vendor };
@@ -182,12 +184,18 @@ export const processVisitation = async ({ user, visitationInfo, action }) => {
       )} for ${convertDateToLongHumanFormat(
         visitation.visitDate,
       )} has been rescheduled to ${convertDateToLongHumanFormat(visitationInfo?.visitDate)}`;
-      await createNotification(NOTIFICATIONS.RESCHEDULE_VISIT, mailDetails._id, { description });
+      await createNotification(NOTIFICATIONS.RESCHEDULE_VISIT, mailDetails._id, {
+        description,
+        actionId: visitation._id,
+      });
     } else {
       const description = `Your visitation to ${getFormattedName(
         property.name,
       )} for ${convertDateToLongHumanFormat(visitation.visitDate)} has been cancelled`;
-      await createNotification(NOTIFICATIONS.CANCEL_VISIT, mailDetails._id, { description });
+      await createNotification(NOTIFICATIONS.CANCEL_VISIT, mailDetails._id, {
+        description,
+        actionId: visitation._id,
+      });
     }
 
     return { visitation: updatedVisitation, mailDetails, property };
