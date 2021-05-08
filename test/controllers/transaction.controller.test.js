@@ -34,6 +34,7 @@ import {
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import { TRANSACTION_FILTERS } from '../../server/helpers/filters';
+import VendorFactory from '../factories/vendor.factory';
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();
@@ -48,9 +49,9 @@ const vendorUser = UserFactory.build(
   {
     role: USER_ROLE.VENDOR,
     activated: true,
-    vendor: {
+    vendor: VendorFactory.build({
       verified: true,
-    },
+    }),
   },
   { generateId: true },
 );
@@ -322,6 +323,7 @@ describe('Transaction Controller', () => {
                 expect(res.body.result[0].vendorInfo.vendor).to.not.have.property(
                   'remittancePercentage',
                 );
+                expect(res.body.result[0].vendorInfo.vendor).to.not.have.property('bankInfo');
                 done();
               });
           });
@@ -335,6 +337,7 @@ describe('Transaction Controller', () => {
               .end((err, res) => {
                 expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
                 expect(res.body.result[0].vendorInfo.vendor.remittancePercentage).to.be.eql(5);
+                expect(res.body.result[0].vendorInfo.vendor).to.have.property('bankInfo');
                 done();
               });
           });
@@ -377,6 +380,7 @@ describe('Transaction Controller', () => {
                 expect(res.body.result[0].vendorInfo.vendor).to.not.have.property(
                   'remittancePercentage',
                 );
+                expect(res.body.result[0].vendorInfo.vendor).to.not.have.property('bankInfo');
                 done();
               });
           });
@@ -1044,6 +1048,7 @@ describe('Transaction Controller', () => {
             expect(res.body.transaction.vendorInfo.vendor).to.not.have.property(
               'remittancePercentage',
             );
+            expect(res.body.transaction.vendorInfo.vendor).to.not.have.property('bankInfo');
             done();
           });
       });
@@ -1060,6 +1065,7 @@ describe('Transaction Controller', () => {
             expect(res.body.transaction.vendorInfo.vendor).to.not.have.property(
               'remittancePercentage',
             );
+            expect(res.body.transaction.vendorInfo.vendor).to.not.have.property('bankInfo');
             done();
           });
       });
@@ -1074,6 +1080,7 @@ describe('Transaction Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.transaction.vendorInfo.vendor.remittancePercentage).to.be.eql(5);
+            expect(res.body.transaction.vendorInfo.vendor).to.have.property('bankInfo');
             done();
           });
       });
