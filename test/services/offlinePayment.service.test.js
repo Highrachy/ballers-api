@@ -80,7 +80,7 @@ describe('Offline Payment Service', () => {
       expectNewNotificationToBeAdded(
         NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED,
         offlinePayment.userId,
-        { description },
+        { description, actionId: offlinePayment._id },
       );
     });
 
@@ -137,6 +137,7 @@ describe('Offline Payment Service', () => {
       )} for ${getFormattedName(property.name)}`;
       expectNewNotificationToBeAdded(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId, {
         description,
+        actionId: offlinePayment._id,
       });
     });
   });

@@ -19,6 +19,7 @@ import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
 import { addNextPayment } from './nextPayment.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
+import { getFormattedName } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -33,14 +34,14 @@ export const getPropertyInitials = (propertyName) =>
 export const generateReferenceCode = async (propertyId) => {
   const property = await getOneProperty(propertyId);
   const vendorCode = 'HIG';
-  const initials = getPropertyInitials(property[0].name);
+  const initials = getPropertyInitials(property.name);
   let numberSold = await Offer.countDocuments({ propertyId })
     .then((count) => count + 1)
     .catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
   numberSold = numberSold < 10 ? `0${numberSold}` : numberSold;
-  const type = `OL${getPropertyInitials(property[0].houseType)}`;
+  const type = `OL${getPropertyInitials(property.houseType)}`;
   const referenceCode = `${vendorCode}/${initials}/${type}/${numberSold}/${getTodaysDateShortCode()}`;
   return referenceCode;
 };
@@ -264,9 +265,9 @@ export const getOffer = async (offerId, user) => {
     },
   ];
 
-  if (user.role === USER_ROLE.VENDOR) {
+  if (user?.role === USER_ROLE.VENDOR) {
     offerOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
-  } else if (user.role === USER_ROLE.USER) {
+  } else if (user?.role === USER_ROLE.USER) {
     offerOptions.unshift({ $match: { userId: ObjectId(user._id) } });
   }
 
@@ -341,7 +342,13 @@ export const createOffer = async (offer) => {
       referenceCode,
     }).save();
     await approveEnquiry({ enquiryId: enquiry._id, vendor });
-    await createNotification(NOTIFICATIONS.OFFER_CREATED, user._id);
+
+    const property = await getOneProperty(enquiry.propertyId);
+    const description = `You have received an offer for ${getFormattedName(property.name)}`;
+    await createNotification(NOTIFICATIONS.OFFER_CREATED, user._id, {
+      actionId: newOffer._id,
+      description,
+    });
     const offerInfo = await getOffer(newOffer._id, user);
     return { ...offerInfo[0], userInfo };
   } catch (error) {
@@ -422,8 +429,21 @@ export const acceptOffer = async (offerToAccept) => {
       { new: true },
     );
 
-    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, offer[0].vendorId);
-    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_USER, offer[0].userId);
+    const property = await getOneProperty(offer[0].propertyId);
+
+    const descriptionVendor = `Your offer for ${getFormattedName(property.name)} has been accepted`;
+    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, offer[0].vendorId, {
+      actionId: offer[0]._id,
+      description: descriptionVendor,
+    });
+
+    const descriptionUser = `Congratulations on signing your offer for ${getFormattedName(
+      property.name,
+    )}`;
+    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_USER, offer[0].userId, {
+      actionId: offer[0]._id,
+      description: descriptionUser,
+    });
 
     const acceptedoffer = await getOffer(offerToAccept.offerId, offerToAccept.user);
     return { ...acceptedoffer[0], paymentSchedule };
@@ -532,7 +552,15 @@ export const raiseConcern = async (concern) => {
       { new: true, safe: true, upsert: true },
     );
 
-    await createNotification(NOTIFICATIONS.RAISE_CONCERN, offer.userId);
+    const property = await getOneProperty(offer.propertyId);
+
+    const description = `A comment has been raised on your offer for ${getFormattedName(
+      property.name,
+    )}`;
+    await createNotification(NOTIFICATIONS.RAISE_CONCERN, offer.userId, {
+      actionId: offer._id,
+      description,
+    });
 
     return await getOffer(concern.offerId, concern.user);
   } catch (error) {
@@ -561,7 +589,7 @@ export const resolveConcern = async (concern) => {
       },
       { new: true },
     );
-    await createNotification(NOTIFICATIONS.RESOLVE_CONCERN, offer.userId);
+    await createNotification(NOTIFICATIONS.RESOLVE_CONCERN, offer.userId, { actionId: offer._id });
     return await getOffer(concern.offerId, concern.vendor);
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error resolving concern', error);
@@ -702,7 +730,12 @@ export const reactivateOffer = async (offerInfo) => {
     await Offer.findByIdAndUpdate(offer._id, { status: OFFER_STATUS.REACTIVATED });
     const newOffer = await new Offer(updatedOffer).save();
 
-    await createNotification(NOTIFICATIONS.OFFER_REACTIVATED, offer.userId);
+    const property = await getOneProperty(offer.propertyId);
+    const description = `Your offer for ${getFormattedName(property.name)} has been reactivated`;
+    await createNotification(NOTIFICATIONS.OFFER_REACTIVATED, offer.userId, {
+      actionId: offer._id,
+      description,
+    });
 
     const reactivatedOffer = await getOffer(newOffer._id, user);
     return reactivatedOffer[0];

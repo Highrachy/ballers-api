@@ -17,6 +17,7 @@ import ReportedPropertyFactory from '../factories/reportedProperty.factory';
 import { getReportById, reportProperty } from '../../server/services/reportedProperty.service';
 import { expectNewNotificationToBeAdded } from '../helpers';
 import NOTIFICATIONS from '../../server/helpers/notifications';
+import { getFormattedName } from '../../server/helpers/funtions';
 
 describe('Property Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -230,7 +231,11 @@ describe('Property Service', () => {
           await flagProperty(propertyInfo);
         });
 
-        expectNewNotificationToBeAdded(NOTIFICATIONS.FLAG_PROPERTY, vendor._id);
+        const description = `Your property ${getFormattedName(property.name)} has been flagged`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.FLAG_PROPERTY, vendor._id, {
+          description,
+          actionId: property._id,
+        });
       });
     });
   });

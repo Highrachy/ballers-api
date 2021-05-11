@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import OfflinePayment from '../models/offlinePayment.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { getOfferById } from './offer.service';
+import { getOfferById, getOffer } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { COMMENT_STATUS, USER_ROLE } from '../helpers/constants';
@@ -35,6 +35,7 @@ export const addOfflinePayment = async (offlinePayment) => {
     )} for ${getFormattedName(property.name)}`;
     await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_ADDED, offlinePayment.userId, {
       description,
+      actionId: payment._id,
     });
     return payment;
   } catch (error) {
@@ -177,6 +178,7 @@ export const resolveOfflinePayment = async ({ offlinePaymentId, adminId }) => {
 
     await createNotification(NOTIFICATIONS.OFFLINE_PAYMENT_RESOLVED, offlinePayment.userId, {
       description,
+      actionId: offlinePayment._id,
     });
     return OfflinePayment.findByIdAndUpdate(
       offlinePayment._id,
@@ -220,6 +222,15 @@ export const raiseComment = async ({ comment, user }) => {
       },
       { new: true, safe: true, upsert: true },
     );
+    const offer = await getOffer(offlinePayment.offerId);
+
+    const description = `A comment has been raised on your offline payment for ${getFormattedName(
+      offer[0].propertyInfo.name,
+    )}`;
+    await createNotification(NOTIFICATIONS.RAISE_COMMENT_FOR_OFFLINE_PAYMENT, offer[0].userId, {
+      actionId: offlinePayment._id,
+      description,
+    });
 
     return { payment };
   } catch (error) {

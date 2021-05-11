@@ -9,5 +9,5 @@ export default new Factory()
   .attr('userId', '6082179739399fdf75887efb')
   .sequence('description', (i) => `Notification success ${i}`)
   .attr('type', 0)
-  .attr('url', '/')
+  .attr('action', 'USER')
   .attr('read', false);

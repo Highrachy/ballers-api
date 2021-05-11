@@ -25,6 +25,7 @@ import { resolveReport, getReportById } from './reportedProperty.service';
 import { getUserById } from './user.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
+import { getFormattedName } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -250,13 +251,12 @@ export const getOneProperty = async (propertyId, user = {}) => {
 
   const property = await Property.aggregate(propertyOptions);
   if (
-    property.length > 0 &&
-    user?.role === USER_ROLE.VENDOR &&
-    user?._id.toString() !== property[0].addedBy.toString()
+    property.length === 0 ||
+    (user?.role === USER_ROLE.VENDOR && user?._id.toString() !== property[0].addedBy.toString())
   ) {
-    return [];
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Property not found');
   }
-  return property;
+  return property[0];
 };
 
 export const searchThroughProperties = async (user, { page = 1, limit = 10, ...query } = {}) => {
@@ -764,7 +764,11 @@ export const flagProperty = async (propertyInfo) => {
       { new: true },
     );
 
-    await createNotification(NOTIFICATIONS.FLAG_PROPERTY, vendor._id);
+    const description = `Your property ${getFormattedName(property.name)} has been flagged`;
+    await createNotification(NOTIFICATIONS.FLAG_PROPERTY, vendor._id, {
+      actionId: property._id,
+      description,
+    });
 
     return { property: flaggedProperty, vendor };
   } catch (error) {
@@ -803,7 +807,11 @@ export const unflagProperty = async (propertyInfo) => {
       { new: true },
     );
 
-    await createNotification(NOTIFICATIONS.UNFLAG_PROPERTY, vendor._id);
+    const description = `Your property ${getFormattedName(property.name)} has been unflagged`;
+    await createNotification(NOTIFICATIONS.UNFLAG_PROPERTY, vendor._id, {
+      actionId: property._id,
+      description,
+    });
 
     return { property: unflaggedProperty, vendor };
   } catch (error) {

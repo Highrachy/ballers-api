@@ -606,6 +606,8 @@ export const expectNewNotificationToBeAdded = (notificationType, userId, options
       expect(userLatestNotification[0].type).to.eql(notification.type);
       expect(userLatestNotification[0].read).to.eql(false);
       expect(userLatestNotification[0].description).to.eql(notification.description);
+      expect(userLatestNotification[0].action).to.eql(notification.action);
+      expect(userLatestNotification[0].actionId).to.eql(notification.actionId);
     });
   });
 };
