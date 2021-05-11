@@ -28,6 +28,7 @@ import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
 import { futureDate, expectNewNotificationToBeAdded } from '../helpers';
 import NOTIFICATIONS from '../../server/helpers/notifications';
+import { getFormattedName } from '../../server/helpers/funtions';
 
 describe('Offer Service', () => {
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
@@ -166,7 +167,11 @@ describe('Offer Service', () => {
         beforeEach(async () => {
           await createOffer(offer);
         });
-        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_CREATED, user._id);
+        const description = `You have received an offer for ${getFormattedName(property.name)}`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_CREATED, user._id, {
+          description,
+          actionId: offer._id,
+        });
       });
     });
 
@@ -475,8 +480,21 @@ describe('Offer Service', () => {
         beforeEach(async () => {
           await acceptOffer(toAcceptValid);
         });
-        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, vendor._id);
-        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_USER, user1._id);
+        const descriptionVendor = `Your offer for ${getFormattedName(
+          property.name,
+        )} has been accepted`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, vendor._id, {
+          description: descriptionVendor,
+          actionId: offer1._id,
+        });
+
+        const descriptionUser = `Congratulations on signing your offer for ${getFormattedName(
+          property.name,
+        )}`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_USER, user1._id, {
+          description: descriptionUser,
+          actionId: offer1._id,
+        });
       });
     });
 
@@ -756,7 +774,13 @@ describe('Offer Service', () => {
         beforeEach(async () => {
           await reactivateOffer(offerInfo);
         });
-        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_REACTIVATED, user._id);
+        const description = `Your offer for ${getFormattedName(
+          property.name,
+        )} has been reactivated`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_REACTIVATED, user._id, {
+          description,
+          actionId: offer._id,
+        });
       });
     });
   });

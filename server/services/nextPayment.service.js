@@ -227,7 +227,7 @@ export const sendReminder = async () => {
   await Promise.all(
     reminders.map(async (reminder) => {
       await createNotification(NOTIFICATIONS.PAYMENT_REMINDER, reminder.userId, {
-        actionId: reminder._id,
+        actionId: reminder.offerId,
       });
     }),
   );

@@ -80,11 +80,7 @@ const PropertyController = {
     const { user } = req;
     getOneProperty(propertId, user)
       .then((property) => {
-        if (property.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, property: property[0] });
-        } else {
-          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Property not found' });
-        }
+        res.status(httpStatus.OK).json({ success: true, property });
       })
       .catch((error) => next(error));
   },

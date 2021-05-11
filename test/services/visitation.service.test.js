@@ -43,10 +43,13 @@ describe('Visitation Service', () => {
     });
 
     context('when a valid schedule is entered', () => {
-      const validBooking = VisitationFactory.build({
-        propertyId: property._id,
-        userId: user._id,
-      });
+      const validBooking = VisitationFactory.build(
+        {
+          propertyId: property._id,
+          userId: user._id,
+        },
+        { generateId: true },
+      );
 
       it('adds a new scheduled visit', async () => {
         const schedule = await scheduleVisitation(validBooking);
@@ -68,6 +71,7 @@ describe('Visitation Service', () => {
         )}`;
         expectNewNotificationToBeAdded(NOTIFICATIONS.SCHEDULE_VISIT_VENDOR, vendor._id, {
           description: vendorDescription,
+          actionId: validBooking._id,
         });
 
         const userDescription = `Your visitation to ${getFormattedName(
@@ -77,6 +81,7 @@ describe('Visitation Service', () => {
         )}`;
         expectNewNotificationToBeAdded(NOTIFICATIONS.SCHEDULE_VISIT_USER, user._id, {
           description: userDescription,
+          actionId: validBooking._id,
         });
       });
     });
@@ -243,7 +248,10 @@ describe('Visitation Service', () => {
           new Date(visitation.visitDate),
         )} has been rescheduled to ${convertDateToLongHumanFormat(visitationInfo.visitDate)}`;
 
-        expectNewNotificationToBeAdded(NOTIFICATIONS.RESCHEDULE_VISIT, user._id, { description });
+        expectNewNotificationToBeAdded(NOTIFICATIONS.RESCHEDULE_VISIT, user._id, {
+          description,
+          actionId: visitation._id,
+        });
       });
 
       context('when visitation is cancelled', () => {
@@ -258,7 +266,10 @@ describe('Visitation Service', () => {
         const description = `Your visitation to ${getFormattedName(
           property.name,
         )} for ${convertDateToLongHumanFormat(new Date(visitation.visitDate))} has been cancelled`;
-        expectNewNotificationToBeAdded(NOTIFICATIONS.CANCEL_VISIT, vendor._id, { description });
+        expectNewNotificationToBeAdded(NOTIFICATIONS.CANCEL_VISIT, vendor._id, {
+          description,
+          actionId: visitation._id,
+        });
       });
     });
   });

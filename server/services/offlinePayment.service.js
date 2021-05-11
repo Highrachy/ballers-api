@@ -223,6 +223,17 @@ export const raiseComment = async ({ comment, user }) => {
       { new: true, safe: true, upsert: true },
     );
 
+    const offer = await getOfferById(offlinePayment.offerId);
+    const property = await getPropertyById(offer.propertyId);
+
+    const description = `A comment has been raised on your offline payment for ${getFormattedName(
+      property.name,
+    )}`;
+    await createNotification(NOTIFICATIONS.RAISE_COMMENT_FOR_OFFLINE_PAYMENT, offer.userId, {
+      actionId: offlinePayment._id,
+      description,
+    });
+
     return { payment };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error raising comment', error);

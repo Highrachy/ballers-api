@@ -261,7 +261,10 @@ describe('Transaction Service', () => {
         const description = `You have received ${getMoneyFormat(
           Math.round(((100 - remittanceInfo.percentage) / 100) * transaction.amount),
         )} for your property ${getFormattedName(property.name)}`;
-        expectNewNotificationToBeAdded(NOTIFICATIONS.REMITTANCE_PAID, vendor._id, { description });
+        expectNewNotificationToBeAdded(NOTIFICATIONS.REMITTANCE_PAID, vendor._id, {
+          description,
+          actionId: transaction._id,
+        });
       });
     });
   });

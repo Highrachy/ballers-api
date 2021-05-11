@@ -11,7 +11,7 @@ import { NOTIFICATION_TYPE } from '../helpers/constants';
  *          - userId
  *          - description
  *          - type
- *          - url
+ *          - action
  *          - status
  *        properties:
  *          userId:
@@ -20,7 +20,7 @@ import { NOTIFICATION_TYPE } from '../helpers/constants';
  *            type: string
  *          type:
  *            type: number
- *          url:
+ *          action:
  *            type: string
  *          read:
  *            type: boolean
@@ -28,7 +28,7 @@ import { NOTIFICATION_TYPE } from '../helpers/constants';
  *           userId: Lekki Phase 1
  *           description: Your account has been activated
  *           type: 1
- *           url: app.ballers.ng/dashboard
+ *           action: app.ballers.ng/dashboard
  *           read: false
  */
 
@@ -36,6 +36,12 @@ const { ObjectId } = mongoose.Schema.Types;
 
 const NotificationSchema = new mongoose.Schema(
   {
+    action: {
+      type: String,
+    },
+    actionId: {
+      type: ObjectId,
+    },
     userId: {
       type: ObjectId,
       required: true,
@@ -47,9 +53,6 @@ const NotificationSchema = new mongoose.Schema(
     type: {
       type: Number,
       default: NOTIFICATION_TYPE.DANGER,
-    },
-    url: {
-      type: String,
     },
     read: {
       type: Boolean,

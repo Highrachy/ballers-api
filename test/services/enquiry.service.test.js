@@ -79,6 +79,7 @@ describe('Enquiry Service', () => {
       const description = `You have received a new enquiry for ${getFormattedName(property.name)}`;
       expectNewNotificationToBeAdded(NOTIFICATIONS.ENQUIRY_ADDED, property.addedBy, {
         description,
+        actionId: enquiry._id,
       });
     });
 
