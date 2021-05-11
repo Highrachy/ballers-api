@@ -251,10 +251,8 @@ export const getOneProperty = async (propertyId, user = {}) => {
 
   const property = await Property.aggregate(propertyOptions);
   if (
-    property.length < 1 ||
-    (property.length > 0 &&
-      user?.role === USER_ROLE.VENDOR &&
-      user?._id.toString() !== property[0].addedBy.toString())
+    property.length === 0 ||
+    (user?.role === USER_ROLE.VENDOR && user?._id.toString() !== property[0].addedBy.toString())
   ) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Property not found');
   }

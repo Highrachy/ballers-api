@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import OfflinePayment from '../models/offlinePayment.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { getOfferById } from './offer.service';
+import { getOfferById, getOffer } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { COMMENT_STATUS, USER_ROLE } from '../helpers/constants';
@@ -222,14 +222,12 @@ export const raiseComment = async ({ comment, user }) => {
       },
       { new: true, safe: true, upsert: true },
     );
-
-    const offer = await getOfferById(offlinePayment.offerId);
-    const property = await getPropertyById(offer.propertyId);
+    const offer = await getOffer(offlinePayment.offerId);
 
     const description = `A comment has been raised on your offline payment for ${getFormattedName(
-      property.name,
+      offer[0].propertyInfo.name,
     )}`;
-    await createNotification(NOTIFICATIONS.RAISE_COMMENT_FOR_OFFLINE_PAYMENT, offer.userId, {
+    await createNotification(NOTIFICATIONS.RAISE_COMMENT_FOR_OFFLINE_PAYMENT, offer[0].userId, {
       actionId: offlinePayment._id,
       description,
     });

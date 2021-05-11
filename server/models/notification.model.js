@@ -28,7 +28,7 @@ import { NOTIFICATION_TYPE } from '../helpers/constants';
  *           userId: Lekki Phase 1
  *           description: Your account has been activated
  *           type: 1
- *           action: app.ballers.ng/dashboard
+ *           action: USER
  *           read: false
  */
 
@@ -38,6 +38,7 @@ const NotificationSchema = new mongoose.Schema(
   {
     action: {
       type: String,
+      required: true,
     },
     actionId: {
       type: ObjectId,

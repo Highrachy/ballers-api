@@ -31,6 +31,8 @@ import {
 import { OFFLINE_PAYMENT_FILTERS } from '../../server/helpers/filters';
 import PropertyFactory from '../factories/property.factory';
 import { addProperty } from '../../server/services/property.service';
+import EnquiryFactory from '../factories/enquiry.factory';
+import { addEnquiry } from '../../server/services/enquiry.service';
 
 let userToken;
 let adminToken;
@@ -65,6 +67,16 @@ const property = PropertyFactory.build(
   { addedBy: vendorUser._id, updatedBy: vendorUser._id },
   { generateId: true },
 );
+const enquiry = EnquiryFactory.build(
+  {
+    propertyId: property._id,
+    userId: regularUser._id,
+    addedBy: regularUser._id,
+    updatedBy: regularUser._id,
+  },
+  { generateId: true },
+);
+
 const offer = OfferFactory.build(
   {
     totalAmountPayable: 4_000_000,
@@ -76,6 +88,7 @@ const offer = OfferFactory.build(
     propertyId: property._id,
     vendorId: vendorUser._id,
     userId: regularUser._id,
+    enquiryId: enquiry._id,
   },
   { generateId: true },
 );
@@ -86,6 +99,7 @@ describe('Offline Payment Controller', () => {
     userToken = await addUser(regularUser);
     adminToken = await addUser(adminUser);
     await addProperty(property);
+    await addEnquiry(enquiry);
     await Offer.create(offer);
   });
 

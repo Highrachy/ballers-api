@@ -265,9 +265,9 @@ export const getOffer = async (offerId, user) => {
     },
   ];
 
-  if (user.role === USER_ROLE.VENDOR) {
+  if (user?.role === USER_ROLE.VENDOR) {
     offerOptions.unshift({ $match: { vendorId: ObjectId(user._id) } });
-  } else if (user.role === USER_ROLE.USER) {
+  } else if (user?.role === USER_ROLE.USER) {
     offerOptions.unshift({ $match: { userId: ObjectId(user._id) } });
   }
 
