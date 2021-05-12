@@ -20,6 +20,7 @@ import {
   flagProperty,
   unflagProperty,
   getOnePortfolio,
+  approveProperty,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -254,6 +255,16 @@ const PropertyController = {
     getOnePortfolio(offerId, user)
       .then((portfolio) => {
         res.status(httpStatus.OK).json({ success: true, portfolio });
+      })
+      .catch((error) => next(error));
+  },
+
+  approveProperty(req, res, next) {
+    const propertyId = req.params.id;
+    const adminId = req.user._id;
+    approveProperty({ propertyId, adminId })
+      .then((property) => {
+        res.status(httpStatus.OK).json({ success: true, message: 'Property approved', property });
       })
       .catch((error) => next(error));
   },

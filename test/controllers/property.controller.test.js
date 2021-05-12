@@ -1234,7 +1234,7 @@ describe('Property Controller', () => {
   describe('Get one property', () => {
     const invalidPropertyId = mongoose.Types.ObjectId();
     const property = PropertyFactory.build(
-      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { addedBy: vendorUser._id, updatedBy: vendorUser._id, approved: { status: true } },
       { generateId: true },
     );
 
@@ -1443,9 +1443,8 @@ describe('Property Controller', () => {
       addedBy: vendorUser._id,
       updatedBy: vendorUser._id,
       createdAt: new Date(),
-      flagged: {
-        status: false,
-      },
+      flagged: { status: false },
+      approved: { status: false },
     });
     const vendor2Properties = PropertyFactory.buildList(5, {
       addedBy: vendorUser2._id,
@@ -1472,9 +1471,8 @@ describe('Property Controller', () => {
         toilets: 1,
         units: 1,
         updatedBy: vendorUser._id,
-        flagged: {
-          status: true,
-        },
+        flagged: { status: true },
+        approved: { status: true },
       },
       { generateId: true },
     );
@@ -1904,6 +1902,7 @@ describe('Property Controller', () => {
         addedBy: vendorUser._id,
         updatedBy: vendorUser._id,
         flagged: { status: true },
+        approved: { status: true },
         createdAt: futureDate,
       },
       { generateId: true },
@@ -1929,6 +1928,7 @@ describe('Property Controller', () => {
         units: 3,
         flagged: { status: false },
         createdAt: futureDate,
+        approved: { status: true },
       },
       { generateId: true },
     );
@@ -1954,6 +1954,7 @@ describe('Property Controller', () => {
         units: 1,
         flagged: { status: false },
         createdAt: currentDate,
+        approved: { status: true },
       },
       { generateId: true },
     );
@@ -1978,6 +1979,7 @@ describe('Property Controller', () => {
         units: 2,
         flagged: { status: false },
         createdAt: pastDate,
+        approved: { status: true },
       },
       { generateId: true },
     );
