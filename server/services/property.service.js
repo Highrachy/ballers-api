@@ -271,12 +271,6 @@ export const searchThroughProperties = async (user, { page = 1, limit = 10, ...q
     { $match: { $and: filterQuery } },
     { $sort: sortQuery },
     {
-      $match: {
-        'flagged.status': false,
-        'approved.status': true,
-      },
-    },
-    {
       $lookup: {
         from: 'users',
         localField: 'assignedTo',
@@ -319,7 +313,13 @@ export const searchThroughProperties = async (user, { page = 1, limit = 10, ...q
   }
 
   if (user.role === USER_ROLE.USER) {
-    propertyOptions.unshift({ $match: { assignedTo: { $nin: [ObjectId(user._id)] } } });
+    propertyOptions.unshift({
+      $match: {
+        assignedTo: { $nin: [ObjectId(user._id)] },
+        'flagged.status': false,
+        'approved.status': true,
+      },
+    });
   }
 
   const properties = await Property.aggregate(propertyOptions);

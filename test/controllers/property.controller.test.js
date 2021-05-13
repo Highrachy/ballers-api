@@ -1329,6 +1329,48 @@ describe('Property Controller', () => {
       });
     });
 
+    context('when property is not approved', () => {
+      beforeEach(async () => {
+        await Property.findByIdAndUpdate(property._id, { 'approved.status': false });
+      });
+
+      context('with user id', () => {
+        it('returns not found', (done) => {
+          request()
+            .get(`/api/v1/property/${property._id}`)
+            .set('authorization', userToken)
+            .send(property)
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Property not found');
+              done();
+            });
+        });
+      });
+
+      context('with admin and vendor token', () => {
+        [...new Array(2)].map((_, index) =>
+          it('successfully returns property', (done) => {
+            request()
+              .get(`/api/v1/property/${property._id}`)
+              .set('authorization', [vendorToken, adminToken][index])
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.property._id).to.be.eql(property._id.toString());
+                expect(res.body.property).to.not.have.property('assignedTo');
+                expect(res.body.property).to.not.have.property('enquiryInfo');
+                expect(res.body.property).to.not.have.property('visitationInfo');
+                expectResponseToExcludeSensitiveUserData(res.body.property.vendorInfo);
+                expectResponseToContainNecessaryVendorData(res.body.property.vendorInfo);
+                done();
+              });
+          }),
+        );
+      });
+    });
+
     context('when token is invalid', () => {
       beforeEach(async () => {
         await User.findByIdAndDelete(vendorUser._id);
@@ -1908,6 +1950,17 @@ describe('Property Controller', () => {
       { generateId: true },
     );
 
+    const unapprovedProperty = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        updatedBy: vendorUser._id,
+        flagged: { status: false },
+        approved: { status: false },
+        createdAt: futureDate,
+      },
+      { generateId: true },
+    );
+
     const property = PropertyFactory.build(
       {
         addedBy: testVendor._id,
@@ -2002,17 +2055,40 @@ describe('Property Controller', () => {
 
       describe('when properties exist in db', () => {
         beforeEach(async () => {
-          await Property.insertMany([property, flaggedProperty, ...properties1, ...properties2]);
+          await Property.insertMany([
+            property,
+            flaggedProperty,
+            unapprovedProperty,
+            ...properties1,
+            ...properties2,
+          ]);
         });
 
-        [adminUser, vendorUser, regularUser].map((user) =>
-          itReturnsTheRightPaginationValue({
-            endpoint,
-            method,
-            user,
-            useExistingUser: true,
-          }),
-        );
+        itReturnsTheRightPaginationValue({
+          endpoint,
+          method,
+          user: regularUser,
+          useExistingUser: true,
+        });
+
+        context('with a admin and vendor token', () => {
+          [...new Array(2)].map((_, index) =>
+            it('returns flagged and unapproved properties', (done) => {
+              request()
+                [method](endpoint)
+                .set('authorization', [adminToken, vendorToken][index])
+                .end((err, res) => {
+                  expectsPaginationToReturnTheRightValues(res, {
+                    ...defaultPaginationResult,
+                    total: 20,
+                    result: 10,
+                    totalPage: 2,
+                  });
+                  done();
+                });
+            }),
+          );
+        });
 
         context('when 3 properties are assigned to user', () => {
           beforeEach(async () => {
@@ -2077,7 +2153,7 @@ describe('Property Controller', () => {
 
     describe('Filter Tests', () => {
       beforeEach(async () => {
-        await Property.insertMany([property, flaggedProperty, ...properties1, ...properties2]);
+        await Property.insertMany([property, ...properties1, ...properties2]);
       });
 
       describe('Unknown Filters', () => {
@@ -2159,7 +2235,7 @@ describe('Property Controller', () => {
 
     describe('Property feature filter', () => {
       beforeEach(async () => {
-        await Property.insertMany([property, flaggedProperty, ...properties1, ...properties2]);
+        await Property.insertMany([property, ...properties1, ...properties2]);
       });
 
       context('when a single entry is used', () => {
@@ -2206,7 +2282,7 @@ describe('Property Controller', () => {
 
     describe('Sorting Searched Properties', () => {
       beforeEach(async () => {
-        await Property.insertMany([property, flaggedProperty, properties1[0], properties2[0]]);
+        await Property.insertMany([property, properties1[0], properties2[0]]);
       });
 
       context('when an unknown filter is used', () => {
@@ -2400,7 +2476,7 @@ describe('Property Controller', () => {
 
     describe('Filtering Searched Properties by Range', () => {
       beforeEach(async () => {
-        await Property.insertMany([property, flaggedProperty, properties1[0], properties2[0]]);
+        await Property.insertMany([property, properties1[0], properties2[0]]);
       });
 
       context('when unknown parameter is used', () => {
@@ -2508,7 +2584,7 @@ describe('Property Controller', () => {
 
     describe('Filtering and Sorting Search Properties', () => {
       beforeEach(async () => {
-        await Property.insertMany([property, flaggedProperty, properties1[0], properties2[0]]);
+        await Property.insertMany([property, properties1[0], properties2[0]]);
       });
 
       context('when the `to` value is given', () => {
