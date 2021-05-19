@@ -221,6 +221,7 @@ export const PROPERTY_FILTERS = {
   toilets: { type: FILTER_TYPE.INTEGER },
   units: { type: FILTER_TYPE.INTEGER },
   flagged: { key: 'flagged.status', type: FILTER_TYPE.BOOLEAN },
+  approved: { key: 'approved.status', type: FILTER_TYPE.BOOLEAN },
 };
 
 export const OFFER_FILTERS = {

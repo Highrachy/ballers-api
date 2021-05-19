@@ -216,6 +216,18 @@ const PropertySchema = new mongoose.Schema(
         },
       ],
     },
+    approved: {
+      by: {
+        type: ObjectId,
+      },
+      date: {
+        type: Date,
+      },
+      status: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
   { timestamps: true },
 );

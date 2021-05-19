@@ -193,7 +193,12 @@ export const getOneProperty = async (propertyId, user = {}) => {
   ];
 
   if (user?.role === USER_ROLE.USER) {
-    propertyOptions.splice(1, 0, { $match: { 'flagged.status': false } });
+    propertyOptions.splice(1, 0, {
+      $match: {
+        'flagged.status': false,
+        'approved.status': true,
+      },
+    });
     propertyOptions.splice(
       2,
       0,
@@ -265,7 +270,6 @@ export const searchThroughProperties = async (user, { page = 1, limit = 10, ...q
   const propertyOptions = [
     { $match: { $and: filterQuery } },
     { $sort: sortQuery },
-    { $match: { 'flagged.status': false } },
     {
       $lookup: {
         from: 'users',
@@ -309,7 +313,13 @@ export const searchThroughProperties = async (user, { page = 1, limit = 10, ...q
   }
 
   if (user.role === USER_ROLE.USER) {
-    propertyOptions.unshift({ $match: { assignedTo: { $nin: [ObjectId(user._id)] } } });
+    propertyOptions.unshift({
+      $match: {
+        assignedTo: { $nin: [ObjectId(user._id)] },
+        'flagged.status': false,
+        'approved.status': true,
+      },
+    });
   }
 
   const properties = await Property.aggregate(propertyOptions);
@@ -873,4 +883,30 @@ export const getOnePortfolio = async (offerId, user = {}) => {
     ...portfolio[0],
     amountContributed,
   };
+};
+
+export const approveProperty = async ({ propertyId, adminId }) => {
+  const property = await getPropertyById(propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  try {
+    return Property.findByIdAndUpdate(
+      property._id,
+      {
+        $set: {
+          'approved.by': adminId,
+          'approved.date': Date.now(),
+          'approved.status': true,
+        },
+      },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error approving property', error);
+  }
 };

@@ -630,4 +630,35 @@ router.get(
   PropertyController.getOnePortfolio,
 );
 
+/**
+ * @swagger
+ * /property/approve/:id:
+ *   delete:
+ *     tags:
+ *       - Property
+ *     description: Approve a property for viewing
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Approve a property for viewing
+ *     responses:
+ *      '200':
+ *        description: Property approved
+ *      '404':
+ *       description: Property not found
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/approve/:id',
+  authenticate,
+  hasValidObjectId,
+  isAdmin,
+  PropertyController.approveProperty,
+);
+
 module.exports = router;
