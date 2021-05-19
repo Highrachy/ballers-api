@@ -17,6 +17,7 @@ import reportProperty from './reportedProperty.routes';
 import nextPayment from './nextPayment.routes';
 import offlinePayment from './offlinePayment.routes';
 import notification from './notification.routes';
+import models from './model.routes';
 
 export default (app) => {
   app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, { explorer: true }));
@@ -37,4 +38,5 @@ export default (app) => {
   app.use('/api/v1/next-payment', nextPayment);
   app.use('/api/v1/offline-payment', offlinePayment);
   app.use('/api/v1/notification', notification);
+  app.use('/api/v1/all', models);
 };

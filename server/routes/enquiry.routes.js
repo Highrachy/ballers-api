@@ -5,6 +5,7 @@ import {
   isAdminOrUserOrVendor,
   hasValidObjectId,
   isVendor,
+  isUser,
 } from '../helpers/middleware';
 import { addEnquirySchema, approveEnquirySchema } from '../schemas/enquiry.schema';
 import EnquiryController from '../controllers/enquiry.controllers';
@@ -34,7 +35,13 @@ const router = express.Router();
  *      '500':
  *       description: Internal server error
  */
-router.post('/add', authenticate, schemaValidation(addEnquirySchema), EnquiryController.add);
+router.post(
+  '/add',
+  authenticate,
+  isUser,
+  schemaValidation(addEnquirySchema),
+  EnquiryController.add,
+);
 
 /**
  * @swagger
@@ -109,6 +116,6 @@ router.get('/all', authenticate, isAdminOrUserOrVendor, EnquiryController.getAll
  *        '500':
  *          description: Internal server error
  */
-router.get('/:id', authenticate, hasValidObjectId, EnquiryController.getOne);
+router.get('/:id', authenticate, isAdminOrUserOrVendor, hasValidObjectId, EnquiryController.getOne);
 
 module.exports = router;
