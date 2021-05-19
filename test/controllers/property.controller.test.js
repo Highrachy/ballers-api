@@ -1334,7 +1334,7 @@ describe('Property Controller', () => {
         await Property.findByIdAndUpdate(property._id, { 'approved.status': false });
       });
 
-      context('with user id', () => {
+      context('with user token', () => {
         it('returns not found', (done) => {
           request()
             .get(`/api/v1/property/${property._id}`)
@@ -2064,11 +2064,13 @@ describe('Property Controller', () => {
           ]);
         });
 
-        itReturnsTheRightPaginationValue({
-          endpoint,
-          method,
-          user: regularUser,
-          useExistingUser: true,
+        context('with user token', () => {
+          itReturnsTheRightPaginationValue({
+            endpoint,
+            method,
+            user: regularUser,
+            useExistingUser: true,
+          });
         });
 
         context('with a admin and vendor token', () => {
