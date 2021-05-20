@@ -63,10 +63,7 @@ const vendorUser = UserFactory.build(
   },
   { generateId: true },
 );
-const property = PropertyFactory.build(
-  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-  { generateId: true },
-);
+const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 const enquiry = EnquiryFactory.build(
   {
     propertyId: property._id,

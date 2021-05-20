@@ -17,7 +17,7 @@ import { addProperty } from '../../server/services/property.service';
 
 describe('Offline Payment Service', () => {
   const property = PropertyFactory.build(
-    { addedBy: mongoose.Types.ObjectId(), updatedBy: mongoose.Types.ObjectId() },
+    { addedBy: mongoose.Types.ObjectId() },
     { generateId: true },
   );
   const offer = OfferFactory.build(

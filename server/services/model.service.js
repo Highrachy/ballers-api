@@ -18,19 +18,23 @@ const getAllModels = async (user) => {
   let matchObject;
   let propertyMatchObject;
   let referralMatchObject;
+  let reportedPropertyMatchObject;
 
   if (user.role === USER_ROLE.USER) {
     matchObject = { userId: ObjectId(user._id) };
     propertyMatchObject = { assignedTo: { $in: [ObjectId(user._id)] } };
-    referralMatchObject = { userId: ObjectId(user._id) };
+    referralMatchObject = { referrerId: ObjectId(user._id) };
+    reportedPropertyMatchObject = { reportedBy: ObjectId(user._id) };
   } else if (user.role === USER_ROLE.VENDOR) {
     matchObject = { vendorId: ObjectId(user._id) };
     propertyMatchObject = { addedBy: ObjectId(user._id) };
-    referralMatchObject = { userId: ObjectId(user._id) };
+    reportedPropertyMatchObject = {};
+    referralMatchObject = { referrerId: ObjectId(user._id) };
   } else {
     propertyMatchObject = {};
     referralMatchObject = {};
     matchObject = {};
+    reportedPropertyMatchObject = {};
   }
   try {
     const enquiries = await Enquiry.countDocuments(matchObject);
@@ -38,7 +42,7 @@ const getAllModels = async (user) => {
     const offlinePayments = await OfflinePayment.countDocuments(matchObject);
     const properties = await Property.countDocuments(propertyMatchObject);
     const referrals = await Referral.countDocuments(referralMatchObject);
-    const reportedProperties = await ReportedProperty.countDocuments(matchObject);
+    const reportedProperties = await ReportedProperty.countDocuments(reportedPropertyMatchObject);
     const scheduledVisitations = await Visitation.countDocuments({
       ...matchObject,
       status: VISITATION_STATUS.PENDING,

@@ -31,7 +31,7 @@ const PropertyController = {
   add(req, res, next) {
     const newProperty = req.locals;
     const { user } = req;
-    addProperty({ ...newProperty, addedBy: user._id, updatedBy: user._id })
+    addProperty({ ...newProperty, addedBy: user._id })
       .then((property) => {
         res.status(httpStatus.CREATED).json({ success: true, message: 'Property added', property });
       })

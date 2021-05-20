@@ -89,11 +89,7 @@ const testVendor = UserFactory.build(
   { generateId: true },
 );
 
-const properties = PropertyFactory.buildList(
-  18,
-  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-  { generateId: true },
-);
+const properties = PropertyFactory.buildList(18, { addedBy: vendorUser._id }, { generateId: true });
 
 describe('Offer Controller', () => {
   describe('Offer Controller', () => {
@@ -123,7 +119,6 @@ describe('Offer Controller', () => {
           name: 'Lekki Ville Estate',
           houseType: 'Maisonette',
           addedBy: vendorUser._id,
-          updatedBy: vendorUser._id,
         },
         { generateId: true },
       );
@@ -1485,18 +1480,15 @@ describe('Offer Controller', () => {
 
     const userProperties = PropertyFactory.buildList(
       17,
-      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { addedBy: vendorUser._id },
       { generateId: true },
     );
 
-    const userProperty = PropertyFactory.build(
-      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-      { generateId: true },
-    );
+    const userProperty = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 
     const user2Properties = PropertyFactory.buildList(
       8,
-      { addedBy: vendor2._id, updatedBy: vendor2._id },
+      { addedBy: vendor2._id },
       { generateId: true },
     );
 
@@ -1827,13 +1819,13 @@ describe('Offer Controller', () => {
 
     const vendorProperties = PropertyFactory.buildList(
       10,
-      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
+      { addedBy: vendorUser._id },
       { generateId: true },
     );
 
     const vendor2Properties = PropertyFactory.buildList(
       8,
-      { addedBy: vendor2._id, updatedBy: vendor2._id },
+      { addedBy: vendor2._id },
       { generateId: true },
     );
 

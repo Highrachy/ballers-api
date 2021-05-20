@@ -588,7 +588,7 @@ describe('NextPayment Service', () => {
     );
 
     const vendorProperty = PropertyFactory.build(
-      { addedBy: mongoose.Types.ObjectId(), updatedBy: mongoose.Types.ObjectId() },
+      { addedBy: mongoose.Types.ObjectId() },
       { generateId: true },
     );
 

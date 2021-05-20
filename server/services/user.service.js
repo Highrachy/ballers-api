@@ -185,7 +185,6 @@ export const getUserInfo = async (key, value) => {
         'user.password': 0,
         'user.assignedProperties.assignedTo': 0,
         'user.assignedProperties.addedBy': 0,
-        'user.assignedProperties.updatedBy': 0,
         'user.favorites.assignedTo': 0,
         'user.favorites.addedBy': 0,
         'user.favorites.updatedBy': 0,
