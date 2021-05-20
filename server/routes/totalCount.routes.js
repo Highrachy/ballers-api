@@ -1,20 +1,20 @@
 import express from 'express';
 import { authenticate, isAdminOrUserOrVendor } from '../helpers/middleware';
-import ModelController from '../controllers/model.controllers';
+import TotalCountController from '../controllers/totalCount.controllers';
 
 const router = express.Router();
 
 /**
  * @swagger
  * path:
- *  /:
+ *  /total-count/:
  *    get:
- *      summary: Returns all models in database
+ *      summary: Count the total number of each model in the database
  *      tags: [Models]
  *      responses:
  *        "200":
  *          description: All models
  */
-router.get('/', authenticate, isAdminOrUserOrVendor, ModelController.getAllModels);
+router.get('/', authenticate, isAdminOrUserOrVendor, TotalCountController.getTotalCount);
 
 module.exports = router;

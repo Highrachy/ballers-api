@@ -18,8 +18,8 @@ import TransactionFactory from '../factories/transaction.factory';
 import UserFactory from '../factories/user.factory';
 import VendorFactory from '../factories/vendor.factory';
 import VisitationFactory from '../factories/visitation.factory';
-import { addUser } from '../../server/services/user.service';
-import { VISITATION_STATUS, USER_ROLE } from '../../server/helpers/constants';
+import { addUser, assignPropertyToUser } from '../../server/services/user.service';
+import { VISITATION_STATUS, USER_ROLE, OFFER_STATUS } from '../../server/helpers/constants';
 import {
   itReturnsForbiddenForNoToken,
   itReturnsForbiddenForTokenWithInvalidAccess,
@@ -52,16 +52,16 @@ const editorUser = UserFactory.build(
   { generateId: true },
 );
 
-describe('Model Controller', () => {
+describe('TotalCount Controller', () => {
   beforeEach(async () => {
     adminToken = await addUser(adminUser);
     userToken = await addUser(regularUser);
     vendorToken = await addUser(vendorUser);
   });
 
-  describe('Get All Models', () => {
+  describe('Get Total Count', () => {
     const method = 'get';
-    const endpoint = '/api/v1/all';
+    const endpoint = '/api/v1/total-count';
 
     const properties = PropertyFactory.buildList(
       7,
@@ -86,7 +86,7 @@ describe('Model Controller', () => {
       ),
     );
 
-    const offers = properties.map((_, index) =>
+    const offers = [...new Array(properties.length - 2)].map((_, index) =>
       OfferFactory.build(
         {
           propertyId: properties[index]._id,
@@ -94,9 +94,34 @@ describe('Model Controller', () => {
           userId: regularUser._id,
           vendorId: vendorUser._id,
           referenceCode: 'GOO/123/456/XXX',
+          status: OFFER_STATUS.GENERATED,
         },
         { generateId: true },
       ),
+    );
+
+    const assignedOffer = OfferFactory.build(
+      {
+        propertyId: properties[properties.length - 1]._id,
+        enquiryId: enquiries[properties.length - 1]._id,
+        userId: regularUser._id,
+        vendorId: vendorUser._id,
+        referenceCode: 'GOO/123/456/XXX',
+        status: OFFER_STATUS.ASSIGNED,
+      },
+      { generateId: true },
+    );
+
+    const acceptedOffer = OfferFactory.build(
+      {
+        propertyId: properties[properties.length - 2]._id,
+        enquiryId: enquiries[properties.length - 2]._id,
+        userId: mongoose.Types.ObjectId(),
+        vendorId: vendorUser._id,
+        referenceCode: 'GOO/123/456/XXX',
+        status: OFFER_STATUS.INTERESTED,
+      },
+      { generateId: true },
     );
 
     const offlinePayments = OfflinePaymentFactory.buildList(
@@ -165,11 +190,17 @@ describe('Model Controller', () => {
       await Property.insertMany([...properties, ...properties2]);
       await Visitation.insertMany(visitations);
       await Enquiry.insertMany(enquiries);
-      await Offer.insertMany(offers);
+      await Offer.insertMany([...offers, assignedOffer, acceptedOffer]);
       await OfflinePayment.insertMany(offlinePayments);
       await Referral.insertMany(referrals);
       await ReportedProperty.insertMany(reportedProperties);
       await Transaction.insertMany(transactions);
+
+      await assignPropertyToUser({
+        userId: regularUser._id,
+        propertyId: properties[0]._id,
+        vendor: vendorUser,
+      });
     });
 
     context('when request is sent by admin', () => {
@@ -191,6 +222,7 @@ describe('Model Controller', () => {
             expect(res.body.models.scheduledVisitations).to.be.eql(4);
             expect(res.body.models.transactions).to.be.eql(8);
             expect(res.body.models.users).to.be.eql(3);
+            expect(res.body.models.portfolio).to.be.eql(2);
             done();
           });
       });
@@ -205,14 +237,15 @@ describe('Model Controller', () => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.models.enquiries).to.be.eql(7);
-            expect(res.body.models.offers).to.be.eql(7);
+            expect(res.body.models.offers).to.be.eql(6);
             expect(res.body.models.offlinePayments).to.be.eql(0);
-            expect(res.body.models.properties).to.be.eql(0);
+            expect(res.body.models.properties).to.be.eql(1);
             expect(res.body.models.referrals).to.be.eql(2);
             expect(res.body.models.reportedProperties).to.be.eql(3);
             expect(res.body.models.scheduledVisitations).to.be.eql(0);
             expect(res.body.models.transactions).to.be.eql(8);
             expect(res.body.models).to.not.have.property('users');
+            expect(res.body.models.portfolio).to.be.eql(1);
             done();
           });
       });
@@ -235,6 +268,7 @@ describe('Model Controller', () => {
             expect(res.body.models).to.not.have.property('users');
             expect(res.body.models).to.not.have.property('reportedProperties');
             expect(res.body.models).to.not.have.property('offlinePayments');
+            expect(res.body.models.portfolio).to.be.eql(2);
             done();
           });
       });

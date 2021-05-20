@@ -1,10 +1,10 @@
-import getAllModels from '../services/model.service';
+import getTotalCount from '../services/totalCount.service';
 import httpStatus from '../helpers/httpStatus';
 
-const ModelController = {
-  getAllModels(req, res, next) {
+const TotalCountController = {
+  getTotalCount(req, res, next) {
     const { user } = req;
-    getAllModels(user)
+    getTotalCount(user)
       .then((models) => {
         res.status(httpStatus.OK).json({ success: true, models });
       })
@@ -12,4 +12,4 @@ const ModelController = {
   },
 };
 
-export default ModelController;
+export default TotalCountController;
