@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { USER_ROLE, VISITATION_STATUS, OFFER_STATUS } from '../helpers/constants';
+import { USER_ROLE, VISITATION_STATUS, VALID_PORTFOLIO_OFFER } from '../helpers/constants';
 import Enquiry from '../models/enquiry.model';
 import Offer from '../models/offer.model';
 import OfflinePayment from '../models/offlinePayment.model';
@@ -20,14 +20,7 @@ const getTotalCount = async (user) => {
   let referralMatchObject = {};
   let reportedPropertyMatchObject = {};
 
-  const portfolioMatchObject = {
-    $or: [
-      { status: OFFER_STATUS.ASSIGNED },
-      { status: OFFER_STATUS.ALLOCATED },
-      { status: OFFER_STATUS.INTERESTED },
-      { status: OFFER_STATUS.RESOLVED },
-    ],
-  };
+  const portfolioMatchObject = { $or: VALID_PORTFOLIO_OFFER };
 
   if (user.role === USER_ROLE.USER) {
     matchObject = { userId: ObjectId(user._id) };
@@ -42,11 +35,9 @@ const getTotalCount = async (user) => {
   try {
     const enquiries = await Enquiry.countDocuments(matchObject);
     const offers = await Offer.countDocuments(matchObject);
-    const offlinePayments = await OfflinePayment.countDocuments(matchObject);
     const portfolio = await Offer.countDocuments({ ...matchObject, ...portfolioMatchObject });
     const properties = await Property.countDocuments(propertyMatchObject);
     const referrals = await Referral.countDocuments(referralMatchObject);
-    const reportedProperties = await ReportedProperty.countDocuments(reportedPropertyMatchObject);
     const scheduledVisitations = await Visitation.countDocuments({
       ...matchObject,
       status: VISITATION_STATUS.PENDING,
@@ -56,18 +47,18 @@ const getTotalCount = async (user) => {
     const models = {
       enquiries,
       offers,
-      offlinePayments,
       portfolio,
       properties,
       referrals,
-      reportedProperties,
       scheduledVisitations,
       transactions,
     };
 
-    if (user.role === USER_ROLE.VENDOR) {
-      delete models.reportedProperties;
-      delete models.offlinePayments;
+    if (user.role === USER_ROLE.ADMIN || user.role === USER_ROLE.USER) {
+      models.offlinePayments = await OfflinePayment.countDocuments(matchObject);
+      models.reportedProperties = await ReportedProperty.countDocuments(
+        reportedPropertyMatchObject,
+      );
     }
 
     if (user.role === USER_ROLE.ADMIN) {

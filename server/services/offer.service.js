@@ -4,7 +4,12 @@ import Offer from '../models/offer.model';
 import Enquiry from '../models/enquiry.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { OFFER_STATUS, CONCERN_STATUS, USER_ROLE } from '../helpers/constants';
+import {
+  OFFER_STATUS,
+  CONCERN_STATUS,
+  USER_ROLE,
+  ACTIVE_PORTFOLIO_OFFER,
+} from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, assignPropertyToUser } from './user.service';
 // eslint-disable-next-line import/no-cycle
@@ -152,16 +157,7 @@ export const getAllOffers = async (accountId, { page = 1, limit = 10, ...query }
 export const getActiveOffers = async (userId) =>
   Offer.aggregate([
     { $match: { userId: ObjectId(userId) } },
-    {
-      $match: {
-        $or: [
-          { status: OFFER_STATUS.GENERATED },
-          { status: OFFER_STATUS.INTERESTED },
-          { status: OFFER_STATUS.ASSIGNED },
-          { status: OFFER_STATUS.ALLOCATED },
-        ],
-      },
-    },
+    { $match: { $or: ACTIVE_PORTFOLIO_OFFER } },
     { $match: { expires: { $gte: new Date(getTodaysDateStandard()) } } },
     { $sort: { expires: 1 } },
     {
@@ -510,16 +506,7 @@ export const cancelOffer = async ({ offerId, vendorId }) => {
 export const calculateContributionReward = async (userId) =>
   Offer.aggregate([
     { $match: { userId: ObjectId(userId) } },
-    {
-      $match: {
-        $or: [
-          { status: OFFER_STATUS.GENERATED },
-          { status: OFFER_STATUS.INTERESTED },
-          { status: OFFER_STATUS.ASSIGNED },
-          { status: OFFER_STATUS.ALLOCATED },
-        ],
-      },
-    },
+    { $match: { $or: ACTIVE_PORTFOLIO_OFFER } },
     {
       $group: {
         _id: null,
