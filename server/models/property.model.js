@@ -184,10 +184,6 @@ const PropertySchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
-    updatedBy: {
-      type: ObjectId,
-      required: true,
-    },
     flagged: {
       status: {
         type: Boolean,

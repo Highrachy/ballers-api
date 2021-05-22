@@ -62,13 +62,7 @@ const vendor2 = UserFactory.build(
   { generateId: true },
 );
 
-const demoProperty = PropertyFactory.build(
-  {
-    addedBy: vendor._id,
-    updatedBy: vendor._id,
-  },
-  { generateId: true },
-);
+const demoProperty = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
 
 describe('Visitation Controller', () => {
   beforeEach(async () => {
@@ -320,19 +314,13 @@ describe('Visitation Controller', () => {
 
     const vendorProperties = PropertyFactory.buildList(
       13,
-      {
-        addedBy: vendor._id,
-        updatedBy: vendor._id,
-      },
+      { addedBy: vendor._id },
       { generateId: true },
     );
 
     const vendor2Properties = PropertyFactory.buildList(
       5,
-      {
-        addedBy: vendor2._id,
-        updatedBy: vendor2._id,
-      },
+      { addedBy: vendor2._id },
       { generateId: true },
     );
 
@@ -359,13 +347,7 @@ describe('Visitation Controller', () => {
       },
       { generateId: true },
     );
-    const vendor3Property = PropertyFactory.build(
-      {
-        addedBy: vendor3._id,
-        updatedBy: vendor3._id,
-      },
-      { generateId: true },
-    );
+    const vendor3Property = PropertyFactory.build({ addedBy: vendor3._id }, { generateId: true });
     const vendor3Visitation = VisitationFactory.build(
       {
         propertyId: vendor3Property._id,

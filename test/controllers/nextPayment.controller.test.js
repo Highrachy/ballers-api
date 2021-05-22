@@ -44,10 +44,7 @@ const vendorUser = UserFactory.build(
   { generateId: true },
 );
 
-const vendorProperty = PropertyFactory.build(
-  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-  { generateId: true },
-);
+const vendorProperty = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();
@@ -82,7 +79,7 @@ describe('Next Payments Controller', () => {
     );
 
     const vendor2Property = PropertyFactory.build(
-      { addedBy: vendorUser2._id, updatedBy: vendorUser2._id },
+      { addedBy: vendorUser2._id },
       { generateId: true },
     );
 

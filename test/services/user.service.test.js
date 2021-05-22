@@ -632,13 +632,7 @@ describe('User Service', () => {
       { role: USER_ROLE.VENDOR, email: 'vendor@mail.com' },
       { generateId: true },
     );
-    const property = PropertyFactory.build(
-      {
-        addedBy: vendor._id,
-        updatedBy: vendor._id,
-      },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
 
     const toBeAssigned = {
       propertyId: property._id,
@@ -761,9 +755,7 @@ describe('User Service', () => {
 
     beforeEach(async () => {
       await User.create(UserFactory.build({ _id }));
-      await Property.create(
-        PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id }),
-      );
+      await Property.create(PropertyFactory.build({ _id: propertyId, addedBy: _id }));
     });
 
     context('when getUserById works', () => {
@@ -815,9 +807,7 @@ describe('User Service', () => {
 
     beforeEach(async () => {
       await User.create(UserFactory.build({ _id }));
-      await Property.create(
-        PropertyFactory.build({ _id: propertyId, addedBy: _id, updatedBy: _id }),
-      );
+      await Property.create(PropertyFactory.build({ _id: propertyId, addedBy: _id }));
     });
 
     context('when findByIdAndUpdate works', () => {
@@ -849,11 +839,7 @@ describe('User Service', () => {
     const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
     const admin = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
     const property = PropertyFactory.build(
-      {
-        addedBy: vendor._id,
-        updatedBy: vendor._id,
-        price: 20000000,
-      },
+      { addedBy: vendor._id, price: 20000000 },
       { generateId: true },
     );
 

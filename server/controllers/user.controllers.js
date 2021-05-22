@@ -5,7 +5,6 @@ import {
   forgotPasswordToken,
   resetPasswordViaToken,
   updateUser,
-  assignPropertyToUser,
   getAllUsers,
   getUserInfo,
   addPropertyToFavorites,
@@ -110,16 +109,6 @@ const UserController = {
           message: 'Your information has been successfully retrieved',
           user,
         });
-      })
-      .catch((error) => next(error));
-  },
-
-  assignProperty(req, res, next) {
-    const toBeAssigned = req.locals;
-    const { user } = req;
-    assignPropertyToUser({ ...toBeAssigned, assignedBy: user._id, vendor: user })
-      .then(() => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Property assigned' });
       })
       .catch((error) => next(error));
   },

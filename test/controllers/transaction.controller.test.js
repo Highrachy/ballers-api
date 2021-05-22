@@ -60,23 +60,11 @@ const regularUser = UserFactory.build(
   { generateId: true },
 );
 
-const property = PropertyFactory.build(
-  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-  { generateId: true },
-);
+const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 
-const property1 = PropertyFactory.build(
-  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-  { generateId: true },
-);
-const property2 = PropertyFactory.build(
-  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-  { generateId: true },
-);
-const property3 = PropertyFactory.build(
-  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-  { generateId: true },
-);
+const property1 = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
+const property2 = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
+const property3 = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 const enquiry = EnquiryFactory.build(
   {
     userId: regularUser._id,
@@ -166,10 +154,7 @@ describe('Transaction Controller', () => {
       },
       { generateId: true },
     );
-    const vendor2Property = PropertyFactory.build(
-      { addedBy: vendor2._id, updatedBy: vendor2._id },
-      { generateId: true },
-    );
+    const vendor2Property = PropertyFactory.build({ addedBy: vendor2._id }, { generateId: true });
     const vendor2Enquiry = EnquiryFactory.build(
       {
         userId: regularUser._id,

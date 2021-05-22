@@ -595,13 +595,7 @@ describe('Property Controller', () => {
   });
 
   describe('Update Property', () => {
-    const property = PropertyFactory.build(
-      {
-        addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
-      },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
     const newProperty = {
       id: property._id,
       price: 30200000,
@@ -1123,10 +1117,7 @@ describe('Property Controller', () => {
 
   describe('Delete property', () => {
     const invalidPropertyId = mongoose.Types.ObjectId();
-    const property = PropertyFactory.build(
-      { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 
     beforeEach(async () => {
       await addProperty(property);
@@ -1234,7 +1225,7 @@ describe('Property Controller', () => {
   describe('Get one property', () => {
     const invalidPropertyId = mongoose.Types.ObjectId();
     const property = PropertyFactory.build(
-      { addedBy: vendorUser._id, updatedBy: vendorUser._id, approved: { status: true } },
+      { addedBy: vendorUser._id, approved: { status: true } },
       { generateId: true },
     );
 
@@ -1483,14 +1474,13 @@ describe('Property Controller', () => {
     );
     const vendorProperties = PropertyFactory.buildList(12, {
       addedBy: vendorUser._id,
-      updatedBy: vendorUser._id,
+
       createdAt: new Date(),
       flagged: { status: false },
       approved: { status: false },
     });
     const vendor2Properties = PropertyFactory.buildList(5, {
       addedBy: vendorUser2._id,
-      updatedBy: vendorUser2._id,
       createdAt: new Date(),
     });
     const vendorProperty = PropertyFactory.build(
@@ -1512,7 +1502,7 @@ describe('Property Controller', () => {
         price: 12500000,
         toilets: 1,
         units: 1,
-        updatedBy: vendorUser._id,
+
         flagged: { status: true },
         approved: { status: true },
       },
@@ -1756,22 +1746,12 @@ describe('Property Controller', () => {
 
   describe('Array filters', () => {
     const addedBy = vendorUser._id;
-    const updatedBy = vendorUser._id;
 
-    const property1 = PropertyFactory.build({
-      features: null,
-      addedBy,
-      updatedBy,
-    });
-    const property2 = PropertyFactory.build({
-      features: ['electricity'],
-      addedBy,
-      updatedBy,
-    });
+    const property1 = PropertyFactory.build({ features: null, addedBy });
+    const property2 = PropertyFactory.build({ features: ['electricity'], addedBy });
     const property3 = PropertyFactory.build({
       features: ['swimming pool', 'electricity', 'tile roads'],
       addedBy,
-      updatedBy,
     });
 
     beforeEach(async () => {
@@ -1811,7 +1791,6 @@ describe('Property Controller', () => {
   describe('Get all properties added by an vendor', () => {
     const properties = PropertyFactory.buildList(18, {
       addedBy: vendorUser._id,
-      updatedBy: vendorUser._id,
     });
 
     context('when no property is found', () => {
@@ -1942,7 +1921,6 @@ describe('Property Controller', () => {
     const flaggedProperty = PropertyFactory.build(
       {
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
         flagged: { status: true },
         approved: { status: true },
         createdAt: futureDate,
@@ -1953,7 +1931,6 @@ describe('Property Controller', () => {
     const unapprovedProperty = PropertyFactory.build(
       {
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
         flagged: { status: false },
         approved: { status: false },
         createdAt: futureDate,
@@ -1964,7 +1941,6 @@ describe('Property Controller', () => {
     const property = PropertyFactory.build(
       {
         addedBy: testVendor._id,
-        updatedBy: testVendor._id,
         address: {
           state: 'Lagos',
           city: 'Lekki',
@@ -1990,7 +1966,6 @@ describe('Property Controller', () => {
       7,
       {
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
         address: {
           state: 'Ogun',
           city: 'Abeokuta',
@@ -2015,7 +1990,6 @@ describe('Property Controller', () => {
       10,
       {
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
         address: {
           state: 'Osun',
           city: 'ajah',
@@ -2625,19 +2599,16 @@ describe('Property Controller', () => {
       houseType: '2 bedroom apartment',
       address: { state: 'taraba' },
       addedBy: vendorUser._id,
-      updatedBy: vendorUser._id,
     });
     const property2 = PropertyFactory.build({
       houseType: '4 bedroom semi-detatched',
       address: { state: 'taraba' },
       addedBy: vendorUser._id,
-      updatedBy: vendorUser._id,
     });
     const property3 = PropertyFactory.build({
       houseType: '4 bedroom semi-detatched',
       address: { state: 'kano' },
       addedBy: vendorUser._id,
-      updatedBy: vendorUser._id,
     });
 
     describe('when properties exist in db', () => {
@@ -2701,13 +2672,7 @@ describe('Property Controller', () => {
   });
 
   describe('Get One Portfolio', () => {
-    const property = PropertyFactory.build(
-      {
-        addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
-      },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 
     const enquiry = EnquiryFactory.build(
       {
@@ -2960,21 +2925,9 @@ describe('Property Controller', () => {
       offerStatus[1],
     ];
     const properties = allOfferStatus.map(() =>
-      PropertyFactory.build(
-        {
-          addedBy: vendorUser._id,
-          updatedBy: vendorUser._id,
-        },
-        { generateId: true },
-      ),
+      PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true }),
     );
-    const property = PropertyFactory.build(
-      {
-        addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
-      },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 
     const enquiries = allOfferStatus.map((_, index) =>
       EnquiryFactory.build(
@@ -3164,7 +3117,6 @@ describe('Property Controller', () => {
           ],
         },
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -3338,7 +3290,6 @@ describe('Property Controller', () => {
           ],
         },
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -3540,7 +3491,6 @@ describe('Property Controller', () => {
           ],
         },
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -3666,7 +3616,6 @@ describe('Property Controller', () => {
           },
         ],
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -3789,7 +3738,6 @@ describe('Property Controller', () => {
           },
         ],
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -3913,7 +3861,6 @@ describe('Property Controller', () => {
           },
         ],
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -4027,7 +3974,6 @@ describe('Property Controller', () => {
           },
         ],
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -4168,7 +4114,6 @@ describe('Property Controller', () => {
           },
         ],
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -4332,7 +4277,6 @@ describe('Property Controller', () => {
           },
         ],
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -4442,11 +4386,8 @@ describe('Property Controller', () => {
 
     const property = PropertyFactory.build(
       {
-        flagged: {
-          status: false,
-        },
+        flagged: { status: false },
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
       },
       { generateId: true },
     );
@@ -4649,7 +4590,6 @@ describe('Property Controller', () => {
     const property = PropertyFactory.build(
       {
         addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
         flagged: {
           status: true,
           case: [

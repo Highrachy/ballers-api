@@ -26,10 +26,7 @@ describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
   const admin = UserFactory.build({ role: USER_ROLE.admin }, { generateId: true });
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
-  const property = PropertyFactory.build(
-    { addedBy: vendor._id, updatedBy: vendor._id },
-    { generateId: true },
-  );
+  const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
   const enquiry = EnquiryFactory.build(
     { userId: user._id, propertyId: property._id },
     { generateId: true },

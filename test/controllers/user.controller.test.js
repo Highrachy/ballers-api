@@ -1018,10 +1018,7 @@ describe('User Controller', () => {
         },
         { generateId: true },
       );
-      const property = PropertyFactory.build(
-        { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-        { generateId: true },
-      );
+      const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 
       beforeEach(async () => {
         await addUser(vendorUser);
@@ -1193,18 +1190,11 @@ describe('User Controller', () => {
         { generateId: true },
       );
       const property = PropertyFactory.build(
-        {
-          addedBy: vendor._id,
-          updatedBy: vendor._id,
-          price: 20000000,
-        },
+        { addedBy: vendor._id, price: 20000000 },
         { generateId: true },
       );
       const referral = ReferralFactory.build(
-        {
-          referrerId: regularUser._id,
-          reward: { amount: 50000 },
-        },
+        { referrerId: regularUser._id, reward: { amount: 50000 } },
         { generateId: true },
       );
 

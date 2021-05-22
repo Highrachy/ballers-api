@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import Transaction from '../models/transaction.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { OFFER_STATUS, USER_ROLE } from '../helpers/constants';
+import { ACTIVE_PORTFOLIO_OFFER, USER_ROLE } from '../helpers/constants';
 import Offer from '../models/offer.model';
 import Referral from '../models/referral.model';
 // eslint-disable-next-line import/no-cycle
@@ -217,16 +217,7 @@ export const getTotalAmountPaidByUser = async (userId) =>
 export const getContributionRewards = async (userId) =>
   Offer.aggregate([
     { $match: { userId: ObjectId(userId) } },
-    {
-      $match: {
-        $or: [
-          { status: OFFER_STATUS.GENERATED },
-          { status: OFFER_STATUS.INTERESTED },
-          { status: OFFER_STATUS.ASSIGNED },
-          { status: OFFER_STATUS.ALLOCATED },
-        ],
-      },
-    },
+    { $match: { $or: ACTIVE_PORTFOLIO_OFFER } },
   ]);
 
 export const getReferralRewards = async (referrerId) =>

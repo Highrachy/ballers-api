@@ -24,10 +24,7 @@ describe('Property Service', () => {
   const property = PropertyFactory.build(
     {
       addedBy: vendor._id,
-      updatedBy: vendor._id,
-      flagged: {
-        status: false,
-      },
+      flagged: { status: false },
     },
     { generateId: true },
   );
@@ -68,11 +65,7 @@ describe('Property Service', () => {
     context('when an invalid data is entered', () => {
       it('throws an error', async () => {
         try {
-          const InvalidProperty = PropertyFactory.build({
-            name: '',
-            addedBy: vendor._id,
-            updatedBy: vendor._id,
-          });
+          const InvalidProperty = PropertyFactory.build({ name: '', addedBy: vendor._id });
           await addProperty(InvalidProperty);
         } catch (err) {
           const currentCountedProperties = await Property.countDocuments({});

@@ -100,3 +100,17 @@ export const NOTIFICATION_ACTION = {
   USER: 'USER',
   VISITATION: 'VISITATION',
 };
+
+export const VALID_PORTFOLIO_OFFER = [
+  { status: OFFER_STATUS.ASSIGNED },
+  { status: OFFER_STATUS.ALLOCATED },
+  { status: OFFER_STATUS.INTERESTED },
+  { status: OFFER_STATUS.RESOLVED },
+];
+
+export const ACTIVE_PORTFOLIO_OFFER = [
+  { status: OFFER_STATUS.GENERATED },
+  { status: OFFER_STATUS.INTERESTED },
+  { status: OFFER_STATUS.ASSIGNED },
+  { status: OFFER_STATUS.ALLOCATED },
+];

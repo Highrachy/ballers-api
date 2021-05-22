@@ -22,10 +22,7 @@ describe('Enquiry Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
   const admin = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
-  const property = PropertyFactory.build(
-    { addedBy: vendor._id, updatedBy: vendor._id },
-    { generateId: true },
-  );
+  const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
 
   beforeEach(async () => {
     await addUser(vendor);

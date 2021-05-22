@@ -104,11 +104,7 @@ describe('PaymentPlan Service', () => {
   describe('#deletePaymentPlan', () => {
     const paymentPlan = PaymentPlanFactory.build({ addedBy: admin._id }, { generateId: true });
     const property = PropertyFactory.build(
-      {
-        addedBy: vendor._id,
-        updatedBy: vendor._id,
-        paymentPlan: [paymentPlan._id],
-      },
+      { addedBy: vendor._id, paymentPlan: [paymentPlan._id] },
       { generateId: true },
     );
 

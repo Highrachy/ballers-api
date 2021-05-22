@@ -45,10 +45,7 @@ const regularUser = UserFactory.build(
   { role: USER_ROLE.USER, activated: true },
   { generateId: true },
 );
-const property = PropertyFactory.build(
-  { addedBy: vendorUser._id, updatedBy: vendorUser._id },
-  { generateId: true },
-);
+const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 
 describe('Enquiry Controller', () => {
   beforeEach(async () => {
@@ -644,7 +641,7 @@ describe('Enquiry Controller', () => {
       { generateId: true },
     );
     const vendor2Property = PropertyFactory.build(
-      { addedBy: vendorUser2._id, updatedBy: vendorUser2._id },
+      { addedBy: vendorUser2._id },
       { generateId: true },
     );
 
@@ -865,25 +862,13 @@ describe('Enquiry Controller', () => {
     );
     const vendorProperties = PropertyFactory.buildList(
       13,
-      {
-        addedBy: vendorUser._id,
-        updatedBy: vendorUser._id,
-      },
+      { addedBy: vendorUser._id },
       { generateId: true },
     );
-    const vendor3Property = PropertyFactory.build(
-      {
-        addedBy: vendor3._id,
-        updatedBy: vendor3._id,
-      },
-      { generateId: true },
-    );
+    const vendor3Property = PropertyFactory.build({ addedBy: vendor3._id }, { generateId: true });
     const vendor2Properties = PropertyFactory.buildList(
       5,
-      {
-        addedBy: vendor2._id,
-        updatedBy: vendor2._id,
-      },
+      { addedBy: vendor2._id },
       { generateId: true },
     );
     const dummyProperties = [...vendorProperties, ...vendor2Properties];

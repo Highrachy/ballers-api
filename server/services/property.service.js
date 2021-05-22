@@ -3,7 +3,7 @@ import Property from '../models/property.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import Transaction from '../models/transaction.model';
-import { OFFER_STATUS, USER_ROLE } from '../helpers/constants';
+import { VALID_PORTFOLIO_OFFER, USER_ROLE } from '../helpers/constants';
 import Offer from '../models/offer.model';
 import {
   PROJECTED_VENDOR_INFO,
@@ -372,16 +372,7 @@ export const getAllPortfolios = async (user, { page = 1, limit = 10, ...query } 
 
   const portfolioOptions = [
     { $match: { $and: filterQuery } },
-    {
-      $match: {
-        $or: [
-          { status: OFFER_STATUS.ASSIGNED },
-          { status: OFFER_STATUS.ALLOCATED },
-          { status: OFFER_STATUS.INTERESTED },
-          { status: OFFER_STATUS.RESOLVED },
-        ],
-      },
-    },
+    { $match: { $or: VALID_PORTFOLIO_OFFER } },
     {
       $lookup: {
         from: 'properties',

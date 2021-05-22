@@ -42,10 +42,7 @@ describe('Offer Service', () => {
   });
 
   describe('#getOfferById', () => {
-    const property = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
     const enquiry = EnquiryFactory.build(
       { userId: user._id, propertyId: property._id },
       { generateId: true },
@@ -83,7 +80,6 @@ describe('Offer Service', () => {
         name: 'Lekki Ville Estate',
         houseType: 'Maisonette',
         addedBy: vendor._id,
-        updatedBy: vendor._id,
       },
       { generateId: true },
     );
@@ -126,10 +122,7 @@ describe('Offer Service', () => {
 
   describe('#createOffer', () => {
     let countedOffers;
-    const property = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
     const enquiry = EnquiryFactory.build(
       { userId: user._id, propertyId: property._id },
       { generateId: true },
@@ -196,13 +189,13 @@ describe('Offer Service', () => {
 
     const userProperties = PropertyFactory.buildList(
       7,
-      { addedBy: vendor._id, updatedBy: vendor._id },
+      { addedBy: vendor._id },
       { generateId: true },
     );
 
     const user2Properties = PropertyFactory.buildList(
       8,
-      { addedBy: vendor2._id, updatedBy: vendor2._id },
+      { addedBy: vendor2._id },
       { generateId: true },
     );
 
@@ -367,10 +360,7 @@ describe('Offer Service', () => {
   });
 
   describe('#getOffer', () => {
-    const property = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
     const enquiry = EnquiryFactory.build(
       { userId: user._id, propertyId: property._id },
       { generateId: true },
@@ -416,11 +406,7 @@ describe('Offer Service', () => {
     const user1 = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
     const user2 = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
     const property = PropertyFactory.build(
-      {
-        addedBy: vendor._id,
-        updatedBy: vendor._id,
-        price: 20000000,
-      },
+      { addedBy: vendor._id, price: 20000000 },
       { generateId: true },
     );
     const enquiry1 = EnquiryFactory.build(
@@ -509,10 +495,7 @@ describe('Offer Service', () => {
   });
 
   describe('#assignOffer', () => {
-    const property = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
     const enquiry = EnquiryFactory.build(
       { userId: user._id, propertyId: property._id },
       { generateId: true },
@@ -555,10 +538,7 @@ describe('Offer Service', () => {
   });
 
   describe('#cancelOffer', () => {
-    const property = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
     const enquiry = EnquiryFactory.build(
       { userId: user._id, propertyId: property._id },
       { generateId: true },
@@ -599,13 +579,7 @@ describe('Offer Service', () => {
   describe('#getActiveOffers', () => {
     const allOfferStatus = Object.keys(OFFER_STATUS);
     const properties = allOfferStatus.map(() =>
-      PropertyFactory.build(
-        {
-          addedBy: vendor._id,
-          updatedBy: vendor._id,
-        },
-        { generateId: true },
-      ),
+      PropertyFactory.build({ addedBy: vendor._id }, { generateId: true }),
     );
 
     const enquiries = allOfferStatus.map((_, index) =>
@@ -732,10 +706,7 @@ describe('Offer Service', () => {
   });
 
   describe('#reactivateOffer', () => {
-    const property = PropertyFactory.build(
-      { addedBy: vendor._id, updatedBy: vendor._id },
-      { generateId: true },
-    );
+    const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
     const enquiry = EnquiryFactory.build(
       { userId: user._id, propertyId: property._id },
       { generateId: true },
