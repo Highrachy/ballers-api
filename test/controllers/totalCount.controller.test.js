@@ -222,7 +222,7 @@ describe('TotalCount Controller', () => {
             expect(res.body.models.scheduledVisitations).to.be.eql(4);
             expect(res.body.models.transactions).to.be.eql(8);
             expect(res.body.models.users).to.be.eql(3);
-            expect(res.body.models.portfolio).to.be.eql(2);
+            expect(res.body.models.portfolios).to.be.eql(2);
             done();
           });
       });
@@ -245,7 +245,7 @@ describe('TotalCount Controller', () => {
             expect(res.body.models.scheduledVisitations).to.be.eql(0);
             expect(res.body.models.transactions).to.be.eql(8);
             expect(res.body.models).to.not.have.property('users');
-            expect(res.body.models.portfolio).to.be.eql(1);
+            expect(res.body.models.portfolios).to.be.eql(1);
             done();
           });
       });
@@ -268,7 +268,7 @@ describe('TotalCount Controller', () => {
             expect(res.body.models).to.not.have.property('users');
             expect(res.body.models).to.not.have.property('reportedProperties');
             expect(res.body.models).to.not.have.property('offlinePayments');
-            expect(res.body.models.portfolio).to.be.eql(2);
+            expect(res.body.models.portfolios).to.be.eql(2);
             done();
           });
       });

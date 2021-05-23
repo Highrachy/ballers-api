@@ -35,7 +35,7 @@ const getTotalCount = async (user) => {
   try {
     const enquiries = await Enquiry.countDocuments(matchObject);
     const offers = await Offer.countDocuments(matchObject);
-    const portfolio = await Offer.countDocuments({ ...matchObject, ...portfolioMatchObject });
+    const portfolios = await Offer.countDocuments({ ...matchObject, ...portfolioMatchObject });
     const properties = await Property.countDocuments(propertyMatchObject);
     const referrals = await Referral.countDocuments(referralMatchObject);
     const scheduledVisitations = await Visitation.countDocuments({
@@ -46,7 +46,7 @@ const getTotalCount = async (user) => {
     const models = {
       enquiries,
       offers,
-      portfolio,
+      portfolios,
       properties,
       referrals,
       scheduledVisitations,
