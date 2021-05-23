@@ -730,3 +730,8 @@ export const reactivateOffer = async (offerInfo) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error reactivating offer', error);
   }
 };
+
+export const getUserFirstOfferByUSerId = async (userId) =>
+  Offer.find({ userId: ObjectId(userId) })
+    .sort({ _id: 1 })
+    .limit(1);

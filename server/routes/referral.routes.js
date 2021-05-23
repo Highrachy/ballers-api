@@ -156,4 +156,35 @@ router.get('/ref/:refcode', ReferralController.getUserByRefCode);
  */
 router.get('/:id', hasValidObjectId, ReferralController.getReferralById);
 
+/**
+ * @swagger
+ * /referral/pay-referral/:id:
+ *   put:
+ *     tags:
+ *       - Referral
+ *     description: Pay referral
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Referral'
+ *      description: Pay referral
+ *     responses:
+ *      '200':
+ *        description: Referral paid
+ *      '400':
+ *        description: Error paying referral
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/pay-referral/:id',
+  authenticate,
+  hasValidObjectId,
+  isAdmin,
+  ReferralController.payReferral,
+);
+
 module.exports = router;

@@ -3,9 +3,11 @@ import Referral from '../models/referral.model';
 import User from '../models/user.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { REFERRAL_STATUS, REWARD_STATUS } from '../helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS, REFERRAL_RATE } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
+// eslint-disable-next-line import/no-cycle
+import { getUserFirstOfferByUSerId } from './offer.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -212,3 +214,35 @@ export const calculateReferralRewards = async (referrerId) =>
       },
     },
   ]);
+
+export const payReferral = async ({ referralId, adminId }) => {
+  const referral = await Referral.findById(referralId).select();
+
+  if (!referral) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid referral');
+  }
+
+  const offer = await getUserFirstOfferByUSerId(referral.referrerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  const amount = Math.round((REFERRAL_RATE / 100) * offer.totalAmountPayable);
+
+  try {
+    return Referral.findByIdAndUpdate(
+      referral._id,
+      {
+        $set: {
+          'reward.amount': amount,
+          'reward.status': REWARD_STATUS.PAID,
+          'reward.paidBy': adminId,
+          'reward.paidOn': Date.now(),
+        },
+      },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error paying referral', error);
+  }
+  // updateReferralToRewarded
+};

@@ -5,6 +5,7 @@ import {
   getUserByRefCode,
   getReferralById,
   getAllReferrals,
+  payReferral,
 } from '../services/referral.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -79,6 +80,16 @@ const ReferralController = {
         } else {
           res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Referral not found' });
         }
+      })
+      .catch((error) => next(error));
+  },
+
+  payReferral(req, res, next) {
+    const referralId = req.params.id;
+    const adminId = req.user._id;
+    payReferral({ referralId, adminId })
+      .then((referral) => {
+        res.status(httpStatus.OK).json({ success: true, referral });
       })
       .catch((error) => next(error));
   },
