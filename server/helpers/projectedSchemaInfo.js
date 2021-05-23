@@ -21,6 +21,7 @@ export const PROJECTED_PROPERTY_INFO = {
   createdAt: 1,
   addedBy: 1,
   flagged: 1,
+  approved: 1,
 };
 
 export const EXCLUDED_PROPERTY_INFO = {
