@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { USER_ROLE, VISITATION_STATUS, VALID_PORTFOLIO_OFFER } from '../helpers/constants';
+import { USER_ROLE, VALID_PORTFOLIO_OFFER } from '../helpers/constants';
 import Enquiry from '../models/enquiry.model';
 import Offer from '../models/offer.model';
 import OfflinePayment from '../models/offlinePayment.model';
@@ -40,7 +40,6 @@ const getTotalCount = async (user) => {
     const referrals = await Referral.countDocuments(referralMatchObject);
     const scheduledVisitations = await Visitation.countDocuments({
       ...matchObject,
-      status: VISITATION_STATUS.PENDING,
     });
     const transactions = await Transaction.countDocuments(matchObject);
 
