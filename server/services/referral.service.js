@@ -7,7 +7,7 @@ import { REFERRAL_STATUS, REWARD_STATUS, REFERRAL_RATE } from '../helpers/consta
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
 // eslint-disable-next-line import/no-cycle
-import { getUserFirstOfferByUSerId } from './offer.service';
+import { getUserFirstOfferByUserId } from './offer.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -222,17 +222,24 @@ export const payReferral = async ({ referralId, adminId }) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid referral');
   }
 
-  const offer = await getUserFirstOfferByUSerId(referral.referrerId).catch((error) => {
+  const [offer] = await getUserFirstOfferByUserId(referral.userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
+
+  if (!offer) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User has not bought a property');
+  }
 
   const amount = Math.round((REFERRAL_RATE / 100) * offer.totalAmountPayable);
 
   try {
+    // make payment to referral.referrerId
+
     return Referral.findByIdAndUpdate(
       referral._id,
       {
         $set: {
+          status: REFERRAL_STATUS.REWARDED,
           'reward.amount': amount,
           'reward.status': REWARD_STATUS.PAID,
           'reward.paidBy': adminId,
@@ -244,5 +251,4 @@ export const payReferral = async ({ referralId, adminId }) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error paying referral', error);
   }
-  // updateReferralToRewarded
 };

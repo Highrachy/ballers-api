@@ -731,7 +731,7 @@ export const reactivateOffer = async (offerInfo) => {
   }
 };
 
-export const getUserFirstOfferByUSerId = async (userId) =>
+export const getUserFirstOfferByUserId = async (userId) =>
   Offer.find({ userId: ObjectId(userId) })
     .sort({ _id: 1 })
     .limit(1);

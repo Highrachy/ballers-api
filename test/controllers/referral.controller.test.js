@@ -6,9 +6,20 @@ import ReferralFactory from '../factories/referral.factory';
 import UserFactory from '../factories/user.factory';
 import { addUser } from '../../server/services/user.service';
 import { addReferral, sendReferralInvite } from '../../server/services/referral.service';
-import { REFERRAL_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS, USER_ROLE } from '../../server/helpers/constants';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
+import OfferFactory from '../factories/offer.factory';
+import EnquiryFactory from '../factories/enquiry.factory';
+import PropertyFactory from '../factories/property.factory';
+import { createOffer } from '../../server/services/offer.service';
+import { addEnquiry } from '../../server/services/enquiry.service';
+import Property from '../../server/models/property.model';
+import {
+  itReturnsForbiddenForNoToken,
+  itReturnsForbiddenForTokenWithInvalidAccess,
+  itReturnsNotFoundForInvalidToken,
+} from '../helpers';
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();
@@ -19,13 +30,13 @@ const userId = mongoose.Types.ObjectId();
 const adminId = mongoose.Types.ObjectId();
 const adminUser = UserFactory.build({
   _id: adminId,
-  role: 0,
+  role: USER_ROLE.ADMIN,
   activated: true,
   email: 'admin@mail.com',
 });
 const regularUser = UserFactory.build({
   _id: userId,
-  role: 1,
+  role: USER_ROLE.USER,
   activated: true,
   email: 'user@mail.com',
 });
@@ -607,6 +618,127 @@ describe('Referral Controller', () => {
               done();
             });
         });
+      });
+    });
+  });
+
+  describe('Pay out referrals', () => {
+    const referredUser = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
+    const referral = ReferralFactory.build(
+      { referrerId: adminId, userId: referredUser._id },
+      { generateId: true },
+    );
+
+    const vendorUser = UserFactory.build(
+      { role: USER_ROLE.VENDOR, activated: true },
+      { generateId: true },
+    );
+
+    const endpoint = `/api/v1/referral/pay-referral/${referral._id}`;
+    const method = 'put';
+
+    const properties = PropertyFactory.buildList(
+      2,
+      { addedBy: vendorUser._id, flagged: { status: false }, approved: { status: true } },
+      { generateId: true },
+    );
+
+    const enquiry1 = EnquiryFactory.build(
+      {
+        userId: referredUser._id,
+        propertyId: properties[0]._id,
+      },
+      { generateId: true },
+    );
+    const offer1 = OfferFactory.build(
+      {
+        enquiryId: enquiry1._id,
+        vendorId: vendorUser._id,
+        totalAmountPayable: 500_000,
+      },
+      { generateId: true },
+    );
+
+    const enquiry2 = EnquiryFactory.build(
+      {
+        userId: referredUser._id,
+        propertyId: properties[1]._id,
+      },
+      { generateId: true },
+    );
+    const offer2 = OfferFactory.build(
+      {
+        enquiryId: enquiry2._id,
+        vendorId: vendorUser._id,
+        totalAmountPayable: 900_000,
+      },
+      { generateId: true },
+    );
+
+    beforeEach(async () => {
+      await addUser(vendorUser);
+      await Property.insertMany(properties);
+      await addUser(referredUser);
+      await addReferral(referral);
+      await addEnquiry(enquiry1);
+      await addEnquiry(enquiry2);
+      await createOffer(offer1);
+      await createOffer(offer2);
+    });
+
+    context('with admin token', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.referral.status).to.be.eql('Rewarded');
+            expect(res.body.referral.reward.status).to.be.eql('Paid');
+            expect(res.body.referral.reward.amount).to.be.eql(25_000);
+            expect(res.body.referral.reward.paidBy).to.be.eql(adminUser._id.toString());
+            done();
+          });
+      });
+    });
+
+    context('with user and vendor token', () => {
+      [regularUser, vendorUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: adminUser,
+      userId: adminUser._id,
+      useExistingUser: true,
+    });
+
+    context('when payReferral service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Referral, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            done();
+            Referral.findByIdAndUpdate.restore();
+          });
       });
     });
   });
