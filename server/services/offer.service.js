@@ -9,6 +9,7 @@ import {
   CONCERN_STATUS,
   USER_ROLE,
   ACTIVE_PORTFOLIO_OFFER,
+  REFERRAL_RATE,
 } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, assignPropertyToUser } from './user.service';
@@ -25,6 +26,9 @@ import { addNextPayment } from './nextPayment.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { getFormattedName } from '../helpers/funtions';
+// eslint-disable-next-line import/no-cycle
+import { userIsReferred } from './referral.service';
+import Referral from '../models/referral.model';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -49,6 +53,19 @@ export const generateReferenceCode = async (propertyId) => {
   const type = `OL${getPropertyInitials(property.houseType)}`;
   const referenceCode = `${vendorCode}/${initials}/${type}/${numberSold}/${getTodaysDateShortCode()}`;
   return referenceCode;
+};
+
+export const isUserFirstProperty = async ({ userId, offerId }) => {
+  const offer = await Offer.find({ userId: ObjectId(userId) });
+
+  if (
+    offer.length === 0 ||
+    (offer.length === 1 && offer[0]._id.toString() === offerId.toString())
+  ) {
+    return true;
+  }
+
+  return false;
 };
 
 export const getAllOffers = async (accountId, { page = 1, limit = 10, ...query } = {}) => {
@@ -353,6 +370,8 @@ export const createOffer = async (offer) => {
 };
 
 export const acceptOffer = async (offerToAccept) => {
+  let isUserIsReferred = false;
+  let referralId = null;
   const offer = await getOffer(offerToAccept.offerId, offerToAccept.user).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -392,6 +411,24 @@ export const acceptOffer = async (offerToAccept) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has been accepted');
   }
 
+  const isFirstProperty = await isUserFirstProperty({
+    userId: offer[0].userId,
+    offerId: offer[0]._id,
+  });
+
+  if (isFirstProperty) {
+    const referralStatus = await userIsReferred(offer[0].userId);
+    isUserIsReferred = referralStatus.status;
+    referralId = referralStatus.referralId;
+  }
+
+  if (isUserIsReferred) {
+    const amount = Math.round((REFERRAL_RATE / 100) * offer[0].totalAmountPayable);
+    Referral.findByIdAndUpdate(referralId, {
+      $set: { offerId: offer[0]._id, 'reward.amount': amount },
+    });
+  }
+
   const paymentSchedule = generatePaymentSchedules(offer[0]);
 
   const nextPayment = {
@@ -420,6 +457,7 @@ export const acceptOffer = async (offerToAccept) => {
           signature: offerToAccept.signature,
           contributionReward,
           responseDate: Date.now(),
+          referralId,
         },
       },
       { new: true },

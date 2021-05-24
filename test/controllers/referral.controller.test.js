@@ -637,7 +637,7 @@ describe('Referral Controller', () => {
       { generateId: true },
     );
 
-    const endpoint = `/api/v1/referral/pay-referral/${referral._id}`;
+    const endpoint = `/api/v1/referral/pay/${referral._id}`;
     const method = 'put';
 
     const properties = PropertyFactory.buildList(
@@ -699,7 +699,6 @@ describe('Referral Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.referral.status).to.be.eql('Rewarded');
             expect(res.body.referral.reward.status).to.be.eql('Paid');
-            expect(res.body.referral.reward.amount).to.be.eql(7_500);
             expect(res.body.referral.reward.paidBy).to.be.eql(adminUser._id.toString());
             done();
           });

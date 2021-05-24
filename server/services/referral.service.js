@@ -3,7 +3,7 @@ import Referral from '../models/referral.model';
 import User from '../models/user.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { REFERRAL_STATUS, REWARD_STATUS, REFERRAL_RATE } from '../helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
 // eslint-disable-next-line import/no-cycle
@@ -230,8 +230,6 @@ export const payReferral = async ({ referralId, adminId }) => {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'User has not bought a property');
   }
 
-  const amount = Math.round((REFERRAL_RATE / 100) * offer.totalAmountPayable);
-
   try {
     // make payment to referral.referrerId
 
@@ -240,7 +238,6 @@ export const payReferral = async ({ referralId, adminId }) => {
       {
         $set: {
           status: REFERRAL_STATUS.REWARDED,
-          'reward.amount': amount,
           'reward.status': REWARD_STATUS.PAID,
           'reward.paidBy': adminId,
           'reward.paidOn': Date.now(),
@@ -251,4 +248,10 @@ export const payReferral = async ({ referralId, adminId }) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error paying referral', error);
   }
+};
+
+export const userIsReferred = async (userId) => {
+  const referral = await Referral.find({ userId: ObjectId(userId) });
+
+  return { status: referral.length !== 0, referralId: referral[0]?._id || null };
 };

@@ -94,6 +94,9 @@ const OfferSchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
+    referralId: {
+      type: ObjectId,
+    },
     handOverDate: {
       type: Date,
       required: true,

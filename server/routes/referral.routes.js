@@ -158,7 +158,7 @@ router.get('/:id', hasValidObjectId, ReferralController.getReferralById);
 
 /**
  * @swagger
- * /referral/pay-referral/:id:
+ * /referral/pay/:id:
  *   put:
  *     tags:
  *       - Referral
@@ -179,12 +179,6 @@ router.get('/:id', hasValidObjectId, ReferralController.getReferralById);
  *      '500':
  *       description: Internal server error
  */
-router.put(
-  '/pay-referral/:id',
-  authenticate,
-  hasValidObjectId,
-  isAdmin,
-  ReferralController.payReferral,
-);
+router.put('/pay/:id', authenticate, hasValidObjectId, isAdmin, ReferralController.payReferral);
 
 module.exports = router;
