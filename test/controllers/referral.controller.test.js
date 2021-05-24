@@ -699,7 +699,7 @@ describe('Referral Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.referral.status).to.be.eql('Rewarded');
             expect(res.body.referral.reward.status).to.be.eql('Paid');
-            expect(res.body.referral.reward.amount).to.be.eql(25_000);
+            expect(res.body.referral.reward.amount).to.be.eql(7_500);
             expect(res.body.referral.reward.paidBy).to.be.eql(adminUser._id.toString());
             done();
           });

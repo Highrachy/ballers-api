@@ -115,4 +115,4 @@ export const ACTIVE_PORTFOLIO_OFFER = [
   { status: OFFER_STATUS.ALLOCATED },
 ];
 
-export const REFERRAL_RATE = 5;
+export const REFERRAL_RATE = 1.5;
