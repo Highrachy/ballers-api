@@ -19,7 +19,7 @@ import { getOneProperty } from './property.service';
 import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
-import { buildFilterQuery, OFFER_FILTERS } from '../helpers/filters';
+import { buildFilterAndSortQuery, OFFER_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { addNextPayment } from './nextPayment.service';
 import { createNotification } from './notification.service';
@@ -52,7 +52,7 @@ export const generateReferenceCode = async (propertyId) => {
 };
 
 export const getAllOffers = async (accountId, { page = 1, limit = 10, ...query } = {}) => {
-  const filterQuery = buildFilterQuery(OFFER_FILTERS, query);
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(OFFER_FILTERS, query);
 
   let accountType;
   const user = await getUserById(accountId);
@@ -75,6 +75,7 @@ export const getAllOffers = async (accountId, { page = 1, limit = 10, ...query }
 
   const offerOptions = [
     { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     {
       $lookup: {
         from: 'users',
@@ -121,6 +122,10 @@ export const getAllOffers = async (accountId, { page = 1, limit = 10, ...query }
       },
     },
   ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    offerOptions.splice(1, 1);
+  }
 
   if (filterQuery.length < 1) {
     offerOptions.shift();
