@@ -7,7 +7,7 @@ import { getUserById } from './user.service';
 import { USER_ROLE, VISITATION_STATUS, PROCESS_VISITATION_ACTION } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { getDateWithTimestamp, convertDateToLongHumanFormat } from '../helpers/dates';
-import { buildFilterQuery, VISITATION_FILTERS } from '../helpers/filters';
+import { buildFilterAndSortQuery, VISITATION_FILTERS } from '../helpers/filters';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { getFormattedName } from '../helpers/funtions';
@@ -57,10 +57,11 @@ export const scheduleVisitation = async (schedule) => {
 };
 
 export const getAllVisitations = async (user, { page = 1, limit = 10, ...query } = {}) => {
-  const filterQuery = buildFilterQuery(VISITATION_FILTERS, query);
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(VISITATION_FILTERS, query);
 
   const scheduleOptions = [
     { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     {
       $lookup: {
         from: 'properties',
@@ -76,6 +77,10 @@ export const getAllVisitations = async (user, { page = 1, limit = 10, ...query }
       },
     },
   ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    scheduleOptions.splice(1, 1);
+  }
 
   if (filterQuery.length < 1) {
     scheduleOptions.shift();

@@ -7,7 +7,7 @@ import { getPropertyById } from './property.service';
 import { USER_ROLE } from '../helpers/constants';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
-import { buildFilterQuery, ENQUIRY_FILTERS } from '../helpers/filters';
+import { buildFilterAndSortQuery, ENQUIRY_FILTERS } from '../helpers/filters';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { getFormattedName } from '../helpers/funtions';
@@ -68,10 +68,11 @@ export const approveEnquiry = async ({ enquiryId, vendor }) => {
 };
 
 export const getAllEnquiries = async (user, { page = 1, limit = 10, ...query } = {}) => {
-  const filterQuery = buildFilterQuery(ENQUIRY_FILTERS, query);
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(ENQUIRY_FILTERS, query);
 
   const enquiryOptions = [
     { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     {
       $lookup: {
         from: 'properties',
@@ -104,6 +105,10 @@ export const getAllEnquiries = async (user, { page = 1, limit = 10, ...query } =
       },
     },
   ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    enquiryOptions.splice(1, 1);
+  }
 
   if (filterQuery.length < 1) {
     enquiryOptions.shift();
