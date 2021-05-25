@@ -39,6 +39,9 @@ const ReferralSchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
+    offerId: {
+      type: ObjectId,
+    },
     status: {
       type: String,
       default: REFERRAL_STATUS.SENT,

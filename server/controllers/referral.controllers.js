@@ -74,11 +74,7 @@ const ReferralController = {
     const referralId = req.params.id;
     getReferralById(referralId)
       .then((referral) => {
-        if (referral.length > 0) {
-          res.status(httpStatus.OK).json({ success: true, referral: referral[0] });
-        } else {
-          res.status(httpStatus.NOT_FOUND).json({ success: false, message: 'Referral not found' });
-        }
+        res.status(httpStatus.OK).json({ success: true, referral });
       })
       .catch((error) => next(error));
   },

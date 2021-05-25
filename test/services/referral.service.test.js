@@ -224,7 +224,7 @@ describe('Referral Service', () => {
 
     it('returns a valid referral by referral id', async () => {
       const ref = await getReferralById(referralId);
-      expect(ref[0]._id).to.eql(referralId);
+      expect(ref._id).to.eql(referralId);
     });
   });
 

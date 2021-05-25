@@ -111,8 +111,8 @@ export const sendReferralInvite = async (invite) => {
   }
 };
 
-export const getReferralById = async (referralId) =>
-  Referral.aggregate([
+export const getReferralById = async (referralId) => {
+  const referral = await Referral.aggregate([
     { $match: { _id: ObjectId(referralId) } },
     {
       $lookup: {
@@ -142,6 +142,13 @@ export const getReferralById = async (referralId) =>
     },
   ]);
 
+  if (referral.length < 1) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Referral not found');
+  }
+
+  return referral[0];
+};
+
 export const updateReferralToRewarded = async (referralId) => {
   const referral = await getReferralById(referralId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -149,8 +156,8 @@ export const updateReferralToRewarded = async (referralId) => {
 
   try {
     return Referral.findByIdAndUpdate(
-      referral[0]._id,
-      { $set: { status: REFERRAL_STATUS.REWARDED, reward: { status: REWARD_STATUS.PAID } } },
+      referral._id,
+      { $set: { status: REFERRAL_STATUS.REWARDED, 'reward.status': REWARD_STATUS.PAID } },
       { new: true },
     );
   } catch (error) {
@@ -212,3 +219,24 @@ export const calculateReferralRewards = async (referrerId) =>
       },
     },
   ]);
+
+export const userIsReferredWithoutActiveReferral = async (userId) => {
+  const referral = await Referral.find({
+    userId: ObjectId(userId),
+    'reward.status': REWARD_STATUS.PENDING,
+  });
+
+  return { isReferred: referral.length !== 0, referralId: referral[0]?._id || null };
+};
+
+export const startReferral = async ({ referralId, offerId }) => {
+  try {
+    return Referral.findByIdAndUpdate(
+      referralId,
+      { $set: { offerId, 'reward.status': REWARD_STATUS.STARTED } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error starting referral', error);
+  }
+};

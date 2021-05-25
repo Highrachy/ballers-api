@@ -25,6 +25,8 @@ import { addNextPayment } from './nextPayment.service';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { getFormattedName } from '../helpers/funtions';
+// eslint-disable-next-line import/no-cycle
+import { userIsReferredWithoutActiveReferral, startReferral } from './referral.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -358,15 +360,15 @@ export const createOffer = async (offer) => {
 };
 
 export const acceptOffer = async (offerToAccept) => {
-  const offer = await getOffer(offerToAccept.offerId, offerToAccept.user).catch((error) => {
+  const [offer] = await getOffer(offerToAccept.offerId, offerToAccept.user).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (offer.length < 1) {
+  if (!offer) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Invalid offer');
   }
 
-  if (offer[0].userId.toString() !== offerToAccept.user._id.toString()) {
+  if (offer.userId.toString() !== offerToAccept.user._id.toString()) {
     throw new ErrorHandler(
       httpStatus.PRECONDITION_FAILED,
       'You cannot accept offer of another user',
@@ -374,51 +376,57 @@ export const acceptOffer = async (offerToAccept) => {
   }
 
   if (
-    offer[0].status === OFFER_STATUS.CANCELLED ||
-    offer[0].status === OFFER_STATUS.NEGLECTED ||
-    offer[0].status === OFFER_STATUS.REJECTED
+    offer.status === OFFER_STATUS.CANCELLED ||
+    offer.status === OFFER_STATUS.NEGLECTED ||
+    offer.status === OFFER_STATUS.REJECTED
   ) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'You cannot accept a cancelled offer');
   }
-  const propertyPrice = offer[0].propertyInfo.price;
-  const offerPrice = offer[0].totalAmountPayable;
+  const propertyPrice = offer.propertyInfo.price;
+  const offerPrice = offer.totalAmountPayable;
   const contributionReward = propertyPrice - offerPrice < 0 ? 0 : propertyPrice - offerPrice;
 
-  const expiryDate = new Date(offer[0].expires);
+  const expiryDate = new Date(offer.expires);
   if (Date.now() > expiryDate) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has expired');
   }
 
   if (
-    offer[0].status === OFFER_STATUS.INTERESTED ||
-    offer[0].status === OFFER_STATUS.ASSIGNED ||
-    offer[0].status === OFFER_STATUS.ALLOCATED
+    offer.status === OFFER_STATUS.INTERESTED ||
+    offer.status === OFFER_STATUS.ASSIGNED ||
+    offer.status === OFFER_STATUS.ALLOCATED
   ) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Offer has been accepted');
   }
 
-  const paymentSchedule = generatePaymentSchedules(offer[0]);
+  const paymentSchedule = generatePaymentSchedules(offer);
 
   const nextPayment = {
     expectedAmount: paymentSchedule[0].amount,
     expiresOn: paymentSchedule[0].date,
-    offerId: offer[0]._id,
-    propertyId: offer[0].propertyId,
-    userId: offer[0].userId,
-    vendorId: offer[0].vendorId,
+    offerId: offer._id,
+    propertyId: offer.propertyId,
+    userId: offer.userId,
+    vendorId: offer.vendorId,
   };
 
-  const vendor = await getUserById(offer[0].vendorId);
+  const vendor = await getUserById(offer.vendorId);
+
+  const { isReferred, referralId } = await userIsReferredWithoutActiveReferral(offer.userId);
+
+  if (isReferred) {
+    await startReferral({ referralId, offerId: offer._id });
+  }
 
   try {
     await assignPropertyToUser({
-      propertyId: offer[0].propertyId,
-      userId: offer[0].userId,
+      propertyId: offer.propertyId,
+      userId: offer.userId,
       vendor,
     });
     await addNextPayment(nextPayment);
     await Offer.findByIdAndUpdate(
-      offer[0]._id,
+      offer._id,
       {
         $set: {
           status: OFFER_STATUS.INTERESTED,
@@ -430,19 +438,19 @@ export const acceptOffer = async (offerToAccept) => {
       { new: true },
     );
 
-    const property = await getOneProperty(offer[0].propertyId);
+    const property = await getOneProperty(offer.propertyId);
 
     const descriptionVendor = `Your offer for ${getFormattedName(property.name)} has been accepted`;
-    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, offer[0].vendorId, {
-      actionId: offer[0]._id,
+    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, offer.vendorId, {
+      actionId: offer._id,
       description: descriptionVendor,
     });
 
     const descriptionUser = `Congratulations on signing your offer for ${getFormattedName(
       property.name,
     )}`;
-    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_USER, offer[0].userId, {
-      actionId: offer[0]._id,
+    await createNotification(NOTIFICATIONS.OFFER_RESPONSE_USER, offer.userId, {
+      actionId: offer._id,
       description: descriptionUser,
     });
 
