@@ -13,7 +13,6 @@ import {
 } from '../helpers/projectedSchemaInfo';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import {
-  buildFilterQuery,
   PROPERTY_FILTERS,
   OFFER_FILTERS,
   SEARCH_FILTERS,
@@ -100,10 +99,11 @@ export const getAllPropertiesAddedByVendor = async (vendorId) =>
   ]);
 
 export const getAllProperties = async (user, { page = 1, limit = 10, ...query } = {}) => {
-  const filterQuery = buildFilterQuery(PROPERTY_FILTERS, query);
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(PROPERTY_FILTERS, query);
 
   const propertiesOptions = [
     { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     {
       $lookup: {
         from: 'users',
@@ -145,6 +145,10 @@ export const getAllProperties = async (user, { page = 1, limit = 10, ...query } 
       },
     },
   ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    propertiesOptions.splice(1, 1);
+  }
 
   if (filterQuery.length < 1) {
     propertiesOptions.shift();
@@ -368,10 +372,11 @@ export const getTotalAmountPaidForProperty = async (offerId) =>
 
 export const getAllPortfolios = async (user, { page = 1, limit = 10, ...query } = {}) => {
   const matchKey = user.role === USER_ROLE.USER ? 'userId' : 'vendorId';
-  const filterQuery = buildFilterQuery(OFFER_FILTERS, query);
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(OFFER_FILTERS, query);
 
   const portfolioOptions = [
     { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     { $match: { $or: VALID_PORTFOLIO_OFFER } },
     {
       $lookup: {
@@ -429,6 +434,10 @@ export const getAllPortfolios = async (user, { page = 1, limit = 10, ...query } 
       },
     },
   ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    portfolioOptions.splice(1, 1);
+  }
 
   if (filterQuery.length < 1) {
     portfolioOptions.shift();
