@@ -112,7 +112,7 @@ export const sendReferralInvite = async (invite) => {
 };
 
 export const getReferralById = async (referralId) => {
-  const referral = await Referral.aggregate([
+  const [referral] = await Referral.aggregate([
     { $match: { _id: ObjectId(referralId) } },
     {
       $lookup: {
@@ -142,11 +142,11 @@ export const getReferralById = async (referralId) => {
     },
   ]);
 
-  if (referral.length < 1) {
+  if (!referral) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Referral not found');
   }
 
-  return referral[0];
+  return referral;
 };
 
 export const updateReferralToRewarded = async (referralId) => {
@@ -220,18 +220,16 @@ export const calculateReferralRewards = async (referrerId) =>
     },
   ]);
 
-export const userIsReferredWithoutActiveReferral = async (userId) => {
+export const getPendingUserReferral = async ({ userId, offerId }) => {
   const referral = await Referral.find({
     userId: ObjectId(userId),
     'reward.status': REWARD_STATUS.PENDING,
   });
 
-  return { isReferred: referral.length !== 0, referralId: referral[0]?._id || null };
-};
+  const referralId = referral?.[0]?._id;
 
-export const startReferral = async ({ referralId, offerId }) => {
   try {
-    return Referral.findByIdAndUpdate(
+    await Referral.findByIdAndUpdate(
       referralId,
       { $set: { offerId, 'reward.status': REWARD_STATUS.STARTED } },
       { new: true },

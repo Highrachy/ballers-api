@@ -26,7 +26,7 @@ import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { getFormattedName } from '../helpers/funtions';
 // eslint-disable-next-line import/no-cycle
-import { userIsReferredWithoutActiveReferral, startReferral } from './referral.service';
+import { getPendingUserReferral } from './referral.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -412,11 +412,7 @@ export const acceptOffer = async (offerToAccept) => {
 
   const vendor = await getUserById(offer.vendorId);
 
-  const { isReferred, referralId } = await userIsReferredWithoutActiveReferral(offer.userId);
-
-  if (isReferred) {
-    await startReferral({ referralId, offerId: offer._id });
-  }
+  await getPendingUserReferral({ userId: offer.userId, offerId: offer._id });
 
   try {
     await assignPropertyToUser({
