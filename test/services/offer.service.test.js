@@ -24,11 +24,14 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import EnquiryFactory from '../factories/enquiry.factory';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
-import { OFFER_STATUS, USER_ROLE } from '../../server/helpers/constants';
+import { OFFER_STATUS, USER_ROLE, REWARD_STATUS } from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
 import { futureDate, expectNewNotificationToBeAdded } from '../helpers';
 import NOTIFICATIONS from '../../server/helpers/notifications';
 import { getFormattedName } from '../../server/helpers/funtions';
+import ReferralFactory from '../factories/referral.factory';
+import { addReferral } from '../../server/services/referral.service';
+import Referral from '../../server/models/referral.model';
 
 describe('Offer Service', () => {
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
@@ -490,6 +493,31 @@ describe('Offer Service', () => {
         expect(acceptedOffer.status).to.eql('Interested');
         expect(acceptedOffer.contributionReward).to.eql(0);
         expect(acceptedOffer.signature).to.eql(toAcceptInvalid.signature);
+      });
+    });
+
+    describe('when user was referred', () => {
+      const referral = ReferralFactory.build(
+        { referrerId: user2._id, userId: user1._id, 'reward.status': REWARD_STATUS.PENDING },
+        { generateId: true },
+      );
+
+      beforeEach(async () => {
+        await addReferral(referral);
+      });
+
+      context('when all is valid', () => {
+        it('returns a valid accepted offer', async () => {
+          const acceptedOffer = await acceptOffer(toAcceptValid);
+          const updatedReferral = await Referral.findById(referral._id).select();
+          expect(acceptedOffer.status).to.eql('Interested');
+          expect(acceptedOffer.contributionReward).to.eql(2000000);
+          expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
+          expect(updatedReferral.userId).to.eql(user1._id);
+          expect(updatedReferral.referrerId).to.eql(user2._id);
+          expect(updatedReferral.offerId).to.eql(offer1._id);
+          expect(updatedReferral.reward.status).to.eql(REWARD_STATUS.STARTED);
+        });
       });
     });
   });
