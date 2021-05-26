@@ -220,17 +220,15 @@ export const calculateReferralRewards = async (referrerId) =>
     },
   ]);
 
-export const getPendingUserReferral = async ({ userId, offerId }) => {
-  const referral = await Referral.find({
+export const activatePendingUserReferral = async ({ userId, offerId }) => {
+  const referral = await Referral.findOne({
     userId: ObjectId(userId),
     'reward.status': REWARD_STATUS.PENDING,
   });
 
-  const referralId = referral?.[0]?._id;
-
   try {
     await Referral.findByIdAndUpdate(
-      referralId,
+      referral._id,
       { $set: { offerId, 'reward.status': REWARD_STATUS.STARTED } },
       { new: true },
     );
