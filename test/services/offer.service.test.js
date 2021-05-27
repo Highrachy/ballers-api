@@ -24,7 +24,12 @@ import { addEnquiry } from '../../server/services/enquiry.service';
 import EnquiryFactory from '../factories/enquiry.factory';
 import { addUser } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
-import { OFFER_STATUS, USER_ROLE, REWARD_STATUS } from '../../server/helpers/constants';
+import {
+  OFFER_STATUS,
+  USER_ROLE,
+  REWARD_STATUS,
+  REFERRAL_STATUS,
+} from '../../server/helpers/constants';
 import { getTodaysDateShortCode } from '../../server/helpers/dates';
 import { futureDate, expectNewNotificationToBeAdded } from '../helpers';
 import NOTIFICATIONS from '../../server/helpers/notifications';
@@ -424,7 +429,7 @@ describe('Offer Service', () => {
       {
         enquiryId: enquiry1._id,
         vendorId: vendor._id,
-        totalAmountPayable: 18000000,
+        totalAmountPayable: 18_000_000,
       },
       { generateId: true },
     );
@@ -432,7 +437,7 @@ describe('Offer Service', () => {
       {
         enquiryId: enquiry2._id,
         vendorId: vendor._id,
-        totalAmountPayable: 28000000,
+        totalAmountPayable: 28_000_000,
       },
       { generateId: true },
     );
@@ -457,48 +462,55 @@ describe('Offer Service', () => {
       await createOffer(offer2);
     });
 
-    context('when all is valid', () => {
-      it('returns a valid accepted offer', async () => {
-        const acceptedOffer = await acceptOffer(toAcceptValid);
-        expect(acceptedOffer.status).to.eql('Interested');
-        expect(acceptedOffer.contributionReward).to.eql(2000000);
-        expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
+    describe('when user is not referred', () => {
+      context('when all is valid', () => {
+        it('returns a valid accepted offer', async () => {
+          const acceptedOffer = await acceptOffer(toAcceptValid);
+          expect(acceptedOffer.status).to.eql('Interested');
+          expect(acceptedOffer.contributionReward).to.eql(2_000_000);
+          expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
+        });
+
+        context('when new notification is added', () => {
+          beforeEach(async () => {
+            await acceptOffer(toAcceptValid);
+          });
+          const descriptionVendor = `Your offer for ${getFormattedName(
+            property.name,
+          )} has been accepted`;
+          expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, vendor._id, {
+            description: descriptionVendor,
+            actionId: offer1._id,
+          });
+
+          const descriptionUser = `Congratulations on signing your offer for ${getFormattedName(
+            property.name,
+          )}`;
+          expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_USER, user1._id, {
+            description: descriptionUser,
+            actionId: offer1._id,
+          });
+        });
       });
 
-      context('when new notification is added', () => {
-        beforeEach(async () => {
-          await acceptOffer(toAcceptValid);
+      context('when offer price is higher than property price', () => {
+        it('returns a valid accepted offer', async () => {
+          const acceptedOffer = await acceptOffer(toAcceptInvalid);
+          expect(acceptedOffer.status).to.eql('Interested');
+          expect(acceptedOffer.contributionReward).to.eql(0);
+          expect(acceptedOffer.signature).to.eql(toAcceptInvalid.signature);
         });
-        const descriptionVendor = `Your offer for ${getFormattedName(
-          property.name,
-        )} has been accepted`;
-        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_VENDOR, vendor._id, {
-          description: descriptionVendor,
-          actionId: offer1._id,
-        });
-
-        const descriptionUser = `Congratulations on signing your offer for ${getFormattedName(
-          property.name,
-        )}`;
-        expectNewNotificationToBeAdded(NOTIFICATIONS.OFFER_RESPONSE_USER, user1._id, {
-          description: descriptionUser,
-          actionId: offer1._id,
-        });
-      });
-    });
-
-    context('when offer price is higher than property price', () => {
-      it('returns a valid accepted offer', async () => {
-        const acceptedOffer = await acceptOffer(toAcceptInvalid);
-        expect(acceptedOffer.status).to.eql('Interested');
-        expect(acceptedOffer.contributionReward).to.eql(0);
-        expect(acceptedOffer.signature).to.eql(toAcceptInvalid.signature);
       });
     });
 
     describe('when user was referred', () => {
       const referral = ReferralFactory.build(
-        { referrerId: user2._id, userId: user1._id, 'reward.status': REWARD_STATUS.PENDING },
+        {
+          referrerId: user2._id,
+          userId: user1._id,
+          status: REFERRAL_STATUS.REGISTERED,
+          'reward.status': REWARD_STATUS.PENDING,
+        },
         { generateId: true },
       );
 
@@ -506,18 +518,49 @@ describe('Offer Service', () => {
         await addReferral(referral);
       });
 
-      context('when all is valid', () => {
+      context('when the referral is pending', () => {
         it('returns a valid accepted offer', async () => {
           const acceptedOffer = await acceptOffer(toAcceptValid);
           const updatedReferral = await Referral.findById(referral._id).select();
           expect(acceptedOffer.status).to.eql('Interested');
-          expect(acceptedOffer.contributionReward).to.eql(2000000);
+          expect(acceptedOffer.contributionReward).to.eql(2_000_000);
           expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
           expect(updatedReferral.userId).to.eql(user1._id);
           expect(updatedReferral.referrerId).to.eql(user2._id);
           expect(updatedReferral.offerId).to.eql(offer1._id);
           expect(updatedReferral.reward.status).to.eql(REWARD_STATUS.STARTED);
+          expect(updatedReferral.reward.amount).to.eql(270_000);
         });
+      });
+
+      context('when the referral is started', () => {
+        const startedReferralStatuses = Object.keys(REWARD_STATUS);
+        delete startedReferralStatuses[0];
+
+        Object.keys(startedReferralStatuses).map((status) =>
+          context(`when the referral is ${REWARD_STATUS[startedReferralStatuses[status]]}`, () => {
+            beforeEach(async () => {
+              await Referral.findByIdAndUpdate(referral._id, {
+                $set: { 'reward.status': REWARD_STATUS[startedReferralStatuses[status]] },
+              });
+            });
+
+            it('does not update referral', async () => {
+              const acceptedOffer = await acceptOffer(toAcceptValid);
+              const updatedReferral = await Referral.findById(referral._id).select();
+              expect(acceptedOffer.status).to.eql('Interested');
+              expect(acceptedOffer.contributionReward).to.eql(2_000_000);
+              expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
+              expect(updatedReferral.userId).to.eql(user1._id);
+              expect(updatedReferral.referrerId).to.eql(user2._id);
+              expect(updatedReferral.reward.status).to.eql(
+                REWARD_STATUS[startedReferralStatuses[status]],
+              );
+              expect(updatedReferral.reward.amount).to.eql(0);
+              expect(updatedReferral.offerId).to.not.eql(offer1._id);
+            });
+          }),
+        );
       });
     });
   });

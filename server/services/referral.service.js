@@ -3,7 +3,7 @@ import Referral from '../models/referral.model';
 import User from '../models/user.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { REFERRAL_STATUS, REWARD_STATUS } from '../helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS, REFERRAL_PERCENTAGE } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
 
@@ -220,19 +220,29 @@ export const calculateReferralRewards = async (referrerId) =>
     },
   ]);
 
-export const activatePendingUserReferral = async ({ userId, offerId }) => {
+export const activatePendingUserReferral = async ({ userId, offer }) => {
   const referral = await Referral.findOne({
     userId: ObjectId(userId),
+    status: REFERRAL_STATUS.REGISTERED,
     'reward.status': REWARD_STATUS.PENDING,
   });
 
-  try {
-    await Referral.findByIdAndUpdate(
-      referral._id,
-      { $set: { offerId, 'reward.status': REWARD_STATUS.STARTED } },
-      { new: true },
-    );
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error starting referral', error);
+  if (referral) {
+    const amount = Math.round((REFERRAL_PERCENTAGE / 100) * offer.totalAmountPayable);
+    try {
+      await Referral.findByIdAndUpdate(
+        referral._id,
+        {
+          $set: {
+            offerId: offer._id,
+            'reward.amount': amount,
+            'reward.status': REWARD_STATUS.STARTED,
+          },
+        },
+        { new: true },
+      );
+    } catch (error) {
+      throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error starting referral', error);
+    }
   }
 };
