@@ -220,9 +220,9 @@ export const calculateReferralRewards = async (referrerId) =>
     },
   ]);
 
-export const activatePendingUserReferral = async ({ userId, offer }) => {
+export const activatePendingUserReferral = async (offer) => {
   const referral = await Referral.findOne({
-    userId: ObjectId(userId),
+    userId: ObjectId(offer.userId),
     status: REFERRAL_STATUS.REGISTERED,
     'reward.status': REWARD_STATUS.PENDING,
   });

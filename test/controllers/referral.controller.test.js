@@ -601,7 +601,6 @@ describe('Referral Controller', () => {
             .set('authorization', adminToken)
             .send(invalidData)
             .end((err, res) => {
-              expect(res).to.have.status(500);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.error.statusCode).to.be.eql(404);
               expect(res.body.error.message).to.be.eql('Referral not found');

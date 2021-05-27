@@ -412,7 +412,7 @@ export const acceptOffer = async (offerToAccept) => {
 
   const vendor = await getUserById(offer.vendorId);
 
-  await activatePendingUserReferral({ userId: offer.userId, offer });
+  await activatePendingUserReferral(offer);
 
   try {
     await assignPropertyToUser({

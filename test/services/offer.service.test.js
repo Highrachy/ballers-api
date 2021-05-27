@@ -518,7 +518,7 @@ describe('Offer Service', () => {
         await addReferral(referral);
       });
 
-      context('when the referral is pending', () => {
+      context('when the reward status is pending', () => {
         it('returns a valid accepted offer', async () => {
           const acceptedOffer = await acceptOffer(toAcceptValid);
           const updatedReferral = await Referral.findById(referral._id).select();
@@ -533,15 +533,16 @@ describe('Offer Service', () => {
         });
       });
 
-      context('when the referral is started', () => {
-        const startedReferralStatuses = Object.keys(REWARD_STATUS);
-        delete startedReferralStatuses[0];
+      context('when the reward status has started', () => {
+        const startedReferralStatuses = Object.keys(REWARD_STATUS).filter(
+          (reward) => reward !== 'PENDING',
+        );
 
-        Object.keys(startedReferralStatuses).map((status) =>
-          context(`when the referral is ${REWARD_STATUS[startedReferralStatuses[status]]}`, () => {
+        startedReferralStatuses.map((status) =>
+          context(`when the reward status is ${REWARD_STATUS[status]}`, () => {
             beforeEach(async () => {
               await Referral.findByIdAndUpdate(referral._id, {
-                $set: { 'reward.status': REWARD_STATUS[startedReferralStatuses[status]] },
+                $set: { 'reward.status': REWARD_STATUS[status] },
               });
             });
 
@@ -553,9 +554,36 @@ describe('Offer Service', () => {
               expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
               expect(updatedReferral.userId).to.eql(user1._id);
               expect(updatedReferral.referrerId).to.eql(user2._id);
-              expect(updatedReferral.reward.status).to.eql(
-                REWARD_STATUS[startedReferralStatuses[status]],
-              );
+              expect(updatedReferral.reward.status).to.eql(REWARD_STATUS[status]);
+              expect(updatedReferral.reward.amount).to.eql(0);
+              expect(updatedReferral.offerId).to.not.eql(offer1._id);
+            });
+          }),
+        );
+      });
+
+      describe('when referral status is not registered', () => {
+        const referralStatuses = Object.keys(REFERRAL_STATUS).filter(
+          (reward) => reward !== 'REGISTERED',
+        );
+
+        referralStatuses.map((status) =>
+          context(`when the referral is ${REFERRAL_STATUS[status]}`, () => {
+            beforeEach(async () => {
+              await Referral.findByIdAndUpdate(referral._id, {
+                $set: { status: REFERRAL_STATUS[status] },
+              });
+            });
+
+            it('does not update referral', async () => {
+              const acceptedOffer = await acceptOffer(toAcceptValid);
+              const updatedReferral = await Referral.findById(referral._id).select();
+              expect(acceptedOffer.status).to.eql('Interested');
+              expect(acceptedOffer.contributionReward).to.eql(2_000_000);
+              expect(acceptedOffer.signature).to.eql(toAcceptValid.signature);
+              expect(updatedReferral.userId).to.eql(user1._id);
+              expect(updatedReferral.referrerId).to.eql(user2._id);
+              expect(updatedReferral.status).to.eql(REFERRAL_STATUS[status]);
               expect(updatedReferral.reward.amount).to.eql(0);
               expect(updatedReferral.offerId).to.not.eql(offer1._id);
             });
