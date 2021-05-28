@@ -3,7 +3,7 @@ import Referral from '../models/referral.model';
 import User from '../models/user.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { REFERRAL_STATUS, REWARD_STATUS } from '../helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS, REFERRAL_PERCENTAGE } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
 
@@ -111,8 +111,8 @@ export const sendReferralInvite = async (invite) => {
   }
 };
 
-export const getReferralById = async (referralId) =>
-  Referral.aggregate([
+export const getReferralById = async (referralId) => {
+  const [referral] = await Referral.aggregate([
     { $match: { _id: ObjectId(referralId) } },
     {
       $lookup: {
@@ -142,6 +142,13 @@ export const getReferralById = async (referralId) =>
     },
   ]);
 
+  if (!referral) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Referral not found');
+  }
+
+  return referral;
+};
+
 export const updateReferralToRewarded = async (referralId) => {
   const referral = await getReferralById(referralId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
@@ -149,8 +156,8 @@ export const updateReferralToRewarded = async (referralId) => {
 
   try {
     return Referral.findByIdAndUpdate(
-      referral[0]._id,
-      { $set: { status: REFERRAL_STATUS.REWARDED, reward: { status: REWARD_STATUS.PAID } } },
+      referral._id,
+      { $set: { status: REFERRAL_STATUS.REWARDED, 'reward.status': REWARD_STATUS.PAID } },
       { new: true },
     );
   } catch (error) {
@@ -212,3 +219,30 @@ export const calculateReferralRewards = async (referrerId) =>
       },
     },
   ]);
+
+export const activatePendingUserReferral = async (offer) => {
+  const referral = await Referral.findOne({
+    userId: ObjectId(offer.userId),
+    status: REFERRAL_STATUS.REGISTERED,
+    'reward.status': REWARD_STATUS.PENDING,
+  });
+
+  if (referral) {
+    const amount = Math.round((REFERRAL_PERCENTAGE / 100) * offer.totalAmountPayable);
+    try {
+      await Referral.findByIdAndUpdate(
+        referral._id,
+        {
+          $set: {
+            offerId: offer._id,
+            'reward.amount': amount,
+            'reward.status': REWARD_STATUS.STARTED,
+          },
+        },
+        { new: true },
+      );
+    } catch (error) {
+      throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error starting referral', error);
+    }
+  }
+};

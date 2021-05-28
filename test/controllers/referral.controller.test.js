@@ -601,9 +601,9 @@ describe('Referral Controller', () => {
             .set('authorization', adminToken)
             .send(invalidData)
             .end((err, res) => {
-              expect(res).to.have.status(400);
               expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Error rewarding referral');
+              expect(res.body.error.statusCode).to.be.eql(404);
+              expect(res.body.error.message).to.be.eql('Referral not found');
               done();
             });
         });

@@ -24,6 +24,7 @@ export const REFERRAL_STATUS = {
 
 export const REWARD_STATUS = {
   PENDING: 'Pending',
+  STARTED: 'Started',
   PROGRESS: 'Progress',
   PAID: 'Paid',
 };
@@ -114,3 +115,5 @@ export const ACTIVE_PORTFOLIO_OFFER = [
   { status: OFFER_STATUS.ASSIGNED },
   { status: OFFER_STATUS.ALLOCATED },
 ];
+
+export const REFERRAL_PERCENTAGE = 1.5;
