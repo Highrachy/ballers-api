@@ -4728,4 +4728,92 @@ describe('Property Controller', () => {
       });
     });
   });
+
+  describe('Approve Property', () => {
+    const unapprovedProperty = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        flagged: { status: false },
+        approved: { status: false },
+        createdAt: futureDate,
+      },
+      { generateId: true },
+    );
+    const endpoint = `/api/v1/property/approve/${unapprovedProperty._id}`;
+    const method = 'put';
+
+    beforeEach(async () => {
+      await addProperty(unapprovedProperty);
+    });
+
+    context('with a valid token & id', () => {
+      it('approves property', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Property approved');
+            expect(res.body.property.approved.status).to.be.eql(true);
+            expect(res.body.property.approved.by).to.be.eql(adminUser._id.toString());
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.APPROVE_PROPERTY);
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, vendorUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    context('when property id is invalid', () => {
+      it('returns error', (done) => {
+        request()
+          [method](`/api/v1/property/approve/${mongoose.Types.ObjectId()}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            expect(sendMailStub.callCount).to.eq(0);
+            done();
+          });
+      });
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: adminUser,
+      userId: adminUser._id,
+      useExistingUser: true,
+    });
+
+    context('when update service returns an error', () => {
+      it('returns the error', (done) => {
+        sinon.stub(Property, 'findByIdAndUpdate').throws(new Error('Type Error'));
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(400);
+            expect(res.body.success).to.be.eql(false);
+            expect(sendMailStub.callCount).to.eq(0);
+            done();
+            Property.findByIdAndUpdate.restore();
+          });
+      });
+    });
+  });
 });

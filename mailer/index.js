@@ -5,6 +5,10 @@ const EMAIL_CONTENT = {
       'Your ballers.ng account has been successfully created. Complete your registration by clicking on the link below to verify your email',
     subject: 'Verify your Email',
   },
+  APPROVE_PROPERTY: {
+    subject: 'Property Approved',
+    contentTop: 'Your property [property name] has been approved and is now available for viewing.',
+  },
   BAN_USER: {
     subject: 'Account Locked',
     contentTop:
