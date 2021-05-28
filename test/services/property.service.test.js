@@ -7,6 +7,7 @@ import {
   deleteProperty,
   getPropertiesWithPaymentPlanId,
   flagProperty,
+  approveProperty,
 } from '../../server/services/property.service';
 import { addUser } from '../../server/services/user.service';
 import PropertyFactory from '../factories/property.factory';
@@ -228,6 +229,49 @@ describe('Property Service', () => {
         expectNewNotificationToBeAdded(NOTIFICATIONS.FLAG_PROPERTY, vendor._id, {
           description,
           actionId: property._id,
+        });
+      });
+    });
+  });
+
+  describe('#approveProperty', () => {
+    const unapprovedProperty = PropertyFactory.build(
+      {
+        addedBy: vendor._id,
+        flagged: { status: false },
+        approved: { status: false },
+      },
+      { generateId: true },
+    );
+    const adminId = mongoose.Types.ObjectId();
+
+    const propertyInfo = {
+      propertyId: unapprovedProperty._id,
+      adminId,
+    };
+
+    beforeEach(async () => {
+      await addProperty(unapprovedProperty);
+    });
+
+    context('when data is valid', () => {
+      it('returns approved prperty', async () => {
+        const approvedProperty = await approveProperty(propertyInfo);
+        expect(approvedProperty.property.approved.status).to.eql(true);
+        expect(approvedProperty.property.approved.by).to.eql(adminId);
+      });
+
+      context('when new notification is added', () => {
+        beforeEach(async () => {
+          await approveProperty(propertyInfo);
+        });
+
+        const description = `Your property ${getFormattedName(
+          unapprovedProperty.name,
+        )} has been approved and is now available for viewing`;
+        expectNewNotificationToBeAdded(NOTIFICATIONS.APPROVE_PROPERTY, vendor._id, {
+          description,
+          actionId: unapprovedProperty._id,
         });
       });
     });

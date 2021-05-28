@@ -6,6 +6,11 @@ const NOTIFICATIONS = {
     description: 'Your account has been activated successfully',
     type: NOTIFICATION_TYPE.SUCCESS,
   },
+  APPROVE_PROPERTY: {
+    action: NOTIFICATION_ACTION.PROPERTY,
+    description: 'Your property [property name] has been approved and is now available for viewing',
+    type: NOTIFICATION_TYPE.INFO,
+  },
   BAN_USER: {
     action: NOTIFICATION_ACTION.USER,
     description: 'Your account has been locked for security reasons',

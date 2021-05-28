@@ -894,8 +894,12 @@ export const approveProperty = async ({ propertyId, adminId }) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
   }
 
+  const vendor = await getUserById(property.addedBy).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
   try {
-    return Property.findByIdAndUpdate(
+    const approvedProperty = await Property.findByIdAndUpdate(
       property._id,
       {
         $set: {
@@ -906,6 +910,16 @@ export const approveProperty = async ({ propertyId, adminId }) => {
       },
       { new: true },
     );
+
+    const description = `Your property ${getFormattedName(
+      property.name,
+    )} has been approved and is now available for viewing`;
+    await createNotification(NOTIFICATIONS.APPROVE_PROPERTY, vendor._id, {
+      actionId: property._id,
+      description,
+    });
+
+    return { property: approvedProperty, vendor };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error approving property', error);
   }

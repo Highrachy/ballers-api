@@ -633,7 +633,7 @@ router.get(
 /**
  * @swagger
  * /property/approve/:id:
- *   delete:
+ *   put:
  *     tags:
  *       - Property
  *     description: Approve a property for viewing

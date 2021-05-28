@@ -263,7 +263,12 @@ const PropertyController = {
     const propertyId = req.params.id;
     const adminId = req.user._id;
     approveProperty({ propertyId, adminId })
-      .then((property) => {
+      .then(({ property, vendor }) => {
+        const contentTop = `Your property ${getFormattedName(
+          property.name,
+        )} has been approved and is now available for viewing`;
+        sendMail(EMAIL_CONTENT.APPROVE_PROPERTY, vendor, { contentTop });
+
         res.status(httpStatus.OK).json({ success: true, message: 'Property approved', property });
       })
       .catch((error) => next(error));
