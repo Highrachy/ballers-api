@@ -534,11 +534,11 @@ describe('Offer Service', () => {
       });
 
       context('when the reward status has started', () => {
-        const startedReferralStatuses = Object.keys(REWARD_STATUS).filter(
+        const nonPendingReferralStatuses = Object.keys(REWARD_STATUS).filter(
           (reward) => reward !== 'PENDING',
         );
 
-        startedReferralStatuses.map((status) =>
+        nonPendingReferralStatuses.map((status) =>
           context(`when the reward status is ${REWARD_STATUS[status]}`, () => {
             beforeEach(async () => {
               await Referral.findByIdAndUpdate(referral._id, {
