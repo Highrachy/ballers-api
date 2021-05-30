@@ -6,6 +6,8 @@ import httpStatus from '../helpers/httpStatus';
 import { REFERRAL_STATUS, REWARD_STATUS, REFERRAL_PERCENTAGE } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
+// eslint-disable-next-line import/no-cycle
+import { isFirstOrLastPayment } from './transaction.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -244,5 +246,25 @@ export const activatePendingUserReferral = async (offer) => {
     } catch (error) {
       throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error starting referral', error);
     }
+  }
+};
+
+export const updateReferralRewardStatus = async ({ referralId, offerId }) => {
+  const { ifLastPayment, ifFirstPayment } = await isFirstOrLastPayment(offerId);
+
+  if (ifFirstPayment) {
+    await Referral.findByIdAndUpdate(
+      referralId,
+      { $set: { offerId, 'reward.status': REWARD_STATUS.STARTED } },
+      { new: true },
+    );
+  }
+
+  if (ifLastPayment) {
+    await Referral.findByIdAndUpdate(
+      referralId,
+      { $set: { offerId, 'reward.status': REWARD_STATUS.PROGRESS } },
+      { new: true },
+    );
   }
 };
