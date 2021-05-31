@@ -26,6 +26,7 @@ export const REWARD_STATUS = {
   PENDING: 'Pending',
   STARTED: 'Started',
   PROGRESS: 'Progress',
+  AWAITING_PAYMENT: 'Awaiting Payment',
   PAID: 'Paid',
 };
 

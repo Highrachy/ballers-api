@@ -336,15 +336,18 @@ export const addRemittance = async (remittanceInfo) => {
   }
 };
 
-export const isFirstOrLastPayment = async (offerId) => {
+export const isFirstOrLastOrOtherPayment = async (offerId) => {
   const offer = await getOfferById(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  const totalPaid = await getTotalTransactionByOfferId(offer._id);
+  const paymentsMade = await Transaction.find({ offerId });
 
-  const ifLastPayment = totalPaid >= offer.totalAmountPayable;
-  const ifFirstPayment = totalPaid <= offer.initialPayment;
+  const totalPaid = paymentsMade.reduce((accum, transaction) => accum + transaction.amount, 0);
 
-  return { ifLastPayment, ifFirstPayment };
+  const isFirstPayment = paymentsMade.length === 1 && totalPaid < offer.totalAmountPayable;
+  const isLastPayment = totalPaid >= offer.totalAmountPayable;
+  const isOtherPayment = !!(isFirstPayment === false && isLastPayment === false);
+
+  return { isLastPayment, isFirstPayment, isOtherPayment };
 };

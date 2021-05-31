@@ -7,7 +7,7 @@ import { REFERRAL_STATUS, REWARD_STATUS, REFERRAL_PERCENTAGE } from '../helpers/
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
 // eslint-disable-next-line import/no-cycle
-import { isFirstOrLastPayment } from './transaction.service';
+import { isFirstOrLastOrOtherPayment } from './transaction.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -250,21 +250,27 @@ export const activatePendingUserReferral = async (offer) => {
 };
 
 export const updateReferralRewardStatus = async ({ referralId, offerId }) => {
-  const { ifLastPayment, ifFirstPayment } = await isFirstOrLastPayment(offerId);
+  const paymentType = await isFirstOrLastOrOtherPayment(offerId);
+  let rewardStatus;
 
-  if (ifFirstPayment) {
-    await Referral.findByIdAndUpdate(
-      referralId,
-      { $set: { offerId, 'reward.status': REWARD_STATUS.STARTED } },
-      { new: true },
-    );
+  switch (paymentType) {
+    case paymentType.isFirstPayment:
+      rewardStatus = REWARD_STATUS.STARTED;
+      break;
+    case paymentType.isLastPayment:
+      rewardStatus = REWARD_STATUS.AWAITING_PAYMENT;
+      break;
+    case paymentType.isOtherPayment:
+      rewardStatus = REWARD_STATUS.PROGRESS;
+      break;
+
+    default:
+      break;
   }
 
-  if (ifLastPayment) {
-    await Referral.findByIdAndUpdate(
-      referralId,
-      { $set: { offerId, 'reward.status': REWARD_STATUS.PROGRESS } },
-      { new: true },
-    );
-  }
+  await Referral.findByIdAndUpdate(
+    referralId,
+    { $set: { offerId, 'reward.status': rewardStatus } },
+    { new: true },
+  );
 };
