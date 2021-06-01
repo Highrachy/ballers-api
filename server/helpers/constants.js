@@ -26,9 +26,9 @@ export const REWARD_STATUS = {
   PENDING: 'Pending',
   STARTED: 'Started',
   PAYMENT_STARTED: 'Payment Started',
-  PROGRESS: 'Progress',
-  AWAITING_PAYMENT: 'Awaiting Payment',
-  PAID: 'Paid',
+  PAYMENT_IN_PROGRESS: 'Payment In Progress',
+  PAYMENT_COMPLETED: 'Payment Completed',
+  REFERRAL_PAID: 'Referral Paid',
 };
 
 export const CONCERN_STATUS = {

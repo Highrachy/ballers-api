@@ -159,7 +159,7 @@ export const updateReferralToRewarded = async (referralId) => {
   try {
     return Referral.findByIdAndUpdate(
       referral._id,
-      { $set: { status: REFERRAL_STATUS.REWARDED, 'reward.status': REWARD_STATUS.PAID } },
+      { $set: { status: REFERRAL_STATUS.REWARDED, 'reward.status': REWARD_STATUS.REFERRAL_PAID } },
       { new: true },
     );
   } catch (error) {
@@ -251,14 +251,14 @@ export const activatePendingUserReferral = async (offer) => {
 
 export const updateReferralRewardStatus = async ({ referralId, offerId }) => {
   const paymentType = await getPaymentDuration(offerId);
-  let rewardStatus = REWARD_STATUS.PROGRESS;
+  let rewardStatus = REWARD_STATUS.PAYMENT_IN_PROGRESS;
 
   if (paymentType.isFirstPayment) {
     rewardStatus = REWARD_STATUS.PAYMENT_STARTED;
   }
 
   if (paymentType.isLastPayment) {
-    rewardStatus = REWARD_STATUS.AWAITING_PAYMENT;
+    rewardStatus = REWARD_STATUS.PAYMENT_COMPLETED;
   }
 
   await Referral.findByIdAndUpdate(

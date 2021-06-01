@@ -222,7 +222,7 @@ describe('Transaction Service', () => {
         it('updates referral to progress', async () => {
           const updatedReferral = await Referral.findById(referral._id);
           expect(updatedReferral._id).to.be.eql(referral._id);
-          expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PROGRESS);
+          expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PAYMENT_IN_PROGRESS);
         });
       });
 
@@ -238,7 +238,7 @@ describe('Transaction Service', () => {
         it('updates referral to awaiting payment', async () => {
           const updatedReferral = await Referral.findById(referral._id);
           expect(updatedReferral._id).to.be.eql(referral._id);
-          expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.AWAITING_PAYMENT);
+          expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PAYMENT_COMPLETED);
         });
       });
     });
