@@ -13,7 +13,8 @@ import { HOST } from '../config';
 
 const ReferralController = {
   getAllReferrals(req, res, next) {
-    getAllReferrals()
+    const { query } = req;
+    getAllReferrals(query)
       .then((referrals) => {
         res.status(httpStatus.OK).json({ success: true, referrals });
       })

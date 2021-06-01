@@ -8,6 +8,8 @@ import { REFERRAL_STATUS, REWARD_STATUS, REFERRAL_PERCENTAGE } from '../helpers/
 import { getUserById, getUserByEmail } from './user.service';
 // eslint-disable-next-line import/no-cycle
 import { getPaymentDuration } from './transaction.service';
+import { REFERRAL_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -167,8 +169,12 @@ export const updateReferralToRewarded = async (referralId) => {
   }
 };
 
-export const getAllReferrals = async () =>
-  Referral.aggregate([
+export const getAllReferrals = async ({ page = 1, limit = 10, ...query } = {}) => {
+  const { filterQuery, sortQuery } = buildFilterAndSortQuery(REFERRAL_FILTERS, query);
+
+  const referralOptions = [
+    { $match: { $and: filterQuery } },
+    { $sort: sortQuery },
     {
       $lookup: {
         from: 'users',
@@ -178,7 +184,19 @@ export const getAllReferrals = async () =>
       },
     },
     {
-      $unwind: '$referrer',
+      $lookup: {
+        from: 'offers',
+        localField: 'offerId',
+        foreignField: '_id',
+        as: 'offerInfo',
+      },
+    },
+    { $unwind: '$referrer' },
+    {
+      $unwind: {
+        path: '$offerInfo',
+        preserveNullAndEmptyArrays: true,
+      },
     },
     {
       $project: {
@@ -194,9 +212,32 @@ export const getAllReferrals = async () =>
         'referrer.firstName': 1,
         'referrer.lastName': 1,
         'referrer.phone': 1,
+        offerInfo: 1,
       },
     },
-  ]);
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+  ];
+
+  if (Object.keys(sortQuery).length === 0) {
+    referralOptions.splice(1, 1);
+  }
+
+  if (filterQuery.length < 1) {
+    referralOptions.shift();
+  }
+
+  const referrals = await Referral.aggregate(referralOptions);
+
+  const total = getPaginationTotal(referrals);
+  const pagination = generatePagination(page, limit, total);
+  const result = referrals[0].data;
+  return { pagination, result };
+};
 
 export const getUserByRefCode = async (refCode) =>
   User.aggregate([

@@ -346,3 +346,5 @@ export const TRANSACTION_FILTERS = {
   remittedDate: { key: 'remittance.date', type: FILTER_TYPE.DATE },
   remittedPercentage: { key: 'remittance.percentage', type: FILTER_TYPE.INTEGER },
 };
+
+export const REFERRAL_FILTERS = {};
