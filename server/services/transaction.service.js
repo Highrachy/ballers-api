@@ -71,6 +71,8 @@ export const addTransaction = async (transaction) => {
 
     const referral = await activatePendingUserReferral(offer);
 
+    // console.log(referral);
+
     if (referral) {
       await updateReferralRewardStatus({ referralId: referral._id, offerId: offer._id });
     }
@@ -342,8 +344,10 @@ export const isFirstOrLastOrOtherPayment = async (offerId) => {
   });
 
   const paymentsMade = await Transaction.find({ offerId });
+  // console.log(paymentsMade);
 
   const totalPaid = paymentsMade.reduce((accum, transaction) => accum + transaction.amount, 0);
+  // console.log(totalPaid);
 
   const isFirstPayment = paymentsMade.length === 1 && totalPaid < offer.totalAmountPayable;
   const isLastPayment = totalPaid >= offer.totalAmountPayable;
