@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { expect, sinon } from '../config';
 import {
   getTransactionById,
@@ -14,13 +15,16 @@ import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import { addProperty } from '../../server/services/property.service';
 import { addUser } from '../../server/services/user.service';
-import { createOffer } from '../../server/services/offer.service';
+import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
-import { USER_ROLE } from '../../server/helpers/constants';
+import { USER_ROLE, REWARD_STATUS, REFERRAL_STATUS } from '../../server/helpers/constants';
 import NextPayment from '../../server/models/nextPayment.model';
 import { expectNewNotificationToBeAdded } from '../helpers';
 import NOTIFICATIONS from '../../server/helpers/notifications';
 import { getMoneyFormat, getFormattedName } from '../../server/helpers/funtions';
+import ReferralFactory from '../factories/referral.factory';
+import { addReferral } from '../../server/services/referral.service';
+import Referral from '../../server/models/referral.model';
 
 describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -174,6 +178,68 @@ describe('Transaction Service', () => {
           expect(err.message).to.be.eql('Property not for offer');
           expect(currentCountedTransactions).to.eql(countedTransactions);
         }
+      });
+    });
+
+    context('when transaction is made by referred user', () => {
+      const referral = ReferralFactory.build(
+        {
+          referrerId: admin._id,
+          userId: user._id,
+          status: REFERRAL_STATUS.REGISTERED,
+          'reward.status': REWARD_STATUS.PENDING,
+        },
+        { generateId: true },
+      );
+      const toAcceptValid = {
+        offerId: offer._id,
+        signature: 'http://www.ballers.ng/signature.png',
+        user,
+      };
+
+      beforeEach(async () => {
+        fakeDate = sinon.useFakeTimers({
+          now: new Date('2020-02-21'),
+        });
+        await addReferral(referral);
+        await acceptOffer(toAcceptValid);
+        await addTransaction(transaction);
+      });
+
+      context('when it is the first transaction', () => {
+        it('updates referral to payment started', async () => {
+          const updatedReferral = await Referral.findById(referral._id);
+          expect(updatedReferral._id).to.be.eql(referral._id);
+          expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PAYMENT_STARTED);
+        });
+      });
+
+      context('when it is the second transaction', () => {
+        beforeEach(async () => {
+          await addTransaction({ ...transaction, amount: 500_000, _id: mongoose.Types.ObjectId() });
+        });
+
+        it('updates referral to progress', async () => {
+          const updatedReferral = await Referral.findById(referral._id);
+          expect(updatedReferral._id).to.be.eql(referral._id);
+          expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PAYMENT_IN_PROGRESS);
+        });
+      });
+
+      context('when it is the last transaction', () => {
+        beforeEach(async () => {
+          await addTransaction({
+            ...transaction,
+            amount: 3_000_000,
+            _id: mongoose.Types.ObjectId(),
+          });
+        });
+
+        it('updates referral to awaiting payment', async () => {
+          const updatedReferral = await Referral.findById(referral._id);
+          expect(updatedReferral._id).to.be.eql(referral._id);
+          expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PAYMENT_COMPLETED);
+        });
       });
     });
   });

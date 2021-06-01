@@ -525,7 +525,7 @@ describe('Referral Controller', () => {
             expect(res.body).to.have.property('referral');
             expect(res.body.referral._id).to.be.eql(referralId.toString());
             expect(res.body.referral.status).to.be.eql(REFERRAL_STATUS.REWARDED);
-            expect(res.body.referral.reward.status).to.be.eql(REWARD_STATUS.PAID);
+            expect(res.body.referral.reward.status).to.be.eql(REWARD_STATUS.REFERRAL_PAID);
             done();
           });
       });

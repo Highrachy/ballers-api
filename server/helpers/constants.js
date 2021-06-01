@@ -25,8 +25,10 @@ export const REFERRAL_STATUS = {
 export const REWARD_STATUS = {
   PENDING: 'Pending',
   STARTED: 'Started',
-  PROGRESS: 'Progress',
-  PAID: 'Paid',
+  PAYMENT_STARTED: 'Payment Started',
+  PAYMENT_IN_PROGRESS: 'Payment In Progress',
+  PAYMENT_COMPLETED: 'Payment Completed',
+  REFERRAL_PAID: 'Referral Paid',
 };
 
 export const CONCERN_STATUS = {

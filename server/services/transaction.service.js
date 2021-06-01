@@ -21,6 +21,8 @@ import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { TRANSACTION_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
 import { getMoneyFormat, getFormattedName } from '../helpers/funtions';
+// eslint-disable-next-line import/no-cycle
+import { updateReferralRewardStatus, getReferralByOfferId } from './referral.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -66,6 +68,12 @@ export const addTransaction = async (transaction) => {
     }).catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
+
+    const referral = await getReferralByOfferId(offer._id);
+
+    if (referral) {
+      await updateReferralRewardStatus({ referralId: referral._id, offerId: offer._id });
+    }
 
     return newTransaction;
   } catch (error) {
@@ -326,4 +334,20 @@ export const addRemittance = async (remittanceInfo) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding remittance', error);
   }
+};
+
+export const getPaymentDuration = async (offerId) => {
+  const offer = await getOfferById(offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  const paymentsMade = await Transaction.find({ offerId });
+
+  const totalPaid = paymentsMade.reduce((accum, transaction) => accum + transaction.amount, 0);
+
+  const isFirstPayment = paymentsMade.length === 1 && totalPaid < offer.totalAmountPayable;
+  const isLastPayment = totalPaid >= offer.totalAmountPayable;
+  const isOtherPayment = !isFirstPayment && !isLastPayment;
+
+  return { isLastPayment, isFirstPayment, isOtherPayment };
 };

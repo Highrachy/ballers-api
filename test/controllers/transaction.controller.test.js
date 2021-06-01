@@ -848,7 +848,7 @@ describe('Transaction Controller', () => {
       email: 'demo1@mail.com',
       reward: {
         amount: 10000,
-        status: REWARD_STATUS.PAID,
+        status: REWARD_STATUS.REFERRAL_PAID,
       },
     });
     const pendingReferral = ReferralFactory.build({
@@ -863,7 +863,7 @@ describe('Transaction Controller', () => {
       email: 'demo2@mail.com',
       reward: {
         amount: 20000,
-        status: REWARD_STATUS.PAID,
+        status: REWARD_STATUS.REFERRAL_PAID,
       },
     });
 
