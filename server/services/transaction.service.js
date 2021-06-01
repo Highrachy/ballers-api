@@ -22,7 +22,7 @@ import NOTIFICATIONS from '../helpers/notifications';
 import { TRANSACTION_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
 import { getMoneyFormat, getFormattedName } from '../helpers/funtions';
 // eslint-disable-next-line import/no-cycle
-import { updateReferralRewardStatus, activatePendingUserReferral } from './referral.service';
+import { updateReferralRewardStatus, getReferralByOfferId } from './referral.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -69,9 +69,7 @@ export const addTransaction = async (transaction) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
 
-    const referral = await activatePendingUserReferral(offer);
-
-    // console.log(referral);
+    const referral = await getReferralByOfferId(offer._id);
 
     if (referral) {
       await updateReferralRewardStatus({ referralId: referral._id, offerId: offer._id });
@@ -338,20 +336,18 @@ export const addRemittance = async (remittanceInfo) => {
   }
 };
 
-export const isFirstOrLastOrOtherPayment = async (offerId) => {
+export const getPaymentDuration = async (offerId) => {
   const offer = await getOfferById(offerId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
   const paymentsMade = await Transaction.find({ offerId });
-  // console.log(paymentsMade);
 
   const totalPaid = paymentsMade.reduce((accum, transaction) => accum + transaction.amount, 0);
-  // console.log(totalPaid);
 
   const isFirstPayment = paymentsMade.length === 1 && totalPaid < offer.totalAmountPayable;
   const isLastPayment = totalPaid >= offer.totalAmountPayable;
-  const isOtherPayment = !!(isFirstPayment === false && isLastPayment === false);
+  const isOtherPayment = !isFirstPayment && !isLastPayment;
 
   return { isLastPayment, isFirstPayment, isOtherPayment };
 };

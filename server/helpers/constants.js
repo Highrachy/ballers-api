@@ -25,6 +25,7 @@ export const REFERRAL_STATUS = {
 export const REWARD_STATUS = {
   PENDING: 'Pending',
   STARTED: 'Started',
+  PAYMENT_STARTED: 'Payment Started',
   PROGRESS: 'Progress',
   AWAITING_PAYMENT: 'Awaiting Payment',
   PAID: 'Paid',

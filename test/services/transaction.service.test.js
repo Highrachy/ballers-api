@@ -15,7 +15,7 @@ import OfferFactory from '../factories/offer.factory';
 import EnquiryFactory from '../factories/enquiry.factory';
 import { addProperty } from '../../server/services/property.service';
 import { addUser } from '../../server/services/user.service';
-import { createOffer } from '../../server/services/offer.service';
+import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { USER_ROLE, REWARD_STATUS, REFERRAL_STATUS } from '../../server/helpers/constants';
 import NextPayment from '../../server/models/nextPayment.model';
@@ -181,7 +181,7 @@ describe('Transaction Service', () => {
       });
     });
 
-    context.only('when transaction is made by referred user', () => {
+    context('when transaction is made by referred user', () => {
       const referral = ReferralFactory.build(
         {
           referrerId: admin._id,
@@ -191,20 +191,26 @@ describe('Transaction Service', () => {
         },
         { generateId: true },
       );
+      const toAcceptValid = {
+        offerId: offer._id,
+        signature: 'http://www.ballers.ng/signature.png',
+        user,
+      };
 
       beforeEach(async () => {
         fakeDate = sinon.useFakeTimers({
           now: new Date('2020-02-21'),
         });
         await addReferral(referral);
+        await acceptOffer(toAcceptValid);
         await addTransaction(transaction);
       });
 
       context('when it is the first transaction', () => {
-        it('updates referral to started', async () => {
+        it('updates referral to payment started', async () => {
           const updatedReferral = await Referral.findById(referral._id);
           expect(updatedReferral._id).to.be.eql(referral._id);
-          expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.STARTED);
+          expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PAYMENT_STARTED);
         });
       });
 
