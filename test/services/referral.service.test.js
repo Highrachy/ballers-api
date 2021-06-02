@@ -7,6 +7,7 @@ import {
   getReferralByEmailAndReferrerId,
   sendReferralInvite,
   getReferralById,
+  getUserByRefCode,
 } from '../../server/services/referral.service';
 import ReferralFactory from '../factories/referral.factory';
 import UserFactory from '../factories/user.factory';
@@ -223,6 +224,21 @@ describe('Referral Service', () => {
     it('returns a valid referral by referral id', async () => {
       const ref = await getReferralById(referralId);
       expect(ref._id).to.eql(referralId);
+    });
+  });
+
+  describe('#getUserByRefCode', () => {
+    const referrerId = mongoose.Types.ObjectId();
+    const referralCode = 'RC1234';
+    const referrer = UserFactory.build({ _id: referrerId, referralCode });
+
+    beforeEach(async () => {
+      await User.create(referrer);
+    });
+
+    it('returns a valid user by referral code', async () => {
+      const res = await getUserByRefCode(referralCode);
+      expect(res[0]._id).to.eql(referrerId);
     });
   });
 });
