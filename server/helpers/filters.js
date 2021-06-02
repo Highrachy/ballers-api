@@ -346,3 +346,15 @@ export const TRANSACTION_FILTERS = {
   remittedDate: { key: 'remittance.date', type: FILTER_TYPE.DATE },
   remittedPercentage: { key: 'remittance.percentage', type: FILTER_TYPE.INTEGER },
 };
+
+export const REFERRAL_FILTERS = {
+  createdAt: { type: FILTER_TYPE.DATE },
+  userId: { type: FILTER_TYPE.OBJECT_ID },
+  referrerId: { type: FILTER_TYPE.OBJECT_ID },
+  offerId: { type: FILTER_TYPE.OBJECT_ID },
+  status: { type: FILTER_TYPE.STRING },
+  rewardAmount: { key: 'reward.amount', type: FILTER_TYPE.INTEGER },
+  rewardStatus: { key: 'reward.status', type: FILTER_TYPE.STRING },
+  paidBy: { key: 'reward.paidBy', type: FILTER_TYPE.OBJECT_ID },
+  paidOn: { key: 'reward.paidOn', type: FILTER_TYPE.DATE },
+};
