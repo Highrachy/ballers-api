@@ -15,8 +15,8 @@ const ReferralController = {
   getAllReferrals(req, res, next) {
     const { query } = req;
     getAllReferrals(query)
-      .then((referrals) => {
-        res.status(httpStatus.OK).json({ success: true, referrals });
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },

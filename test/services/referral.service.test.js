@@ -7,8 +7,6 @@ import {
   getReferralByEmailAndReferrerId,
   sendReferralInvite,
   getReferralById,
-  getAllReferrals,
-  getUserByRefCode,
 } from '../../server/services/referral.service';
 import ReferralFactory from '../factories/referral.factory';
 import UserFactory from '../factories/user.factory';
@@ -225,53 +223,6 @@ describe('Referral Service', () => {
     it('returns a valid referral by referral id', async () => {
       const ref = await getReferralById(referralId);
       expect(ref._id).to.eql(referralId);
-    });
-  });
-
-  describe('#getUserByRefCode', () => {
-    const referrerId = mongoose.Types.ObjectId();
-    const referralCode = 'RC1234';
-    const referrer = UserFactory.build({ _id: referrerId, referralCode });
-
-    beforeEach(async () => {
-      await User.create(referrer);
-    });
-
-    it('returns a valid user by referral code', async () => {
-      const res = await getUserByRefCode(referralCode);
-      expect(res[0]._id).to.eql(referrerId);
-    });
-  });
-
-  describe('#getAllReferrals', () => {
-    const referrerId = mongoose.Types.ObjectId();
-    const referrer = UserFactory.build({ _id: referrerId });
-    const referral1 = ReferralFactory.build({ referrerId, email: 'demo1@mail.com' });
-    const referral2 = ReferralFactory.build({ referrerId, email: 'demo2@mail.com' });
-    const referral3 = ReferralFactory.build({ referrerId, email: 'demo3@mail.com' });
-
-    beforeEach(async () => {
-      await User.create(referrer);
-      await addReferral(referral1);
-      await addReferral(referral2);
-    });
-
-    context('when referral added is valid', () => {
-      it('returns 2 referrals', async () => {
-        const referrasls = await getAllReferrals();
-        expect(referrasls).to.be.an('array');
-        expect(referrasls.length).to.be.eql(2);
-      });
-    });
-    context('when new referral is added', () => {
-      beforeEach(async () => {
-        await addReferral(referral3);
-      });
-      it('returns 3 referrals', async () => {
-        const referrasls = await getAllReferrals();
-        expect(referrasls).to.be.an('array');
-        expect(referrasls.length).to.be.eql(3);
-      });
     });
   });
 });
