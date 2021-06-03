@@ -3,7 +3,12 @@ import Referral from '../models/referral.model';
 import User from '../models/user.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import { REFERRAL_STATUS, REWARD_STATUS, REFERRAL_PERCENTAGE } from '../helpers/constants';
+import {
+  REFERRAL_STATUS,
+  REWARD_STATUS,
+  REFERRAL_PERCENTAGE,
+  USER_ROLE,
+} from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
 // eslint-disable-next-line import/no-cycle
@@ -48,35 +53,6 @@ export const addReferral = async (referalInfo) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding referral info', error);
   }
 };
-
-export const getAllUserReferrals = async (referrerId) =>
-  Referral.aggregate([
-    { $match: { referrerId: ObjectId(referrerId) } },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'referrerId',
-        foreignField: '_id',
-        as: 'referrer',
-      },
-    },
-    {
-      $unwind: '$referrer',
-    },
-    {
-      $project: {
-        _id: 1,
-        userId: 1,
-        firstName: 1,
-        email: 1,
-        referrerId: 1,
-        reward: 1,
-        status: 1,
-        'referrer._id': 1,
-        'referrer.email': 1,
-      },
-    },
-  ]);
 
 export const sendReferralInvite = async (invite) => {
   const existingUser = await getUserByEmail(invite.email).catch((error) => {
@@ -169,7 +145,7 @@ export const updateReferralToRewarded = async (referralId) => {
   }
 };
 
-export const getAllReferrals = async ({ page = 1, limit = 10, ...query } = {}) => {
+export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } = {}) => {
   const { filterQuery, sortQuery } = buildFilterAndSortQuery(REFERRAL_FILTERS, query);
 
   const referralOptions = [
@@ -229,6 +205,10 @@ export const getAllReferrals = async ({ page = 1, limit = 10, ...query } = {}) =
 
   if (filterQuery.length < 1) {
     referralOptions.shift();
+  }
+
+  if (user.role !== USER_ROLE.ADMIN) {
+    referralOptions.unshift({ $match: { referrerId: ObjectId(user._id) } });
   }
 
   const referrals = await Referral.aggregate(referralOptions);

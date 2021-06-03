@@ -7,29 +7,6 @@ const router = express.Router();
 
 /**
  * @swagger
- * /referral/:
- *   get:
- *     tags:
- *       - Referral
- *     description: Get all owned referrals
- *     produces:
- *       - application/json
- *     requestBody:
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/Referral'
- *      description: Get all owned referrals
- *     responses:
- *      '200':
- *        description: returns object of referrals
- *      '500':
- *       description: Internal server error
- */
-router.get('/', authenticate, ReferralController.getUserReferrals);
-
-/**
- * @swagger
  * /referral/all/:
  *   get:
  *     tags:
@@ -49,7 +26,7 @@ router.get('/', authenticate, ReferralController.getUserReferrals);
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', authenticate, isAdmin, ReferralController.getAllReferrals);
+router.get('/all', authenticate, ReferralController.getAllReferrals);
 
 /**
  * @swagger
