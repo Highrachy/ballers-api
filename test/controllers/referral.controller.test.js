@@ -231,8 +231,19 @@ describe('Referral Controller', () => {
     const method = 'get';
     const endpoint = '/api/v1/referral/all';
     let vendorToken;
+    let editorToken;
+
     const vendorUser = UserFactory.build(
       { role: USER_ROLE.VENDOR, activated: true },
+      { generateId: true },
+    );
+    const editorUser = UserFactory.build(
+      { role: USER_ROLE.EDITOR, activated: true },
+      { generateId: true },
+    );
+
+    const referredUser = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
       { generateId: true },
     );
 
@@ -252,11 +263,45 @@ describe('Referral Controller', () => {
       { generateId: true },
     );
 
-    const referrals = ReferralFactory.buildList(
-      17,
+    const userReferrals = ReferralFactory.buildList(
+      10,
       {
         referrerId: regularUser._id,
-        userId: vendorUser._id,
+        userId: referredUser._id,
+        offerId: mongoose.Types.ObjectId(),
+        createdAt: currentDate,
+        status: REFERRAL_STATUS.REGISTERED,
+        reward: {
+          amount: 50_000,
+          status: REWARD_STATUS.PAYMENT_STARTED,
+          paidBy: vendorUser._id,
+          paidOn: currentDate,
+        },
+      },
+      { generateId: true },
+    );
+    const vendorReferrals = ReferralFactory.buildList(
+      3,
+      {
+        referrerId: vendorUser._id,
+        userId: referredUser._id,
+        offerId: mongoose.Types.ObjectId(),
+        createdAt: currentDate,
+        status: REFERRAL_STATUS.REGISTERED,
+        reward: {
+          amount: 50_000,
+          status: REWARD_STATUS.PAYMENT_STARTED,
+          paidBy: vendorUser._id,
+          paidOn: currentDate,
+        },
+      },
+      { generateId: true },
+    );
+    const editorReferrals = ReferralFactory.buildList(
+      4,
+      {
+        referrerId: editorUser._id,
+        userId: referredUser._id,
         offerId: mongoose.Types.ObjectId(),
         createdAt: currentDate,
         status: REFERRAL_STATUS.REGISTERED,
@@ -287,12 +332,14 @@ describe('Referral Controller', () => {
       { generateId: true },
     );
 
-    describe('Referral pagination', () => {
-      beforeEach(async () => {
-        vendorToken = await addUser(vendorUser);
-        await Offer.create(offer);
-      });
+    beforeEach(async () => {
+      vendorToken = await addUser(vendorUser);
+      editorToken = await addUser(editorUser);
+      await addUser(referredUser);
+      await Offer.create(offer);
+    });
 
+    describe('Referral pagination', () => {
       context('when no referrals exists in db', () => {
         itReturnsEmptyValuesWhenNoItemExistInDatabase({
           endpoint,
@@ -304,7 +351,12 @@ describe('Referral Controller', () => {
 
       describe('when referrals exist in db', () => {
         beforeEach(async () => {
-          await Referral.insertMany([referral, ...referrals]);
+          await Referral.insertMany([
+            referral,
+            ...userReferrals,
+            ...editorReferrals,
+            ...vendorReferrals,
+          ]);
         });
 
         itReturnsTheRightPaginationValue({
@@ -326,6 +378,8 @@ describe('Referral Controller', () => {
                 expect(res.body.result[0].offerInfo.totalAmountPayable).to.be.eql(
                   offer.totalAmountPayable,
                 );
+                expect(res.body.result[0].referee._id).to.be.eql(regularUser._id.toString());
+                expect(res.body.result[0].referrer._id).to.be.eql(adminUser._id.toString());
                 done();
               });
           });
@@ -339,9 +393,10 @@ describe('Referral Controller', () => {
               .end((err, res) => {
                 expectsPaginationToReturnTheRightValues(res, {
                   ...defaultPaginationResult,
-                  total: 17,
+                  total: 10,
+                  totalPage: 1,
                 });
-                expect(res.body.result[0]._id).to.be.eql(referrals[0]._id.toString());
+                expect(res.body.result[0]._id).to.be.eql(userReferrals[0]._id.toString());
                 done();
               });
           });
@@ -355,9 +410,26 @@ describe('Referral Controller', () => {
               .end((err, res) => {
                 expectsPaginationToReturnTheRightValues(res, {
                   ...defaultPaginationResult,
-                  total: 0,
-                  totalPage: 0,
-                  result: 0,
+                  total: 3,
+                  totalPage: 1,
+                  result: 3,
+                });
+                done();
+              });
+          });
+        });
+
+        context('with editor token', () => {
+          it('returns all owned referrals', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', editorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 4,
+                  totalPage: 1,
+                  result: 4,
                 });
                 done();
               });
@@ -387,7 +459,12 @@ describe('Referral Controller', () => {
 
     describe('Referral filter', () => {
       beforeEach(async () => {
-        await Referral.insertMany([referral, ...referrals]);
+        await Referral.insertMany([
+          referral,
+          ...userReferrals,
+          ...editorReferrals,
+          ...vendorReferrals,
+        ]);
       });
 
       describe('Unknown Filters', () => {

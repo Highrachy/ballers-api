@@ -15,6 +15,7 @@ import { getUserById, getUserByEmail } from './user.service';
 import { getPaymentDuration } from './transaction.service';
 import { REFERRAL_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { projectRefereeIfAdmin } from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -189,6 +190,7 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
         'referrer.lastName': 1,
         'referrer.phone': 1,
         offerInfo: 1,
+        ...projectRefereeIfAdmin(user.role),
       },
     },
     {
@@ -198,6 +200,22 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
       },
     },
   ];
+
+  if (user.role === USER_ROLE.ADMIN) {
+    referralOptions.splice(
+      4,
+      0,
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'referee',
+        },
+      },
+      { $unwind: '$referee' },
+    );
+  }
 
   if (Object.keys(sortQuery).length === 0) {
     referralOptions.splice(1, 1);
