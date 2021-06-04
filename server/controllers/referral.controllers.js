@@ -1,5 +1,4 @@
 import {
-  getAllUserReferrals,
   updateReferralToRewarded,
   sendReferralInvite,
   getUserByRefCode,
@@ -13,19 +12,10 @@ import { HOST } from '../config';
 
 const ReferralController = {
   getAllReferrals(req, res, next) {
-    const { query } = req;
-    getAllReferrals(query)
+    const { user, query } = req;
+    getAllReferrals(user, query)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
-      })
-      .catch((error) => next(error));
-  },
-
-  getUserReferrals(req, res, next) {
-    const { user } = req;
-    getAllUserReferrals(user._id)
-      .then((referrals) => {
-        res.status(httpStatus.OK).json({ success: true, referrals });
       })
       .catch((error) => next(error));
   },

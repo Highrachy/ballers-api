@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import { expect, sinon } from '../config';
 import {
   addReferral,
-  getAllUserReferrals,
   updateReferralToRewarded,
   getReferralByEmailAndReferrerId,
   sendReferralInvite,
@@ -67,38 +66,6 @@ describe('Referral Service', () => {
         expect(referral.referralInfo).to.eql(referralInfo.referralInfo);
         expect(referral.status).to.eql(REFERRAL_STATUS.REGISTERED);
         expect(currentcountedReferrals).to.eql(countedReferrals);
-      });
-    });
-  });
-
-  describe('#getAllUserReferrals', () => {
-    const referrerId = mongoose.Types.ObjectId();
-    const referrer = UserFactory.build({ _id: referrerId });
-    const referral1 = ReferralFactory.build({ referrerId, email: 'demo1@mail.com' });
-    const referral2 = ReferralFactory.build({ referrerId, email: 'demo2@mail.com' });
-    const referral3 = ReferralFactory.build({ referrerId, email: 'demo3@mail.com' });
-
-    beforeEach(async () => {
-      await User.create(referrer);
-      await addReferral(referral1);
-      await addReferral(referral2);
-    });
-
-    context('when referral added is valid', () => {
-      it('returns 2 referrals', async () => {
-        const referrasls = await getAllUserReferrals(referrerId);
-        expect(referrasls).to.be.an('array');
-        expect(referrasls.length).to.be.eql(2);
-      });
-    });
-    context('when new referral is added', () => {
-      beforeEach(async () => {
-        await addReferral(referral3);
-      });
-      it('returns 3 referrals', async () => {
-        const referrasls = await getAllUserReferrals(referrerId);
-        expect(referrasls).to.be.an('array');
-        expect(referrasls.length).to.be.eql(3);
       });
     });
   });

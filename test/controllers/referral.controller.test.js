@@ -15,7 +15,6 @@ import Offer from '../../server/models/offer.model';
 import OfferFactory from '../factories/offer.factory';
 import {
   itReturnsForbiddenForNoToken,
-  itReturnsForbiddenForTokenWithInvalidAccess,
   itReturnsNotFoundForInvalidToken,
   itReturnsAnErrorWhenServiceFails,
   itReturnsTheRightPaginationValue,
@@ -28,6 +27,8 @@ import {
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
   currentDate,
 } from '../helpers';
+import PropertyFactory from '../factories/property.factory';
+import { addProperty } from '../../server/services/property.service';
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();
@@ -231,16 +232,30 @@ describe('Referral Controller', () => {
   describe('Get all referrals', () => {
     const method = 'get';
     const endpoint = '/api/v1/referral/all';
+    let vendorToken;
+    let editorToken;
+
     const vendorUser = UserFactory.build(
       { role: USER_ROLE.VENDOR, activated: true },
       { generateId: true },
     );
+    const editorUser = UserFactory.build(
+      { role: USER_ROLE.EDITOR, activated: true },
+      { generateId: true },
+    );
+
+    const referredUser = UserFactory.build(
+      { role: USER_ROLE.USER, activated: true },
+      { generateId: true },
+    );
+
+    const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
 
     const offer = OfferFactory.build(
       {
         enquiryId: mongoose.Types.ObjectId(),
         vendorId: vendorUser._id,
-        propertyId: mongoose.Types.ObjectId(),
+        propertyId: property._id,
         userId: regularUser._id,
         totalAmountPayable: 100_000,
         initialPayment: 50_000,
@@ -252,11 +267,45 @@ describe('Referral Controller', () => {
       { generateId: true },
     );
 
-    const referrals = ReferralFactory.buildList(
-      17,
+    const userReferrals = ReferralFactory.buildList(
+      10,
       {
         referrerId: regularUser._id,
-        userId: vendorUser._id,
+        userId: referredUser._id,
+        offerId: mongoose.Types.ObjectId(),
+        createdAt: currentDate,
+        status: REFERRAL_STATUS.REGISTERED,
+        reward: {
+          amount: 50_000,
+          status: REWARD_STATUS.PAYMENT_STARTED,
+          paidBy: vendorUser._id,
+          paidOn: currentDate,
+        },
+      },
+      { generateId: true },
+    );
+    const vendorReferrals = ReferralFactory.buildList(
+      3,
+      {
+        referrerId: vendorUser._id,
+        userId: referredUser._id,
+        offerId: mongoose.Types.ObjectId(),
+        createdAt: currentDate,
+        status: REFERRAL_STATUS.REGISTERED,
+        reward: {
+          amount: 50_000,
+          status: REWARD_STATUS.PAYMENT_STARTED,
+          paidBy: vendorUser._id,
+          paidOn: currentDate,
+        },
+      },
+      { generateId: true },
+    );
+    const editorReferrals = ReferralFactory.buildList(
+      4,
+      {
+        referrerId: editorUser._id,
+        userId: referredUser._id,
         offerId: mongoose.Types.ObjectId(),
         createdAt: currentDate,
         status: REFERRAL_STATUS.REGISTERED,
@@ -287,12 +336,15 @@ describe('Referral Controller', () => {
       { generateId: true },
     );
 
-    describe('Referral pagination', () => {
-      beforeEach(async () => {
-        await addUser(vendorUser);
-        await Offer.create(offer);
-      });
+    beforeEach(async () => {
+      vendorToken = await addUser(vendorUser);
+      editorToken = await addUser(editorUser);
+      await addUser(referredUser);
+      await addProperty(property);
+      await Offer.create(offer);
+    });
 
+    describe('Referral pagination', () => {
       context('when no referrals exists in db', () => {
         itReturnsEmptyValuesWhenNoItemExistInDatabase({
           endpoint,
@@ -304,7 +356,12 @@ describe('Referral Controller', () => {
 
       describe('when referrals exist in db', () => {
         beforeEach(async () => {
-          await Referral.insertMany([referral, ...referrals]);
+          await Referral.insertMany([
+            referral,
+            ...userReferrals,
+            ...editorReferrals,
+            ...vendorReferrals,
+          ]);
         });
 
         itReturnsTheRightPaginationValue({
@@ -314,8 +371,8 @@ describe('Referral Controller', () => {
           useExistingUser: true,
         });
 
-        context('with user token & id', () => {
-          it('returns referral with offer info', (done) => {
+        context('with admin token', () => {
+          it('returns all referrals in db with offer info', (done) => {
             request()
               [method](endpoint)
               .set('authorization', adminToken)
@@ -326,19 +383,64 @@ describe('Referral Controller', () => {
                 expect(res.body.result[0].offerInfo.totalAmountPayable).to.be.eql(
                   offer.totalAmountPayable,
                 );
+                expect(res.body.result[0].referee._id).to.be.eql(regularUser._id.toString());
+                expect(res.body.result[0].referrer._id).to.be.eql(adminUser._id.toString());
+                expect(res.body.result[0].propertyInfo._id).to.be.eql(property._id.toString());
                 done();
               });
           });
         });
 
-        [regularUser, vendorUser].map((user) =>
-          itReturnsForbiddenForTokenWithInvalidAccess({
-            endpoint,
-            method,
-            user,
-            useExistingUser: true,
-          }),
-        );
+        context('with user token', () => {
+          it('returns all owned referrals', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', userToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 10,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(userReferrals[0]._id.toString());
+                done();
+              });
+          });
+        });
+
+        context('with vendor token', () => {
+          it('returns all owned referrals', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', vendorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 3,
+                  totalPage: 1,
+                  result: 3,
+                });
+                done();
+              });
+          });
+        });
+
+        context('with editor token', () => {
+          it('returns all owned referrals', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', editorToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 4,
+                  totalPage: 1,
+                  result: 4,
+                });
+                done();
+              });
+          });
+        });
 
         itReturnsForbiddenForNoToken({ endpoint, method });
 
@@ -363,7 +465,12 @@ describe('Referral Controller', () => {
 
     describe('Referral filter', () => {
       beforeEach(async () => {
-        await Referral.insertMany([referral, ...referrals]);
+        await Referral.insertMany([
+          referral,
+          ...userReferrals,
+          ...editorReferrals,
+          ...vendorReferrals,
+        ]);
       });
 
       describe('Unknown Filters', () => {
@@ -439,107 +546,6 @@ describe('Referral Controller', () => {
         user: adminUser,
         dataObject: referral,
         useExistingUser: true,
-      });
-    });
-  });
-
-  describe('Get all owned referrals', () => {
-    const referral1 = ReferralFactory.build({
-      referrerId: regularUser._id,
-      email: 'demo1@mail.com',
-    });
-    const referral2 = ReferralFactory.build({ referrerId: adminUser._id, email: 'demo2@mail.com' });
-    const referral3 = ReferralFactory.build({
-      referrerId: regularUser._id,
-      email: 'demo3@mail.com',
-    });
-
-    context('when no referral is found', () => {
-      it('returns not found', (done) => {
-        request()
-          .get('/api/v1/referral/')
-          .set('authorization', userToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.referrals.length).to.be.eql(0);
-            done();
-          });
-      });
-    });
-
-    describe('when referrals exist in db', () => {
-      beforeEach(async () => {
-        await addReferral(referral1);
-        await addReferral(referral2);
-        await addReferral(referral3);
-      });
-
-      context('with a valid token & id', () => {
-        it('returns successful payload', (done) => {
-          request()
-            .get('/api/v1/referral/')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.referrals.length).to.be.eql(2);
-              expect(res.body).to.have.property('referrals');
-              expect(res.body.referrals[0]).to.have.property('reward');
-              expect(res.body.referrals[0]).to.have.property('status');
-              expect(res.body.referrals[0]).to.have.property('referrerId');
-              expect(res.body.referrals[0].referrerId).to.be.eql(regularUser._id.toString());
-              expect(res.body.referrals[0]).to.have.property('email');
-              expect(res.body.referrals[0].email).to.be.eql('demo1@mail.com');
-              expect(res.body.referrals[0]).to.have.property('referrer');
-              expect(res.body.referrals[0].referrer).to.have.property('email');
-              done();
-            });
-        });
-      });
-
-      context('without token', () => {
-        it('returns error', (done) => {
-          request()
-            .get('/api/v1/referral/')
-            .end((err, res) => {
-              expect(res).to.have.status(403);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Token needed to access resources');
-              done();
-            });
-        });
-      });
-
-      context('when an invalid token is used', () => {
-        beforeEach(async () => {
-          await User.findByIdAndDelete(regularUser._id);
-        });
-        it('returns token error', (done) => {
-          request()
-            .get('/api/v1/referral/')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(404);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Invalid token');
-              done();
-            });
-        });
-      });
-
-      context('when getAllUserReferrals service fails', () => {
-        it('returns the error', (done) => {
-          sinon.stub(Referral, 'aggregate').throws(new Error('Type Error'));
-          request()
-            .get('/api/v1/referral/')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(500);
-              done();
-              Referral.aggregate.restore();
-            });
-        });
       });
     });
   });
