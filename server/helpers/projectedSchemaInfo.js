@@ -84,7 +84,7 @@ export const NON_PROJECTED_USER_INFO = (infoType, userRole = null) => {
 export const getExcludedTransactionInfo = (userRole) =>
   userRole === USER_ROLE.USER ? { remittance: 0 } : {};
 
-export const projectRefereeIfAdmin = (userRole) =>
+export const projectedReferralInfoForAdmin = (userRole) =>
   userRole === USER_ROLE.ADMIN
     ? {
         'referee._id': 1,
@@ -92,5 +92,6 @@ export const projectRefereeIfAdmin = (userRole) =>
         'referee.firstName': 1,
         'referee.lastName': 1,
         'referee.phone': 1,
+        propertyInfo: 1,
       }
     : {};

@@ -27,6 +27,8 @@ import {
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
   currentDate,
 } from '../helpers';
+import PropertyFactory from '../factories/property.factory';
+import { addProperty } from '../../server/services/property.service';
 
 let sendMailStub;
 const sandbox = sinon.createSandbox();
@@ -247,11 +249,13 @@ describe('Referral Controller', () => {
       { generateId: true },
     );
 
+    const property = PropertyFactory.build({ addedBy: vendorUser._id }, { generateId: true });
+
     const offer = OfferFactory.build(
       {
         enquiryId: mongoose.Types.ObjectId(),
         vendorId: vendorUser._id,
-        propertyId: mongoose.Types.ObjectId(),
+        propertyId: property._id,
         userId: regularUser._id,
         totalAmountPayable: 100_000,
         initialPayment: 50_000,
@@ -336,6 +340,7 @@ describe('Referral Controller', () => {
       vendorToken = await addUser(vendorUser);
       editorToken = await addUser(editorUser);
       await addUser(referredUser);
+      await addProperty(property);
       await Offer.create(offer);
     });
 
@@ -380,6 +385,7 @@ describe('Referral Controller', () => {
                 );
                 expect(res.body.result[0].referee._id).to.be.eql(regularUser._id.toString());
                 expect(res.body.result[0].referrer._id).to.be.eql(adminUser._id.toString());
+                expect(res.body.result[0].propertyInfo._id).to.be.eql(property._id.toString());
                 done();
               });
           });

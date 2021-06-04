@@ -15,7 +15,7 @@ import { getUserById, getUserByEmail } from './user.service';
 import { getPaymentDuration } from './transaction.service';
 import { REFERRAL_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { projectRefereeIfAdmin } from '../helpers/projectedSchemaInfo';
+import { projectedReferralInfoForAdmin } from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -168,10 +168,24 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
         as: 'offerInfo',
       },
     },
-    { $unwind: '$referrer' },
     {
       $unwind: {
         path: '$offerInfo',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'offerInfo.propertyId',
+        foreignField: '_id',
+        as: 'propertyInfo',
+      },
+    },
+    { $unwind: '$referrer' },
+    {
+      $unwind: {
+        path: '$propertyInfo',
         preserveNullAndEmptyArrays: true,
       },
     },
@@ -190,7 +204,7 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
         'referrer.lastName': 1,
         'referrer.phone': 1,
         offerInfo: 1,
-        ...projectRefereeIfAdmin(user.role),
+        ...projectedReferralInfoForAdmin(user.role),
       },
     },
     {
