@@ -16,6 +16,9 @@ import { getPaymentDuration } from './transaction.service';
 import { REFERRAL_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { projectedReferralInfoForAdmin } from '../helpers/projectedSchemaInfo';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../helpers/notifications';
+import { getMoneyFormat } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -146,8 +149,10 @@ export const updateReferralToRewarded = async ({ referralId, adminId }) => {
     );
   }
 
+  const referrer = await getUserById(referral.referrerId);
+
   try {
-    return Referral.findByIdAndUpdate(
+    const rewardedReferral = await Referral.findByIdAndUpdate(
       referral._id,
       {
         $set: {
@@ -159,6 +164,17 @@ export const updateReferralToRewarded = async ({ referralId, adminId }) => {
       },
       { new: true },
     );
+
+    const description = `You have recieved ${getMoneyFormat(
+      referral.reward.amount,
+    )} as commission for your referral`;
+
+    await createNotification(NOTIFICATIONS.REWARD_REFERRAL, referral.referrerId, {
+      actionId: referral._id,
+      description,
+    });
+
+    return { referral: rewardedReferral, referrer };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error rewarding referral', error);
   }

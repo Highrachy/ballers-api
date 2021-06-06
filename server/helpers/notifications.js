@@ -111,6 +111,11 @@ const NOTIFICATIONS = {
     description: 'Your raised comment has been resolved.',
     type: NOTIFICATION_TYPE.INFO,
   },
+  REWARD_REFERRAL: {
+    action: NOTIFICATION_ACTION.REFERRAL,
+    description: 'You have recieved [amount] as commission for your referral',
+    type: NOTIFICATION_TYPE.SUCCESS,
+  },
   SCHEDULE_VISIT_USER: {
     action: NOTIFICATION_ACTION.VISITATION,
     description: 'Your visitation to [property] has been scheduled for [date]',

@@ -13,6 +13,9 @@ import UserFactory from '../factories/user.factory';
 import Referral from '../../server/models/referral.model';
 import User from '../../server/models/user.model';
 import { REFERRAL_STATUS, REWARD_STATUS, USER_ROLE } from '../../server/helpers/constants';
+import { expectNewNotificationToBeAdded } from '../helpers';
+import NOTIFICATIONS from '../../server/helpers/notifications';
+import { getMoneyFormat } from '../../server/helpers/funtions';
 
 describe('Referral Service', () => {
   describe('#addReferral', () => {
@@ -76,7 +79,7 @@ describe('Referral Service', () => {
     const referral = ReferralFactory.build({
       _id: referralId,
       referrerId,
-      'reward.status': REWARD_STATUS.PAYMENT_COMPLETED,
+      reward: { status: REWARD_STATUS.PAYMENT_COMPLETED, amount: 100_000 },
     });
     const referrer = UserFactory.build({ _id: referrerId });
     const admin = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
@@ -92,10 +95,28 @@ describe('Referral Service', () => {
           referralId,
           adminId: admin._id,
         });
-        expect(registeredReferral._id).to.eql(referralId);
-        expect(registeredReferral.referrerId).to.eql(referrerId);
-        expect(registeredReferral.status).to.eql(REFERRAL_STATUS.REWARDED);
-        expect(registeredReferral.reward.status).to.eql(REWARD_STATUS.REFERRAL_PAID);
+        expect(registeredReferral.referral._id).to.eql(referralId);
+        expect(registeredReferral.referral.referrerId).to.eql(referrerId);
+        expect(registeredReferral.referral.status).to.eql(REFERRAL_STATUS.REWARDED);
+        expect(registeredReferral.referral.reward.status).to.eql(REWARD_STATUS.REFERRAL_PAID);
+      });
+    });
+
+    context('when new notification is added', () => {
+      beforeEach(async () => {
+        await updateReferralToRewarded({
+          referralId,
+          adminId: admin._id,
+        });
+      });
+
+      const description = `You have recieved ${getMoneyFormat(
+        referral.reward.amount,
+      )} as commission for your referral`;
+
+      expectNewNotificationToBeAdded(NOTIFICATIONS.REWARD_REFERRAL, referrerId, {
+        description,
+        actionId: referralId,
       });
     });
 

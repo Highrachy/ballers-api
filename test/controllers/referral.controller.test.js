@@ -693,6 +693,8 @@ describe('Referral Controller', () => {
             expect(res.body.referral._id).to.be.eql(referralId.toString());
             expect(res.body.referral.status).to.be.eql(REFERRAL_STATUS.REWARDED);
             expect(res.body.referral.reward.status).to.be.eql(REWARD_STATUS.REFERRAL_PAID);
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.REWARD_REFERRAL);
             done();
           });
       });
@@ -714,6 +716,7 @@ describe('Referral Controller', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Payment for offer has not been completed');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -735,6 +738,7 @@ describe('Referral Controller', () => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Referral has been paid previously');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -750,6 +754,7 @@ describe('Referral Controller', () => {
             expect(res.body.success).to.be.eql(false);
             expect(res.body.error.statusCode).to.be.eql(404);
             expect(res.body.error.message).to.be.eql('Referral not found');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -773,6 +778,7 @@ describe('Referral Controller', () => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Token needed to access resources');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -788,6 +794,7 @@ describe('Referral Controller', () => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -803,6 +810,7 @@ describe('Referral Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(400);
             expect(res.body.success).to.be.eql(false);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
             Referral.findByIdAndUpdate.restore();
           });
@@ -822,6 +830,7 @@ describe('Referral Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Referral Id" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -837,6 +846,7 @@ describe('Referral Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.error.statusCode).to.be.eql(404);
               expect(res.body.error.message).to.be.eql('Referral not found');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });

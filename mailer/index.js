@@ -114,6 +114,11 @@ const EMAIL_CONTENT = {
       "You (or someone pretending to be you) requested a password reset for your account. If you didn't made this request you can ignore this email.",
     subject: 'Password Reset',
   },
+  REWARD_REFERRAL: {
+    subject: 'Referral Rewarded',
+    contentTop:
+      'You have recieved [amount] as commission for your referral. Visit your dashboard for more information.',
+  },
   SCHEDULE_VISIT: {
     subject: 'You have a new inspection request',
     contentTop: 'A new propery visit has been requested',
