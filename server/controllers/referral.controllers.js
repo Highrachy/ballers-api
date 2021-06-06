@@ -22,7 +22,8 @@ const ReferralController = {
 
   updateReferralToRewarded(req, res, next) {
     const { referralId } = req.locals;
-    updateReferralToRewarded(referralId)
+    const adminId = req.user._id;
+    updateReferralToRewarded({ referralId, adminId })
       .then((referral) => {
         res.status(httpStatus.OK).json({ success: true, message: 'Referral rewarded', referral });
       })

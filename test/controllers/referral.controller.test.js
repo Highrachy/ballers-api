@@ -26,6 +26,7 @@ import {
   itReturnsNoResultWhenNoFilterParameterIsMatched,
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
   currentDate,
+  itReturnsForbiddenForTokenWithInvalidAccess,
 } from '../helpers';
 import PropertyFactory from '../factories/property.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -655,15 +656,26 @@ describe('Referral Controller', () => {
   });
 
   describe('Reward a referral', () => {
+    const method = 'put';
+    const endpoint = '/api/v1/referral/rewarded';
     const referralId = mongoose.Types.ObjectId();
     const invalidId = mongoose.Types.ObjectId();
-    const referral = ReferralFactory.build({ _id: referralId, referrerId: adminUser._id });
+    const referral = ReferralFactory.build({
+      _id: referralId,
+      referrerId: adminUser._id,
+      'reward.status': REWARD_STATUS.PAYMENT_COMPLETED,
+    });
+    const vendorUser = UserFactory.build(
+      { role: USER_ROLE.VENDOR, activated: true },
+      { generateId: true },
+    );
 
     const referralDetails = {
       referralId,
     };
 
     beforeEach(async () => {
+      await addUser(vendorUser);
       await addReferral(referral);
     });
 
@@ -685,6 +697,72 @@ describe('Referral Controller', () => {
           });
       });
     });
+
+    context('when offer payment is not complete', () => {
+      beforeEach(async () => {
+        await Referral.findByIdAndUpdate(referralId, {
+          'reward.status': REWARD_STATUS.PAYMENT_IN_PROGRESS,
+        });
+      });
+
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/referral/rewarded')
+          .set('authorization', adminToken)
+          .send(referralDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Payment for offer has not been completed');
+            done();
+          });
+      });
+    });
+
+    context('when referral has been paid', () => {
+      beforeEach(async () => {
+        await Referral.findByIdAndUpdate(referralId, {
+          'reward.status': REWARD_STATUS.REFERRAL_PAID,
+        });
+      });
+
+      it('returns error', (done) => {
+        request()
+          .put('/api/v1/referral/rewarded')
+          .set('authorization', adminToken)
+          .send(referralDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Referral has been paid previously');
+            done();
+          });
+      });
+    });
+
+    context('with invalid referral id', () => {
+      it('returns not found', (done) => {
+        request()
+          .put('/api/v1/referral/rewarded')
+          .set('authorization', adminToken)
+          .send({ referralId: mongoose.Types.ObjectId() })
+          .end((err, res) => {
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.error.statusCode).to.be.eql(404);
+            expect(res.body.error.message).to.be.eql('Referral not found');
+            done();
+          });
+      });
+    });
+
+    [regularUser, vendorUser].map((user) =>
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user,
+        useExistingUser: true,
+      }),
+    );
 
     context('without token', () => {
       it('returns error', (done) => {

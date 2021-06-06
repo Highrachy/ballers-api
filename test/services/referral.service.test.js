@@ -12,7 +12,7 @@ import ReferralFactory from '../factories/referral.factory';
 import UserFactory from '../factories/user.factory';
 import Referral from '../../server/models/referral.model';
 import User from '../../server/models/user.model';
-import { REFERRAL_STATUS, REWARD_STATUS } from '../../server/helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS, USER_ROLE } from '../../server/helpers/constants';
 
 describe('Referral Service', () => {
   describe('#addReferral', () => {
@@ -73,17 +73,25 @@ describe('Referral Service', () => {
   describe('#updateReferralToRewarded', () => {
     const referralId = mongoose.Types.ObjectId();
     const referrerId = mongoose.Types.ObjectId();
-    const referral = ReferralFactory.build({ _id: referralId, referrerId });
+    const referral = ReferralFactory.build({
+      _id: referralId,
+      referrerId,
+      'reward.status': REWARD_STATUS.PAYMENT_COMPLETED,
+    });
     const referrer = UserFactory.build({ _id: referrerId });
+    const admin = UserFactory.build({ role: USER_ROLE.ADMIN }, { generateId: true });
 
     beforeEach(async () => {
-      await User.create(referrer);
+      await User.insertMany([referrer, admin]);
       await addReferral(referral);
     });
 
     context('when referral is rewarded', () => {
       it('returns a valid updated referral', async () => {
-        const registeredReferral = await updateReferralToRewarded(referralId);
+        const registeredReferral = await updateReferralToRewarded({
+          referralId,
+          adminId: admin._id,
+        });
         expect(registeredReferral._id).to.eql(referralId);
         expect(registeredReferral.referrerId).to.eql(referrerId);
         expect(registeredReferral.status).to.eql(REFERRAL_STATUS.REWARDED);
@@ -95,7 +103,10 @@ describe('Referral Service', () => {
       it('throws an error', async () => {
         sinon.stub(Referral, 'findByIdAndUpdate').throws(new Error('error msg'));
         try {
-          await updateReferralToRewarded(referralId);
+          await updateReferralToRewarded({
+            referralId,
+            adminId: admin._id,
+          });
         } catch (err) {
           expect(err.statusCode).to.eql(400);
           expect(err.message).to.be.eql('Error rewarding referral');

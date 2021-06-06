@@ -130,15 +130,33 @@ export const getReferralById = async (referralId) => {
   return referral;
 };
 
-export const updateReferralToRewarded = async (referralId) => {
+export const updateReferralToRewarded = async ({ referralId, adminId }) => {
   const referral = await getReferralById(referralId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  if (referral.reward.status === REWARD_STATUS.REFERRAL_PAID) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Referral has been paid previously');
+  }
+
+  if (referral.reward.status !== REWARD_STATUS.PAYMENT_COMPLETED) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Payment for offer has not been completed',
+    );
+  }
+
   try {
     return Referral.findByIdAndUpdate(
       referral._id,
-      { $set: { status: REFERRAL_STATUS.REWARDED, 'reward.status': REWARD_STATUS.REFERRAL_PAID } },
+      {
+        $set: {
+          status: REFERRAL_STATUS.REWARDED,
+          'reward.status': REWARD_STATUS.REFERRAL_PAID,
+          'reward.paidBy': adminId,
+          'reward.paidOn': Date.now(),
+        },
+      },
       { new: true },
     );
   } catch (error) {
