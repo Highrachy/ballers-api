@@ -345,6 +345,7 @@ export const TRANSACTION_FILTERS = {
   remittedBy: { key: 'remittance.by', type: FILTER_TYPE.OBJECT_ID },
   remittedDate: { key: 'remittance.date', type: FILTER_TYPE.DATE },
   remittedPercentage: { key: 'remittance.percentage', type: FILTER_TYPE.INTEGER },
+  remittanceStatus: { key: 'remittance.status', type: FILTER_TYPE.BOOLEAN },
 };
 
 export const REFERRAL_FILTERS = {

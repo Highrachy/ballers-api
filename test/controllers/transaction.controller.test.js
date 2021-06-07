@@ -133,6 +133,7 @@ describe('Transaction Controller', () => {
           by: adminUser._id,
           percentage: 7,
           date: '2020-11-11',
+          status: false,
         },
       },
       { generateId: true },
@@ -183,6 +184,7 @@ describe('Transaction Controller', () => {
           by: adminUser._id,
           percentage: 14,
           date: '2002-11-11',
+          status: false,
         },
         createdAt: pastDate,
       },
@@ -421,6 +423,7 @@ describe('Transaction Controller', () => {
           by: testAdmin._id,
           percentage: 7,
           date: '2020-11-11',
+          status: true,
         },
       };
       beforeEach(async () => {
@@ -1179,6 +1182,7 @@ describe('Transaction Controller', () => {
               expect(res.body.transaction.remittance.by).to.be.eql(adminUser._id.toString());
               expect(res.body.transaction.remittance.date).to.have.string(data.date);
               expect(res.body.transaction.remittance.percentage).to.be.eql(5);
+              expect(res.body.transaction.remittance.status).to.be.eql(true);
               expect(sendMailStub.callCount).to.eq(1);
               expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.REMITTANCE_PAID);
               done();
