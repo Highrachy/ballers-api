@@ -113,7 +113,7 @@ const NOTIFICATIONS = {
   },
   REWARD_REFERRAL: {
     action: NOTIFICATION_ACTION.REFERRAL,
-    description: 'You have recieved [amount] as commission for your referral',
+    description: 'You have received a referral bonus of [amount] as commission for your referral',
     type: NOTIFICATION_TYPE.SUCCESS,
   },
   SCHEDULE_VISIT_USER: {

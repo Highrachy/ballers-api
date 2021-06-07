@@ -115,9 +115,9 @@ const EMAIL_CONTENT = {
     subject: 'Password Reset',
   },
   REWARD_REFERRAL: {
-    subject: 'Referral Rewarded',
+    subject: 'You have received a referral bonus of [amount]',
     contentTop:
-      'You have recieved [amount] as commission for your referral. Visit your dashboard for more information.',
+      'You have received a referral bonus of [amount] as commission for your referral. Visit your dashboard for more information.',
   },
   SCHEDULE_VISIT: {
     subject: 'You have a new inspection request',

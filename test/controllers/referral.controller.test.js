@@ -657,7 +657,7 @@ describe('Referral Controller', () => {
 
   describe('Reward a referral', () => {
     const method = 'put';
-    const endpoint = '/api/v1/referral/rewarded';
+    const endpoint = '/api/v1/referral/reward';
     const referralId = mongoose.Types.ObjectId();
     const invalidId = mongoose.Types.ObjectId();
     const referral = ReferralFactory.build({
@@ -682,7 +682,7 @@ describe('Referral Controller', () => {
     context('with valid data & token', () => {
       it('returns assigned referral', (done) => {
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .set('authorization', adminToken)
           .send(referralDetails)
           .end((err, res) => {
@@ -709,7 +709,7 @@ describe('Referral Controller', () => {
 
       it('returns error', (done) => {
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .set('authorization', adminToken)
           .send(referralDetails)
           .end((err, res) => {
@@ -731,7 +731,7 @@ describe('Referral Controller', () => {
 
       it('returns error', (done) => {
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .set('authorization', adminToken)
           .send(referralDetails)
           .end((err, res) => {
@@ -747,7 +747,7 @@ describe('Referral Controller', () => {
     context('with invalid referral id', () => {
       it('returns not found', (done) => {
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .set('authorization', adminToken)
           .send({ referralId: mongoose.Types.ObjectId() })
           .end((err, res) => {
@@ -772,7 +772,7 @@ describe('Referral Controller', () => {
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .send(referralDetails)
           .end((err, res) => {
             expect(res).to.have.status(403);
@@ -787,7 +787,7 @@ describe('Referral Controller', () => {
     context('with unauthorized user access token', () => {
       it('returns error', (done) => {
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .set('authorization', userToken)
           .send(referralDetails)
           .end((err, res) => {
@@ -804,7 +804,7 @@ describe('Referral Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Referral, 'findByIdAndUpdate').throws(new Error('Type Error'));
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .set('authorization', adminToken)
           .send(referralDetails)
           .end((err, res) => {
@@ -822,7 +822,7 @@ describe('Referral Controller', () => {
         it('returns an error', (done) => {
           const invalidData = { referralId: '' };
           request()
-            .put('/api/v1/referral/rewarded')
+            .put(endpoint)
             .set('authorization', adminToken)
             .send(invalidData)
             .end((err, res) => {
@@ -839,7 +839,7 @@ describe('Referral Controller', () => {
         it('returns an error', (done) => {
           const invalidData = { referralId: invalidId };
           request()
-            .put('/api/v1/referral/rewarded')
+            .put(endpoint)
             .set('authorization', adminToken)
             .send(invalidData)
             .end((err, res) => {

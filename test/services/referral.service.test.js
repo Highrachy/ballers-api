@@ -110,7 +110,7 @@ describe('Referral Service', () => {
         });
       });
 
-      const description = `You have recieved ${getMoneyFormat(
+      const description = `You have received a referral bonus of ${getMoneyFormat(
         referral.reward.amount,
       )} as commission for your referral`;
 

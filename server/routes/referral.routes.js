@@ -30,7 +30,7 @@ router.get('/all', authenticate, ReferralController.getAllReferrals);
 
 /**
  * @swagger
- * /referral/rewarded:
+ * /referral/reward:
  *   put:
  *     tags:
  *       - Referral
@@ -52,7 +52,7 @@ router.get('/all', authenticate, ReferralController.getAllReferrals);
  *       description: Internal server error
  */
 router.put(
-  '/rewarded',
+  '/reward',
   authenticate,
   isAdmin,
   schemaValidation(updateReferralSchema),
