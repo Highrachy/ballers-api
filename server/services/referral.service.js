@@ -261,7 +261,12 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
           as: 'referee',
         },
       },
-      { $unwind: '$referee' },
+      {
+        $unwind: {
+          path: '$referee',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
     );
   }
 
