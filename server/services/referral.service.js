@@ -165,7 +165,7 @@ export const updateReferralToRewarded = async ({ referralId, adminId }) => {
       { new: true },
     );
 
-    const description = `You have recieved ${getMoneyFormat(
+    const description = `You have received a referral bonus of ${getMoneyFormat(
       referral.reward.amount,
     )} as commission for your referral`;
 
