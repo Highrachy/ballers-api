@@ -26,6 +26,7 @@ import {
   itReturnsNoResultWhenNoFilterParameterIsMatched,
   itReturnAllResultsWhenAnUnknownFilterIsUsed,
   currentDate,
+  itReturnsForbiddenForTokenWithInvalidAccess,
 } from '../helpers';
 import PropertyFactory from '../factories/property.factory';
 import { addProperty } from '../../server/services/property.service';
@@ -655,22 +656,33 @@ describe('Referral Controller', () => {
   });
 
   describe('Reward a referral', () => {
+    const method = 'put';
+    const endpoint = '/api/v1/referral/reward';
     const referralId = mongoose.Types.ObjectId();
     const invalidId = mongoose.Types.ObjectId();
-    const referral = ReferralFactory.build({ _id: referralId, referrerId: adminUser._id });
+    const referral = ReferralFactory.build({
+      _id: referralId,
+      referrerId: adminUser._id,
+      'reward.status': REWARD_STATUS.PAYMENT_COMPLETED,
+    });
+    const vendorUser = UserFactory.build(
+      { role: USER_ROLE.VENDOR, activated: true },
+      { generateId: true },
+    );
 
     const referralDetails = {
       referralId,
     };
 
     beforeEach(async () => {
+      await addUser(vendorUser);
       await addReferral(referral);
     });
 
     context('with valid data & token', () => {
       it('returns assigned referral', (done) => {
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .set('authorization', adminToken)
           .send(referralDetails)
           .end((err, res) => {
@@ -681,20 +693,92 @@ describe('Referral Controller', () => {
             expect(res.body.referral._id).to.be.eql(referralId.toString());
             expect(res.body.referral.status).to.be.eql(REFERRAL_STATUS.REWARDED);
             expect(res.body.referral.reward.status).to.be.eql(REWARD_STATUS.REFERRAL_PAID);
+            expect(sendMailStub.callCount).to.eq(1);
+            expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.REWARD_REFERRAL);
             done();
           });
       });
     });
 
+    context('when offer payment is not complete', () => {
+      beforeEach(async () => {
+        await Referral.findByIdAndUpdate(referralId, {
+          'reward.status': REWARD_STATUS.PAYMENT_IN_PROGRESS,
+        });
+      });
+
+      it('returns error', (done) => {
+        request()
+          .put(endpoint)
+          .set('authorization', adminToken)
+          .send(referralDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Payment for offer has not been completed');
+            expect(sendMailStub.callCount).to.eq(0);
+            done();
+          });
+      });
+    });
+
+    context('when referral has been paid', () => {
+      beforeEach(async () => {
+        await Referral.findByIdAndUpdate(referralId, {
+          'reward.status': REWARD_STATUS.REFERRAL_PAID,
+        });
+      });
+
+      it('returns error', (done) => {
+        request()
+          .put(endpoint)
+          .set('authorization', adminToken)
+          .send(referralDetails)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Referral has been paid previously');
+            expect(sendMailStub.callCount).to.eq(0);
+            done();
+          });
+      });
+    });
+
+    context('with invalid referral id', () => {
+      it('returns not found', (done) => {
+        request()
+          .put(endpoint)
+          .set('authorization', adminToken)
+          .send({ referralId: mongoose.Types.ObjectId() })
+          .end((err, res) => {
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.error.statusCode).to.be.eql(404);
+            expect(res.body.error.message).to.be.eql('Referral not found');
+            expect(sendMailStub.callCount).to.eq(0);
+            done();
+          });
+      });
+    });
+
+    [regularUser, vendorUser].map((user) =>
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user,
+        useExistingUser: true,
+      }),
+    );
+
     context('without token', () => {
       it('returns error', (done) => {
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .send(referralDetails)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Token needed to access resources');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -703,13 +787,14 @@ describe('Referral Controller', () => {
     context('with unauthorized user access token', () => {
       it('returns error', (done) => {
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .set('authorization', userToken)
           .send(referralDetails)
           .end((err, res) => {
             expect(res).to.have.status(403);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('You are not permitted to perform this action');
+            expect(sendMailStub.callCount).to.eq(0);
             done();
           });
       });
@@ -719,12 +804,13 @@ describe('Referral Controller', () => {
       it('returns the error', (done) => {
         sinon.stub(Referral, 'findByIdAndUpdate').throws(new Error('Type Error'));
         request()
-          .put('/api/v1/referral/rewarded')
+          .put(endpoint)
           .set('authorization', adminToken)
           .send(referralDetails)
           .end((err, res) => {
             expect(res).to.have.status(400);
             expect(res.body.success).to.be.eql(false);
+            expect(sendMailStub.callCount).to.eq(0);
             done();
             Referral.findByIdAndUpdate.restore();
           });
@@ -736,7 +822,7 @@ describe('Referral Controller', () => {
         it('returns an error', (done) => {
           const invalidData = { referralId: '' };
           request()
-            .put('/api/v1/referral/rewarded')
+            .put(endpoint)
             .set('authorization', adminToken)
             .send(invalidData)
             .end((err, res) => {
@@ -744,6 +830,7 @@ describe('Referral Controller', () => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
               expect(res.body.error).to.be.eql('"Referral Id" is not allowed to be empty');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });
@@ -752,13 +839,14 @@ describe('Referral Controller', () => {
         it('returns an error', (done) => {
           const invalidData = { referralId: invalidId };
           request()
-            .put('/api/v1/referral/rewarded')
+            .put(endpoint)
             .set('authorization', adminToken)
             .send(invalidData)
             .end((err, res) => {
               expect(res.body.success).to.be.eql(false);
               expect(res.body.error.statusCode).to.be.eql(404);
               expect(res.body.error.message).to.be.eql('Referral not found');
+              expect(sendMailStub.callCount).to.eq(0);
               done();
             });
         });

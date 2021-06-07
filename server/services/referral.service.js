@@ -16,6 +16,9 @@ import { getPaymentDuration } from './transaction.service';
 import { REFERRAL_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { projectedReferralInfoForAdmin } from '../helpers/projectedSchemaInfo';
+import { createNotification } from './notification.service';
+import NOTIFICATIONS from '../helpers/notifications';
+import { getMoneyFormat } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -130,17 +133,48 @@ export const getReferralById = async (referralId) => {
   return referral;
 };
 
-export const updateReferralToRewarded = async (referralId) => {
+export const updateReferralToRewarded = async ({ referralId, adminId }) => {
   const referral = await getReferralById(referralId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
+  if (referral.reward.status === REWARD_STATUS.REFERRAL_PAID) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Referral has been paid previously');
+  }
+
+  if (referral.reward.status !== REWARD_STATUS.PAYMENT_COMPLETED) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Payment for offer has not been completed',
+    );
+  }
+
+  const referrer = await getUserById(referral.referrerId);
+
   try {
-    return Referral.findByIdAndUpdate(
+    const rewardedReferral = await Referral.findByIdAndUpdate(
       referral._id,
-      { $set: { status: REFERRAL_STATUS.REWARDED, 'reward.status': REWARD_STATUS.REFERRAL_PAID } },
+      {
+        $set: {
+          status: REFERRAL_STATUS.REWARDED,
+          'reward.status': REWARD_STATUS.REFERRAL_PAID,
+          'reward.paidBy': adminId,
+          'reward.paidOn': Date.now(),
+        },
+      },
       { new: true },
     );
+
+    const description = `You have received a referral bonus of ${getMoneyFormat(
+      referral.reward.amount,
+    )} as commission for your referral`;
+
+    await createNotification(NOTIFICATIONS.REWARD_REFERRAL, referral.referrerId, {
+      actionId: referral._id,
+      description,
+    });
+
+    return { referral: rewardedReferral, referrer };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error rewarding referral', error);
   }

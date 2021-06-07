@@ -22,8 +22,13 @@ const ReferralController = {
 
   updateReferralToRewarded(req, res, next) {
     const { referralId } = req.locals;
-    updateReferralToRewarded(referralId)
-      .then((referral) => {
+    const adminId = req.user._id;
+    updateReferralToRewarded({ referralId, adminId })
+      .then(({ referral, referrer }) => {
+        const subject = `You have received a referral bonus of ${referral.reward.amount}`;
+        const contentTop = `You have received a referral bonus of ${referral.reward.amount} as commission for your referral. Visit your dashboard for more information.`;
+        sendMail(EMAIL_CONTENT.REWARD_REFERRAL, referrer, { contentTop, subject });
+
         res.status(httpStatus.OK).json({ success: true, message: 'Referral rewarded', referral });
       })
       .catch((error) => next(error));
