@@ -269,7 +269,7 @@ describe('Referral Controller', () => {
     );
 
     const userReferrals = ReferralFactory.buildList(
-      10,
+      8,
       {
         referrerId: regularUser._id,
         userId: referredUser._id,
@@ -282,6 +282,15 @@ describe('Referral Controller', () => {
           paidBy: vendorUser._id,
           paidOn: currentDate,
         },
+      },
+      { generateId: true },
+    );
+    const referralsWithoutUsers = ReferralFactory.buildList(
+      2,
+      {
+        referrerId: regularUser._id,
+        createdAt: currentDate,
+        status: REFERRAL_STATUS.SENT,
       },
       { generateId: true },
     );
@@ -362,6 +371,7 @@ describe('Referral Controller', () => {
             ...userReferrals,
             ...editorReferrals,
             ...vendorReferrals,
+            ...referralsWithoutUsers,
           ]);
         });
 
@@ -471,6 +481,7 @@ describe('Referral Controller', () => {
           ...userReferrals,
           ...editorReferrals,
           ...vendorReferrals,
+          ...referralsWithoutUsers,
         ]);
       });
 
