@@ -328,7 +328,7 @@ describe('Referral Controller', () => {
       },
       { generateId: true },
     );
-    const referral = ReferralFactory.build(
+    const adminReferral = ReferralFactory.build(
       {
         referrerId: adminUser._id,
         userId: regularUser._id,
@@ -367,7 +367,7 @@ describe('Referral Controller', () => {
       describe('when referrals exist in db', () => {
         beforeEach(async () => {
           await Referral.insertMany([
-            referral,
+            adminReferral,
             ...userReferrals,
             ...editorReferrals,
             ...vendorReferrals,
@@ -389,7 +389,7 @@ describe('Referral Controller', () => {
               .set('authorization', adminToken)
               .end((err, res) => {
                 expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
-                expect(res.body.result[0]._id).to.be.eql(referral._id.toString());
+                expect(res.body.result[0]._id).to.be.eql(adminReferral._id.toString());
                 expect(res.body.result[0].offerInfo._id).to.be.eql(offer._id.toString());
                 expect(res.body.result[0].offerInfo.totalAmountPayable).to.be.eql(
                   offer.totalAmountPayable,
@@ -477,12 +477,55 @@ describe('Referral Controller', () => {
     describe('Referral filter', () => {
       beforeEach(async () => {
         await Referral.insertMany([
-          referral,
+          adminReferral,
           ...userReferrals,
           ...editorReferrals,
           ...vendorReferrals,
           ...referralsWithoutUsers,
         ]);
+      });
+
+      context('when admin tries to get all his referrals', () => {
+        const filter = {
+          referrerId: adminUser._id.toString(),
+        };
+        const filteredParams = querystring.stringify(filter);
+        it('returns all owned referrals', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                total: 1,
+                totalPage: 1,
+                result: 1,
+              });
+              expect(res.body.result[0]._id).to.be.eql(adminReferral._id.toString());
+              done();
+            });
+        });
+      });
+
+      context('when user tries to get referral of another user', () => {
+        const filter = {
+          referrerId: adminUser._id.toString(),
+        };
+        const filteredParams = querystring.stringify(filter);
+        it('returns empty result', (done) => {
+          request()
+            [method](`${endpoint}?${filteredParams}`)
+            .set('authorization', userToken)
+            .end((err, res) => {
+              expectsPaginationToReturnTheRightValues(res, {
+                ...defaultPaginationResult,
+                total: 0,
+                totalPage: 0,
+                result: 0,
+              });
+              done();
+            });
+        });
       });
 
       describe('Unknown Filters', () => {
@@ -502,10 +545,10 @@ describe('Referral Controller', () => {
 
       context('when multiple filters are used', () => {
         const multipleFilters = {
-          status: referral.status,
-          referrerId: referral.referrerId,
-          rewardAmount: referral.reward.amount,
-          rewardStatus: referral.reward.status,
+          status: adminReferral.status,
+          referrerId: adminReferral.referrerId.toString(),
+          rewardAmount: adminReferral.reward.amount,
+          rewardStatus: adminReferral.reward.status,
         };
         const filteredParams = querystring.stringify(multipleFilters);
 
@@ -522,7 +565,7 @@ describe('Referral Controller', () => {
                 total: 1,
                 totalPage: 1,
               });
-              expect(res.body.result[0]._id).to.be.eql(referral._id.toString());
+              expect(res.body.result[0]._id).to.be.eql(adminReferral._id.toString());
               expect(res.body.result[0].status).to.be.eql(multipleFilters.status);
               expect(res.body.result[0].referrerId).to.be.eql(
                 multipleFilters.referrerId.toString(),
@@ -556,7 +599,7 @@ describe('Referral Controller', () => {
         method,
         endpoint,
         user: adminUser,
-        dataObject: referral,
+        dataObject: adminReferral,
         useExistingUser: true,
       });
     });
