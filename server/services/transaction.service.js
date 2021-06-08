@@ -316,6 +316,7 @@ export const addRemittance = async (remittanceInfo) => {
           'remittance.by': remittanceInfo.adminId,
           'remittance.date': remittanceInfo.date,
           'remittance.percentage': percentage,
+          'remittance.status': true,
         },
       },
       { new: true },

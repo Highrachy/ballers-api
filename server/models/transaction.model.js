@@ -102,6 +102,10 @@ const TransactionSchema = new mongoose.Schema(
       percentage: {
         type: Number,
       },
+      status: {
+        type: Boolean,
+        default: false,
+      },
     },
   },
   { timestamps: true },
