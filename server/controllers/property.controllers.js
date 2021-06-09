@@ -276,9 +276,9 @@ const PropertyController = {
   },
 
   requestToUnflagProperty(req, res, next) {
-    const propertyId = req.params.id;
+    const propertyInfo = req.locals;
     const vendorId = req.user._id;
-    requestToUnflagProperty({ propertyId, vendorId })
+    requestToUnflagProperty({ ...propertyInfo, vendorId })
       .then((property) => {
         res
           .status(httpStatus.OK)

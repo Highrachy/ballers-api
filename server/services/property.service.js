@@ -925,8 +925,8 @@ export const approveProperty = async ({ propertyId, adminId }) => {
   }
 };
 
-export const requestToUnflagProperty = async ({ propertyId, vendorId }) => {
-  const property = await getPropertyById(propertyId).catch((error) => {
+export const requestToUnflagProperty = async (propertyInfo) => {
+  const property = await getPropertyById(propertyInfo.propertyId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
@@ -934,7 +934,7 @@ export const requestToUnflagProperty = async ({ propertyId, vendorId }) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
   }
 
-  if (vendorId.toString() !== property.addedBy.toString()) {
+  if (propertyInfo.vendorId.toString() !== property.addedBy.toString()) {
     throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
   }
 
@@ -943,11 +943,22 @@ export const requestToUnflagProperty = async ({ propertyId, vendorId }) => {
   }
 
   try {
+    const flaggedProperty = await Property.findByIdAndUpdate(
+      property._id,
+      {
+        $set: {
+          'flagged.requestUnflag': true,
+          'flagged.case.0.unflagRequestComment': propertyInfo.comment,
+        },
+      },
+      { new: true },
+    );
+
     await createNotification(NOTIFICATIONS.REQUEST_UNFLAG, property.flagged.case[0].flaggedBy, {
       actionId: property._id,
     });
 
-    return property;
+    return flaggedProperty;
   } catch (error) {
     throw new ErrorHandler(
       httpStatus.BAD_REQUEST,

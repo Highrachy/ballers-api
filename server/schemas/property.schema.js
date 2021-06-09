@@ -148,3 +148,8 @@ export const unflagPropertySchema = Joi.object({
   propertyId: requiredObjectId('Property id'),
   reason: requiredString('Reason'),
 });
+
+export const requestUnflagSchema = Joi.object({
+  propertyId: requiredObjectId('Property id'),
+  comment: requiredString('Comment'),
+});

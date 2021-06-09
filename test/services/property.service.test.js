@@ -306,10 +306,12 @@ describe('Property Service', () => {
       { generateId: true },
     );
 
+    const data = { propertyId: flaggedProperty._id, vendorId, comment: 'Kindly resolve' };
+
     context('when new notification is added', () => {
       beforeEach(async () => {
         await addProperty(flaggedProperty);
-        await requestToUnflagProperty({ propertyId: flaggedProperty._id, vendorId });
+        await requestToUnflagProperty(data);
       });
 
       expectNewNotificationToBeAdded(NOTIFICATIONS.REQUEST_UNFLAG, adminId, {

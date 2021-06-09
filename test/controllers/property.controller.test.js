@@ -1476,7 +1476,7 @@ describe('Property Controller', () => {
       addedBy: vendorUser._id,
 
       createdAt: new Date(),
-      flagged: { status: false },
+      flagged: { status: false, requestUnflag: false },
       approved: { status: false },
     });
     const vendor2Properties = PropertyFactory.buildList(5, {
@@ -1503,7 +1503,7 @@ describe('Property Controller', () => {
         toilets: 1,
         units: 1,
 
-        flagged: { status: true },
+        flagged: { status: true, requestUnflag: true },
         approved: { status: true },
       },
       { generateId: true },
@@ -4843,6 +4843,7 @@ describe('Property Controller', () => {
         addedBy: vendorUser._id,
         flagged: {
           status: true,
+          requestUnflag: false,
           case: [
             {
               _id: mongoose.Types.ObjectId(),
@@ -4856,7 +4857,12 @@ describe('Property Controller', () => {
     );
 
     const method = 'post';
-    const endpoint = `/api/v1/property/request-unflag/${property._id}`;
+    const endpoint = '/api/v1/property/request-unflag';
+
+    const propertyInfo = {
+      propertyId: property._id,
+      comment: 'Issue has been resolved',
+    };
 
     beforeEach(async () => {
       await addProperty(property);
@@ -4867,10 +4873,16 @@ describe('Property Controller', () => {
         request()
           [method](endpoint)
           .set('authorization', vendorToken)
+          .send(propertyInfo)
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Property unflag request sent');
+            expect(res.body.property._id).to.be.eql(property._id.toString());
+            expect(res.body.property.flagged.requestUnflag).to.be.eql(true);
+            expect(res.body.property.flagged.case[0].unflagRequestComment).to.be.eql(
+              propertyInfo.comment,
+            );
             done();
           });
       });
@@ -4884,6 +4896,7 @@ describe('Property Controller', () => {
         request()
           [method](endpoint)
           .set('authorization', vendorToken)
+          .send(propertyInfo)
           .end((err, res) => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
@@ -4896,8 +4909,9 @@ describe('Property Controller', () => {
     context('property id is invalid', () => {
       it('returns not found', (done) => {
         request()
-          [method](`/api/v1/property/request-unflag/${mongoose.Types.ObjectId()}`)
+          [method](endpoint)
           .set('authorization', vendorToken)
+          .send({ ...propertyInfo, propertyId: mongoose.Types.ObjectId() })
           .end((err, res) => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
@@ -4913,18 +4927,20 @@ describe('Property Controller', () => {
           endpoint,
           method,
           user,
+          data: propertyInfo,
           useExistingUser: true,
         }),
       );
     });
 
-    itReturnsForbiddenForNoToken({ endpoint, method });
+    itReturnsForbiddenForNoToken({ endpoint, method, data: propertyInfo });
 
     itReturnsNotFoundForInvalidToken({
       endpoint,
       method,
       user: vendorUser,
       userId: vendorUser._id,
+      data: propertyInfo,
       useExistingUser: true,
     });
   });

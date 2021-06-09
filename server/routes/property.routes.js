@@ -22,6 +22,7 @@ import {
   deleteImageSchema,
   flagPropertySchema,
   unflagPropertySchema,
+  requestUnflagSchema,
 } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -663,7 +664,7 @@ router.put(
 
 /**
  * @swagger
- * /property/request-unflag/:id:
+ * /property/request-unflag:
  *   post:
  *     tags:
  *       - Property
@@ -685,9 +686,9 @@ router.put(
  *       description: Internal server error
  */
 router.post(
-  '/request-unflag/:id',
+  '/request-unflag',
   authenticate,
-  hasValidObjectId,
+  schemaValidation(requestUnflagSchema),
   isVendor,
   PropertyController.requestToUnflagProperty,
 );

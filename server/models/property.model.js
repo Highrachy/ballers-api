@@ -189,6 +189,10 @@ const PropertySchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
+      requestUnflag: {
+        type: Boolean,
+        default: false,
+      },
       case: [
         {
           flaggedBy: {
@@ -207,6 +211,9 @@ const PropertySchema = new mongoose.Schema(
             type: Date,
           },
           unflaggedReason: {
+            type: String,
+          },
+          unflagRequestComment: {
             type: String,
           },
         },
