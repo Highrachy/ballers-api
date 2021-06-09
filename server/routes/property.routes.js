@@ -661,4 +661,35 @@ router.put(
   PropertyController.approveProperty,
 );
 
+/**
+ * @swagger
+ * /property/request-unflag/:id:
+ *   put:
+ *     tags:
+ *       - Property
+ *     description: Request a property for unflagging
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Request a property for unflagging
+ *     responses:
+ *      '200':
+ *        description: Property unflag request sent
+ *      '404':
+ *       description: Property not found
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/request-unflag/:id',
+  authenticate,
+  hasValidObjectId,
+  isVendor,
+  PropertyController.requestToUnflagProperty,
+);
+
 module.exports = router;

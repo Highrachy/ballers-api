@@ -4386,8 +4386,19 @@ describe('Property Controller', () => {
 
     const property = PropertyFactory.build(
       {
-        flagged: { status: false },
         addedBy: vendorUser._id,
+        flagged: {
+          status: false,
+          case: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              flaggedBy: adminUser._id,
+              flaggedReason: 'suspicious activity',
+              unflaggedBy: adminUser._id,
+              unflaggedReason: 'issue resolved',
+            },
+          ],
+        },
       },
       { generateId: true },
     );
@@ -4428,6 +4439,15 @@ describe('Property Controller', () => {
             expect(res.body.property.flagged.status).to.be.eql(true);
             expect(res.body.property.flagged.case[0].flaggedBy).to.be.eql(adminUser._id.toString());
             expect(res.body.property.flagged.case[0].flaggedReason).to.be.eql(data.reason);
+            expect(res.body.property.flagged.case[1]._id).to.be.eql(
+              property.flagged.case[0]._id.toString(),
+            );
+            expect(res.body.property.flagged.case[1].flaggedReason).to.be.eql(
+              property.flagged.case[0].flaggedReason,
+            );
+            expect(res.body.property.flagged.case[1].unflaggedReason).to.be.eql(
+              property.flagged.case[0].unflaggedReason,
+            );
             expect(sendMailStub.callCount).to.eq(1);
             expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.FLAG_PROPERTY);
             done();

@@ -758,19 +758,19 @@ export const flagProperty = async (propertyInfo) => {
     });
   }
 
+  const updatedFlaggedcase = [
+    {
+      flaggedBy: propertyInfo.adminId,
+      flaggedDate: Date.now(),
+      flaggedReason: propertyInfo.reason,
+    },
+    ...property.flagged.case,
+  ];
+
   try {
     const flaggedProperty = await Property.findByIdAndUpdate(
       property._id,
-      {
-        $set: { 'flagged.status': true },
-        $push: {
-          'flagged.case': {
-            flaggedBy: propertyInfo.adminId,
-            flaggedDate: Date.now(),
-            flaggedReason: propertyInfo.reason,
-          },
-        },
-      },
+      { $set: { 'flagged.status': true, 'flagged.case': updatedFlaggedcase } },
       { new: true },
     );
 
@@ -922,5 +922,37 @@ export const approveProperty = async ({ propertyId, adminId }) => {
     return { property: approvedProperty, vendor };
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error approving property', error);
+  }
+};
+
+export const requestToUnflagProperty = async ({ propertyId, vendorId }) => {
+  const property = await getPropertyById(propertyId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  if (!property) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Invalid property');
+  }
+
+  if (vendorId.toString() !== property.addedBy.toString()) {
+    throw new ErrorHandler(httpStatus.FORBIDDEN, 'You are not permitted to perform this action');
+  }
+
+  if (!property.flagged.status) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Property is not flagged');
+  }
+
+  try {
+    await createNotification(NOTIFICATIONS.REQUEST_UNFLAG, property.flagged.case[0].flaggedBy, {
+      actionId: property._id,
+    });
+
+    return property;
+  } catch (error) {
+    throw new ErrorHandler(
+      httpStatus.BAD_REQUEST,
+      'Error requesting property to be unflagged',
+      error,
+    );
   }
 };
