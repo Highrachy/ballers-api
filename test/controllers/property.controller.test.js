@@ -4836,4 +4836,96 @@ describe('Property Controller', () => {
       });
     });
   });
+
+  describe('Request to Unflag Property', () => {
+    const property = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        flagged: {
+          status: true,
+          case: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              flaggedBy: adminUser._id,
+              flaggedReason: 'suspicious activity 1',
+            },
+          ],
+        },
+      },
+      { generateId: true },
+    );
+
+    const method = 'post';
+    const endpoint = `/api/v1/property/request-unflag/${property._id}`;
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Property unflag request sent');
+            done();
+          });
+      });
+    });
+
+    context('property is not flagged', () => {
+      beforeEach(async () => {
+        await Property.findByIdAndUpdate(property._id, { 'flagged.status': false });
+      });
+      it('returns error', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Property is not flagged');
+            done();
+          });
+      });
+    });
+
+    context('property id is invalid', () => {
+      it('returns not found', (done) => {
+        request()
+          [method](`/api/v1/property/request-unflag/${mongoose.Types.ObjectId()}`)
+          .set('authorization', vendorToken)
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser, invalidVendorUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      useExistingUser: true,
+    });
+  });
 });

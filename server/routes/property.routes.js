@@ -664,7 +664,7 @@ router.put(
 /**
  * @swagger
  * /property/request-unflag/:id:
- *   put:
+ *   post:
  *     tags:
  *       - Property
  *     description: Request a property for unflagging
@@ -684,7 +684,7 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.put(
+router.post(
   '/request-unflag/:id',
   authenticate,
   hasValidObjectId,
