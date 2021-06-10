@@ -18,6 +18,7 @@ import nextPayment from './nextPayment.routes';
 import offlinePayment from './offlinePayment.routes';
 import notification from './notification.routes';
 import totalCount from './totalCount.routes';
+import badge from './badge.routes';
 
 export default (app) => {
   app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, { explorer: true }));
@@ -39,4 +40,5 @@ export default (app) => {
   app.use('/api/v1/offline-payment', offlinePayment);
   app.use('/api/v1/notification', notification);
   app.use('/api/v1/total-count', totalCount);
+  app.use('/api/v1/badge', badge);
 };

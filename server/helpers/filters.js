@@ -360,3 +360,5 @@ export const REFERRAL_FILTERS = {
   paidBy: { key: 'reward.paidBy', type: FILTER_TYPE.OBJECT_ID },
   paidOn: { key: 'reward.paidOn', type: FILTER_TYPE.DATE },
 };
+
+export const BADGE_FILTERS = {};
