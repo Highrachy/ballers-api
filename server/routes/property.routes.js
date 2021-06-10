@@ -22,6 +22,7 @@ import {
   deleteImageSchema,
   flagPropertySchema,
   unflagPropertySchema,
+  requestUnflagSchema,
 } from '../schemas/property.schema';
 import PropertyController from '../controllers/property.controllers';
 
@@ -659,6 +660,37 @@ router.put(
   hasValidObjectId,
   isAdmin,
   PropertyController.approveProperty,
+);
+
+/**
+ * @swagger
+ * /property/request-unflag:
+ *   post:
+ *     tags:
+ *       - Property
+ *     description: Request a property for unflagging
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Property'
+ *      description: Request a property for unflagging
+ *     responses:
+ *      '200':
+ *        description: Property unflag request sent
+ *      '404':
+ *       description: Property not found
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/request-unflag',
+  authenticate,
+  schemaValidation(requestUnflagSchema),
+  isVendor,
+  PropertyController.requestToUnflagProperty,
 );
 
 module.exports = router;

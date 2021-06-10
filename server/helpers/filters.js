@@ -222,6 +222,7 @@ export const PROPERTY_FILTERS = {
   units: { type: FILTER_TYPE.INTEGER },
   flagged: { key: 'flagged.status', type: FILTER_TYPE.BOOLEAN },
   approved: { key: 'approved.status', type: FILTER_TYPE.BOOLEAN },
+  requestUnflag: { key: 'flagged.requestUnflag', type: FILTER_TYPE.BOOLEAN },
 };
 
 export const OFFER_FILTERS = {

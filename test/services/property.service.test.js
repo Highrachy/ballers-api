@@ -8,6 +8,7 @@ import {
   getPropertiesWithPaymentPlanId,
   flagProperty,
   approveProperty,
+  requestToUnflagProperty,
 } from '../../server/services/property.service';
 import { addUser } from '../../server/services/user.service';
 import PropertyFactory from '../factories/property.factory';
@@ -273,6 +274,48 @@ describe('Property Service', () => {
           description,
           actionId: unapprovedProperty._id,
         });
+      });
+    });
+  });
+
+  describe('#requestToUnflagProperty', () => {
+    const vendorId = mongoose.Types.ObjectId();
+    const adminId = mongoose.Types.ObjectId();
+
+    const flaggedProperty = PropertyFactory.build(
+      {
+        addedBy: vendorId,
+        flagged: {
+          status: true,
+          case: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              flaggedBy: adminId,
+              flaggedReason: 'suspicious activity 1',
+            },
+            {
+              _id: mongoose.Types.ObjectId(),
+              flaggedBy: mongoose.Types.ObjectId(),
+              flaggedReason: 'suspicious activity 2',
+              unflaggedBy: mongoose.Types.ObjectId(),
+              unflaggedReason: 'issue resolved ',
+            },
+          ],
+        },
+      },
+      { generateId: true },
+    );
+
+    const data = { propertyId: flaggedProperty._id, vendorId, comment: 'Kindly resolve' };
+
+    context('when new notification is added', () => {
+      beforeEach(async () => {
+        await addProperty(flaggedProperty);
+        await requestToUnflagProperty(data);
+      });
+
+      expectNewNotificationToBeAdded(NOTIFICATIONS.REQUEST_UNFLAG, adminId, {
+        actionId: flaggedProperty._id,
       });
     });
   });

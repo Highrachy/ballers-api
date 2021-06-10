@@ -1476,7 +1476,7 @@ describe('Property Controller', () => {
       addedBy: vendorUser._id,
 
       createdAt: new Date(),
-      flagged: { status: false },
+      flagged: { status: false, requestUnflag: false },
       approved: { status: false },
     });
     const vendor2Properties = PropertyFactory.buildList(5, {
@@ -1503,7 +1503,7 @@ describe('Property Controller', () => {
         toilets: 1,
         units: 1,
 
-        flagged: { status: true },
+        flagged: { status: true, requestUnflag: true },
         approved: { status: true },
       },
       { generateId: true },
@@ -4386,8 +4386,19 @@ describe('Property Controller', () => {
 
     const property = PropertyFactory.build(
       {
-        flagged: { status: false },
         addedBy: vendorUser._id,
+        flagged: {
+          status: false,
+          case: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              flaggedBy: adminUser._id,
+              flaggedReason: 'suspicious activity',
+              unflaggedBy: adminUser._id,
+              unflaggedReason: 'issue resolved',
+            },
+          ],
+        },
       },
       { generateId: true },
     );
@@ -4428,6 +4439,15 @@ describe('Property Controller', () => {
             expect(res.body.property.flagged.status).to.be.eql(true);
             expect(res.body.property.flagged.case[0].flaggedBy).to.be.eql(adminUser._id.toString());
             expect(res.body.property.flagged.case[0].flaggedReason).to.be.eql(data.reason);
+            expect(res.body.property.flagged.case[1]._id).to.be.eql(
+              property.flagged.case[0]._id.toString(),
+            );
+            expect(res.body.property.flagged.case[1].flaggedReason).to.be.eql(
+              property.flagged.case[0].flaggedReason,
+            );
+            expect(res.body.property.flagged.case[1].unflaggedReason).to.be.eql(
+              property.flagged.case[0].unflaggedReason,
+            );
             expect(sendMailStub.callCount).to.eq(1);
             expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.FLAG_PROPERTY);
             done();
@@ -4625,6 +4645,7 @@ describe('Property Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Property unflagged');
             expect(res.body.property.flagged.status).to.be.eql(false);
+            expect(res.body.property.flagged.requestUnflag).to.be.eql(false);
             expect(res.body.property.flagged.case[0].unflaggedBy).to.be.eql(
               adminUser._id.toString(),
             );
@@ -4814,6 +4835,115 @@ describe('Property Controller', () => {
             Property.findByIdAndUpdate.restore();
           });
       });
+    });
+  });
+
+  describe('Request to Unflag Property', () => {
+    const property = PropertyFactory.build(
+      {
+        addedBy: vendorUser._id,
+        flagged: {
+          status: true,
+          requestUnflag: false,
+          case: [
+            {
+              _id: mongoose.Types.ObjectId(),
+              flaggedBy: adminUser._id,
+              flaggedReason: 'suspicious activity 1',
+            },
+          ],
+        },
+      },
+      { generateId: true },
+    );
+
+    const method = 'post';
+    const endpoint = '/api/v1/property/request-unflag';
+
+    const propertyInfo = {
+      propertyId: property._id,
+      comment: 'Issue has been resolved',
+    };
+
+    beforeEach(async () => {
+      await addProperty(property);
+    });
+
+    context('with a valid token & id', () => {
+      it('returns successful payload', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(propertyInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Property unflag request sent');
+            expect(res.body.property._id).to.be.eql(property._id.toString());
+            expect(res.body.property.flagged.status).to.be.eql(true);
+            expect(res.body.property.flagged.requestUnflag).to.be.eql(true);
+            expect(res.body.property.flagged.case[0].unflagRequestComment).to.be.eql(
+              propertyInfo.comment,
+            );
+            done();
+          });
+      });
+    });
+
+    context('property is not flagged', () => {
+      beforeEach(async () => {
+        await Property.findByIdAndUpdate(property._id, { 'flagged.status': false });
+      });
+      it('returns error', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send(propertyInfo)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Property is not flagged');
+            done();
+          });
+      });
+    });
+
+    context('property id is invalid', () => {
+      it('returns not found', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', vendorToken)
+          .send({ ...propertyInfo, propertyId: mongoose.Types.ObjectId() })
+          .end((err, res) => {
+            expect(res).to.have.status(404);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Invalid property');
+            done();
+          });
+      });
+    });
+
+    context('when user has invalid access token', () => {
+      [regularUser, adminUser, invalidVendorUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data: propertyInfo,
+          useExistingUser: true,
+        }),
+      );
+    });
+
+    itReturnsForbiddenForNoToken({ endpoint, method, data: propertyInfo });
+
+    itReturnsNotFoundForInvalidToken({
+      endpoint,
+      method,
+      user: vendorUser,
+      userId: vendorUser._id,
+      data: propertyInfo,
+      useExistingUser: true,
     });
   });
 });

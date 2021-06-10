@@ -21,6 +21,7 @@ import {
   unflagProperty,
   getOnePortfolio,
   approveProperty,
+  requestToUnflagProperty,
 } from '../services/property.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -270,6 +271,18 @@ const PropertyController = {
         sendMail(EMAIL_CONTENT.APPROVE_PROPERTY, vendor, { contentTop });
 
         res.status(httpStatus.OK).json({ success: true, message: 'Property approved', property });
+      })
+      .catch((error) => next(error));
+  },
+
+  requestToUnflagProperty(req, res, next) {
+    const propertyInfo = req.locals;
+    const vendorId = req.user._id;
+    requestToUnflagProperty({ ...propertyInfo, vendorId })
+      .then((property) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Property unflag request sent', property });
       })
       .catch((error) => next(error));
   },

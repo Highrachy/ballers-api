@@ -111,6 +111,11 @@ const NOTIFICATIONS = {
     description: 'Your raised comment has been resolved.',
     type: NOTIFICATION_TYPE.INFO,
   },
+  REQUEST_UNFLAG: {
+    action: NOTIFICATION_ACTION.PROPERTY,
+    description: 'You have received a request to unflag a property you recently flagged',
+    type: NOTIFICATION_TYPE.INFO,
+  },
   REWARD_REFERRAL: {
     action: NOTIFICATION_ACTION.REFERRAL,
     description: 'You have received a referral bonus of [amount] as commission for your referral',
