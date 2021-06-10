@@ -804,6 +804,7 @@ export const unflagProperty = async (propertyInfo) => {
       { 'flagged.case._id': propertyInfo.caseId },
       {
         $set: {
+          'flagged.requestUnflag': false,
           'flagged.case.$.unflaggedBy': propertyInfo.adminId,
           'flagged.case.$.unflaggedDate': Date.now(),
           'flagged.case.$.unflaggedReason': propertyInfo.reason,

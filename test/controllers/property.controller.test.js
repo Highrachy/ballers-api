@@ -4645,6 +4645,7 @@ describe('Property Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Property unflagged');
             expect(res.body.property.flagged.status).to.be.eql(false);
+            expect(res.body.property.flagged.requestUnflag).to.be.eql(false);
             expect(res.body.property.flagged.case[0].unflaggedBy).to.be.eql(
               adminUser._id.toString(),
             );
@@ -4879,6 +4880,7 @@ describe('Property Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Property unflag request sent');
             expect(res.body.property._id).to.be.eql(property._id.toString());
+            expect(res.body.property.flagged.status).to.be.eql(true);
             expect(res.body.property.flagged.requestUnflag).to.be.eql(true);
             expect(res.body.property.flagged.case[0].unflagRequestComment).to.be.eql(
               propertyInfo.comment,
