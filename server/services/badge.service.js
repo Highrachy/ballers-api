@@ -3,6 +3,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterAndSortQuery, BADGE_FILTERS } from '../helpers/filters';
+import { getAssignedBadgesByBadgeId } from './assignedBadge.service';
 
 export const getBadgeById = async (id) => Badge.findById(id).select();
 
@@ -48,7 +49,9 @@ export const deleteBadge = async (id) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Badge not found');
   }
 
-  const attachedUsers = ''; // get from assignrd badges
+  const attachedUsers = await getAssignedBadgesByBadgeId().catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
 
   if (attachedUsers.length > 0) {
     throw new ErrorHandler(
