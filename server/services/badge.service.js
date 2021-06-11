@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Badge from '../models/badge.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
@@ -5,14 +6,13 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import { buildFilterAndSortQuery, BADGE_FILTERS } from '../helpers/filters';
 import { getAssignedBadgesByBadgeId } from './assignedBadge.service';
 
+const { ObjectId } = mongoose.Types.ObjectId;
+
 export const getBadgeById = async (id) => Badge.findById(id).select();
 
 export const addBadge = async (badge) => {
   try {
-    const addedBadge = await new Badge({
-      ...badge,
-      dateAdded: Date.now(),
-    }).save();
+    const addedBadge = await new Badge(badge).save();
     return addedBadge;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding badge', error);
@@ -28,9 +28,8 @@ export const updateBadge = async (updatedBadge) => {
   }
 
   const badgePayload = {
+    ...badge,
     ...updatedBadge,
-    name: updatedBadge.name ? updatedBadge.name : badge.name,
-    userLevel: updatedBadge.userLevel ? updatedBadge.userLevel : badge.userLevel,
   };
 
   try {
@@ -96,4 +95,14 @@ export const getAllBadges = async ({ page = 1, limit = 10, ...query } = {}) => {
   const total = getPaginationTotal(badges);
   const pagination = generatePagination(page, limit, total);
   return { pagination, result: badges[0].data };
+};
+
+export const getOneBadge = async (badgeId) => {
+  const badge = await Badge.aggregate([{ $match: { vendorId: ObjectId(badgeId) } }]);
+
+  if (badge.length === 0) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Badge not found');
+  }
+
+  return { badge: badge[0] };
 };

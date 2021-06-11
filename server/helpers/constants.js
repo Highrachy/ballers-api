@@ -122,7 +122,7 @@ export const ACTIVE_PORTFOLIO_OFFER = [
 export const REFERRAL_PERCENTAGE = 1.5;
 
 export const BADGE_ACCESS_LEVEL = {
-  ALL: 0,
-  USER: 1,
-  VENDOR: 2,
+  ALL: -1,
+  USER: USER_ROLE.USER,
+  VENDOR: USER_ROLE.VENDOR,
 };

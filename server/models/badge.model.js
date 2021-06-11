@@ -8,43 +8,43 @@ import { BADGE_ACCESS_LEVEL } from '../helpers/constants';
  *      Badge:
  *        type: object
  *        required:
- *          - name
- *          - userLevel
  *          - addedBy
- *          - dateAdded
+ *          - assignedRole
+ *          - name
+ *          - image
  *        properties:
- *          name:
- *            type: string
- *          userLevel:
- *            type: number
  *          addedBy:
  *            type: string
- *          dateAdded:
+ *          assignedRole:
+ *            type: number
+ *          name:
+ *            type: string
+ *          image:
  *            type: date
  *        example:
- *           name: Hero Badge
- *           userLevel: 0
  *           addedBy: 5f2b39035a086cfc4b7fa7f6
- *           dateAdded: 2020-11-20
+ *           name: Hero Badge
+ *           assignedRole: 0
+ *           image: https://ballers.ng/badge.png
  */
 
 const { ObjectId } = mongoose.Schema.Types;
 const BadgeSchema = new mongoose.Schema(
   {
+    addedBy: {
+      type: ObjectId,
+    },
+    assignedRole: {
+      type: Number,
+      default: BADGE_ACCESS_LEVEL.ALL,
+    },
     name: {
       type: String,
       required: true,
     },
-    userLevel: {
-      type: Number,
-      default: BADGE_ACCESS_LEVEL.ALL,
-    },
-    addedBy: {
+    image: {
       type: ObjectId,
       required: true,
-    },
-    dateAdded: {
-      type: Date,
     },
   },
   { timestamps: true },

@@ -63,7 +63,7 @@ router.put(
 
 /**
  * @swagger
- * /badge/delete/:id:
+ * /badge/:id:
  *   delete:
  *     tags:
  *       - Badge
@@ -82,7 +82,7 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.delete('/delete/:id', authenticate, hasValidObjectId, isAdmin, BadgeController.deleteBadge);
+router.delete('/:id', authenticate, hasValidObjectId, isAdmin, BadgeController.deleteBadge);
 
 /**
  * @swagger
@@ -106,5 +106,27 @@ router.delete('/delete/:id', authenticate, hasValidObjectId, isAdmin, BadgeContr
  *       description: Internal server error
  */
 router.get('/all', authenticate, isAdmin, BadgeController.getAllBadges);
+
+/**
+ * @swagger
+ * path:
+ *  /badge/:id:
+ *    get:
+ *      parameters:
+ *        - in: query
+ *          name: token
+ *          schema:
+ *            type: string
+ *      summary: Get a badge by the badge id
+ *      tags: [Badge]
+ *      responses:
+ *        '200':
+ *          description: Badge found
+ *        '404':
+ *          description: Badge not found
+ *        '500':
+ *          description: Internal server error
+ */
+router.get('/:id', authenticate, hasValidObjectId, isAdmin, BadgeController.getOneBadge);
 
 module.exports = router;

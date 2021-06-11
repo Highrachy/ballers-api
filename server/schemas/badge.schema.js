@@ -2,18 +2,20 @@ import Joi from '@hapi/joi';
 import { requiredObjectId, requiredString, optionalString } from './helper.schema';
 import { BADGE_ACCESS_LEVEL } from '../helpers/constants';
 
-const userLevel = Joi.number()
-  .label('Step')
+const assignedRole = Joi.number()
+  .label('Role')
   .valid(...Object.values(BADGE_ACCESS_LEVEL))
   .optional();
 
 export const addBadgeSchema = Joi.object({
   name: requiredString('Name'),
-  userLevel,
+  image: requiredString('Image'),
+  assignedRole,
 });
 
 export const updateBadgeSchema = Joi.object({
   id: requiredObjectId('Badge Id'),
   name: optionalString('Name'),
-  userLevel,
+  image: optionalString('Image'),
+  assignedRole,
 });

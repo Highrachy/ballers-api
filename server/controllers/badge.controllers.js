@@ -1,4 +1,10 @@
-import { addBadge, updateBadge, deleteBadge, getAllBadges } from '../services/badge.service';
+import {
+  addBadge,
+  updateBadge,
+  deleteBadge,
+  getAllBadges,
+  getOneBadge,
+} from '../services/badge.service';
 import httpStatus from '../helpers/httpStatus';
 
 const BadgeController = {
@@ -36,6 +42,15 @@ const BadgeController = {
     getAllBadges(query)
       .then(({ result, pagination }) => {
         res.status(httpStatus.OK).json({ success: true, pagination, result });
+      })
+      .catch((error) => next(error));
+  },
+
+  getOneBadge(req, res, next) {
+    const { id } = req.params;
+    getOneBadge(id)
+      .then((badge) => {
+        res.status(httpStatus.OK).json({ success: true, badge });
       })
       .catch((error) => next(error));
   },

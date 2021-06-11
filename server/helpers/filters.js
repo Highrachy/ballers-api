@@ -361,4 +361,8 @@ export const REFERRAL_FILTERS = {
   paidOn: { key: 'reward.paidOn', type: FILTER_TYPE.DATE },
 };
 
-export const BADGE_FILTERS = {};
+export const BADGE_FILTERS = {
+  createdAt: { type: FILTER_TYPE.DATE },
+  addedBy: { type: FILTER_TYPE.OBJECT_ID },
+  assignedRole: { type: FILTER_TYPE.INTEGER },
+};
