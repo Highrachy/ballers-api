@@ -16,6 +16,7 @@ import {
   getTodaysDateShortCode,
   getTodaysDateStandard,
   getTodaysDateInWords,
+  getEndOfDay,
 } from '../../server/helpers/dates';
 import * as MailService from '../../server/services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -150,7 +151,9 @@ describe('Offer Controller', () => {
               expect(res.body.offer).to.have.property('userInfo');
               expect(res.body.offer.vendorInfo._id).to.be.eql(vendorUser._id.toString());
               expect(res.body.offer.propertyInfo._id).to.be.eql(newProperty._id.toString());
-              expect(res.body.offer.expires).to.have.string('22:59:59.999');
+              expect(res.body.offer.expires).to.be.eql(
+                getEndOfDay(enquiry.investmentStartDate).toISOString(),
+              );
               expect(res.body.offer.referenceCode).to.be.eql(
                 `HIG/LVE/OLM/01/${getTodaysDateShortCode()}`,
               );
@@ -1522,8 +1525,7 @@ describe('Offer Controller', () => {
               expect(res.body.offer.periodicPayment).to.be.eql(offer.periodicPayment);
               expect(res.body.offer.totalAmountPayable).to.be.eql(offer.totalAmountPayable);
               expect(res.body.offer.referenceCode).to.be.eql(offer.referenceCode);
-              expect(res.body.offer.expires).to.have.string(data.expires);
-              expect(res.body.offer.expires).to.have.string('22:59:59.999');
+              expect(res.body.offer.expires).to.be.eql(getEndOfDay(data.expires).toISOString());
               expect(res.body.offer.initialPaymentDate).to.have.string(data.initialPaymentDate);
               expect(sendMailStub.callCount).to.eq(1);
               expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.OFFER_REACTIVATED);
