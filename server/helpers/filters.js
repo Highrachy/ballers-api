@@ -68,31 +68,33 @@ export const buildFilterQuery = (allFilters, query) => {
             const rangeType = processRangeSeparator(query[queryKey]);
             const { tz } = query;
             const timeZoneDifference = tz || 0;
+            const gteHours = timeZoneDifference;
+            const ltHours = Math.min(24, 24 - timeZoneDifference);
 
             switch (rangeType) {
               case RANGE_TYPE.EQUALS:
                 dateQueryValue = {
-                  $gte: add(new Date(query[queryKey]), { hours: 0 - timeZoneDifference }),
-                  $lt: add(new Date(query[queryKey]), { hours: 24 - timeZoneDifference }),
+                  $gte: add(new Date(query[queryKey]), { hours: gteHours }),
+                  $lt: add(new Date(query[queryKey]), { hours: ltHours }),
                 };
                 break;
 
               case RANGE_TYPE.RANGE:
                 dateQueryValue = {
-                  $gte: add(new Date(rangeFrom), { hours: 0 - timeZoneDifference }),
-                  $lt: add(new Date(rangeTo), { hours: 24 - timeZoneDifference }),
+                  $gte: add(new Date(rangeFrom), { hours: gteHours }),
+                  $lt: add(new Date(rangeTo), { hours: ltHours }),
                 };
                 break;
 
               case RANGE_TYPE.FROM:
                 dateQueryValue = {
-                  $gte: add(new Date(rangeFrom), { hours: 0 - timeZoneDifference }),
+                  $gte: add(new Date(rangeFrom), { hours: gteHours }),
                 };
                 break;
 
               case RANGE_TYPE.TO:
                 dateQueryValue = {
-                  $lt: add(new Date(rangeTo), { hours: 24 - timeZoneDifference }),
+                  $lt: add(new Date(rangeTo), { hours: ltHours }),
                 };
                 break;
 
