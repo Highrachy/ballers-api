@@ -28,14 +28,15 @@ export const updateBadge = async (updatedBadge) => {
   }
 
   const badgePayload = {
-    ...badge,
+    // eslint-disable-next-line no-underscore-dangle
+    ...badge._doc,
     ...updatedBadge,
   };
 
   try {
     return Badge.findByIdAndUpdate(badge._id, badgePayload, { new: true });
   } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating area', error);
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating badge', error);
   }
 };
 
@@ -98,11 +99,11 @@ export const getAllBadges = async ({ page = 1, limit = 10, ...query } = {}) => {
 };
 
 export const getOneBadge = async (badgeId) => {
-  const badge = await Badge.aggregate([{ $match: { vendorId: ObjectId(badgeId) } }]);
+  const badge = await Badge.aggregate([{ $match: { _id: ObjectId(badgeId) } }]);
 
   if (badge.length === 0) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Badge not found');
   }
 
-  return { badge: badge[0] };
+  return badge[0];
 };

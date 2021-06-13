@@ -43,7 +43,7 @@ const BadgeSchema = new mongoose.Schema(
       required: true,
     },
     image: {
-      type: ObjectId,
+      type: String,
       required: true,
     },
   },

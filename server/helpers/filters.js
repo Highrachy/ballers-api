@@ -365,4 +365,5 @@ export const BADGE_FILTERS = {
   createdAt: { type: FILTER_TYPE.DATE },
   addedBy: { type: FILTER_TYPE.OBJECT_ID },
   assignedRole: { type: FILTER_TYPE.INTEGER },
+  name: { type: FILTER_TYPE.STRING },
 };
