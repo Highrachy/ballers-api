@@ -25,6 +25,7 @@ import { getMoneyFormat, getFormattedName } from '../../server/helpers/funtions'
 import ReferralFactory from '../factories/referral.factory';
 import { addReferral } from '../../server/services/referral.service';
 import Referral from '../../server/models/referral.model';
+import { getEndOfDay } from '../../server/helpers/dates';
 
 describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -84,8 +85,8 @@ describe('Transaction Service', () => {
     let countedTransactions;
     let countedNextPayments;
 
-    const expiresOnForSecondCycle = new Date('2020-03-31');
-    const expiresOnForLastCycle = new Date('2020-06-29');
+    const expiresOnForSecondCycle = getEndOfDay('2020-03-31');
+    const expiresOnForLastCycle = getEndOfDay('2020-06-29');
 
     beforeEach(async () => {
       countedTransactions = await Transaction.countDocuments({});
