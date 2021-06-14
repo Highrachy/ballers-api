@@ -1,5 +1,4 @@
-import format from 'date-fns/format';
-import formatISO from 'date-fns/formatISO';
+import { format, formatISO, endOfDay } from 'date-fns';
 
 export const getTodaysDateInWords = () => format(new Date(), 'd MMM yyyy');
 
@@ -12,3 +11,5 @@ export const getDateWithTimestamp = () => formatISO(new Date());
 export const convertDateToLongHumanFormat = (date) => format(date, `EEEE, do 'of' MMMM yyyy`);
 
 export const convertDateToShortHumanFormat = (date) => format(date, 'EEE MMM d, yyyy');
+
+export const getEndOfDay = (date) => endOfDay(new Date(date));

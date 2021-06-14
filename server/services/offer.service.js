@@ -16,7 +16,7 @@ import { getUserById, assignPropertyToUser } from './user.service';
 import { getEnquiryById, approveEnquiry } from './enquiry.service';
 // eslint-disable-next-line import/no-cycle
 import { getOneProperty } from './property.service';
-import { getTodaysDateShortCode, getTodaysDateStandard } from '../helpers/dates';
+import { getTodaysDateShortCode, getTodaysDateStandard, getEndOfDay } from '../helpers/dates';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { buildFilterAndSortQuery, OFFER_FILTERS } from '../helpers/filters';
@@ -340,6 +340,7 @@ export const createOffer = async (offer) => {
   try {
     const newOffer = await new Offer({
       ...offer,
+      expires: getEndOfDay(offer.expires),
       userId: enquiry.userId,
       propertyId: enquiry.propertyId,
       referenceCode,
@@ -715,7 +716,7 @@ export const reactivateOffer = async (offerInfo) => {
   const updatedOffer = {
     ...offer.toObject(),
     initialPaymentDate: offerInfo.initialPaymentDate,
-    expires: offerInfo.expires,
+    expires: getEndOfDay(offerInfo.expires),
   };
 
   delete updatedOffer._id;

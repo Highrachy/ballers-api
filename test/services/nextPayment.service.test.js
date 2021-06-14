@@ -18,15 +18,16 @@ import PropertyFactory from '../factories/property.factory';
 import { addUser } from '../../server/services/user.service';
 import { addProperty } from '../../server/services/property.service';
 import { futureDate } from '../helpers';
+import { getEndOfDay } from '../../server/helpers/dates';
 
 describe('NextPayment Service', () => {
   describe('#generateNextPaymentDate', () => {
     let fakeDate;
-    const expiresOnForFirstCycle = new Date('2020-03-01');
-    const expiresOnForSecondCycle = new Date('2020-03-31');
-    const expiresOnForThirdCycle = new Date('2020-04-30');
-    const expiresOnforFourthCycle = new Date('2020-05-30');
-    const expiresOnForLastCycle = new Date('2020-06-29');
+    const expiresOnForFirstCycle = getEndOfDay('2020-03-01');
+    const expiresOnForSecondCycle = getEndOfDay('2020-03-31');
+    const expiresOnForThirdCycle = getEndOfDay('2020-04-30');
+    const expiresOnforFourthCycle = getEndOfDay('2020-05-30');
+    const expiresOnForLastCycle = getEndOfDay('2020-06-29');
 
     const offer = OfferFactory.build(
       {
@@ -475,7 +476,7 @@ describe('NextPayment Service', () => {
   describe('#resolveExpiredNextPayments', () => {
     let fakeDate;
     let countedNextPayments;
-    const expiresOnForFirstCycle = new Date('2020-03-01');
+    const expiresOnForFirstCycle = getEndOfDay('2020-03-01');
 
     const unresolvedNextPaymentsOffers = OfferFactory.buildList(
       100,
