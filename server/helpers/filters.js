@@ -362,8 +362,8 @@ export const REFERRAL_FILTERS = {
 };
 
 export const BADGE_FILTERS = {
-  createdAt: { type: FILTER_TYPE.DATE },
   addedBy: { type: FILTER_TYPE.OBJECT_ID },
   assignedRole: { type: FILTER_TYPE.INTEGER },
+  createdAt: { type: FILTER_TYPE.DATE },
   name: { type: FILTER_TYPE.STRING },
 };

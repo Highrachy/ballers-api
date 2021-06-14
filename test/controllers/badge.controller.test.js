@@ -2,8 +2,10 @@ import mongoose from 'mongoose';
 import querystring from 'querystring';
 import { expect, request, sinon } from '../config';
 import Badge from '../../server/models/badge.model';
+import AssignedBadge from '../../server/models/assignedBadge.model';
 import BadgeFactory from '../factories/badge.factory';
 import UserFactory from '../factories/user.factory';
+import AssignedBadgeFactory from '../factories/assignedBadge.factory';
 import { addBadge } from '../../server/services/badge.service';
 import { addUser } from '../../server/services/user.service';
 import { USER_ROLE, BADGE_ACCESS_LEVEL } from '../../server/helpers/constants';
@@ -278,6 +280,26 @@ describe('Badge Controller', () => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Badge not found');
+            done();
+          });
+      });
+    });
+
+    context('when badge has been assigned to a user', () => {
+      const assignedBadge = AssignedBadgeFactory.build({ badgeId: badge._id });
+
+      beforeEach(async () => {
+        await AssignedBadge.create(assignedBadge);
+      });
+
+      it('returns error', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Badge has been assigned to 1 user');
             done();
           });
       });

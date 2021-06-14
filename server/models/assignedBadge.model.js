@@ -40,10 +40,6 @@ const AssignedBadgeSchema = new mongoose.Schema(
     },
     addedBy: {
       type: ObjectId,
-      required: true,
-    },
-    dateAssigned: {
-      type: Date,
     },
   },
   { timestamps: true },

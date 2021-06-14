@@ -28,8 +28,7 @@ export const updateBadge = async (updatedBadge) => {
   }
 
   const badgePayload = {
-    // eslint-disable-next-line no-underscore-dangle
-    ...badge._doc,
+    ...badge.toObject(),
     ...updatedBadge,
   };
 
@@ -49,7 +48,7 @@ export const deleteBadge = async (id) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Badge not found');
   }
 
-  const attachedUsers = await getAssignedBadgesByBadgeId().catch((error) => {
+  const attachedUsers = await getAssignedBadgesByBadgeId(badge._id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
