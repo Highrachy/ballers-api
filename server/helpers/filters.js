@@ -364,3 +364,10 @@ export const REFERRAL_FILTERS = {
   paidBy: { key: 'reward.paidBy', type: FILTER_TYPE.OBJECT_ID },
   paidOn: { key: 'reward.paidOn', type: FILTER_TYPE.DATE },
 };
+
+export const BADGE_FILTERS = {
+  addedBy: { type: FILTER_TYPE.OBJECT_ID },
+  assignedRole: { type: FILTER_TYPE.INTEGER },
+  createdAt: { type: FILTER_TYPE.DATE },
+  name: { type: FILTER_TYPE.STRING },
+};
