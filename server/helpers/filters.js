@@ -371,3 +371,10 @@ export const BADGE_FILTERS = {
   createdAt: { type: FILTER_TYPE.DATE },
   name: { type: FILTER_TYPE.STRING },
 };
+
+export const ASSIGNED_BADGE_FILTERS = {
+  assignedBy: { type: FILTER_TYPE.OBJECT_ID },
+  badgeId: { type: FILTER_TYPE.OBJECT_ID },
+  createdAt: { type: FILTER_TYPE.DATE },
+  userId: { type: FILTER_TYPE.OBJECT_ID },
+};
