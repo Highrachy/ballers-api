@@ -10,10 +10,10 @@ const AssignedBadgeController = {
   assignBadge(req, res, next) {
     const badgeInfo = req.locals;
     assignBadge({ ...badgeInfo, assignedBy: req.user._id })
-      .then((badge) => {
+      .then((assignedBadge) => {
         res
           .status(httpStatus.CREATED)
-          .json({ success: true, message: 'Badge assigned successfully', badge });
+          .json({ success: true, message: 'Badge assigned successfully', assignedBadge });
       })
       .catch((error) => next(error));
   },

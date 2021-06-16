@@ -8,6 +8,7 @@ import httpStatus from '../helpers/httpStatus';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterAndSortQuery, ASSIGNED_BADGE_FILTERS } from '../helpers/filters';
 import { USER_ROLE, BADGE_ACCESS_LEVEL } from '../helpers/constants';
+import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -32,7 +33,7 @@ export const assignBadge = async (badgeInfo) => {
   }
 
   if (badge.assignedRole !== BADGE_ACCESS_LEVEL.ALL && badge.assignedRole !== user.role) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Badge cannot be assigned to user');
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Badge cannot be assigned to user');
   }
 
   try {
@@ -50,7 +51,7 @@ export const deleteAssignedBadge = async (id) => {
   });
 
   if (!assignedBadge) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Assigned Badge not found');
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Assigned badge not found');
   }
 
   try {
@@ -81,6 +82,7 @@ export const getAssignedBadge = async (user, assignedBadgeId) => {
     },
     { $unwind: '$badgeInfo' },
     { $unwind: '$userInfo' },
+    { $project: NON_PROJECTED_USER_INFO('userInfo') },
   ];
 
   if (user.role !== USER_ROLE.ADMIN) {
@@ -89,7 +91,7 @@ export const getAssignedBadge = async (user, assignedBadgeId) => {
   const assignedBadge = await AssignedBadge.aggregate(assignedBadgeOptions);
 
   if (assignedBadge.length === 0) {
-    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Assigned Badge not found');
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'Assigned badge not found');
   }
 
   return assignedBadge[0];
@@ -101,6 +103,15 @@ export const getAllAssignedBadges = async (user, { page = 1, limit = 10, ...quer
   const assignedBadgeOptions = [
     { $match: { $and: filterQuery } },
     { $sort: sortQuery },
+    {
+      $lookup: {
+        from: 'badges',
+        localField: 'badgeId',
+        foreignField: '_id',
+        as: 'badgeInfo',
+      },
+    },
+    { $unwind: '$badgeInfo' },
     {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
