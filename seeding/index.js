@@ -3,9 +3,13 @@ import { logSuccess, logError } from './seed-helpers';
 import { MODEL } from './seed-constants';
 import { seedUsers } from './user.seeding';
 import resetDB from './reset.seeding';
-import { model, limit, role } from './seed-config';
+import { CONFIG } from './defaults.seeding';
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+const model = (process.env.MODEL || CONFIG.MODEL).toUpperCase();
+const limit = process.env.LIMIT || CONFIG.LIMIT;
+const role = process.env.ROLE || CONFIG.ROLE;
 
 const seedDB = async () => {
   startDBConnection();
