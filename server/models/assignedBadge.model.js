@@ -10,7 +10,6 @@ import mongoose from 'mongoose';
  *          - badgeId
  *          - userId
  *          - assignedBy
- *          - dateAssigned
  *        properties:
  *          badgeId:
  *            type: string
@@ -18,13 +17,10 @@ import mongoose from 'mongoose';
  *            type: string
  *          assignedBy:
  *            type: string
- *          dateAssigned:
- *            type: date
  *        example:
  *           badgeId: 5f2b39035a086cfc4b7fa7f6
  *           userId: 5f5a71e1e26485102a780795
  *           assignedBy: 5f2b39035a086cfc4b7fa7f6
- *           dateAssigned: 2020-11-20
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -38,7 +34,7 @@ const AssignedBadgeSchema = new mongoose.Schema(
       type: ObjectId,
       required: true,
     },
-    addedBy: {
+    assignedBy: {
       type: ObjectId,
     },
   },

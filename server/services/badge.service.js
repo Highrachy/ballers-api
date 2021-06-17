@@ -4,6 +4,7 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import { buildFilterAndSortQuery, BADGE_FILTERS } from '../helpers/filters';
+// eslint-disable-next-line import/no-cycle
 import { getAssignedBadgesByBadgeId } from './assignedBadge.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
