@@ -1,9 +1,9 @@
 export const CONFIG = {
   LIMIT: 1,
-  MODEL: 'reset', // reset, user
-  ROLE: 'user', // user, admin, vendor, editor
+  MODEL: '', // reset, user
+  ROLE: 'vendor', // user, admin, vendor, editor
 };
 
 export const USER_DEFAULTS = {
-  PASSWORD: 'passworded',
+  password: 'passworded',
 };

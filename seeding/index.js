@@ -3,7 +3,7 @@ import { logSuccess, logError } from './seed-helpers';
 import { MODEL } from './seed-constants';
 import { seedUsers } from './user.seeding';
 import resetDB from './reset.seeding';
-import { CONFIG } from './defaults.seeding';
+import { CONFIG, USER_DEFAULTS } from './defaults.seeding';
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -17,7 +17,7 @@ const seedDB = async () => {
   try {
     switch (model) {
       case MODEL.USER:
-        await seedUsers(limit, role);
+        await seedUsers(limit, role, USER_DEFAULTS);
         break;
       case MODEL.RESET:
         await resetDB();

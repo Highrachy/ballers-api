@@ -6,15 +6,17 @@ import AddressFactory from '../test/factories/address.factory';
 import User from '../server/models/user.model';
 import { USER_ROLE } from '../server/helpers/constants';
 import { logLoading, logError, logTable } from './seed-helpers';
-import { ROLE } from './seed-constants';
-import { hashPassword } from '../server/services/user.service';
+import { ROLE, DEFAULT_PASSWORD } from './seed-constants';
+import { hashPassword, generateReferralCode } from '../server/services/user.service';
 import { USER_DEFAULTS } from './defaults.seeding';
 
 export const seedUsers = async (limit, role, customValues = {}) => {
   const roleValue = Object.keys(ROLE).find((key) => ROLE[key] === role);
 
-  const password = customValues.password || USER_DEFAULTS.PASSWORD;
+  const password = customValues.password || USER_DEFAULTS?.password || DEFAULT_PASSWORD;
   const hashedPassword = await hashPassword(password);
+  const firstName = faker.name.firstName();
+  const referralCode = await generateReferralCode(firstName);
 
   const getVendorInfo = () =>
     VendorFactory.build({
@@ -35,18 +37,19 @@ export const seedUsers = async (limit, role, customValues = {}) => {
           phone: faker.phone.phoneNumber(),
         },
       ],
+      ...customValues.vendor,
     });
 
-  const users = [...new Array(parseInt(limit, 10))].map((_, index) =>
+  const users = [...new Array(parseInt(limit, 10))].map(() =>
     UserFactory.build({
       role: roleValue,
       activated: true,
       activationDate: new Date(),
-      firstName: faker.name.firstName(),
+      firstName,
       lastName: faker.name.lastName(),
       email: faker.internet.email(),
       phone: faker.phone.phoneNumber(),
-      referralCode: `${faker.lorem.word()}${Math.random() + index}`,
+      referralCode,
       profileImage: faker.image.avatar(),
       address: AddressFactory.build({
         city: faker.address.city(),
@@ -55,8 +58,8 @@ export const seedUsers = async (limit, role, customValues = {}) => {
         street1: faker.address.streetName(),
         street2: faker.address.streetName(),
       }),
-      vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? getVendorInfo() : {},
       ...customValues,
+      vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? getVendorInfo() : {},
       password: hashedPassword,
     }),
   );
