@@ -46,7 +46,7 @@ export const seedUsers = async (limit, role, customValues = {}) => {
       lastName: faker.name.lastName(),
       email: faker.internet.email(),
       phone: faker.phone.phoneNumber(),
-      referralCode: `${faker.lorem.word()}${index}`,
+      referralCode: `${faker.lorem.word()}${Math.random() + index}`,
       profileImage: faker.image.avatar(),
       address: AddressFactory.build({
         city: faker.address.city(),
