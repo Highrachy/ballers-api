@@ -11,12 +11,13 @@ import { hashPassword, generateReferralCode } from '../server/services/user.serv
 import { USER_DEFAULTS } from './defaults.seeding';
 
 export const seedUsers = async (limit, role, customValues = {}) => {
-  const roleValue = Object.keys(ROLE).find((key) => ROLE[key] === role);
+  const userDefaults = { ...customValues, ...USER_DEFAULTS };
+  const roleValue = Object.keys(ROLE).find((key) => ROLE[key] === (userDefaults?.role || role));
 
-  const password = customValues.password || USER_DEFAULTS?.password || DEFAULT_PASSWORD;
+  const password = userDefaults?.password || DEFAULT_PASSWORD;
   const hashedPassword = await hashPassword(password);
-  const firstName = faker.name.firstName();
-  const referralCode = await generateReferralCode(firstName);
+  const getFirstName = () => faker.name.firstName();
+  const referralCode = await generateReferralCode(getFirstName());
 
   const getVendorInfo = () =>
     VendorFactory.build({
@@ -37,7 +38,7 @@ export const seedUsers = async (limit, role, customValues = {}) => {
           phone: faker.phone.phoneNumber(),
         },
       ],
-      ...customValues.vendor,
+      ...userDefaults.vendor,
     });
 
   const users = [...new Array(parseInt(limit, 10))].map(() =>
@@ -45,7 +46,7 @@ export const seedUsers = async (limit, role, customValues = {}) => {
       role: roleValue,
       activated: true,
       activationDate: new Date(),
-      firstName,
+      firstName: getFirstName(),
       lastName: faker.name.lastName(),
       email: faker.internet.email(),
       phone: faker.phone.phoneNumber(),
@@ -58,7 +59,7 @@ export const seedUsers = async (limit, role, customValues = {}) => {
         street1: faker.address.streetName(),
         street2: faker.address.streetName(),
       }),
-      ...customValues,
+      ...userDefaults,
       vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? getVendorInfo() : {},
       password: hashedPassword,
     }),
@@ -75,7 +76,7 @@ export const seedUsers = async (limit, role, customValues = {}) => {
       users.forEach((user) => {
         table.push({
           Email: user.email,
-          Password: customValues.password || USER_DEFAULTS.PASSWORD,
+          Password: userDefaults.password || DEFAULT_PASSWORD,
         });
       });
       logTable(table);
