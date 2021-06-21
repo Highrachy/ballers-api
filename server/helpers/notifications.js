@@ -111,6 +111,12 @@ const NOTIFICATIONS = {
     description: 'Your raised comment has been resolved.',
     type: NOTIFICATION_TYPE.INFO,
   },
+  REQUEST_BANK_DETAILS: {
+    action: NOTIFICATION_ACTION.USER,
+    description:
+      'Your bank details have been requested. Kindly update it in your account settings.',
+    type: NOTIFICATION_TYPE.INFO,
+  },
   REQUEST_UNFLAG: {
     action: NOTIFICATION_ACTION.PROPERTY,
     description: 'You have received a request to unflag a property you recently flagged',
