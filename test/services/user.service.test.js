@@ -26,6 +26,7 @@ import {
   certifyVendor,
   banUser,
   unbanUser,
+  requestBankDetails,
 } from '../../server/services/user.service';
 import UserFactory from '../factories/user.factory';
 import ReferralFactory from '../factories/referral.factory';
@@ -1056,6 +1057,21 @@ describe('User Service', () => {
 
         expectNewNotificationToBeAdded(NOTIFICATIONS.UNBAN_USER, user._id);
       });
+    });
+  });
+
+  describe('#requestBankDetails', () => {
+    const user = UserFactory.build({}, { generateId: true });
+    beforeEach(async () => {
+      await addUser(user);
+    });
+
+    context('when new notification is added', () => {
+      beforeEach(async () => {
+        await requestBankDetails(user._id);
+      });
+
+      expectNewNotificationToBeAdded(NOTIFICATIONS.REQUEST_BANK_DETAILS, user._id);
     });
   });
 });
