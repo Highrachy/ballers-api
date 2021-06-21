@@ -4,6 +4,4 @@ export const CONFIG = {
   ROLE: 'user', // user, admin, vendor, editor
 };
 
-export const USER_DEFAULTS = {
-  email: 'test@hello.com',
-};
+export const USER_DEFAULTS = {};

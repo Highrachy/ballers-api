@@ -17,7 +17,6 @@ export const seedUsers = async (limit, role, customValues = {}) => {
   const password = userDefaults?.password || DEFAULT_PASSWORD;
   const hashedPassword = await hashPassword(password);
   const getFirstName = () => faker.name.firstName();
-  const referralCode = await generateReferralCode(getFirstName());
 
   const getVendorInfo = () =>
     VendorFactory.build({
@@ -38,30 +37,35 @@ export const seedUsers = async (limit, role, customValues = {}) => {
           phone: faker.phone.phoneNumber(),
         },
       ],
-      ...userDefaults.vendor,
+      ...userDefaults?.vendor,
     });
 
-  const users = [...new Array(parseInt(limit, 10))].map(() =>
-    UserFactory.build({
-      role: roleValue,
-      activated: true,
-      activationDate: new Date(),
-      firstName: getFirstName(),
-      lastName: faker.name.lastName(),
-      email: faker.internet.email(),
-      phone: faker.phone.phoneNumber(),
-      referralCode,
-      profileImage: faker.image.avatar(),
-      address: AddressFactory.build({
-        city: faker.address.city(),
-        country: faker.address.country(),
-        state: faker.address.state(),
-        street1: faker.address.streetName(),
-        street2: faker.address.streetName(),
-      }),
-      ...userDefaults,
-      vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? getVendorInfo() : {},
-      password: hashedPassword,
+  const users = await Promise.all(
+    [...new Array(parseInt(limit, 10))].map(async () => {
+      const firstName = getFirstName();
+      const referralCode = await generateReferralCode(firstName);
+
+      return UserFactory.build({
+        role: roleValue,
+        activated: true,
+        activationDate: new Date(),
+        firstName,
+        lastName: faker.name.lastName(),
+        email: faker.internet.email(),
+        phone: faker.phone.phoneNumber(),
+        referralCode,
+        profileImage: faker.image.avatar(),
+        address: AddressFactory.build({
+          city: faker.address.city(),
+          country: faker.address.country(),
+          state: faker.address.state(),
+          street1: faker.address.streetName(),
+          street2: faker.address.streetName(),
+        }),
+        ...userDefaults,
+        vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? getVendorInfo() : {},
+        password: hashedPassword,
+      });
     }),
   );
 
@@ -76,7 +80,7 @@ export const seedUsers = async (limit, role, customValues = {}) => {
       users.forEach((user) => {
         table.push({
           Email: user.email,
-          Password: userDefaults.password || DEFAULT_PASSWORD,
+          Password: password,
         });
       });
       logTable(table);
