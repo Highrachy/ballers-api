@@ -36,7 +36,7 @@ const startDBConnection = () => {
   }
 };
 
-const clearDB = () => {
+const clearDB = async () => {
   mongoose.connect(DB_URL, () => {
     mongoose.connection.db.dropDatabase();
   });

@@ -7,55 +7,65 @@ import User from '../server/models/user.model';
 import { USER_ROLE } from '../server/helpers/constants';
 import { logLoading, logError, logTable } from './seed-helpers';
 import { ROLE, DEFAULT_PASSWORD } from './seed-constants';
-import { hashPassword } from '../server/services/user.service';
+import { hashPassword, generateReferralCode } from '../server/services/user.service';
+import { USER_DEFAULTS } from './defaults.seeding';
 
 export const seedUsers = async (limit, role, customValues = {}) => {
-  const roleValue = Object.keys(ROLE).find((key) => ROLE[key] === role);
+  const userDefaults = { ...customValues, ...USER_DEFAULTS };
+  const roleValue = Object.keys(ROLE).find((key) => ROLE[key] === (userDefaults?.role || role));
 
-  const password = customValues.password || DEFAULT_PASSWORD;
+  const password = userDefaults?.password || DEFAULT_PASSWORD;
   const hashedPassword = await hashPassword(password);
+  const getFirstName = () => faker.name.firstName();
 
-  const vendor = VendorFactory.build({
-    companyName: faker.company.companyName(),
-    companyLogo: faker.image.abstract(),
-    verified: true,
-    phone: faker.phone.phoneNumber(),
-    bankInfo: {
-      accountName: faker.finance.accountName(),
-      accountNumber: faker.finance.routingNumber(),
-      bankName: faker.company.companyName(),
-    },
-    directors: [
-      {
-        name: faker.name.findName(),
-        isSignatory: true,
-        signature: faker.image.abstract(),
-        phone: faker.phone.phoneNumber(),
-      },
-    ],
-  });
-
-  const users = [...new Array(parseInt(limit, 10))].map((_, index) =>
-    UserFactory.build({
-      role: roleValue,
-      activated: true,
-      activationDate: new Date(),
-      firstName: faker.name.firstName(),
-      lastName: faker.name.lastName(),
-      email: faker.internet.email(),
+  const getVendorInfo = () =>
+    VendorFactory.build({
+      companyName: faker.company.companyName(),
+      companyLogo: faker.image.abstract(),
+      verified: true,
       phone: faker.phone.phoneNumber(),
-      referralCode: `${faker.lorem.word()}${index}`,
-      profileImage: faker.image.avatar(),
-      address: AddressFactory.build({
-        city: faker.address.city(),
-        country: faker.address.country(),
-        state: faker.address.state(),
-        street1: faker.address.streetName(),
-        street2: faker.address.streetName(),
-      }),
-      vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? vendor : {},
-      ...customValues,
-      password: hashedPassword,
+      bankInfo: {
+        accountName: faker.finance.accountName(),
+        accountNumber: faker.finance.routingNumber(),
+        bankName: faker.company.companyName(),
+      },
+      directors: [
+        {
+          name: faker.name.findName(),
+          isSignatory: true,
+          signature: faker.image.abstract(),
+          phone: faker.phone.phoneNumber(),
+        },
+      ],
+      ...userDefaults?.vendor,
+    });
+
+  const users = await Promise.all(
+    [...new Array(parseInt(limit, 10))].map(async () => {
+      const firstName = getFirstName();
+      const referralCode = await generateReferralCode(firstName);
+
+      return UserFactory.build({
+        role: roleValue,
+        activated: true,
+        activationDate: new Date(),
+        firstName,
+        lastName: faker.name.lastName(),
+        email: faker.internet.email(),
+        phone: faker.phone.phoneNumber(),
+        referralCode,
+        profileImage: faker.image.avatar(),
+        address: AddressFactory.build({
+          city: faker.address.city(),
+          country: faker.address.country(),
+          state: faker.address.state(),
+          street1: faker.address.streetName(),
+          street2: faker.address.streetName(),
+        }),
+        ...userDefaults,
+        vendor: parseInt(roleValue, 10) === USER_ROLE.VENDOR ? getVendorInfo() : {},
+        password: hashedPassword,
+      });
     }),
   );
 
@@ -68,7 +78,10 @@ export const seedUsers = async (limit, role, customValues = {}) => {
 
       const table = [];
       users.forEach((user) => {
-        table.push({ Email: user.email, Password: customValues.password || DEFAULT_PASSWORD });
+        table.push({
+          Email: user.email,
+          Password: password,
+        });
       });
       logTable(table);
     }

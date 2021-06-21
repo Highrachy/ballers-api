@@ -1,16 +1,17 @@
 import { startDBConnection, closeDBConnection } from '../server/config';
 import { logSuccess, logError } from './seed-helpers';
-import { MODEL, ROLE } from './seed-constants';
+import { MODEL } from './seed-constants';
 import { seedUsers } from './user.seeding';
 import resetDB from './reset.seeding';
+import { CONFIG } from './defaults.seeding';
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-const seedDB = async () => {
-  const model = process.env.MODEL?.toUpperCase();
-  const limit = process.env.LIMIT || 1;
-  const role = process.env.ROLE || ROLE.USER;
+const model = (process.env.MODEL || CONFIG.MODEL).toUpperCase();
+const limit = process.env.LIMIT || CONFIG.LIMIT;
+const role = process.env.ROLE || CONFIG.ROLE;
 
+const seedDB = async () => {
   startDBConnection();
 
   try {
