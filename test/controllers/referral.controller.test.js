@@ -414,6 +414,7 @@ describe('Referral Controller', () => {
                   totalPage: 1,
                 });
                 expect(res.body.result[0]._id).to.be.eql(userReferrals[0]._id.toString());
+                expect(res.body.result[0].referee._id).to.be.eql(referredUser._id.toString());
                 done();
               });
           });
