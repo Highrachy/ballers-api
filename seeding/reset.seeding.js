@@ -3,7 +3,7 @@ import { logLoading, logError, logInfo } from './seed-helpers';
 import { addDefaultUsers } from './user.seeding';
 
 const resetDB = async () => {
-  clearDB();
+  await clearDB();
   logInfo('Clearing database');
 
   await addDefaultUsers()
