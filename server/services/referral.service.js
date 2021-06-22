@@ -15,7 +15,10 @@ import { getUserById, getUserByEmail } from './user.service';
 import { getPaymentDuration } from './transaction.service';
 import { REFERRAL_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
-import { projectedReferralInfoForAdmin } from '../helpers/projectedSchemaInfo';
+import {
+  projectedReferralInfoForAdmin,
+  projectedReferralUserInfo,
+} from '../helpers/projectedSchemaInfo';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
 import { getMoneyFormat } from '../helpers/funtions';
@@ -189,9 +192,9 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
     {
       $lookup: {
         from: 'users',
-        localField: 'referrerId',
+        localField: 'userId',
         foreignField: '_id',
-        as: 'referrer',
+        as: 'referee',
       },
     },
     {
@@ -216,7 +219,12 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
         as: 'propertyInfo',
       },
     },
-    { $unwind: '$referrer' },
+    {
+      $unwind: {
+        path: '$referee',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
     {
       $unwind: {
         path: '$propertyInfo',
@@ -232,12 +240,8 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
         referrerId: 1,
         reward: 1,
         status: 1,
-        'referrer._id': 1,
-        'referrer.email': 1,
-        'referrer.firstName': 1,
-        'referrer.lastName': 1,
-        'referrer.phone': 1,
         offerInfo: 1,
+        ...projectedReferralUserInfo('referee'),
         ...projectedReferralInfoForAdmin(user.role),
       },
     },
@@ -256,17 +260,12 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
       {
         $lookup: {
           from: 'users',
-          localField: 'userId',
+          localField: 'referrerId',
           foreignField: '_id',
-          as: 'referee',
+          as: 'referrer',
         },
       },
-      {
-        $unwind: {
-          path: '$referee',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+      { $unwind: '$referrer' },
     );
   }
 
