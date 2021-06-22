@@ -3316,10 +3316,6 @@ describe('User Controller', () => {
 
       const vendorUser = UserFactory.build({ role: USER_ROLE.VENDOR, activated: true });
 
-      beforeEach(async () => {
-        await addUser(vendorUser);
-      });
-
       context('when token is valid', () => {
         it('sends notification to user', (done) => {
           request()
@@ -3350,14 +3346,20 @@ describe('User Controller', () => {
         });
       });
 
-      [vendorUser, regularUser].map((user) =>
-        itReturnsForbiddenForTokenWithInvalidAccess({
-          endpoint,
-          method,
-          user,
-          useExistingUser: true,
-        }),
-      );
+      context('with valid user without valid access', () => {
+        beforeEach(async () => {
+          await addUser(vendorUser);
+        });
+
+        [vendorUser, regularUser].map((user) =>
+          itReturnsForbiddenForTokenWithInvalidAccess({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
 
       itReturnsForbiddenForNoToken({ endpoint, method });
 
