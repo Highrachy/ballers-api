@@ -3309,6 +3309,68 @@ describe('User Controller', () => {
         });
       });
     });
+
+    describe('Request user bank details', () => {
+      const endpoint = `/api/v1/user/request-bank/${regularUser._id}`;
+      const method = 'post';
+
+      const vendorUser = UserFactory.build({ role: USER_ROLE.VENDOR, activated: true });
+
+      context('when token is valid', () => {
+        it('sends notification to user', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Bank details requested');
+              expect(sendMailStub.callCount).to.eq(1);
+              done();
+            });
+        });
+      });
+
+      context('when user id is invalid', () => {
+        it('returns not found', (done) => {
+          request()
+            [method](`/api/v1/user/request-bank/${mongoose.Types.ObjectId()}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('User not found');
+              expect(sendMailStub.callCount).to.eq(0);
+              done();
+            });
+        });
+      });
+
+      context('with valid user without valid access', () => {
+        beforeEach(async () => {
+          await addUser(vendorUser);
+        });
+
+        [vendorUser, regularUser].map((user) =>
+          itReturnsForbiddenForTokenWithInvalidAccess({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        userId: adminUser._id,
+        useExistingUser: true,
+      });
+    });
   });
 
   describe('Get all users', () => {

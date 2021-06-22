@@ -907,3 +907,15 @@ export const updateRemittancePercentage = async (remittanceInfo) => {
     );
   }
 };
+
+export const requestBankDetails = async (userId) => {
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  await createNotification(NOTIFICATIONS.REQUEST_BANK_DETAILS, userId);
+
+  return user;
+};

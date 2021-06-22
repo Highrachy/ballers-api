@@ -114,6 +114,10 @@ const EMAIL_CONTENT = {
       "You (or someone pretending to be you) requested a password reset for your account. If you didn't made this request you can ignore this email.",
     subject: 'Password Reset',
   },
+  REQUEST_BANK_DETAILS: {
+    subject: 'Bank Details Requested',
+    contentTop: 'Your bank details have been requested. Kindly update it in your account settings.',
+  },
   REWARD_REFERRAL: {
     subject: 'You have received a referral bonus of [amount]',
     contentTop:
