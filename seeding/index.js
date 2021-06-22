@@ -2,6 +2,7 @@ import { startDBConnection, closeDBConnection } from '../server/config';
 import { logSuccess, logError } from './seed-helpers';
 import { MODEL } from './seed-constants';
 import { seedUsers } from './user.seeding';
+import seedProperties from './property.seeding';
 import resetDB from './reset.seeding';
 import { CONFIG } from './defaults.seeding';
 
@@ -21,6 +22,9 @@ const seedDB = async () => {
         break;
       case MODEL.RESET:
         await resetDB();
+        break;
+      case MODEL.PROPERTY:
+        await seedProperties(limit, role);
         break;
 
       default:
