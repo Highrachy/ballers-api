@@ -24,6 +24,7 @@ import {
   banUser,
   unbanUser,
   updateRemittancePercentage,
+  requestBankDetails,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -323,6 +324,16 @@ const UserController = {
         res
           .status(httpStatus.OK)
           .json({ success: true, message: 'Remittance Percentage Updated', user });
+      })
+      .catch((error) => next(error));
+  },
+
+  requestBankDetails(req, res, next) {
+    const userId = req.params.id;
+    requestBankDetails(userId)
+      .then((user) => {
+        sendMail(EMAIL_CONTENT.REQUEST_BANK_DETAILS, user, {});
+        res.status(httpStatus.OK).json({ success: true, message: 'Bank details requested' });
       })
       .catch((error) => next(error));
   },

@@ -911,4 +911,39 @@ router.put(
   UserController.updateRemittancePercentage,
 );
 
+/**
+ * @swagger
+ * /user/request-bank/:id:
+ *   post:
+ *     tags:
+ *       - User
+ *     description: Allows an admin to request for a users bank details
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              userId:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Request sent
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/request-bank/:id',
+  authenticate,
+  hasValidObjectId,
+  isAdmin,
+  UserController.requestBankDetails,
+);
+
 module.exports = router;
