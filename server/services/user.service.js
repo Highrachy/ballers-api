@@ -919,3 +919,12 @@ export const requestBankDetails = async (userId) => {
 
   return user;
 };
+
+export const resendActivationEmail = async (userId) => {
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+  return { user, token: generateToken(user._id) };
+};
