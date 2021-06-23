@@ -928,7 +928,7 @@ export const resendActivationEmail = async (userId) => {
   }
 
   if (user.activated) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Your account has been activated');
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Account has been previously activated');
   }
   return { user, token: generateToken(user._id) };
 };
