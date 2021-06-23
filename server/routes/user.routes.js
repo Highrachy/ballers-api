@@ -16,6 +16,7 @@ import {
   unbanUserSchema,
   banUserSchema,
   updateRemittancePercentageSchema,
+  emailActivationSchema,
 } from '../schemas/user.schema';
 import {
   schemaValidation,
@@ -948,7 +949,7 @@ router.post(
 
 /**
  * @swagger
- * /user/resend-activation/:id:
+ * /user/resend-activation:
  *   post:
  *     tags:
  *       - User
@@ -973,6 +974,11 @@ router.post(
  *      '500':
  *       description: Internal server error
  */
-router.post('/resend-activation/:id', authenticate, UserController.resendActivationEmail);
+router.post(
+  '/resend-activation/',
+  authenticate,
+  schemaValidation(emailActivationSchema),
+  UserController.resendActivationEmail,
+);
 
 module.exports = router;

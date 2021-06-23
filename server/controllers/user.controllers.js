@@ -341,12 +341,7 @@ const UserController = {
   },
 
   resendActivationEmail(req, res, next) {
-    let userId;
-    if (req.user.role === USER_ROLE.ADMIN) {
-      userId = req.params.id;
-    } else {
-      userId = req.user._id;
-    }
+    const userId = req.user.role === USER_ROLE.ADMIN ? req.locals.userId : req.user._id;
 
     resendActivationEmail(userId)
       .then(({ user, token }) => {

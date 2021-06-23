@@ -926,5 +926,9 @@ export const resendActivationEmail = async (userId) => {
   if (!user) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
   }
+
+  if (user.activated) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Your account has been activated');
+  }
   return { user, token: generateToken(user._id) };
 };

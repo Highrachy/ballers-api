@@ -14,6 +14,7 @@ import {
   optionalNumber,
   optionalAddress,
   nonRequiredPhoneNumber,
+  optionalObjectId,
 } from './helper.schema';
 
 const directorSchema = {
@@ -168,4 +169,8 @@ export const unbanUserSchema = Joi.object({
 export const updateRemittancePercentageSchema = Joi.object({
   vendorId: requiredObjectId('Vendor id'),
   percentage: requiredPercentage('Remittance'),
+});
+
+export const emailActivationSchema = Joi.object({
+  userId: optionalObjectId('User id'),
 });
