@@ -62,28 +62,59 @@ export const DEFAULT_PROPERTY_FEATURES = [
   'Fitted Kitchen',
 ];
 
-export const CITIES = [
-  'Ajah',
-  'Epe',
-  'Ibeju Lekki',
-  'Ikate',
-  'Ikoyi',
-  'Lekki Phase 1',
-  'VGC',
-  'Victoria Island',
-];
-
-export const STATES = ['Lagos', 'Ogun', 'Oyo'];
-
-export const STREETS = [
-  'Ademola Adetokunbo Street',
-  'Adeniran Ogunsanya Street',
-  'Adeola Odeku Street',
-  'Allen Avenue',
-  'Bode Thomas Street',
-  'Broad Street',
-  'Isaac John Street',
-  'Ogunlana Drive',
-  'Ozumba Mbadiwe Avenue',
-  'Toyin Street',
+export const ADDRESSES = [
+  {
+    city: 'Surulere',
+    state: 'Lagos',
+    street1: 'Bode Thomas Street',
+    street2: 'Adeniran Ogunsanya Street',
+  },
+  {
+    city: 'Surulere',
+    state: 'Lagos',
+    street1: 'Adeniran Ogunsanya Street',
+  },
+  {
+    city: 'Surulere',
+    state: 'Lagos',
+    street1: 'Ogunlana Drive',
+  },
+  {
+    city: 'Ikeja',
+    state: 'Lagos',
+    street1: 'Toyin Street',
+    street2: 'Isaac John Street',
+  },
+  {
+    city: 'Ikeja',
+    state: 'Lagos',
+    street1: 'Allen Avenue',
+    street2: 'Opebi',
+  },
+  {
+    city: 'Victoria Island',
+    state: 'Lagos',
+    street1: 'Broad Street',
+  },
+  {
+    city: 'Victoria Island',
+    state: 'Lagos',
+    street1: 'Ademola Adetokunbo Street',
+  },
+  {
+    city: 'Victoria Island',
+    state: 'Lagos',
+    street1: 'Ozumba Mbadiwe Avenue',
+    street2: 'Adeola Odeku street',
+  },
+  {
+    city: 'Lekki Phase 1',
+    state: 'Lagos',
+    street1: 'Admiralty way',
+  },
+  {
+    city: 'Ikoyi',
+    state: 'Lagos',
+    street1: 'Banana Island',
+  },
 ];

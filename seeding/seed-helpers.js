@@ -23,3 +23,11 @@ export const logError = (data) => {
 export const logTable = (table) => {
   console.table(table);
 };
+
+export const returnOneItemFromArray = (array) => array[Math.floor(Math.random() * array.length)];
+
+export const returnMultipleItemsFromArray = (array, noOfItems) =>
+  array.sort(() => Math.random() - Math.random()).slice(0, noOfItems);
+
+export const generateNumberWithinRange = (min, max, unit = 1) =>
+  Math.round((Math.floor(Math.random() * (max - min + 1)) + min) / unit) * unit;
