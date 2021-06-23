@@ -876,20 +876,6 @@ describe('User Controller', () => {
         });
       });
 
-      context('with invalid updated user', () => {
-        it('returns a updated user', (done) => {
-          request()
-            .put('/api/v1/user/update')
-            .set('authorization', userToken)
-            .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.message).to.be.eql('Validation Error');
-              done();
-            });
-        });
-      });
-
       context('when update service returns an error', () => {
         it('returns the error', (done) => {
           sinon.stub(User, 'findOneAndUpdate').throws(new Error('Type Error'));
@@ -1006,6 +992,32 @@ describe('User Controller', () => {
                 done();
               });
           });
+        });
+      });
+
+      context('when user tries to update bank info', () => {
+        it('updates account details', (done) => {
+          const data = {
+            additionalInfo: {
+              bankInfo: {
+                accountNumber: '1234567890',
+                accountName: 'Highrachy Investment Limited',
+                bankName: 'ABC Bank',
+              },
+            },
+          };
+          request()
+            .put('/api/v1/user/update')
+            .set('authorization', userToken)
+            .send(data)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('User updated');
+              expect(res.body.user._id).to.be.eql(regularUser._id.toString());
+              expect(res.body.user.additionalInfo.bankInfo).to.be.eql(data.additionalInfo.bankInfo);
+              done();
+            });
         });
       });
     });

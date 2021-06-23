@@ -3,7 +3,6 @@ import { VENDOR_STEPS } from '../helpers/constants';
 import {
   requiredEmail,
   requiredObjectId,
-  requiredPhoneNumber,
   requiredString,
   requiredPassword,
   requiredConfirmPassword,
@@ -103,14 +102,19 @@ const preferences = Joi.object().keys({
   paymentPlan: optionalString('Payment Plan'),
 });
 
+const additionalInfo = Joi.object().keys({
+  bankInfo,
+});
+
 export const updateUserSchema = Joi.object({
-  firstName: requiredString('First Name'),
-  lastName: requiredString('Last Name'),
-  phone: requiredPhoneNumber('Phone'),
-  phone2: nonRequiredPhoneNumber('Phone 2'),
+  firstName: optionalString('First Name'),
+  lastName: optionalString('Last Name'),
+  phone: optionalPhoneNumber('Phone'),
+  phone2: optionalPhoneNumber('Phone 2'),
   address: optionalAddress,
   profileImage: optionalString('Profile Image'),
   preferences,
+  additionalInfo,
 });
 
 export const favoritePropertySchema = Joi.object({
