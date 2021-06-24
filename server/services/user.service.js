@@ -919,3 +919,16 @@ export const requestBankDetails = async (userId) => {
 
   return user;
 };
+
+export const resendActivationEmail = async (userId) => {
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (user.activated) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Account has been previously activated');
+  }
+  return { user, token: generateToken(user._id) };
+};

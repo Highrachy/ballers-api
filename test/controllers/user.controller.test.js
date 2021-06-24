@@ -3371,6 +3371,117 @@ describe('User Controller', () => {
         useExistingUser: true,
       });
     });
+
+    describe('Resend activation email', () => {
+      const endpoint = '/api/v1/user/resend-activation';
+      const method = 'post';
+
+      let unactivatedUserToken;
+
+      const unactivatedUser = UserFactory.build(
+        { role: USER_ROLE.USER, activated: false },
+        { generateId: true },
+      );
+      const body = { userId: unactivatedUser._id };
+
+      beforeEach(async () => {
+        unactivatedUserToken = await addUser(unactivatedUser);
+      });
+
+      context('when request is made by admin', () => {
+        context('when user id is valid', () => {
+          it('sends activation email', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send(body)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.message).to.be.eql('Reactivation email sent');
+                expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT);
+                expect(sendMailStub.callCount).to.eq(1);
+                done();
+              });
+          });
+        });
+
+        context('when user id is invalid', () => {
+          it('returns not found', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .send({ userId: mongoose.Types.ObjectId() })
+              .end((err, res) => {
+                expect(res).to.have.status(404);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('User not found');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+      });
+
+      context('when request is made by user', () => {
+        context('when user is not activated', () => {
+          it('sends activation email', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', unactivatedUserToken)
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.success).to.be.eql(true);
+                expect(res.body.message).to.be.eql('Reactivation email sent');
+                expect(sendMailStub).to.have.be.calledWith(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT);
+                expect(sendMailStub.callCount).to.eq(1);
+                done();
+              });
+          });
+        });
+
+        context('when user is activated', () => {
+          it('returns error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', userToken)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Account has been previously activated');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+
+        context('when user tries to send activation mail for another user', () => {
+          it('returns error', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', userToken)
+              .send(body)
+              .end((err, res) => {
+                expect(res).to.have.status(412);
+                expect(res.body.success).to.be.eql(false);
+                expect(res.body.message).to.be.eql('Account has been previously activated');
+                expect(sendMailStub.callCount).to.eq(0);
+                done();
+              });
+          });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method });
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        userId: adminUser._id,
+        useExistingUser: true,
+      });
+    });
   });
 
   describe('Get all users', () => {

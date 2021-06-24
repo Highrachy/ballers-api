@@ -25,11 +25,13 @@ import {
   unbanUser,
   updateRemittancePercentage,
   requestBankDetails,
+  resendActivationEmail,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
 import httpStatus from '../helpers/httpStatus';
 import { HOST } from '../config';
+import { USER_ROLE } from '../helpers/constants';
 
 const UserController = {
   register(req, res, next) {
@@ -334,6 +336,20 @@ const UserController = {
       .then((user) => {
         sendMail(EMAIL_CONTENT.REQUEST_BANK_DETAILS, user, {});
         res.status(httpStatus.OK).json({ success: true, message: 'Bank details requested' });
+      })
+      .catch((error) => next(error));
+  },
+
+  resendActivationEmail(req, res, next) {
+    const userId = req.user.role === USER_ROLE.ADMIN ? req.locals.userId : req.user._id;
+
+    resendActivationEmail(userId)
+      .then(({ user, token }) => {
+        sendMail(EMAIL_CONTENT.ACTIVATE_YOUR_ACCOUNT, user, {
+          link: `${HOST}/activate?token=${token}`,
+        });
+
+        res.status(httpStatus.OK).json({ success: true, message: 'Reactivation email sent' });
       })
       .catch((error) => next(error));
   },

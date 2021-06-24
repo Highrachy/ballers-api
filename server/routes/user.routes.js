@@ -16,6 +16,7 @@ import {
   unbanUserSchema,
   banUserSchema,
   updateRemittancePercentageSchema,
+  emailActivationSchema,
 } from '../schemas/user.schema';
 import {
   schemaValidation,
@@ -944,6 +945,40 @@ router.post(
   hasValidObjectId,
   isAdmin,
   UserController.requestBankDetails,
+);
+
+/**
+ * @swagger
+ * /user/resend-activation:
+ *   post:
+ *     tags:
+ *       - User
+ *     description: Allows a user or an admin resend activation email
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              userId:
+ *                  type: string
+ *     responses:
+ *      '200':
+ *        description: Reactivation email sent
+ *      '404':
+ *        description: User not found
+ *      '400':
+ *        description: Bad request
+ *      '500':
+ *       description: Internal server error
+ */
+router.post(
+  '/resend-activation/',
+  authenticate,
+  schemaValidation(emailActivationSchema),
+  UserController.resendActivationEmail,
 );
 
 module.exports = router;
