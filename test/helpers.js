@@ -369,6 +369,7 @@ export const expectResponseToExcludeSensitiveUserData = (data) => {
   expect(data).to.not.have.property('password');
   expect(data).to.not.have.property('referralCode');
   expect(data).to.not.have.property('notifications');
+  expect(data).to.not.have.property('additionalInfo');
   if (data.vendor) {
     expect(data.vendor).to.not.have.property('bankInfo');
     expect(data.vendor.directors).to.not.have.property('phone');

@@ -95,6 +95,19 @@ const UserSchema = new mongoose.Schema(
     },
     activationDate: Date,
     address: addressSchema,
+    additionalInfo: {
+      bankInfo: {
+        accountName: {
+          type: String,
+        },
+        accountNumber: {
+          type: String,
+        },
+        bankName: {
+          type: String,
+        },
+      },
+    },
     banned: {
       status: {
         type: Boolean,
