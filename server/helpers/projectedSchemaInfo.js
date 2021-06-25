@@ -53,6 +53,7 @@ export const PROJECTED_ASSIGNED_USER_INFO = {
   'assignedUsers.firstName': 1,
   'assignedUsers.lastName': 1,
   'assignedUsers.email': 1,
+  'assignedUsers.additionalInfo': 1,
 };
 
 export const NON_PROJECTED_USER_INFO = (infoType, userRole = null) => {
@@ -70,6 +71,7 @@ export const NON_PROJECTED_USER_INFO = (infoType, userRole = null) => {
     [`${infoType}.referralCode`]: 0,
     [`${infoType}.role`]: 0,
     [`${infoType}.notifications`]: 0,
+    [`${infoType}.additionalInfo`]: 0,
     [`${infoType}.vendor.logs`]: 0,
     [`${infoType}.vendor.directors`]: { phone: 0 },
     [`${infoType}.vendor.identification`]: 0,
@@ -100,6 +102,7 @@ export const projectedReferralInfoForAdmin = (userRole) =>
   userRole === USER_ROLE.ADMIN
     ? {
         ...projectedReferralUserInfo('referrer'),
+        'referrer.additionalInfo': 1,
         propertyInfo: 1,
       }
     : {};
