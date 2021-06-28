@@ -11,7 +11,16 @@ const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getBadgeById = async (id) => Badge.findById(id).select();
 
+export const getBadgeByBadgeName = async (badgeName) =>
+  Badge.find({ name: badgeName }).collation({ locale: 'en', strength: 2 });
+
 export const addBadge = async (badge) => {
+  const badgeExists = await getBadgeByBadgeName(badge.name);
+
+  if (badgeExists.length > 0) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Badge already exists');
+  }
+
   try {
     const addedBadge = await new Badge(badge).save();
     return addedBadge;
