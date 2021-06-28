@@ -932,3 +932,21 @@ export const resendActivationEmail = async (userId) => {
   }
   return { user, token: generateToken(user._id) };
 };
+
+export const updateReferralPercentage = async ({ userId, percentage }) => {
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    return User.findByIdAndUpdate(
+      user._id,
+      { $set: { 'additionalInfo.referralPercentage': percentage } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating referral percentage', error);
+  }
+};

@@ -320,9 +320,16 @@ export const activatePendingUserReferral = async (offer) => {
     'reward.status': REWARD_STATUS.PENDING,
   });
 
+  const user = await getUserById(offer.userId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
   if (referral) {
-    const percentage = referral.reward.percentage || REFERRAL_PERCENTAGE;
+    const percentage = user.additionalInfo?.referralPercentage || REFERRAL_PERCENTAGE;
     const amount = Math.round((percentage / 100) * offer.totalAmountPayable);
+
     try {
       await Referral.findByIdAndUpdate(
         referral._id,
@@ -362,23 +369,3 @@ export const updateReferralRewardStatus = async ({ referralId, offerId }) => {
 
 export const getReferralByOfferId = async (offerId) =>
   Referral.findOne({ offerId: ObjectId(offerId) });
-
-export const updateReferralPercentage = async ({ referralId, percentage }) => {
-  const referral = await getReferralById(referralId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (referral.reward.status === REWARD_STATUS.REFERRAL_PAID) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Referral has been paid');
-  }
-
-  try {
-    return Referral.findByIdAndUpdate(
-      referral._id,
-      { $set: { 'reward.percentage': percentage } },
-      { new: true },
-    );
-  } catch (error) {
-    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating referral percentage', error);
-  }
-};

@@ -51,9 +51,6 @@ const ReferralSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
-      percentage: {
-        type: Number,
-      },
       status: {
         type: String,
         default: REWARD_STATUS.PENDING,

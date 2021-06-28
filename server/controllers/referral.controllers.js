@@ -4,7 +4,6 @@ import {
   getUserByRefCode,
   getReferralById,
   getAllReferrals,
-  updateReferralPercentage,
 } from '../services/referral.service';
 import httpStatus from '../helpers/httpStatus';
 import EMAIL_CONTENT from '../../mailer';
@@ -72,17 +71,6 @@ const ReferralController = {
     getReferralById(referralId)
       .then((referral) => {
         res.status(httpStatus.OK).json({ success: true, referral });
-      })
-      .catch((error) => next(error));
-  },
-
-  updateReferralPercentage(req, res, next) {
-    const referralInfo = req.locals;
-    updateReferralPercentage(referralInfo)
-      .then((referral) => {
-        res
-          .status(httpStatus.OK)
-          .json({ success: true, message: 'Referral percentage updated', referral });
       })
       .catch((error) => next(error));
   },

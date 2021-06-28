@@ -107,6 +107,9 @@ const UserSchema = new mongoose.Schema(
           type: String,
         },
       },
+      referralPercentage: {
+        type: Number,
+      },
     },
     banned: {
       status: {
