@@ -117,4 +117,59 @@ export const ADDRESSES = [
     state: 'Lagos',
     street1: 'Banana Island',
   },
+  {
+    city: 'Mabushi',
+    state: 'Abuja',
+    street1: 'Crown Court',
+  },
+  {
+    city: 'Maitama District',
+    state: 'Abuja',
+    street1: `Peggy’s Pointee`,
+  },
+  {
+    city: 'Lokogoma',
+    state: 'Abuja',
+    street1: 'Efab Estate',
+  },
+  {
+    city: 'Dakwo District',
+    state: 'Abuja',
+    street1: 'Sunny Vale Homes',
+  },
+  {
+    city: 'Port-Harcourt',
+    state: 'Rivers',
+    street1: 'Lekki Gardens, Airport Road',
+  },
+  {
+    city: 'Port-Harcourt',
+    state: 'Rivers',
+    street1: 'RIVTAF Golf Estate',
+  },
+  {
+    city: 'Port-Harcourt',
+    state: 'Rivers',
+    street1: 'Vintage Gardens',
+  },
+  {
+    city: 'Port-Harcourt',
+    state: 'Rivers',
+    street1: 'Treasureland Estate',
+  },
+  {
+    city: 'Kano Fagge',
+    state: 'Kano',
+    street1: 'Abarba Nomansland',
+  },
+  {
+    city: 'Nasarawa GRA',
+    state: 'Kano',
+    street1: 'Sanni Abacha road',
+  },
+  {
+    city: 'Rukayya Bayero Gwale',
+    state: 'Kano',
+    street1: 'Tudun Yola',
+  },
 ];

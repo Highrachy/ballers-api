@@ -6,17 +6,22 @@ import {
   logLoading,
   logError,
   logTable,
-  returnOneItemFromArray,
-  returnMultipleItemsFromArray,
-  generateNumberWithinRange,
+  getOneRandomItem,
+  getMultipleRandomItems,
+  getNumberWithinRange,
 } from './seed-helpers';
 import { HOUSE_TYPES, DEFAULT_PROPERTY_FEATURES, ADDRESSES } from './seed-constants';
 import { seedUsers } from './user.seeding';
+import { USER_DEFAULTS } from './defaults.seeding';
 
 const seedProperties = async (limit, customValues = {}) => {
   let vendor;
 
-  [vendor] = await User.find({ role: USER_ROLE.VENDOR }).sort({ _id: -1 }).limit(1);
+  const parsedLimit = parseInt(limit, 10);
+
+  [vendor] = await User.find({ ...USER_DEFAULTS, role: USER_ROLE.VENDOR })
+    .sort({ _id: -1 })
+    .limit(1);
 
   if (!vendor) {
     try {
@@ -27,34 +32,37 @@ const seedProperties = async (limit, customValues = {}) => {
     }
   }
 
-  const properties = [...new Array(parseInt(limit, 10))].map(() => {
-    const rooms = generateNumberWithinRange(2, 4);
-    const houseType = HOUSE_TYPES[Math.floor(Math.random() * HOUSE_TYPES.length)];
+  const properties = [...new Array(parsedLimit)].map(() => {
+    const rooms = getNumberWithinRange(2, 4);
+    const houseType = getOneRandomItem(HOUSE_TYPES);
+    const numberOfFeatures = getNumberWithinRange(1, 6);
+
+    const features = getMultipleRandomItems(DEFAULT_PROPERTY_FEATURES, numberOfFeatures);
 
     return PropertyFactory.build({
       address: {
         country: 'Nigeria',
-        ...returnOneItemFromArray(ADDRESSES),
+        ...getOneRandomItem(ADDRESSES),
       },
       flagged: { status: false, requestUnflag: false },
       approved: { status: true },
       addedBy: vendor._id,
       bathrooms: rooms,
       bedrooms: rooms,
-      description: `Newly built ${houseType}`,
-      features: returnMultipleItemsFromArray(DEFAULT_PROPERTY_FEATURES, 3),
+      description: `Newly built ${houseType} with ${features.join(',')}.`,
+      features,
       houseType,
       name: `Newly built ${houseType}`,
-      price: generateNumberWithinRange(10_000_000, 50_000_000, 1_000_000),
+      price: getNumberWithinRange(10_000_000, 50_000_000, 1_000_000),
       toilets: rooms + 1,
-      units: generateNumberWithinRange(1, 10),
+      units: getNumberWithinRange(1, 10),
       ...customValues,
     });
   });
 
   try {
     await Property.insertMany(properties);
-    logLoading(`${limit} ${parseInt(limit, 10) === 1 ? 'property' : 'properties'} created`);
+    logLoading(`${limit} ${parsedLimit === 1 ? 'property' : 'properties'} created`);
 
     const table = [{ vendorEmail: vendor.email, noOfProperties: limit }];
     logTable(table);
