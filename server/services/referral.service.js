@@ -368,13 +368,17 @@ export const updateReferralPercentage = async ({ referralId, percentage }) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
 
-  if (referral.reward.paidOn) {
+  if (referral.reward.status === REWARD_STATUS.REFERRAL_PAID) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Referral has been paid');
   }
 
-  await Referral.findByIdAndUpdate(
-    referral._id,
-    { $set: { 'reward.percentage': percentage } },
-    { new: true },
-  );
+  try {
+    return Referral.findByIdAndUpdate(
+      referral._id,
+      { $set: { 'reward.percentage': percentage } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating referral percentage', error);
+  }
 };
