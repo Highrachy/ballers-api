@@ -1,6 +1,10 @@
 import express from 'express';
 import { authenticate, schemaValidation, isAdmin, hasValidObjectId } from '../helpers/middleware';
-import { updateReferralSchema, sendReferralSchema } from '../schemas/referral.schema';
+import {
+  updateReferralSchema,
+  sendReferralSchema,
+  updateReferralPercentageSchema,
+} from '../schemas/referral.schema';
 import ReferralController from '../controllers/referral.controllers';
 
 const router = express.Router();
@@ -132,5 +136,36 @@ router.get('/ref/:refcode', ReferralController.getUserByRefCode);
  *       description: Internal server error
  */
 router.get('/:id', hasValidObjectId, ReferralController.getReferralById);
+
+/**
+ * @swagger
+ * /referral/percentage:
+ *   put:
+ *     tags:
+ *       - Referral
+ *     description: Updates the percentage for a referral
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Referral'
+ *      description: Updates the percentage for a referral
+ *     responses:
+ *      '200':
+ *        description: Referral percentage updated
+ *      '400':
+ *        description: Error updating percentage
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/percentage',
+  authenticate,
+  isAdmin,
+  schemaValidation(updateReferralPercentageSchema),
+  ReferralController.updateReferralPercentage,
+);
 
 module.exports = router;
