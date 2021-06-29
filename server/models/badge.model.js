@@ -48,7 +48,6 @@ const BadgeSchema = new mongoose.Schema(
     },
   },
   { timestamps: true },
-  { collation: { locale: 'en', strength: 2 } },
 );
 
 const Badge = mongoose.model('Badge', BadgeSchema);

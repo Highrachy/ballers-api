@@ -75,24 +75,6 @@ describe('Badge Controller', () => {
       });
     });
 
-    context('when badge with similar name exists', () => {
-      beforeEach(async () => {
-        await addBadge(badge);
-      });
-      it('returns error', (done) => {
-        request()
-          [method](endpoint)
-          .set('authorization', adminToken)
-          .send({ ...badge, name: 'SPECIAL USER BADGE' })
-          .end((err, res) => {
-            expect(res).to.have.status(412);
-            expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Badge already exists');
-            done();
-          });
-      });
-    });
-
     [vendorUser, regularUser].map((user) =>
       itReturnsForbiddenForTokenWithInvalidAccess({
         endpoint,
