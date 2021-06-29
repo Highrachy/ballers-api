@@ -17,6 +17,7 @@ import {
   banUserSchema,
   updateRemittancePercentageSchema,
   emailActivationSchema,
+  updateReferralPercentageSchema,
 } from '../schemas/user.schema';
 import {
   schemaValidation,
@@ -979,6 +980,37 @@ router.post(
   authenticate,
   schemaValidation(emailActivationSchema),
   UserController.resendActivationEmail,
+);
+
+/**
+ * @swagger
+ * /user/referral-percentage:
+ *   put:
+ *     tags:
+ *       - User
+ *     description: Updates the referral percentage for a user
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/User'
+ *      description: Updates the referral percentage for a user
+ *     responses:
+ *      '200':
+ *        description: Referral percentage updated
+ *      '400':
+ *        description: Error updating percentage
+ *      '500':
+ *       description: Internal server error
+ */
+router.put(
+  '/referral-percentage',
+  authenticate,
+  isAdmin,
+  schemaValidation(updateReferralPercentageSchema),
+  UserController.updateReferralPercentage,
 );
 
 module.exports = router;
