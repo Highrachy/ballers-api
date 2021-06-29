@@ -3515,6 +3515,80 @@ describe('User Controller', () => {
         useExistingUser: true,
       });
     });
+
+    describe('Update user referral percentage', () => {
+      const method = 'put';
+      const endpoint = '/api/v1/user/referral-percentage';
+
+      const vendorUser = UserFactory.build(
+        { role: USER_ROLE.VENDOR, activated: true, 'additionalInfo.referralPercentage': 1.5 },
+        { generateId: true },
+      );
+
+      const referralDetails = {
+        userId: vendorUser._id,
+        percentage: 2,
+      };
+
+      beforeEach(async () => {
+        await addUser(vendorUser);
+      });
+
+      context('with valid data & token', () => {
+        it('updates referral percentage', (done) => {
+          request()
+            .put(endpoint)
+            .set('authorization', adminToken)
+            .send(referralDetails)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.message).to.be.eql('Referral percentage updated');
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user.additionalInfo.referralPercentage).to.be.eql(
+                referralDetails.percentage,
+              );
+              done();
+            });
+        });
+      });
+
+      context('with invalid referral id', () => {
+        it('returns not found', (done) => {
+          request()
+            .put(endpoint)
+            .set('authorization', adminToken)
+            .send({ ...referralDetails, userId: mongoose.Types.ObjectId() })
+            .end((err, res) => {
+              expect(res).to.have.status(404);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('User not found');
+              done();
+            });
+        });
+      });
+
+      itReturnsForbiddenForNoToken({ endpoint, method, data: referralDetails });
+
+      [regularUser, vendorUser].map((user) =>
+        itReturnsForbiddenForTokenWithInvalidAccess({
+          endpoint,
+          method,
+          user,
+          data: referralDetails,
+          useExistingUser: true,
+        }),
+      );
+
+      itReturnsNotFoundForInvalidToken({
+        endpoint,
+        method,
+        user: adminUser,
+        userId: adminUser._id,
+        data: referralDetails,
+        useExistingUser: true,
+      });
+    });
   });
 
   describe('Get all users', () => {

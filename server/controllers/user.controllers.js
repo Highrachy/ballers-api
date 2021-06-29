@@ -26,6 +26,7 @@ import {
   updateRemittancePercentage,
   requestBankDetails,
   resendActivationEmail,
+  updateReferralPercentage,
 } from '../services/user.service';
 import { sendMail } from '../services/mailer.service';
 import EMAIL_CONTENT from '../../mailer';
@@ -350,6 +351,17 @@ const UserController = {
         });
 
         res.status(httpStatus.OK).json({ success: true, message: 'Reactivation email sent' });
+      })
+      .catch((error) => next(error));
+  },
+
+  updateReferralPercentage(req, res, next) {
+    const referralInfo = req.locals;
+    updateReferralPercentage(referralInfo)
+      .then((user) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Referral percentage updated', user });
       })
       .catch((error) => next(error));
   },

@@ -398,7 +398,7 @@ describe('Referral Controller', () => {
                 expect(res.body.result[0].referrer._id).to.be.eql(adminUser._id.toString());
                 expect(res.body.result[0].propertyInfo._id).to.be.eql(property._id.toString());
                 expect(res.body.result[0].referee).to.not.have.property('additionalInfo');
-                expect(res.body.result[0].referrer).to.not.have.property('additionalInfo');
+                expect(res.body.result[0].referrer).to.have.property('additionalInfo');
                 done();
               });
           });

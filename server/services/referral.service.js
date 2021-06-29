@@ -3,12 +3,7 @@ import Referral from '../models/referral.model';
 import User from '../models/user.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
-import {
-  REFERRAL_STATUS,
-  REWARD_STATUS,
-  REFERRAL_PERCENTAGE,
-  USER_ROLE,
-} from '../helpers/constants';
+import { REFERRAL_STATUS, REWARD_STATUS, USER_ROLE } from '../helpers/constants';
 // eslint-disable-next-line import/no-cycle
 import { getUserById, getUserByEmail } from './user.service';
 // eslint-disable-next-line import/no-cycle
@@ -320,8 +315,16 @@ export const activatePendingUserReferral = async (offer) => {
     'reward.status': REWARD_STATUS.PENDING,
   });
 
+  const user = await getUserById(offer.userId);
+
+  if (!user) {
+    throw new ErrorHandler(httpStatus.NOT_FOUND, 'User not found');
+  }
+
   if (referral) {
-    const amount = Math.round((REFERRAL_PERCENTAGE / 100) * offer.totalAmountPayable);
+    const percentage = user.additionalInfo.referralPercentage;
+    const amount = Math.round((percentage / 100) * offer.totalAmountPayable);
+
     try {
       await Referral.findByIdAndUpdate(
         referral._id,

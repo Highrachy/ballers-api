@@ -178,3 +178,8 @@ export const updateRemittancePercentageSchema = Joi.object({
 export const emailActivationSchema = Joi.object({
   userId: optionalObjectId('User id'),
 });
+
+export const updateReferralPercentageSchema = Joi.object({
+  userId: requiredObjectId('User id'),
+  percentage: requiredPercentage('Percentage'),
+});
