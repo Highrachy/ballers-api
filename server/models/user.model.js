@@ -1,5 +1,11 @@
 import mongoose from 'mongoose';
-import { USER_ROLE, VENDOR_INFO_STATUS, addressSchema, COMMENT_STATUS } from '../helpers/constants';
+import {
+  USER_ROLE,
+  VENDOR_INFO_STATUS,
+  addressSchema,
+  COMMENT_STATUS,
+  REFERRAL_PERCENTAGE,
+} from '../helpers/constants';
 
 /**
  * @swagger
@@ -109,6 +115,7 @@ const UserSchema = new mongoose.Schema(
       },
       referralPercentage: {
         type: Number,
+        default: REFERRAL_PERCENTAGE,
       },
     },
     banned: {
