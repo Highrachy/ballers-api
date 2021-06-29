@@ -2765,7 +2765,7 @@ describe('User Controller', () => {
       });
     });
 
-    describe.only('Get one user', () => {
+    describe('Get one user', () => {
       const invalidUserId = mongoose.Types.ObjectId();
       const testUser = UserFactory.build(
         { role: USER_ROLE.USER, activated: true },
@@ -2774,8 +2774,18 @@ describe('User Controller', () => {
       const method = 'get';
       const endpoint = `/api/v1/user/${testUser._id}`;
 
-      const badge = BadgeFactory.build(
+      const userBadge = BadgeFactory.build(
         { assignedRole: BADGE_ACCESS_LEVEL.USER },
+        { generateId: true },
+      );
+
+      const vendorBadge = BadgeFactory.build(
+        { assignedRole: BADGE_ACCESS_LEVEL.VENDOR },
+        { generateId: true },
+      );
+
+      const badge = BadgeFactory.build(
+        { assignedRole: BADGE_ACCESS_LEVEL.ALL },
         { generateId: true },
       );
 
@@ -2786,11 +2796,21 @@ describe('User Controller', () => {
         },
         { generateId: true },
       );
+      const assignUserBadge = AssignedBadgeFactory.build(
+        {
+          badgeId: userBadge._id,
+          userId: testUser._id,
+        },
+        { generateId: true },
+      );
 
       beforeEach(async () => {
         await addUser(testUser);
         await addBadge(badge);
+        await addBadge(userBadge);
+        await addBadge(vendorBadge);
         await assignBadge(assignedBadge);
+        await assignBadge(assignUserBadge);
       });
 
       context('with a valid token & id', () => {
@@ -2804,7 +2824,9 @@ describe('User Controller', () => {
               expect(res.body.user._id).to.be.eql(testUser._id.toString());
               expect(res.body.user).to.not.have.property('password');
               expect(res.body.user).to.not.have.property('notifications');
+              expect(res.body.user.assignedBadges.length).to.be.eql(2);
               expect(res.body.user.assignedBadges[0]._id).to.be.eql(assignedBadge._id.toString());
+              expect(res.body.user.assignedBadges[1]._id).to.be.eql(assignUserBadge._id.toString());
               done();
             });
         });
