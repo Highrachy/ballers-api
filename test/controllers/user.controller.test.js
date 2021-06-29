@@ -44,12 +44,17 @@ import {
   VENDOR_STEPS,
   VENDOR_INFO_STATUS,
   COMMENT_STATUS,
+  BADGE_ACCESS_LEVEL,
 } from '../../server/helpers/constants';
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
 import { USER_FILTERS } from '../../server/helpers/filters';
 import Notification from '../../server/models/notification.model';
 import NotificationFactory from '../factories/notification.factory';
+import BadgeFactory from '../factories/badge.factory';
+import AssignedBadgeFactory from '../factories/assignedBadge.factory';
+import { addBadge } from '../../server/services/badge.service';
+import { assignBadge } from '../../server/services/assignedBadge.service';
 
 let adminToken;
 let userToken;
@@ -2760,7 +2765,7 @@ describe('User Controller', () => {
       });
     });
 
-    describe('Get one user', () => {
+    describe.only('Get one user', () => {
       const invalidUserId = mongoose.Types.ObjectId();
       const testUser = UserFactory.build(
         { role: USER_ROLE.USER, activated: true },
@@ -2769,8 +2774,23 @@ describe('User Controller', () => {
       const method = 'get';
       const endpoint = `/api/v1/user/${testUser._id}`;
 
+      const badge = BadgeFactory.build(
+        { assignedRole: BADGE_ACCESS_LEVEL.USER },
+        { generateId: true },
+      );
+
+      const assignedBadge = AssignedBadgeFactory.build(
+        {
+          badgeId: badge._id,
+          userId: testUser._id,
+        },
+        { generateId: true },
+      );
+
       beforeEach(async () => {
         await addUser(testUser);
+        await addBadge(badge);
+        await assignBadge(assignedBadge);
       });
 
       context('with a valid token & id', () => {
@@ -2784,6 +2804,7 @@ describe('User Controller', () => {
               expect(res.body.user._id).to.be.eql(testUser._id.toString());
               expect(res.body.user).to.not.have.property('password');
               expect(res.body.user).to.not.have.property('notifications');
+              expect(res.body.user.assignedBadges[0]._id).to.be.eql(assignedBadge._id.toString());
               done();
             });
         });
