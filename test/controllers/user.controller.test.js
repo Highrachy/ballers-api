@@ -2771,6 +2771,11 @@ describe('User Controller', () => {
         { role: USER_ROLE.USER, activated: true },
         { generateId: true },
       );
+      const vendorUser = UserFactory.build(
+        { role: USER_ROLE.VENDOR, activated: true },
+        { generateId: true },
+      );
+
       const method = 'get';
       const endpoint = `/api/v1/user/${testUser._id}`;
 
@@ -2784,14 +2789,14 @@ describe('User Controller', () => {
         { generateId: true },
       );
 
-      const badge = BadgeFactory.build(
+      const allBadge = BadgeFactory.build(
         { assignedRole: BADGE_ACCESS_LEVEL.ALL },
         { generateId: true },
       );
 
-      const assignedBadge = AssignedBadgeFactory.build(
+      const assignedAllBadge = AssignedBadgeFactory.build(
         {
-          badgeId: badge._id,
+          badgeId: allBadge._id,
           userId: testUser._id,
         },
         { generateId: true },
@@ -2803,14 +2808,23 @@ describe('User Controller', () => {
         },
         { generateId: true },
       );
+      const assignVendorBadge = AssignedBadgeFactory.build(
+        {
+          badgeId: vendorBadge._id,
+          userId: vendorUser._id,
+        },
+        { generateId: true },
+      );
 
       beforeEach(async () => {
         await addUser(testUser);
-        await addBadge(badge);
+        await addUser(vendorUser);
+        await addBadge(allBadge);
         await addBadge(userBadge);
         await addBadge(vendorBadge);
-        await assignBadge(assignedBadge);
+        await assignBadge(assignedAllBadge);
         await assignBadge(assignUserBadge);
+        await assignBadge(assignVendorBadge);
       });
 
       context('with a valid token & id', () => {
@@ -2825,8 +2839,30 @@ describe('User Controller', () => {
               expect(res.body.user).to.not.have.property('password');
               expect(res.body.user).to.not.have.property('notifications');
               expect(res.body.user.assignedBadges.length).to.be.eql(2);
-              expect(res.body.user.assignedBadges[0]._id).to.be.eql(assignedBadge._id.toString());
+              expect(res.body.user.assignedBadges[0]._id).to.be.eql(
+                assignedAllBadge._id.toString(),
+              );
               expect(res.body.user.assignedBadges[1]._id).to.be.eql(assignUserBadge._id.toString());
+              done();
+            });
+        });
+      });
+
+      context('with a valid token & id', () => {
+        it('successfully returns vendor details', (done) => {
+          request()
+            .get(`/api/v1/user/${vendorUser._id}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user).to.not.have.property('password');
+              expect(res.body.user).to.not.have.property('notifications');
+              expect(res.body.user.assignedBadges.length).to.be.eql(1);
+              expect(res.body.user.assignedBadges[0]._id).to.be.eql(
+                assignVendorBadge._id.toString(),
+              );
               done();
             });
         });
