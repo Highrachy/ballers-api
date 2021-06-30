@@ -11,6 +11,8 @@ import ReportedProperty from '../models/reportedProperty.model';
 import Transaction from '../models/transaction.model';
 import User from '../models/user.model';
 import Visitation from '../models/visitation.model';
+import Badge from '../models/badge.model';
+import AssignedBadge from '../models/assignedBadge.model';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -42,6 +44,7 @@ const getTotalCount = async (user) => {
       ...matchObject,
     });
     const transactions = await Transaction.countDocuments(matchObject);
+    const assignedbadges = await AssignedBadge.countDocuments({ userId: ObjectId(user._id) });
 
     const models = {
       enquiries,
@@ -51,6 +54,7 @@ const getTotalCount = async (user) => {
       referrals,
       scheduledVisitations,
       transactions,
+      assignedbadges,
     };
 
     if (user.role === USER_ROLE.ADMIN || user.role === USER_ROLE.USER) {
@@ -62,6 +66,7 @@ const getTotalCount = async (user) => {
 
     if (user.role === USER_ROLE.ADMIN) {
       models.users = await User.countDocuments(matchObject);
+      models.badges = await Badge.countDocuments({});
     }
 
     return models;
