@@ -6,6 +6,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import { buildFilterAndSortQuery, BADGE_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { getAssignedBadgesByBadgeId } from './assignedBadge.service';
+import { PROJECTED_BADGE_INFO, NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -85,6 +86,28 @@ export const getAllBadges = async ({ page = 1, limit = 10, ...query } = {}) => {
     { $match: { $and: filterQuery } },
     { $sort: sortQuery },
     {
+      $lookup: {
+        from: 'assignedbadges',
+        localField: '_id',
+        foreignField: 'badgeId',
+        as: 'assignedBadges',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'assignedBadges.userId',
+        foreignField: '_id',
+        as: 'assignedUsers',
+      },
+    },
+    {
+      $project: {
+        ...PROJECTED_BADGE_INFO,
+        noOfAssignedUsers: { $size: '$assignedUsers' },
+      },
+    },
+    {
       $facet: {
         metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
         data: generateFacetData(page, limit),
@@ -108,7 +131,31 @@ export const getAllBadges = async ({ page = 1, limit = 10, ...query } = {}) => {
 };
 
 export const getOneBadge = async (badgeId) => {
-  const badge = await Badge.aggregate([{ $match: { _id: ObjectId(badgeId) } }]);
+  const badge = await Badge.aggregate([
+    { $match: { _id: ObjectId(badgeId) } },
+    {
+      $lookup: {
+        from: 'assignedbadges',
+        localField: '_id',
+        foreignField: 'badgeId',
+        as: 'assignedBadges',
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'assignedBadges.userId',
+        foreignField: '_id',
+        as: 'assignedUsers',
+      },
+    },
+    {
+      $project: {
+        assignedBadges: 0,
+        ...NON_PROJECTED_USER_INFO('assignedUsers'),
+      },
+    },
+  ]);
 
   if (badge.length === 0) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Badge not found');

@@ -106,3 +106,13 @@ export const projectedReferralInfoForAdmin = (userRole) =>
         propertyInfo: 1,
       }
     : {};
+
+export const PROJECTED_BADGE_INFO = {
+  _id: 1,
+  assignedRole: 1,
+  addedBy: 1,
+  createdAt: 1,
+  name: 1,
+  image: 1,
+  updatedAt: 1,
+};

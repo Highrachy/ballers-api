@@ -25,6 +25,7 @@ import {
   futureDate,
   currentDate,
 } from '../helpers';
+import { assignBadge } from '../../server/services/assignedBadge.service';
 
 let adminToken;
 
@@ -350,12 +351,42 @@ describe('Badge Controller', () => {
   });
 
   describe('Get single badge route', () => {
-    const badge = BadgeFactory.build({}, { generateId: true });
-    const endpoint = `/api/v1/badge/${badge._id}`;
+    const badge1 = BadgeFactory.build({}, { generateId: true });
+    const badge2 = BadgeFactory.build({}, { generateId: true });
+    const endpoint = `/api/v1/badge/${badge1._id}`;
     const method = 'get';
 
+    const assignedBadge = AssignedBadgeFactory.build(
+      {
+        badgeId: badge1._id,
+        userId: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const assignedBadge2 = AssignedBadgeFactory.build(
+      {
+        badgeId: badge1._id,
+        userId: regularUser._id,
+      },
+      { generateId: true },
+    );
+
+    const assignedBadge3 = AssignedBadgeFactory.build(
+      {
+        badgeId: badge2._id,
+        userId: regularUser._id,
+      },
+      { generateId: true },
+    );
+
     beforeEach(async () => {
-      await addBadge(badge);
+      await addBadge(badge1);
+      await addBadge(badge2);
+      await addUser(vendorUser);
+      await addUser(regularUser);
+      await assignBadge(assignedBadge);
+      await assignBadge(assignedBadge2);
+      await assignBadge(assignedBadge3);
     });
 
     context('when a valid token is used', () => {
@@ -366,7 +397,26 @@ describe('Badge Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.badge._id).to.be.eql(badge._id.toString());
+            expect(res.body.badge._id).to.be.eql(badge1._id.toString());
+            expect(res.body.badge.assignedUsers.length).to.be.eql(2);
+            expect(res.body.badge.assignedUsers[0]._id).to.be.eql(regularUser._id.toString());
+            expect(res.body.badge.assignedUsers[1]._id).to.be.eql(vendorUser._id.toString());
+            done();
+          });
+      });
+    });
+
+    context('when a valid token is used', () => {
+      it('successfully returns badge', (done) => {
+        request()
+          [method](`/api/v1/badge/${badge2._id}`)
+          .set('authorization', adminToken)
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.badge._id).to.be.eql(badge2._id.toString());
+            expect(res.body.badge.assignedUsers.length).to.be.eql(1);
+            expect(res.body.badge.assignedUsers[0]._id).to.be.eql(regularUser._id.toString());
             done();
           });
       });
@@ -391,6 +441,7 @@ describe('Badge Controller', () => {
         endpoint,
         method,
         user,
+        useExistingUser: true,
       }),
     );
 
@@ -410,6 +461,11 @@ describe('Badge Controller', () => {
     const endpoint = '/api/v1/badge/all';
     const method = 'get';
 
+    const testVendor = UserFactory.build(
+      { role: USER_ROLE.VENDOR, activated: true },
+      { generateId: true },
+    );
+
     const badge = BadgeFactory.build(
       {
         addedBy: adminUser._id,
@@ -426,6 +482,21 @@ describe('Badge Controller', () => {
         addedBy: mongoose.Types.ObjectId(),
         assignedRole: BADGE_ACCESS_LEVEL.ALL,
         createdAt: currentDate,
+      },
+      { generateId: true },
+    );
+
+    const assignedBadge = AssignedBadgeFactory.build(
+      {
+        badgeId: badge._id,
+        userId: vendorUser._id,
+      },
+      { generateId: true },
+    );
+    const assignedBadge2 = AssignedBadgeFactory.build(
+      {
+        badgeId: badge._id,
+        userId: testVendor._id,
       },
       { generateId: true },
     );
@@ -451,6 +522,13 @@ describe('Badge Controller', () => {
         });
 
         context('when a valid token is used', () => {
+          beforeEach(async () => {
+            await addUser(vendorUser);
+            await addUser(testVendor);
+            await assignBadge(assignedBadge);
+            await assignBadge(assignedBadge2);
+          });
+
           it('returns all badges', (done) => {
             request()
               .get(endpoint)
@@ -461,10 +539,12 @@ describe('Badge Controller', () => {
                 expect(res.body.result[0].name).to.be.eql(badge.name);
                 expect(res.body.result[0].addedBy).to.be.eql(badge.addedBy.toString());
                 expect(res.body.result[0].assignedRole).to.be.eql(badge.assignedRole);
+                expect(res.body.result[0].noOfAssignedUsers).to.be.eql(2);
                 expect(res.body.result[1]._id).to.be.eql(badges[0]._id.toString());
                 expect(res.body.result[1].name).to.be.eql(badges[0].name);
                 expect(res.body.result[1].addedBy).to.be.eql(badges[0].addedBy.toString());
                 expect(res.body.result[1].assignedRole).to.be.eql(badges[0].assignedRole);
+                expect(res.body.result[1].noOfAssignedUsers).to.be.eql(0);
                 done();
               });
           });
