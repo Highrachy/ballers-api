@@ -44,12 +44,17 @@ import {
   VENDOR_STEPS,
   VENDOR_INFO_STATUS,
   COMMENT_STATUS,
+  BADGE_ACCESS_LEVEL,
 } from '../../server/helpers/constants';
 import AddressFactory from '../factories/address.factory';
 import VendorFactory from '../factories/vendor.factory';
 import { USER_FILTERS } from '../../server/helpers/filters';
 import Notification from '../../server/models/notification.model';
 import NotificationFactory from '../factories/notification.factory';
+import BadgeFactory from '../factories/badge.factory';
+import AssignedBadgeFactory from '../factories/assignedBadge.factory';
+import { addBadge } from '../../server/services/badge.service';
+import { assignBadge } from '../../server/services/assignedBadge.service';
 
 let adminToken;
 let userToken;
@@ -2766,11 +2771,60 @@ describe('User Controller', () => {
         { role: USER_ROLE.USER, activated: true },
         { generateId: true },
       );
+      const vendorUser = UserFactory.build(
+        { role: USER_ROLE.VENDOR, activated: true },
+        { generateId: true },
+      );
+
       const method = 'get';
       const endpoint = `/api/v1/user/${testUser._id}`;
 
+      const userBadge = BadgeFactory.build(
+        { assignedRole: BADGE_ACCESS_LEVEL.USER },
+        { generateId: true },
+      );
+
+      const vendorBadge = BadgeFactory.build(
+        { assignedRole: BADGE_ACCESS_LEVEL.VENDOR },
+        { generateId: true },
+      );
+
+      const allBadge = BadgeFactory.build(
+        { assignedRole: BADGE_ACCESS_LEVEL.ALL },
+        { generateId: true },
+      );
+
+      const assignedAllBadge = AssignedBadgeFactory.build(
+        {
+          badgeId: allBadge._id,
+          userId: testUser._id,
+        },
+        { generateId: true },
+      );
+      const assignUserBadge = AssignedBadgeFactory.build(
+        {
+          badgeId: userBadge._id,
+          userId: testUser._id,
+        },
+        { generateId: true },
+      );
+      const assignVendorBadge = AssignedBadgeFactory.build(
+        {
+          badgeId: vendorBadge._id,
+          userId: vendorUser._id,
+        },
+        { generateId: true },
+      );
+
       beforeEach(async () => {
         await addUser(testUser);
+        await addUser(vendorUser);
+        await addBadge(allBadge);
+        await addBadge(userBadge);
+        await addBadge(vendorBadge);
+        await assignBadge(assignedAllBadge);
+        await assignBadge(assignUserBadge);
+        await assignBadge(assignVendorBadge);
       });
 
       context('with a valid token & id', () => {
@@ -2784,6 +2838,31 @@ describe('User Controller', () => {
               expect(res.body.user._id).to.be.eql(testUser._id.toString());
               expect(res.body.user).to.not.have.property('password');
               expect(res.body.user).to.not.have.property('notifications');
+              expect(res.body.user.assignedBadges.length).to.be.eql(2);
+              expect(res.body.user.assignedBadges[0]._id).to.be.eql(
+                assignedAllBadge._id.toString(),
+              );
+              expect(res.body.user.assignedBadges[1]._id).to.be.eql(assignUserBadge._id.toString());
+              done();
+            });
+        });
+      });
+
+      context('with a valid token & id', () => {
+        it('successfully returns vendor details', (done) => {
+          request()
+            .get(`/api/v1/user/${vendorUser._id}`)
+            .set('authorization', adminToken)
+            .end((err, res) => {
+              expect(res).to.have.status(200);
+              expect(res.body.success).to.be.eql(true);
+              expect(res.body.user._id).to.be.eql(vendorUser._id.toString());
+              expect(res.body.user).to.not.have.property('password');
+              expect(res.body.user).to.not.have.property('notifications');
+              expect(res.body.user.assignedBadges.length).to.be.eql(1);
+              expect(res.body.user.assignedBadges[0]._id).to.be.eql(
+                assignVendorBadge._id.toString(),
+              );
               done();
             });
         });

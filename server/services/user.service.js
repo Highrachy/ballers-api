@@ -679,6 +679,14 @@ export const getOneUser = async (userId) =>
   User.aggregate([
     { $match: { _id: ObjectId(userId) } },
     {
+      $lookup: {
+        from: 'assignedbadges',
+        localField: '_id',
+        foreignField: 'userId',
+        as: 'assignedBadges',
+      },
+    },
+    {
       $project: {
         password: 0,
         notifications: 0,
