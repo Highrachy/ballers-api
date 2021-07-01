@@ -62,6 +62,25 @@ const ReferralSchema = new mongoose.Schema(
         type: Date,
       },
     },
+    assignedReferral: {
+      total: {
+        type: Number,
+        default: 0,
+      },
+      transactions: [
+        {
+          transactionId: {
+            type: ObjectId,
+          },
+          percentage: {
+            type: Number,
+          },
+          amountPayable: {
+            type: Number,
+          },
+        },
+      ],
+    },
   },
   { timestamps: true },
 );

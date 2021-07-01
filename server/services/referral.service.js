@@ -29,6 +29,8 @@ export const getReferralByEmailAndReferrerId = async (email, referrerId) =>
     },
   ]);
 
+export const getReferralBasicInfoById = async (id) => Referral.findById(id).select();
+
 export const addReferral = async (referalInfo) => {
   const invitedReferral = await getReferralByEmailAndReferrerId(
     referalInfo.email,
@@ -104,9 +106,7 @@ export const getReferralById = async (referralId) => {
         as: 'referrer',
       },
     },
-    {
-      $unwind: '$referrer',
-    },
+    { $unwind: '$referrer' },
     {
       $project: {
         _id: 1,
@@ -364,3 +364,38 @@ export const updateReferralRewardStatus = async ({ referralId, offerId }) => {
 
 export const getReferralByOfferId = async (offerId) =>
   Referral.findOne({ offerId: ObjectId(offerId) });
+
+export const updateAssignedReferral = async ({ referralId, transactionId, amountPaid }) => {
+  const referral = await getReferralBasicInfoById(referralId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  const user = await getUserById(referral.referrerId);
+
+  const percentage = user.additionalInfo.referralPercentage;
+  const amountPayable = (percentage / 100) * amountPaid;
+  const total =
+    amountPayable +
+    referral.assignedReferral.transactions.reduce(
+      (accum, transaction) => accum + transaction.amountPayable,
+      0,
+    );
+
+  const newAssignedReferral = {
+    total,
+    transactions: [
+      { transactionId, percentage, amountPayable },
+      ...referral.assignedReferral.transactions,
+    ],
+  };
+
+  try {
+    return Referral.findByIdAndUpdate(
+      referral._id,
+      { $set: { assignedReferral: newAssignedReferral } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating assigned referral', error);
+  }
+};

@@ -197,7 +197,7 @@ describe('TotalCount Controller', () => {
 
     const badges = BadgeFactory.buildList(
       5,
-      { assignedRole: BADGE_ACCESS_LEVEL.ALL },
+      { assignedRole: BADGE_ACCESS_LEVEL.ALL, slug: 'test_badge' },
       { generateId: true },
     );
 
