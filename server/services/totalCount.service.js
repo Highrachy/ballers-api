@@ -44,7 +44,7 @@ const getTotalCount = async (user) => {
       ...matchObject,
     });
     const transactions = await Transaction.countDocuments(matchObject);
-    const assignedbadges = await AssignedBadge.countDocuments({ userId: ObjectId(user._id) });
+    const assignedBadges = await AssignedBadge.countDocuments({ userId: ObjectId(user._id) });
 
     const models = {
       enquiries,
@@ -54,7 +54,7 @@ const getTotalCount = async (user) => {
       referrals,
       scheduledVisitations,
       transactions,
-      assignedbadges,
+      assignedBadges,
     };
 
     if (user.role === USER_ROLE.ADMIN || user.role === USER_ROLE.USER) {

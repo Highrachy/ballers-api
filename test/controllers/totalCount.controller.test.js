@@ -208,7 +208,7 @@ describe('TotalCount Controller', () => {
       ),
     );
 
-    const vendorAssignedBadges = badges.map((_, index) =>
+    const vendorAssignedBadges = [...new Array(4)].map((_, index) =>
       AssignedBadgeFactory.build(
         { badgeId: badges[index]._id, userId: vendorUser._id },
         { generateId: true },
@@ -255,6 +255,7 @@ describe('TotalCount Controller', () => {
             expect(res.body.models.users).to.be.eql(3);
             expect(res.body.models.portfolios).to.be.eql(2);
             expect(res.body.models.badges).to.be.eql(5);
+            expect(res.body.models.assignedBadges).to.be.eql(0);
             done();
           });
       });
@@ -279,7 +280,7 @@ describe('TotalCount Controller', () => {
             expect(res.body.models).to.not.have.property('users');
             expect(res.body.models.portfolios).to.be.eql(1);
             expect(res.body.models).to.not.have.property('badges');
-            expect(res.body.models.assignedbadges).to.be.eql(3);
+            expect(res.body.models.assignedBadges).to.be.eql(3);
             done();
           });
       });
@@ -304,7 +305,7 @@ describe('TotalCount Controller', () => {
             expect(res.body.models).to.not.have.property('offlinePayments');
             expect(res.body.models.portfolios).to.be.eql(2);
             expect(res.body.models).to.not.have.property('badges');
-            expect(res.body.models.assignedbadges).to.be.eql(5);
+            expect(res.body.models.assignedBadges).to.be.eql(4);
             done();
           });
       });
