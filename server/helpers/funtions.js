@@ -5,3 +5,14 @@ export const getMoneyFormat = (number) =>
   new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(number);
 
 export const getFormattedName = (name) => `"${name}"`;
+
+export const slugify = (text) =>
+  text
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');

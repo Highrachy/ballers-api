@@ -7,23 +7,26 @@ import { buildFilterAndSortQuery, BADGE_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { getAssignedBadgesByBadgeId } from './assignedBadge.service';
 import { PROJECTED_BADGE_INFO, NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
+import { slugify } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
 export const getBadgeById = async (id) => Badge.findById(id).select();
 
-export const getBadgeByBadgeName = async (badgeName) =>
-  Badge.find({ name: badgeName }).collation({ locale: 'en', strength: 2 });
+export const getBadgeBySlug = async (badgeSlug) =>
+  Badge.find({ slug: badgeSlug }).collation({ locale: 'en', strength: 2 });
 
 export const addBadge = async (badge) => {
-  const badgeExists = await getBadgeByBadgeName(badge.name);
+  const slug = slugify(badge.name);
+
+  const badgeExists = await getBadgeBySlug(slug);
 
   if (badgeExists.length > 0) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Badge already exists');
   }
 
   try {
-    const addedBadge = await new Badge(badge).save();
+    const addedBadge = await new Badge({ ...badge, slug }).save();
     return addedBadge;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding badge', error);
