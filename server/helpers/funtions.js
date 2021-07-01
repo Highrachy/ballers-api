@@ -6,8 +6,8 @@ export const getMoneyFormat = (number) =>
 
 export const getFormattedName = (name) => `"${name}"`;
 
-export const slugifyString = (string) =>
-  string
+export const slugify = (text) =>
+  text
     .toString()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')

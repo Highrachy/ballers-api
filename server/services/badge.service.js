@@ -7,7 +7,7 @@ import { buildFilterAndSortQuery, BADGE_FILTERS } from '../helpers/filters';
 // eslint-disable-next-line import/no-cycle
 import { getAssignedBadgesByBadgeId } from './assignedBadge.service';
 import { PROJECTED_BADGE_INFO, NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
-import { slugifyString } from '../helpers/funtions';
+import { slugify } from '../helpers/funtions';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -17,7 +17,7 @@ export const getBadgeBySlug = async (badgeSlug) =>
   Badge.find({ slug: badgeSlug }).collation({ locale: 'en', strength: 2 });
 
 export const addBadge = async (badge) => {
-  const slug = slugifyString(badge.name);
+  const slug = slugify(badge.name);
 
   const badgeExists = await getBadgeBySlug(slug);
 
