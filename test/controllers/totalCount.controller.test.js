@@ -8,6 +8,8 @@ import Referral from '../../server/models/referral.model';
 import ReportedProperty from '../../server/models/reportedProperty.model';
 import Transaction from '../../server/models/transaction.model';
 import Visitation from '../../server/models/visitation.model';
+import Badge from '../../server/models/badge.model';
+import AssignedBadge from '../../server/models/assignedBadge.model';
 import EnquiryFactory from '../factories/enquiry.factory';
 import OfferFactory from '../factories/offer.factory';
 import OfflinePaymentFactory from '../factories/offlinePayment.factory';
@@ -18,8 +20,15 @@ import TransactionFactory from '../factories/transaction.factory';
 import UserFactory from '../factories/user.factory';
 import VendorFactory from '../factories/vendor.factory';
 import VisitationFactory from '../factories/visitation.factory';
+import BadgeFactory from '../factories/badge.factory';
+import AssignedBadgeFactory from '../factories/assignedBadge.factory';
 import { addUser, assignPropertyToUser } from '../../server/services/user.service';
-import { VISITATION_STATUS, USER_ROLE, OFFER_STATUS } from '../../server/helpers/constants';
+import {
+  VISITATION_STATUS,
+  USER_ROLE,
+  OFFER_STATUS,
+  BADGE_ACCESS_LEVEL,
+} from '../../server/helpers/constants';
 import {
   itReturnsForbiddenForNoToken,
   itReturnsForbiddenForTokenWithInvalidAccess,
@@ -186,6 +195,26 @@ describe('TotalCount Controller', () => {
       ),
     );
 
+    const badges = BadgeFactory.buildList(
+      5,
+      { assignedRole: BADGE_ACCESS_LEVEL.ALL },
+      { generateId: true },
+    );
+
+    const userAssignedBadges = [...new Array(3)].map((_, index) =>
+      AssignedBadgeFactory.build(
+        { badgeId: badges[index]._id, userId: regularUser._id },
+        { generateId: true },
+      ),
+    );
+
+    const vendorAssignedBadges = [...new Array(4)].map((_, index) =>
+      AssignedBadgeFactory.build(
+        { badgeId: badges[index]._id, userId: vendorUser._id },
+        { generateId: true },
+      ),
+    );
+
     beforeEach(async () => {
       await Property.insertMany([...properties, ...properties2]);
       await Visitation.insertMany(visitations);
@@ -195,6 +224,8 @@ describe('TotalCount Controller', () => {
       await Referral.insertMany(referrals);
       await ReportedProperty.insertMany(reportedProperties);
       await Transaction.insertMany(transactions);
+      await Badge.insertMany(badges);
+      await AssignedBadge.insertMany([...userAssignedBadges, ...vendorAssignedBadges]);
 
       await assignPropertyToUser({
         userId: regularUser._id,
@@ -223,6 +254,8 @@ describe('TotalCount Controller', () => {
             expect(res.body.models.transactions).to.be.eql(8);
             expect(res.body.models.users).to.be.eql(3);
             expect(res.body.models.portfolios).to.be.eql(2);
+            expect(res.body.models.badges).to.be.eql(5);
+            expect(res.body.models.assignedBadges).to.be.eql(0);
             done();
           });
       });
@@ -246,6 +279,8 @@ describe('TotalCount Controller', () => {
             expect(res.body.models.transactions).to.be.eql(8);
             expect(res.body.models).to.not.have.property('users');
             expect(res.body.models.portfolios).to.be.eql(1);
+            expect(res.body.models).to.not.have.property('badges');
+            expect(res.body.models.assignedBadges).to.be.eql(3);
             done();
           });
       });
@@ -269,6 +304,8 @@ describe('TotalCount Controller', () => {
             expect(res.body.models).to.not.have.property('reportedProperties');
             expect(res.body.models).to.not.have.property('offlinePayments');
             expect(res.body.models.portfolios).to.be.eql(2);
+            expect(res.body.models).to.not.have.property('badges');
+            expect(res.body.models.assignedBadges).to.be.eql(4);
             done();
           });
       });
