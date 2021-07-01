@@ -26,6 +26,7 @@ import {
   currentDate,
 } from '../helpers';
 import { assignBadge } from '../../server/services/assignedBadge.service';
+import { slugifyString } from '../../server/helpers/funtions';
 
 let adminToken;
 
@@ -55,6 +56,7 @@ describe('Badge Controller', () => {
       name: 'Special user badge',
       assignedRole: BADGE_ACCESS_LEVEL.USER,
       image: 'badge.png',
+      icon: { name: 'special_icon', color: '#000000' },
     };
 
     context('when a valid token is used', () => {
@@ -71,12 +73,15 @@ describe('Badge Controller', () => {
             expect(res.body.badge.assignedRole).to.be.eql(BADGE_ACCESS_LEVEL.USER);
             expect(res.body.badge.image).to.be.eql(badge.image);
             expect(res.body.badge.addedBy).to.be.eql(adminUser._id.toString());
+            expect(res.body.badge.slug).to.be.eql(slugifyString(badge.name));
+            expect(res.body.badge.icon.name).to.be.eql(badge.icon.name);
+            expect(res.body.badge.icon.color).to.be.eql(badge.icon.color);
             done();
           });
       });
     });
 
-    context('when badge with similar name exists', () => {
+    context('when badge with similar slug exists', () => {
       beforeEach(async () => {
         await addBadge(badge);
       });

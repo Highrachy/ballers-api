@@ -44,7 +44,17 @@ const BadgeSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      required: true,
+    },
+    icon: {
+      name: {
+        type: String,
+      },
+      color: {
+        type: String,
+      },
+    },
+    slug: {
+      type: String,
     },
   },
   { timestamps: true },
