@@ -7,6 +7,7 @@ import {
   sendReferralInvite,
   getReferralById,
   getUserByRefCode,
+  updateAssignedReferral,
 } from '../../server/services/referral.service';
 import ReferralFactory from '../factories/referral.factory';
 import UserFactory from '../factories/user.factory';
@@ -238,6 +239,72 @@ describe('Referral Service', () => {
     it('returns a valid user by referral code', async () => {
       const res = await getUserByRefCode(referralCode);
       expect(res[0]._id).to.eql(referrerId);
+    });
+  });
+
+  describe('#updateAssignedReferral', () => {
+    const transactionId = mongoose.Types.ObjectId();
+
+    const referrer = UserFactory.build(
+      { additionalInfo: { referralPercentage: 5 } },
+      { generateId: true },
+    );
+
+    const referral = ReferralFactory.build(
+      {
+        referrerId: referrer._id,
+        assignedReferral: {
+          total: 100_000,
+          transactions: [
+            {
+              transactionId: mongoose.Types.ObjectId(),
+              percentage: 2,
+              amountPayable: 100_000,
+            },
+          ],
+        },
+      },
+      { generateId: true },
+    );
+
+    beforeEach(async () => {
+      await User.create(referrer);
+      await addReferral(referral);
+    });
+
+    context('when referral is updated', () => {
+      it('returns a valid updated referral', async () => {
+        const assignedReferral = await updateAssignedReferral({
+          referralId: referral._id,
+          transactionId,
+          amountPaid: 500_000,
+        });
+        expect(assignedReferral._id).to.eql(referral._id);
+        expect(assignedReferral.assignedReferral.total).to.eql(125_000);
+        expect(assignedReferral.assignedReferral.transactions.length).to.eql(2);
+        expect(assignedReferral.assignedReferral.transactions[0].percentage).to.eql(5);
+        expect(assignedReferral.assignedReferral.transactions[0].amountPayable).to.eql(25_000);
+        expect(assignedReferral.assignedReferral.transactions[0].transactionId).to.eql(
+          transactionId,
+        );
+      });
+    });
+
+    context('when findByIdAndUpdate fails', () => {
+      it('throws an error', async () => {
+        sinon.stub(Referral, 'findByIdAndUpdate').throws(new Error('error msg'));
+        try {
+          await updateAssignedReferral({
+            referralId: referral._id,
+            transactionId,
+            amountPaid: 500_000,
+          });
+        } catch (err) {
+          expect(err.statusCode).to.eql(400);
+          expect(err.message).to.be.eql('Error updating assigned referral');
+        }
+        Referral.findByIdAndUpdate.restore();
+      });
     });
   });
 });
