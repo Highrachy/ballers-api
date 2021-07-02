@@ -29,7 +29,10 @@ import { getEndOfDay } from '../../server/helpers/dates';
 
 describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
-  const admin = UserFactory.build({ role: USER_ROLE.admin }, { generateId: true });
+  const admin = UserFactory.build(
+    { role: USER_ROLE.admin, additionalInfo: { referralPercentage: 5 } },
+    { generateId: true },
+  );
   const user = UserFactory.build({ role: USER_ROLE.USER }, { generateId: true });
   const property = PropertyFactory.build({ addedBy: vendor._id }, { generateId: true });
   const enquiry = EnquiryFactory.build(
@@ -208,38 +211,61 @@ describe('Transaction Service', () => {
       });
 
       context('when it is the first transaction', () => {
-        it('updates referral to payment started', async () => {
+        it('updates referral accumulated reward & reward status to payment started', async () => {
           const updatedReferral = await Referral.findById(referral._id);
           expect(updatedReferral._id).to.be.eql(referral._id);
           expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PAYMENT_STARTED);
+          expect(updatedReferral.accumulatedReward.total).to.eql(50_000);
+          expect(updatedReferral.accumulatedReward.transactions.length).to.eql(1);
+          expect(updatedReferral.accumulatedReward.transactions[0].percentage).to.eql(5);
+          expect(updatedReferral.accumulatedReward.transactions[0].amount).to.eql(50_000);
+          expect(updatedReferral.accumulatedReward.transactions[0].transactionId).to.eql(
+            transaction._id,
+          );
         });
       });
 
       context('when it is the second transaction', () => {
+        const secondTransactionId = mongoose.Types.ObjectId();
         beforeEach(async () => {
-          await addTransaction({ ...transaction, amount: 500_000, _id: mongoose.Types.ObjectId() });
+          await addTransaction({ ...transaction, amount: 500_000, _id: secondTransactionId });
         });
 
-        it('updates referral to progress', async () => {
+        it('updates referral accumulated reward & reward status to progress', async () => {
           const updatedReferral = await Referral.findById(referral._id);
           expect(updatedReferral._id).to.be.eql(referral._id);
           expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PAYMENT_IN_PROGRESS);
+          expect(updatedReferral.accumulatedReward.total).to.eql(75_000);
+          expect(updatedReferral.accumulatedReward.transactions.length).to.eql(2);
+          expect(updatedReferral.accumulatedReward.transactions[0].percentage).to.eql(5);
+          expect(updatedReferral.accumulatedReward.transactions[0].amount).to.eql(25_000);
+          expect(updatedReferral.accumulatedReward.transactions[0].transactionId).to.eql(
+            secondTransactionId,
+          );
         });
       });
 
       context('when it is the last transaction', () => {
+        const lastTransactionId = mongoose.Types.ObjectId();
         beforeEach(async () => {
           await addTransaction({
             ...transaction,
             amount: 3_000_000,
-            _id: mongoose.Types.ObjectId(),
+            _id: lastTransactionId,
           });
         });
 
-        it('updates referral to awaiting payment', async () => {
+        it('updates referral accumulated reward & reward status to awaiting payment', async () => {
           const updatedReferral = await Referral.findById(referral._id);
           expect(updatedReferral._id).to.be.eql(referral._id);
           expect(updatedReferral.reward.status).to.be.eql(REWARD_STATUS.PAYMENT_COMPLETED);
+          expect(updatedReferral.accumulatedReward.total).to.eql(200_000);
+          expect(updatedReferral.accumulatedReward.transactions.length).to.eql(2);
+          expect(updatedReferral.accumulatedReward.transactions[0].percentage).to.eql(5);
+          expect(updatedReferral.accumulatedReward.transactions[0].amount).to.eql(150_000);
+          expect(updatedReferral.accumulatedReward.transactions[0].transactionId).to.eql(
+            lastTransactionId,
+          );
         });
       });
     });

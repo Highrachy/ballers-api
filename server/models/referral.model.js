@@ -62,7 +62,7 @@ const ReferralSchema = new mongoose.Schema(
         type: Date,
       },
     },
-    assignedReferral: {
+    accumulatedReward: {
       total: {
         type: Number,
         default: 0,
@@ -75,7 +75,7 @@ const ReferralSchema = new mongoose.Schema(
           percentage: {
             type: Number,
           },
-          amountPayable: {
+          amount: {
             type: Number,
           },
         },

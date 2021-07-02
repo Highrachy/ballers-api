@@ -343,7 +343,15 @@ export const activatePendingUserReferral = async (offer) => {
   }
 };
 
-export const updateReferralRewardStatus = async ({ referralId, offerId }) => {
+export const getReferralByOfferId = async (offerId) =>
+  Referral.findOne({ offerId: ObjectId(offerId) });
+
+export const updateReferralAccumulatedRewardAndRewardStatus = async ({
+  referralId,
+  transactionId,
+  offerId,
+  amountPaid,
+}) => {
   const paymentType = await getPaymentDuration(offerId);
   let rewardStatus = REWARD_STATUS.PAYMENT_IN_PROGRESS;
 
@@ -355,17 +363,6 @@ export const updateReferralRewardStatus = async ({ referralId, offerId }) => {
     rewardStatus = REWARD_STATUS.PAYMENT_COMPLETED;
   }
 
-  await Referral.findByIdAndUpdate(
-    referralId,
-    { $set: { offerId, 'reward.status': rewardStatus } },
-    { new: true },
-  );
-};
-
-export const getReferralByOfferId = async (offerId) =>
-  Referral.findOne({ offerId: ObjectId(offerId) });
-
-export const updateAssignedReferral = async ({ referralId, transactionId, amountPaid }) => {
   const referral = await getReferralBasicInfoById(referralId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
@@ -373,26 +370,25 @@ export const updateAssignedReferral = async ({ referralId, transactionId, amount
   const user = await getUserById(referral.referrerId);
 
   const percentage = user.additionalInfo.referralPercentage;
-  const amountPayable = (percentage / 100) * amountPaid;
-  const total =
-    amountPayable +
-    referral.assignedReferral.transactions.reduce(
-      (accum, transaction) => accum + transaction.amountPayable,
-      0,
-    );
+  const amount = (percentage / 100) * amountPaid;
+  const previousTotal = referral.accumulatedReward.transactions.reduce(
+    (acc, transaction) => acc + transaction.amount,
+    0,
+  );
+  const total = amount + previousTotal;
 
-  const newAssignedReferral = {
+  const newAccumulatedReward = {
     total,
     transactions: [
-      { transactionId, percentage, amountPayable },
-      ...referral.assignedReferral.transactions,
+      { transactionId, percentage, amount },
+      ...referral.accumulatedReward.transactions,
     ],
   };
 
   try {
     return Referral.findByIdAndUpdate(
       referral._id,
-      { $set: { assignedReferral: newAssignedReferral } },
+      { $set: { accumulatedReward: newAccumulatedReward, offerId, 'reward.status': rewardStatus } },
       { new: true },
     );
   } catch (error) {
