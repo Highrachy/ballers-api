@@ -13,6 +13,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import {
   projectedReferralInfoForAdmin,
   projectedReferralUserInfo,
+  PROJECTED_REFERRAL_INFO,
 } from '../helpers/projectedSchemaInfo';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
@@ -109,17 +110,8 @@ export const getReferralById = async (referralId) => {
     { $unwind: '$referrer' },
     {
       $project: {
-        _id: 1,
-        userId: 1,
-        firstName: 1,
-        email: 1,
-        referrerId: 1,
-        reward: 1,
-        status: 1,
-        'referrer._id': 1,
-        'referrer.firstName': 1,
-        'referrer.lastName': 1,
-        'referrer.referralCode': 1,
+        ...PROJECTED_REFERRAL_INFO,
+        ...projectedReferralUserInfo('referrer'),
       },
     },
   ]);
@@ -228,13 +220,7 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
     },
     {
       $project: {
-        _id: 1,
-        userId: 1,
-        firstName: 1,
-        email: 1,
-        referrerId: 1,
-        reward: 1,
-        status: 1,
+        ...PROJECTED_REFERRAL_INFO,
         offerInfo: 1,
         ...projectedReferralUserInfo('referee'),
         ...projectedReferralInfoForAdmin(user.role),
@@ -377,7 +363,7 @@ export const updateReferralAccumulatedRewardAndRewardStatus = async ({
   );
   const total = amount + previousTotal;
 
-  const newAccumulatedReward = {
+  const accumulatedReward = {
     total,
     transactions: [
       { transactionId, percentage, amount },
@@ -388,7 +374,7 @@ export const updateReferralAccumulatedRewardAndRewardStatus = async ({
   try {
     return Referral.findByIdAndUpdate(
       referral._id,
-      { $set: { accumulatedReward: newAccumulatedReward, offerId, 'reward.status': rewardStatus } },
+      { $set: { accumulatedReward, offerId, 'reward.status': rewardStatus } },
       { new: true },
     );
   } catch (error) {
