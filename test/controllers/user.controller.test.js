@@ -2843,6 +2843,8 @@ describe('User Controller', () => {
                 assignedAllBadge._id.toString(),
               );
               expect(res.body.user.assignedBadges[1]._id).to.be.eql(assignUserBadge._id.toString());
+              expect(res.body.user.badges[0]._id).to.be.eql(userBadge._id.toString());
+              expect(res.body.user.badges[1]._id).to.be.eql(allBadge._id.toString());
               done();
             });
         });

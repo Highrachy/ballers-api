@@ -549,6 +549,7 @@ describe('Badge Controller', () => {
                 expect(res.body.result[0].name).to.be.eql(badge.name);
                 expect(res.body.result[0].addedBy).to.be.eql(badge.addedBy.toString());
                 expect(res.body.result[0].assignedRole).to.be.eql(badge.assignedRole);
+                expect(res.body.result[0].icon).to.be.eql(badge.icon);
                 expect(res.body.result[0].noOfAssignedUsers).to.be.eql(2);
                 expect(res.body.result[1]._id).to.be.eql(badges[0]._id.toString());
                 expect(res.body.result[1].name).to.be.eql(badges[0].name);
