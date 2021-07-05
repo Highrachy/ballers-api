@@ -22,7 +22,10 @@ import NOTIFICATIONS from '../helpers/notifications';
 import { TRANSACTION_FILTERS, buildFilterAndSortQuery } from '../helpers/filters';
 import { getMoneyFormat, getFormattedName } from '../helpers/funtions';
 // eslint-disable-next-line import/no-cycle
-import { updateReferralRewardStatus, getReferralByOfferId } from './referral.service';
+import {
+  getReferralByOfferId,
+  updateReferralAccumulatedRewardAndRewardStatus,
+} from './referral.service';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -72,7 +75,12 @@ export const addTransaction = async (transaction) => {
     const referral = await getReferralByOfferId(offer._id);
 
     if (referral) {
-      await updateReferralRewardStatus({ referralId: referral._id, offerId: offer._id });
+      await updateReferralAccumulatedRewardAndRewardStatus({
+        referralId: referral._id,
+        transactionId: newTransaction._id,
+        amountPaid: transaction.amount,
+        offerId: offer._id,
+      });
     }
 
     return newTransaction;

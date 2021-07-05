@@ -13,6 +13,7 @@ import { generatePagination, generateFacetData, getPaginationTotal } from '../he
 import {
   projectedReferralInfoForAdmin,
   projectedReferralUserInfo,
+  PROJECTED_REFERRAL_INFO,
 } from '../helpers/projectedSchemaInfo';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
@@ -28,6 +29,8 @@ export const getReferralByEmailAndReferrerId = async (email, referrerId) =>
       },
     },
   ]);
+
+export const getReferralBasicInfoById = async (id) => Referral.findById(id).select();
 
 export const addReferral = async (referalInfo) => {
   const invitedReferral = await getReferralByEmailAndReferrerId(
@@ -104,22 +107,11 @@ export const getReferralById = async (referralId) => {
         as: 'referrer',
       },
     },
-    {
-      $unwind: '$referrer',
-    },
+    { $unwind: '$referrer' },
     {
       $project: {
-        _id: 1,
-        userId: 1,
-        firstName: 1,
-        email: 1,
-        referrerId: 1,
-        reward: 1,
-        status: 1,
-        'referrer._id': 1,
-        'referrer.firstName': 1,
-        'referrer.lastName': 1,
-        'referrer.referralCode': 1,
+        ...PROJECTED_REFERRAL_INFO,
+        ...projectedReferralUserInfo('referrer'),
       },
     },
   ]);
@@ -228,13 +220,7 @@ export const getAllReferrals = async (user, { page = 1, limit = 10, ...query } =
     },
     {
       $project: {
-        _id: 1,
-        userId: 1,
-        firstName: 1,
-        email: 1,
-        referrerId: 1,
-        reward: 1,
-        status: 1,
+        ...PROJECTED_REFERRAL_INFO,
         offerInfo: 1,
         ...projectedReferralUserInfo('referee'),
         ...projectedReferralInfoForAdmin(user.role),
@@ -343,7 +329,15 @@ export const activatePendingUserReferral = async (offer) => {
   }
 };
 
-export const updateReferralRewardStatus = async ({ referralId, offerId }) => {
+export const getReferralByOfferId = async (offerId) =>
+  Referral.findOne({ offerId: ObjectId(offerId) });
+
+export const updateReferralAccumulatedRewardAndRewardStatus = async ({
+  referralId,
+  transactionId,
+  offerId,
+  amountPaid,
+}) => {
   const paymentType = await getPaymentDuration(offerId);
   let rewardStatus = REWARD_STATUS.PAYMENT_IN_PROGRESS;
 
@@ -355,12 +349,35 @@ export const updateReferralRewardStatus = async ({ referralId, offerId }) => {
     rewardStatus = REWARD_STATUS.PAYMENT_COMPLETED;
   }
 
-  await Referral.findByIdAndUpdate(
-    referralId,
-    { $set: { offerId, 'reward.status': rewardStatus } },
-    { new: true },
-  );
-};
+  const referral = await getReferralBasicInfoById(referralId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
 
-export const getReferralByOfferId = async (offerId) =>
-  Referral.findOne({ offerId: ObjectId(offerId) });
+  const user = await getUserById(referral.referrerId);
+
+  const percentage = user.additionalInfo.referralPercentage;
+  const amount = (percentage / 100) * amountPaid;
+  const previousTotal = referral.accumulatedReward.transactions.reduce(
+    (acc, transaction) => acc + transaction.amount,
+    0,
+  );
+  const total = amount + previousTotal;
+
+  const accumulatedReward = {
+    total,
+    transactions: [
+      { transactionId, percentage, amount },
+      ...referral.accumulatedReward.transactions,
+    ],
+  };
+
+  try {
+    return Referral.findByIdAndUpdate(
+      referral._id,
+      { $set: { accumulatedReward, offerId, 'reward.status': rewardStatus } },
+      { new: true },
+    );
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error updating assigned referral', error);
+  }
+};

@@ -62,6 +62,25 @@ const ReferralSchema = new mongoose.Schema(
         type: Date,
       },
     },
+    accumulatedReward: {
+      total: {
+        type: Number,
+        default: 0,
+      },
+      transactions: [
+        {
+          transactionId: {
+            type: ObjectId,
+          },
+          percentage: {
+            type: Number,
+          },
+          amount: {
+            type: Number,
+          },
+        },
+      ],
+    },
   },
   { timestamps: true },
 );

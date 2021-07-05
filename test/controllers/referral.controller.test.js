@@ -390,6 +390,7 @@ describe('Referral Controller', () => {
               .end((err, res) => {
                 expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
                 expect(res.body.result[0]._id).to.be.eql(adminReferral._id.toString());
+                expect(res.body.result[0].accumulatedReward.total).to.be.eql(0);
                 expect(res.body.result[0].offerInfo._id).to.be.eql(offer._id.toString());
                 expect(res.body.result[0].offerInfo.totalAmountPayable).to.be.eql(
                   offer.totalAmountPayable,
@@ -680,7 +681,8 @@ describe('Referral Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body).to.have.property('referral');
+            expect(res.body.referral._id).to.be.eql(referralId.toString());
+            expect(res.body.referral.accumulatedReward.total).to.be.eql(0);
             done();
           });
       });

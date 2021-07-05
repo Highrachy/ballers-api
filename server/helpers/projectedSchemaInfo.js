@@ -116,3 +116,15 @@ export const PROJECTED_BADGE_INFO = {
   image: 1,
   updatedAt: 1,
 };
+
+export const PROJECTED_REFERRAL_INFO = {
+  _id: 1,
+  userId: 1,
+  firstName: 1,
+  email: 1,
+  referrerId: 1,
+  offerId: 1,
+  status: 1,
+  reward: 1,
+  accumulatedReward: 1,
+};
