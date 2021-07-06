@@ -480,7 +480,7 @@ describe('Badge Controller', () => {
         assignedRole: BADGE_ACCESS_LEVEL.VENDOR,
         createdAt: futureDate,
         name: 'Special vendor badge',
-        slug: 'special_vendor_badge',
+        slug: 'special-vendor-badge',
       },
       { generateId: true },
     );
