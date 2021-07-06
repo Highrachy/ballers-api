@@ -1207,11 +1207,22 @@ describe('User Controller', () => {
         { generateId: true },
       );
       const property = PropertyFactory.build(
-        { addedBy: vendor._id, price: 20000000 },
+        { addedBy: vendor._id, price: 20_000_000 },
         { generateId: true },
       );
       const referral = ReferralFactory.build(
-        { referrerId: regularUser._id, reward: { amount: 50000 } },
+        {
+          referrerId: regularUser._id,
+          reward: { amount: 50_000 },
+          accumulatedReward: { total: 40_000 },
+        },
+        { generateId: true },
+      );
+      const referral2 = ReferralFactory.build(
+        {
+          referrerId: regularUser._id,
+          accumulatedReward: { total: 100_000 },
+        },
         { generateId: true },
       );
 
@@ -1224,7 +1235,7 @@ describe('User Controller', () => {
           enquiryId: enquiry._id,
           vendorId: vendor._id,
           userId: regularUser._id,
-          totalAmountPayable: 19000000,
+          totalAmountPayable: 19_000_000,
         },
         { generateId: true },
       );
@@ -1235,7 +1246,7 @@ describe('User Controller', () => {
           addedBy: adminUser._id,
           updatedBy: adminUser._id,
           offerId: offer._id,
-          amount: 250000,
+          amount: 250_000,
         },
         { generateId: true },
       );
@@ -1263,6 +1274,7 @@ describe('User Controller', () => {
       describe('when offer has been accepted', () => {
         beforeEach(async () => {
           await addReferral(referral);
+          await addReferral(referral2);
           await addProperty(property);
           await addEnquiry(enquiry);
           await createOffer(offer);
@@ -1286,7 +1298,9 @@ describe('User Controller', () => {
                   property.price - offer.totalAmountPayable,
                 );
                 expect(res.body.accountOverview.totalAmountPaid).to.be.eql(transaction.amount);
-                expect(res.body.accountOverview.referralRewards).to.be.eql(referral.reward.amount);
+                expect(res.body.accountOverview.referralRewards).to.be.eql(
+                  referral.accumulatedReward.total + referral2.accumulatedReward.total,
+                );
                 done();
               });
           });

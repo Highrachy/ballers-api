@@ -853,7 +853,7 @@ describe('User Service', () => {
         enquiryId: enquiry._id,
         vendorId: vendor._id,
         userId: user._id,
-        totalAmountPayable: 18000000,
+        totalAmountPayable: 18_000_000,
       },
       { generateId: true },
     );
@@ -861,7 +861,8 @@ describe('User Service', () => {
     const referral = ReferralFactory.build(
       {
         referrerId: user._id,
-        reward: { amount: 50000 },
+        reward: { amount: 50_000 },
+        accumulatedReward: { total: 100_000 },
       },
       { generateId: true },
     );
@@ -873,7 +874,7 @@ describe('User Service', () => {
         addedBy: admin._id,
         updatedBy: admin._id,
         offerId: offer._id,
-        amount: 250000,
+        amount: 250_000,
       },
       { generateId: true },
     );
@@ -909,7 +910,7 @@ describe('User Service', () => {
         const overview = await getAccountOverview(user._id);
         expect(overview.contributionReward).to.eql(property.price - offer.totalAmountPayable);
         expect(overview.totalAmountPaid).to.eql(transaction.amount);
-        expect(overview.referralRewards).to.eql(referral.reward.amount);
+        expect(overview.referralRewards).to.eql(referral.accumulatedReward.total);
       });
     });
   });

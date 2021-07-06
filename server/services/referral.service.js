@@ -289,7 +289,7 @@ export const calculateReferralRewards = async (referrerId) =>
     {
       $group: {
         _id: null,
-        referralRewards: { $sum: '$reward.amount' },
+        referralRewards: { $sum: '$accumulatedReward.total' },
       },
     },
   ]);
