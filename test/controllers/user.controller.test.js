@@ -55,6 +55,7 @@ import BadgeFactory from '../factories/badge.factory';
 import AssignedBadgeFactory from '../factories/assignedBadge.factory';
 import { addBadge } from '../../server/services/badge.service';
 import { assignBadge } from '../../server/services/assignedBadge.service';
+import { slugify } from '../../server/helpers/funtions';
 
 let adminToken;
 let userToken;
@@ -2794,7 +2795,7 @@ describe('User Controller', () => {
       const endpoint = `/api/v1/user/${testUser._id}`;
 
       const userBadge = BadgeFactory.build(
-        { assignedRole: BADGE_ACCESS_LEVEL.USER },
+        { assignedRole: BADGE_ACCESS_LEVEL.USER, name: 'Special badge' },
         { generateId: true },
       );
 
@@ -2857,6 +2858,12 @@ describe('User Controller', () => {
                 assignedAllBadge._id.toString(),
               );
               expect(res.body.user.assignedBadges[1]._id).to.be.eql(assignUserBadge._id.toString());
+              expect(res.body.user.badges[0]._id).to.be.eql(userBadge._id.toString());
+              expect(res.body.user.badges[0].name).to.be.eql(userBadge.name);
+              expect(res.body.user.badges[0].image).to.be.eql(userBadge.image);
+              expect(res.body.user.badges[0].icon).to.be.eql(userBadge.icon);
+              expect(res.body.user.badges[0].slug).to.be.eql(slugify(userBadge.name));
+              expect(res.body.user.badges[1]._id).to.be.eql(allBadge._id.toString());
               done();
             });
         });

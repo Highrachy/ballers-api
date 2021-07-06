@@ -115,6 +115,8 @@ export const PROJECTED_BADGE_INFO = {
   name: 1,
   image: 1,
   updatedAt: 1,
+  icon: 1,
+  slug: 1,
 };
 
 export const PROJECTED_REFERRAL_INFO = {
