@@ -70,6 +70,7 @@ describe('Badge Controller', () => {
             expect(res.body.success).to.be.eql(true);
             expect(res.body.message).to.be.eql('Badge added successfully');
             expect(res.body.badge.name).to.be.eql(badge.name);
+            expect(res.body.badge.automated).to.be.eql(false);
             expect(res.body.badge.assignedRole).to.be.eql(BADGE_ACCESS_LEVEL.USER);
             expect(res.body.badge.image).to.be.eql(badge.image);
             expect(res.body.badge.addedBy).to.be.eql(adminUser._id.toString());
@@ -481,6 +482,7 @@ describe('Badge Controller', () => {
         createdAt: futureDate,
         name: 'Special vendor badge',
         slug: 'special_vendor_badge',
+        automated: true,
       },
       { generateId: true },
     );
@@ -492,6 +494,7 @@ describe('Badge Controller', () => {
         assignedRole: BADGE_ACCESS_LEVEL.ALL,
         createdAt: currentDate,
         slug: 'badge',
+        automated: false,
       },
       { generateId: true },
     );

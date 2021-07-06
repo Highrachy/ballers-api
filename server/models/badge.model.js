@@ -34,6 +34,10 @@ const BadgeSchema = new mongoose.Schema(
     addedBy: {
       type: ObjectId,
     },
+    automated: {
+      type: Boolean,
+      default: true,
+    },
     assignedRole: {
       type: Number,
       default: BADGE_ACCESS_LEVEL.ALL,

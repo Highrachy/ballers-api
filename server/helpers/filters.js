@@ -370,6 +370,7 @@ export const BADGE_FILTERS = {
   assignedRole: { type: FILTER_TYPE.INTEGER },
   createdAt: { type: FILTER_TYPE.DATE },
   name: { type: FILTER_TYPE.STRING },
+  automated: { type: FILTER_TYPE.BOOLEAN },
 };
 
 export const ASSIGNED_BADGE_FILTERS = {

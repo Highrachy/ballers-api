@@ -26,7 +26,7 @@ export const addBadge = async (badge) => {
   }
 
   try {
-    const addedBadge = await new Badge({ ...badge, slug }).save();
+    const addedBadge = await new Badge({ ...badge, slug, automated: !badge.addedBy }).save();
     return addedBadge;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding badge', error);
