@@ -26,6 +26,9 @@ import {
   getReferralByOfferId,
   updateReferralAccumulatedRewardAndRewardStatus,
 } from './referral.service';
+// eslint-disable-next-line import/no-cycle
+import { assignBadgeAutomatically } from './assignedBadge.service';
+import AUTOMATED_BADGES from '../helpers/automatedBadges';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -44,6 +47,14 @@ export const getTotalTransactionByOfferId = async (offerId) => {
     },
   ]);
   return total[0]?.totalAmountPaid || 0;
+};
+
+export const isUserFirstPayment = async (userId) => {
+  const transaction = Transaction.find({ userId: ObjectId(userId) });
+
+  await assignBadgeAutomatically(AUTOMATED_BADGES.USER_FIRST_PAYMENT, userId);
+
+  return transaction.length === 1;
 };
 
 export const addTransaction = async (transaction) => {
@@ -71,6 +82,8 @@ export const addTransaction = async (transaction) => {
     }).catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
+
+    await isUserFirstPayment(offer.userId);
 
     const referral = await getReferralByOfferId(offer._id);
 

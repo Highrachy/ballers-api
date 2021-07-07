@@ -22,6 +22,8 @@ import { getDateWithTimestamp } from '../helpers/dates';
 import { buildFilterAndSortQuery, USER_FILTERS } from '../helpers/filters';
 import { createNotification } from './notification.service';
 import NOTIFICATIONS from '../helpers/notifications';
+import { assignBadgeAutomatically } from './assignedBadge.service';
+import AUTOMATED_BADGES from '../helpers/automatedBadges';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -232,6 +234,8 @@ export const activateUser = async (token) => {
     );
 
     await createNotification(NOTIFICATIONS.ACCOUNT_ACTIVATED, user._id);
+
+    await assignBadgeAutomatically(AUTOMATED_BADGES.ACTIVATED_USER, user._id);
 
     return user;
   } catch (error) {
@@ -514,6 +518,8 @@ export const verifyVendor = async ({ vendorId, adminId }) => {
 
     await createNotification(NOTIFICATIONS.VERIFY_VENDOR, vendor._id);
 
+    await assignBadgeAutomatically(AUTOMATED_BADGES.VENDOR_VERIFIED, vendor._id);
+
     return verifiedVendor;
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error verifying vendor', error);
@@ -789,6 +795,8 @@ export const certifyVendor = async ({ vendorId, adminId }) => {
     );
 
     await createNotification(NOTIFICATIONS.CERTIFY_VENDOR, vendorId);
+
+    await assignBadgeAutomatically(AUTOMATED_BADGES.VENDOR_CERTIFIED, vendorId);
 
     return certifiedVendor;
   } catch (error) {
