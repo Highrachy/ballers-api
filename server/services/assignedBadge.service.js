@@ -140,15 +140,15 @@ export const getAllAssignedBadges = async (user, { page = 1, limit = 10, ...quer
   return { pagination, result: assignedBadges[0].data };
 };
 
-export const assignBadgeAutomatically = async (slug, userId) => {
+export const assignBadgeAutomatically = async (badgeDetails, userId) => {
   let badge;
 
-  const badgeFromSlug = await getBadgeBySlug(slug);
+  const badgeFromSlug = await getBadgeBySlug(badgeDetails.slug);
 
   [badge] = badgeFromSlug;
 
   if (!badge) {
-    badge = await addBadge({ name: slug });
+    badge = await addBadge({ ...badgeDetails, automated: true });
   }
 
   if (!badge.automated) {

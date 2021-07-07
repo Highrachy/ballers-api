@@ -52,8 +52,6 @@ export const getTotalTransactionByOfferId = async (offerId) => {
 export const isUserFirstPayment = async (userId) => {
   const transaction = Transaction.find({ userId: ObjectId(userId) });
 
-  await assignBadgeAutomatically(AUTOMATED_BADGES.USER_FIRST_PAYMENT, userId);
-
   return transaction.length === 1;
 };
 
@@ -83,7 +81,10 @@ export const addTransaction = async (transaction) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
 
-    await isUserFirstPayment(offer.userId);
+    const isFirstPayment = await isUserFirstPayment(offer.userId);
+    if (isFirstPayment) {
+      await assignBadgeAutomatically(AUTOMATED_BADGES.USER_FIRST_PAYMENT, offer.userId);
+    }
 
     const referral = await getReferralByOfferId(offer._id);
 

@@ -36,7 +36,7 @@ const BadgeSchema = new mongoose.Schema(
     },
     automated: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     assignedRole: {
       type: Number,
