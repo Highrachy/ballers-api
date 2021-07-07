@@ -55,6 +55,7 @@ import BadgeFactory from '../factories/badge.factory';
 import AssignedBadgeFactory from '../factories/assignedBadge.factory';
 import { addBadge } from '../../server/services/badge.service';
 import { assignBadge } from '../../server/services/assignedBadge.service';
+import { slugify } from '../../server/helpers/funtions';
 
 let adminToken;
 let userToken;
@@ -1207,11 +1208,22 @@ describe('User Controller', () => {
         { generateId: true },
       );
       const property = PropertyFactory.build(
-        { addedBy: vendor._id, price: 20000000 },
+        { addedBy: vendor._id, price: 20_000_000 },
         { generateId: true },
       );
       const referral = ReferralFactory.build(
-        { referrerId: regularUser._id, reward: { amount: 50000 } },
+        {
+          referrerId: regularUser._id,
+          reward: { amount: 50_000 },
+          accumulatedReward: { total: 40_000 },
+        },
+        { generateId: true },
+      );
+      const referral2 = ReferralFactory.build(
+        {
+          referrerId: regularUser._id,
+          accumulatedReward: { total: 100_000 },
+        },
         { generateId: true },
       );
 
@@ -1224,7 +1236,7 @@ describe('User Controller', () => {
           enquiryId: enquiry._id,
           vendorId: vendor._id,
           userId: regularUser._id,
-          totalAmountPayable: 19000000,
+          totalAmountPayable: 19_000_000,
         },
         { generateId: true },
       );
@@ -1235,7 +1247,7 @@ describe('User Controller', () => {
           addedBy: adminUser._id,
           updatedBy: adminUser._id,
           offerId: offer._id,
-          amount: 250000,
+          amount: 250_000,
         },
         { generateId: true },
       );
@@ -1263,6 +1275,7 @@ describe('User Controller', () => {
       describe('when offer has been accepted', () => {
         beforeEach(async () => {
           await addReferral(referral);
+          await addReferral(referral2);
           await addProperty(property);
           await addEnquiry(enquiry);
           await createOffer(offer);
@@ -1286,7 +1299,9 @@ describe('User Controller', () => {
                   property.price - offer.totalAmountPayable,
                 );
                 expect(res.body.accountOverview.totalAmountPaid).to.be.eql(transaction.amount);
-                expect(res.body.accountOverview.referralRewards).to.be.eql(referral.reward.amount);
+                expect(res.body.accountOverview.referralRewards).to.be.eql(
+                  referral.accumulatedReward.total + referral2.accumulatedReward.total,
+                );
                 done();
               });
           });
@@ -2780,7 +2795,7 @@ describe('User Controller', () => {
       const endpoint = `/api/v1/user/${testUser._id}`;
 
       const userBadge = BadgeFactory.build(
-        { assignedRole: BADGE_ACCESS_LEVEL.USER },
+        { assignedRole: BADGE_ACCESS_LEVEL.USER, name: 'Special badge' },
         { generateId: true },
       );
 
@@ -2843,6 +2858,12 @@ describe('User Controller', () => {
                 assignedAllBadge._id.toString(),
               );
               expect(res.body.user.assignedBadges[1]._id).to.be.eql(assignUserBadge._id.toString());
+              expect(res.body.user.badges[0]._id).to.be.eql(userBadge._id.toString());
+              expect(res.body.user.badges[0].name).to.be.eql(userBadge.name);
+              expect(res.body.user.badges[0].image).to.be.eql(userBadge.image);
+              expect(res.body.user.badges[0].icon).to.be.eql(userBadge.icon);
+              expect(res.body.user.badges[0].slug).to.be.eql(slugify(userBadge.name));
+              expect(res.body.user.badges[1]._id).to.be.eql(allBadge._id.toString());
               done();
             });
         });

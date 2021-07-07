@@ -693,6 +693,14 @@ export const getOneUser = async (userId) =>
       },
     },
     {
+      $lookup: {
+        from: 'badges',
+        localField: 'assignedBadges.badgeId',
+        foreignField: '_id',
+        as: 'badges',
+      },
+    },
+    {
       $project: {
         password: 0,
         notifications: 0,
