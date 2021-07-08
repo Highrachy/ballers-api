@@ -45,7 +45,8 @@ import { addReferral } from '../../server/services/referral.service';
 import Referral from '../../server/models/referral.model';
 import { USER_ROLE, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
 import NOTIFICATIONS from '../../server/helpers/notifications';
-import { expectNewNotificationToBeAdded } from '../helpers';
+import { expectNewNotificationToBeAdded, expectBadgeToBeAssignedAutomatically } from '../helpers';
+import AUTOMATED_BADGES from '../../server/helpers/automatedBadges';
 
 const expectsReturnedTokenToBeValid = (token, id) => {
   const decodedToken = jwt.verify(token, USER_SECRET);
@@ -397,12 +398,14 @@ describe('User Service', () => {
         expect(activatedUser).to.have.property('activationDate');
       });
 
-      context('when new notification is added', () => {
+      context('when new notification is added & badge is assigned', () => {
         beforeEach(async () => {
           await activateUser(token);
         });
 
         expectNewNotificationToBeAdded(NOTIFICATIONS.ACCOUNT_ACTIVATED, user._id);
+
+        expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.ACTIVATED_USER, user._id);
       });
     });
 
@@ -959,6 +962,8 @@ describe('User Service', () => {
         });
 
         expectNewNotificationToBeAdded(NOTIFICATIONS.VERIFY_VENDOR, vendor._id);
+
+        expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.VENDOR_VERIFIED, vendor._id);
       });
     });
   });
@@ -988,6 +993,8 @@ describe('User Service', () => {
         });
 
         expectNewNotificationToBeAdded(NOTIFICATIONS.CERTIFY_VENDOR, vendor._id);
+
+        expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.VENDOR_CERTIFIED, vendor._id);
       });
     });
   });

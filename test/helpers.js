@@ -4,6 +4,8 @@ import { addUser, loginUser } from '../server/services/user.service';
 import { expect, request, sinon } from './config';
 import User from '../server/models/user.model';
 import Notification from '../server/models/notification.model';
+import AssignedBadge from '../server/models/assignedBadge.model';
+import { getBadgeBySlug } from '../server/services/badge.service';
 
 export const expectsPaginationToReturnTheRightValues = (
   res,
@@ -609,6 +611,29 @@ export const expectNewNotificationToBeAdded = (notificationType, userId, options
       expect(userLatestNotification[0].description).to.eql(notification.description);
       expect(userLatestNotification[0].action).to.eql(notification.action);
       expect(userLatestNotification[0].actionId).to.eql(notification.actionId);
+    });
+  });
+};
+
+export const expectBadgeToBeAssignedAutomatically = (assignedBadgeInfo, userId) => {
+  let userAssignedBadge;
+
+  let badge;
+
+  beforeEach(async () => {
+    [badge] = await getBadgeBySlug(assignedBadgeInfo.slug);
+    userAssignedBadge = await AssignedBadge.find({ userId, badgeId: badge._id })
+      .sort({ _id: -1 })
+      .limit(1);
+  });
+
+  context('when badge is assigned', () => {
+    it('assigns badge to user', () => {
+      expect(userAssignedBadge[0].badgeId).to.eql(badge._id);
+      expect(userAssignedBadge[0].userId).to.eql(userId);
+      expect(badge.name).to.eql(assignedBadgeInfo.name);
+      expect(badge.slug).to.eql(assignedBadgeInfo.slug);
+      expect(badge.automated).to.eql(true);
     });
   });
 };
