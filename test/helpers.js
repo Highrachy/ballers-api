@@ -5,7 +5,7 @@ import { expect, request, sinon } from './config';
 import User from '../server/models/user.model';
 import Notification from '../server/models/notification.model';
 import AssignedBadge from '../server/models/assignedBadge.model';
-import { getBadgeBySlug } from '../server/services/badge.service';
+import { getBadgeBySlug, addBadge } from '../server/services/badge.service';
 
 export const expectsPaginationToReturnTheRightValues = (
   res,
@@ -634,6 +634,32 @@ export const expectBadgeToBeAssignedAutomatically = (assignedBadgeInfo, userId) 
       expect(badge.name).to.eql(assignedBadgeInfo.name);
       expect(badge.slug).to.eql(assignedBadgeInfo.slug);
       expect(badge.automated).to.eql(true);
+    });
+  });
+};
+
+export const expectToThrowErrorWhenBadgeIsNotAutomated = ({
+  assignedBadgeInfo,
+  user,
+  serviceFunction,
+  functionParameters = {},
+  useExistingUser = false,
+}) => {
+  beforeEach(async () => {
+    if (!useExistingUser) {
+      await addUser(user);
+    }
+    await addBadge({ ...assignedBadgeInfo, automated: false });
+  });
+
+  context('when badge is not automated', () => {
+    it('throws an error', async () => {
+      try {
+        await serviceFunction(functionParameters);
+      } catch (err) {
+        expect(err.error.statusCode).to.eql(412);
+        expect(err.error.error).to.eql('Only automatic badges can be assigned');
+      }
     });
   });
 };

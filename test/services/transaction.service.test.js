@@ -122,7 +122,7 @@ describe('Transaction Service', () => {
           expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForSecondCycle);
         });
 
-        context('when badge is assigned', () => {
+        context('when user makes their first payment', () => {
           expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.USER_FIRST_PAYMENT, user._id);
         });
       });
@@ -178,7 +178,7 @@ describe('Transaction Service', () => {
         await addTransaction({ ...transaction, amount: 4_000_000 });
       });
 
-      context('when badge is assigned', () => {
+      context("when its the vendor's first sale", () => {
         expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.VENDOR_FIRST_SALE, vendor._id);
       });
     });
