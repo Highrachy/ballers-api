@@ -19,13 +19,14 @@ import { createOffer, acceptOffer } from '../../server/services/offer.service';
 import { addEnquiry } from '../../server/services/enquiry.service';
 import { USER_ROLE, REWARD_STATUS, REFERRAL_STATUS } from '../../server/helpers/constants';
 import NextPayment from '../../server/models/nextPayment.model';
-import { expectNewNotificationToBeAdded } from '../helpers';
+import { expectNewNotificationToBeAdded, expectBadgeToBeAssignedAutomatically } from '../helpers';
 import NOTIFICATIONS from '../../server/helpers/notifications';
 import { getMoneyFormat, getFormattedName } from '../../server/helpers/funtions';
 import ReferralFactory from '../factories/referral.factory';
 import { addReferral } from '../../server/services/referral.service';
 import Referral from '../../server/models/referral.model';
 import { getEndOfDay } from '../../server/helpers/dates';
+import AUTOMATED_BADGES from '../../server/helpers/automatedBadges';
 
 describe('Transaction Service', () => {
   const vendor = UserFactory.build({ role: USER_ROLE.VENDOR }, { generateId: true });
@@ -120,6 +121,10 @@ describe('Transaction Service', () => {
           expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
           expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForSecondCycle);
         });
+
+        context('when user makes their first payment', () => {
+          expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.USER_FIRST_PAYMENT, user._id);
+        });
       });
 
       context('during second payment cycle', () => {
@@ -162,6 +167,19 @@ describe('Transaction Service', () => {
           expect(matchedNextPayments[0].expectedAmount).to.eql(500_000);
           expect(matchedNextPayments[0].expiresOn).to.eql(expiresOnForLastCycle);
         });
+      });
+    });
+
+    context('when its the last payment', () => {
+      beforeEach(async () => {
+        fakeDate = sinon.useFakeTimers({
+          now: new Date('2020-06-8'),
+        });
+        await addTransaction({ ...transaction, amount: 4_000_000 });
+      });
+
+      context("when its the vendor's first sale", () => {
+        expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.VENDOR_FIRST_SALE, vendor._id);
       });
     });
 

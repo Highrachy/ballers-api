@@ -14,12 +14,15 @@ import { expectNewNotificationToBeAdded } from '../helpers';
 import { getMoneyFormat, getFormattedName } from '../../server/helpers/funtions';
 import PropertyFactory from '../factories/property.factory';
 import { addProperty } from '../../server/services/property.service';
+import { addUser } from '../../server/services/user.service';
+import UserFactory from '../factories/user.factory';
 
 describe('Offline Payment Service', () => {
   const property = PropertyFactory.build(
     { addedBy: mongoose.Types.ObjectId() },
     { generateId: true },
   );
+  const user = UserFactory.build({}, { generateId: true });
   const offer = OfferFactory.build(
     {
       totalAmountPayable: 4_000_000,
@@ -30,12 +33,13 @@ describe('Offline Payment Service', () => {
       referenceCode: 'HIG/P/OLP/02/28022021',
       propertyId: property._id,
       vendorId: mongoose.Types.ObjectId(),
-      userId: mongoose.Types.ObjectId(),
+      userId: user._id,
     },
     { generateId: true },
   );
 
   beforeEach(async () => {
+    await addUser(user);
     await addProperty(property);
     await Offer.create(offer);
   });
@@ -45,7 +49,7 @@ describe('Offline Payment Service', () => {
     const offlinePayment = OfflinePaymentFactory.build(
       {
         offerId: offer._id,
-        userId: mongoose.Types.ObjectId(),
+        userId: user._id,
         amount: 10_000,
         bank: 'GTB',
         dateOfPayment: '2020-01-21',

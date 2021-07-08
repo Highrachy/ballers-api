@@ -740,3 +740,9 @@ export const reactivateOffer = async (offerInfo) => {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error reactivating offer', error);
   }
 };
+
+export const isVendorFirstSale = async (vendorId) => {
+  const offer = await Offer.find({ vendorId: ObjectId(vendorId), status: OFFER_STATUS.RESOLVED });
+
+  return offer.length === 1;
+};

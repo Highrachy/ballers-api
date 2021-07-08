@@ -6,7 +6,7 @@ import { ACTIVE_PORTFOLIO_OFFER, USER_ROLE } from '../helpers/constants';
 import Offer from '../models/offer.model';
 import Referral from '../models/referral.model';
 // eslint-disable-next-line import/no-cycle
-import { getOfferById } from './offer.service';
+import { getOfferById, isVendorFirstSale } from './offer.service';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
 import {
   NON_PROJECTED_USER_INFO,
@@ -26,6 +26,9 @@ import {
   getReferralByOfferId,
   updateReferralAccumulatedRewardAndRewardStatus,
 } from './referral.service';
+// eslint-disable-next-line import/no-cycle
+import { assignBadgeAutomatically } from './assignedBadge.service';
+import AUTOMATED_BADGES from '../helpers/automatedBadges';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -44,6 +47,28 @@ export const getTotalTransactionByOfferId = async (offerId) => {
     },
   ]);
   return total[0]?.totalAmountPaid || 0;
+};
+
+export const isUserFirstPayment = async (userId) => {
+  const transaction = await Transaction.find({ userId: ObjectId(userId) });
+
+  return transaction.length === 1;
+};
+
+export const getPaymentDuration = async (offerId) => {
+  const offer = await getOfferById(offerId).catch((error) => {
+    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
+  });
+
+  const paymentsMade = await Transaction.find({ offerId });
+
+  const totalPaid = paymentsMade.reduce((accum, transaction) => accum + transaction.amount, 0);
+
+  const isFirstPayment = paymentsMade.length === 1 && totalPaid < offer.totalAmountPayable;
+  const isLastPayment = totalPaid >= offer.totalAmountPayable;
+  const isOtherPayment = !isFirstPayment && !isLastPayment;
+
+  return { isLastPayment, isFirstPayment, isOtherPayment };
 };
 
 export const addTransaction = async (transaction) => {
@@ -71,6 +96,21 @@ export const addTransaction = async (transaction) => {
     }).catch((error) => {
       throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
     });
+
+    const isFirstPayment = await isUserFirstPayment(offer.userId);
+    if (isFirstPayment) {
+      await assignBadgeAutomatically(AUTOMATED_BADGES.USER_FIRST_PAYMENT, offer.userId);
+    }
+
+    const paymentType = await getPaymentDuration(offer._id);
+
+    if (paymentType.isLastPayment) {
+      const isFirstSale = await isVendorFirstSale(offer.vendorId);
+
+      if (isFirstSale) {
+        await assignBadgeAutomatically(AUTOMATED_BADGES.VENDOR_FIRST_SALE, offer.vendorId);
+      }
+    }
 
     const referral = await getReferralByOfferId(offer._id);
 
@@ -343,20 +383,4 @@ export const addRemittance = async (remittanceInfo) => {
   } catch (error) {
     throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error adding remittance', error);
   }
-};
-
-export const getPaymentDuration = async (offerId) => {
-  const offer = await getOfferById(offerId).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  const paymentsMade = await Transaction.find({ offerId });
-
-  const totalPaid = paymentsMade.reduce((accum, transaction) => accum + transaction.amount, 0);
-
-  const isFirstPayment = paymentsMade.length === 1 && totalPaid < offer.totalAmountPayable;
-  const isLastPayment = totalPaid >= offer.totalAmountPayable;
-  const isOtherPayment = !isFirstPayment && !isLastPayment;
-
-  return { isLastPayment, isFirstPayment, isOtherPayment };
 };

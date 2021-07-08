@@ -45,7 +45,13 @@ import { addReferral } from '../../server/services/referral.service';
 import Referral from '../../server/models/referral.model';
 import { USER_ROLE, VENDOR_INFO_STATUS } from '../../server/helpers/constants';
 import NOTIFICATIONS from '../../server/helpers/notifications';
-import { expectNewNotificationToBeAdded } from '../helpers';
+import {
+  expectNewNotificationToBeAdded,
+  expectBadgeToBeAssignedAutomatically,
+  expectToThrowErrorWhenBadgeIsNotAutomated,
+} from '../helpers';
+import AUTOMATED_BADGES from '../../server/helpers/automatedBadges';
+import { addBadge } from '../../server/services/badge.service';
 
 const expectsReturnedTokenToBeValid = (token, id) => {
   const decodedToken = jwt.verify(token, USER_SECRET);
@@ -397,12 +403,33 @@ describe('User Service', () => {
         expect(activatedUser).to.have.property('activationDate');
       });
 
-      context('when new notification is added', () => {
+      context('when user is activated', () => {
         beforeEach(async () => {
           await activateUser(token);
         });
 
-        expectNewNotificationToBeAdded(NOTIFICATIONS.ACCOUNT_ACTIVATED, user._id);
+        context('when new notification is added', () => {
+          expectNewNotificationToBeAdded(NOTIFICATIONS.ACCOUNT_ACTIVATED, user._id);
+        });
+
+        context('when badge is assigned', () => {
+          expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.ACTIVATED_USER, user._id);
+        });
+      });
+
+      context('when badge is not automated', () => {
+        beforeEach(async () => {
+          await addBadge({ ...AUTOMATED_BADGES.ACTIVATED_USER, automated: false });
+        });
+
+        it('throws an error', async () => {
+          try {
+            await activateUser(token);
+          } catch (err) {
+            expect(err.error.statusCode).to.eql(412);
+            expect(err.error.error).to.eql('Only automatic badges can be assigned');
+          }
+        });
       });
     });
 
@@ -946,7 +973,7 @@ describe('User Service', () => {
         await addUser(vendor);
       });
 
-      context('when new notification is added', () => {
+      context('when vendor is verified', () => {
         beforeEach(async () => {
           verifiedVendor = await verifyVendor({
             vendorId: vendor._id,
@@ -954,11 +981,29 @@ describe('User Service', () => {
           });
         });
 
-        it('returns the verified vendor', async () => {
-          expect(verifiedVendor.vendor.verified).be.eql(true);
+        context('when new notification is added', () => {
+          it('returns the verified vendor', async () => {
+            expect(verifiedVendor.vendor.verified).be.eql(true);
+          });
+
+          expectNewNotificationToBeAdded(NOTIFICATIONS.VERIFY_VENDOR, vendor._id);
         });
 
-        expectNewNotificationToBeAdded(NOTIFICATIONS.VERIFY_VENDOR, vendor._id);
+        context('when badge is assigned', () => {
+          it('returns the verified vendor', async () => {
+            expect(verifiedVendor.vendor.verified).be.eql(true);
+          });
+
+          expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.VENDOR_VERIFIED, vendor._id);
+        });
+      });
+    });
+    context('when badge is not automated', () => {
+      expectToThrowErrorWhenBadgeIsNotAutomated({
+        assignedBadgeInfo: AUTOMATED_BADGES.VENDOR_VERIFIED,
+        user: vendor,
+        serviceFunction: verifyVendor,
+        functionParameters: { vendorId: vendor._id, adminId: mongoose.Types.ObjectId() },
       });
     });
   });
@@ -988,6 +1033,17 @@ describe('User Service', () => {
         });
 
         expectNewNotificationToBeAdded(NOTIFICATIONS.CERTIFY_VENDOR, vendor._id);
+
+        expectBadgeToBeAssignedAutomatically(AUTOMATED_BADGES.VENDOR_CERTIFIED, vendor._id);
+      });
+    });
+
+    context('when badge is not automated', () => {
+      expectToThrowErrorWhenBadgeIsNotAutomated({
+        assignedBadgeInfo: AUTOMATED_BADGES.VENDOR_CERTIFIED,
+        user: vendor,
+        serviceFunction: certifyVendor,
+        functionParameters: { vendorId: vendor._id, adminId: mongoose.Types.ObjectId() },
       });
     });
   });

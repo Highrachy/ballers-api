@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import AssignedBadge from '../models/assignedBadge.model';
+// eslint-disable-next-line import/no-cycle
 import { getUserById } from './user.service';
 // eslint-disable-next-line import/no-cycle
-import { getBadgeById } from './badge.service';
+import { getBadgeById, getBadgeBySlug, addBadge } from './badge.service';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
@@ -137,4 +138,25 @@ export const getAllAssignedBadges = async (user, { page = 1, limit = 10, ...quer
   const total = getPaginationTotal(assignedBadges);
   const pagination = generatePagination(page, limit, total);
   return { pagination, result: assignedBadges[0].data };
+};
+
+export const assignBadgeAutomatically = async (badgeDetails, userId) => {
+  let [badge] = await getBadgeBySlug(badgeDetails.slug);
+
+  if (!badge) {
+    badge = await addBadge({ ...badgeDetails, automated: true });
+  }
+
+  if (!badge.automated) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Only automatic badges can be assigned');
+  }
+
+  try {
+    await assignBadge({
+      badgeId: badge._id,
+      userId,
+    });
+  } catch (error) {
+    throw new ErrorHandler(httpStatus.BAD_REQUEST, 'Error assigning badge', error);
+  }
 };
