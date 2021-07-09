@@ -660,4 +660,123 @@ describe('Badge Controller', () => {
       });
     });
   });
+
+  describe('Get all and role specific badge route', () => {
+    const endpoint = '/api/v1/badge/role-specific';
+    const method = 'post';
+
+    const allBadges = BadgeFactory.buildList(
+      5,
+      { automated: false, assignedRole: BADGE_ACCESS_LEVEL.ALL, slug: 'badge-slug' },
+      { generateId: true },
+    );
+    const vendorBadges = BadgeFactory.buildList(
+      2,
+      { automated: false, assignedRole: BADGE_ACCESS_LEVEL.VENDOR, slug: 'badge-slug' },
+      { generateId: true },
+    );
+    const userBadges = BadgeFactory.buildList(
+      4,
+      { automated: false, assignedRole: BADGE_ACCESS_LEVEL.USER, slug: 'badge-slug' },
+      { generateId: true },
+    );
+    const automatedBadges = BadgeFactory.buildList(
+      3,
+      { automated: true, assignedRole: BADGE_ACCESS_LEVEL.ALL, slug: 'badge-slug' },
+      { generateId: true },
+    );
+
+    beforeEach(async () => {
+      await addUser(vendorUser);
+      await addUser(regularUser);
+      await Badge.insertMany([...allBadges, ...vendorBadges, ...userBadges, ...automatedBadges]);
+    });
+
+    context('when vendor role is requested', () => {
+      it('returns related badges', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send({ assignedRole: BADGE_ACCESS_LEVEL.VENDOR })
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.badges.length).to.be.eql(allBadges.length + vendorBadges.length);
+            expect(res.body.badges[0]._id).to.be.eql(allBadges[0]._id.toString());
+            expect(res.body.badges[6]._id).to.be.eql(vendorBadges[1]._id.toString());
+            done();
+          });
+      });
+    });
+
+    context('when user role is requested', () => {
+      it('returns related badges', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send({ assignedRole: BADGE_ACCESS_LEVEL.USER })
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.body.success).to.be.eql(true);
+            expect(res.body.badges.length).to.be.eql(allBadges.length + userBadges.length);
+            expect(res.body.badges[0]._id).to.be.eql(allBadges[0]._id.toString());
+            expect(res.body.badges[8]._id).to.be.eql(userBadges[3]._id.toString());
+            done();
+          });
+      });
+    });
+
+    context('data is invalid', () => {
+      context('when role is empty', () => {
+        it('returns error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ assignedRole: '' })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.error).to.be.eql('"Role" must be one of [-1, 1, 2]');
+              done();
+            });
+        });
+      });
+
+      context('when role is an invalid number', () => {
+        it('returns error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ assignedRole: 6 })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.error).to.be.eql('"Role" must be one of [-1, 1, 2]');
+              done();
+            });
+        });
+      });
+    });
+
+    [vendorUser, regularUser].map((user) =>
+      itReturnsForbiddenForTokenWithInvalidAccess({
+        endpoint,
+        method,
+        user,
+        useExistingUser: true,
+      }),
+    );
+
+    itReturnsForbiddenForNoToken({ endpoint, method });
+
+    itReturnsAnErrorWhenServiceFails({
+      endpoint,
+      method,
+      user: adminUser,
+      model: Badge,
+      data: { assignedRole: BADGE_ACCESS_LEVEL.USER },
+      modelMethod: 'aggregate',
+      useExistingUser: true,
+    });
+  });
 });
