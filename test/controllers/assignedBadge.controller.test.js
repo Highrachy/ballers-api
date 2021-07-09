@@ -124,6 +124,30 @@ describe('Assigned Badge Controller', () => {
         });
       });
 
+      context('when badge is automated', () => {
+        const automatedBadge = BadgeFactory.build(
+          { assignedRole: BADGE_ACCESS_LEVEL.ALL, automated: true },
+          { generateId: true },
+        );
+
+        beforeEach(async () => {
+          await addBadge(automatedBadge);
+        });
+
+        it('returns error', (done) => {
+          request()
+            [method](endpoint)
+            .set('authorization', adminToken)
+            .send({ ...badgeInfo, badgeId: automatedBadge._id })
+            .end((err, res) => {
+              expect(res).to.have.status(412);
+              expect(res.body.success).to.be.eql(false);
+              expect(res.body.message).to.be.eql('Automated badge cannot be assigned manually');
+              done();
+            });
+        });
+      });
+
       context('when user id is invalid', () => {
         it('returns not found', (done) => {
           request()

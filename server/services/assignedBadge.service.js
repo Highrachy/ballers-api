@@ -26,6 +26,13 @@ export const assignBadge = async (badgeInfo) => {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Badge not found');
   }
 
+  if (badgeInfo.assignedBy && badge.automated) {
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Automated badge cannot be assigned manually',
+    );
+  }
+
   const user = await getUserById(badgeInfo.userId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
