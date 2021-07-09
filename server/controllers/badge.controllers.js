@@ -4,6 +4,7 @@ import {
   deleteBadge,
   getAllBadges,
   getOneBadge,
+  getAllAndRoleSpecificBadges,
 } from '../services/badge.service';
 import httpStatus from '../helpers/httpStatus';
 
@@ -51,6 +52,15 @@ const BadgeController = {
     getOneBadge(id)
       .then((badge) => {
         res.status(httpStatus.OK).json({ success: true, badge });
+      })
+      .catch((error) => next(error));
+  },
+
+  getAllAndRoleSpecificBadges(req, res, next) {
+    const { assignedRole } = req.locals;
+    getAllAndRoleSpecificBadges(assignedRole)
+      .then((badges) => {
+        res.status(httpStatus.OK).json({ success: true, badges });
       })
       .catch((error) => next(error));
   },

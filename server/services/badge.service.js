@@ -8,6 +8,7 @@ import { buildFilterAndSortQuery, BADGE_FILTERS } from '../helpers/filters';
 import { getAssignedBadgesByBadgeId } from './assignedBadge.service';
 import { PROJECTED_BADGE_INFO, NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 import { slugify } from '../helpers/funtions';
+import { BADGE_ACCESS_LEVEL } from '../helpers/constants';
 
 const { ObjectId } = mongoose.Types.ObjectId;
 
@@ -165,4 +166,15 @@ export const getOneBadge = async (badgeId) => {
   }
 
   return badge[0];
+};
+
+export const getAllAndRoleSpecificBadges = (assignedRole) => {
+  return Badge.aggregate([
+    { $match: { automated: false } },
+    {
+      $match: {
+        $and: [{ automated: BADGE_ACCESS_LEVEL.ALL }, { automated: parseInt(assignedRole, 10) }],
+      },
+    },
+  ]);
 };

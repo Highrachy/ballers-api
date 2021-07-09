@@ -26,3 +26,7 @@ export const updateBadgeSchema = Joi.object({
   assignedRole,
   icon,
 });
+
+export const assignedRoleBadgeSchema = Joi.object({
+  assignedRole,
+});
