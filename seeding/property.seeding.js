@@ -1,4 +1,5 @@
-import PropertyFactory from '../test/factories/property.factory';
+/* eslint-disable import/no-extraneous-dependencies */
+import faker from 'faker';
 import Property from '../server/models/property.model';
 import User from '../server/models/user.model';
 import { USER_ROLE } from '../server/helpers/constants';
@@ -10,7 +11,7 @@ import {
   getMultipleRandomItems,
   getNumberWithinRange,
 } from './seed-helpers';
-import { HOUSE_TYPES, DEFAULT_PROPERTY_FEATURES, ADDRESSES } from './seed-constants';
+import { HOUSE_TYPES, DEFAULT_PROPERTY_FEATURES, ADDRESSES, NEIGHBORHOODS } from './seed-constants';
 import { seedUsers } from './user.seeding';
 import { USER_DEFAULTS } from './defaults.seeding';
 
@@ -39,10 +40,27 @@ const seedProperties = async (limit, customValues = {}) => {
 
     const features = getMultipleRandomItems(DEFAULT_PROPERTY_FEATURES, numberOfFeatures);
 
-    return PropertyFactory.build({
+    const address = getOneRandomItem(ADDRESSES);
+
+    const gallerySize = getNumberWithinRange(0, 5);
+    const gallery = new Array(gallerySize).fill().map((_, index) => {
+      return { title: `gallery image ${index}`, url: faker.image.business() };
+    });
+
+    const floorPlanSize = getNumberWithinRange(0, 2);
+    const floorPlans = new Array(floorPlanSize).fill().map((_, index) => {
+      return { name: `floor plan ${index}`, plan: faker.image.city() };
+    });
+
+    const neighborhoodSize = getNumberWithinRange(0, 6);
+    const neighborhood = Object.fromEntries(
+      getMultipleRandomItems(Object.entries(NEIGHBORHOODS), neighborhoodSize),
+    );
+
+    return {
       address: {
         country: 'Nigeria',
-        ...getOneRandomItem(ADDRESSES),
+        ...address,
       },
       flagged: { status: false, requestUnflag: false },
       approved: { status: true },
@@ -56,8 +74,13 @@ const seedProperties = async (limit, customValues = {}) => {
       price: getNumberWithinRange(10_000_000, 50_000_000, 1_000_000),
       toilets: rooms + 1,
       units: getNumberWithinRange(1, 10),
+      mainImage: faker.image.business(),
+      gallery,
+      neighborhood: address.state === 'Lagos' ? neighborhood : {},
+      mapLocation: address.mapLocation,
+      floorPlans,
       ...customValues,
-    });
+    };
   });
 
   try {
