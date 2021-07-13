@@ -4,7 +4,13 @@ import {
   updateBadgeSchema,
   assignedRoleBadgeSchema,
 } from '../schemas/badge.schema';
-import { schemaValidation, authenticate, isAdmin, hasValidObjectId } from '../helpers/middleware';
+import {
+  schemaValidation,
+  authenticate,
+  isAdmin,
+  hasValidObjectId,
+  parameterSchemaValidation,
+} from '../helpers/middleware';
 import BadgeController from '../controllers/badge.controllers';
 
 const router = express.Router();
@@ -135,8 +141,8 @@ router.get('/:id', authenticate, hasValidObjectId, isAdmin, BadgeController.getO
 
 /**
  * @swagger
- * /badge/role-specific:
- *   post:
+ * /badge/all/role/:role:
+ *   get:
  *     tags:
  *       - Badge
  *     description: Returns all badges and role specific badge
@@ -154,12 +160,12 @@ router.get('/:id', authenticate, hasValidObjectId, isAdmin, BadgeController.getO
  *      '500':
  *       description: Internal server error
  */
-router.post(
-  '/role-specific',
+router.get(
+  '/all/role/:role',
   authenticate,
   isAdmin,
-  schemaValidation(assignedRoleBadgeSchema),
-  BadgeController.getAllAndRoleSpecificBadges,
+  parameterSchemaValidation(assignedRoleBadgeSchema),
+  BadgeController.getRoleBasedBadges,
 );
 
 module.exports = router;

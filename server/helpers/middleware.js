@@ -18,6 +18,21 @@ export const schemaValidation = (schema) => {
   };
 };
 
+export const parameterSchemaValidation = (schema) => {
+  return (req, res, next) => {
+    const { value, error } = schema.validate(req.params);
+
+    if (value && !error) {
+      req.locals = value;
+      next();
+    } else {
+      res
+        .status(httpStatus.PRECONDITION_FAILED)
+        .json({ success: false, message: 'Validation Error', error: error.message });
+    }
+  };
+};
+
 export const authenticate = async (req, res, next) => {
   if (!req.headers.authorization) {
     return res.status(httpStatus.FORBIDDEN).json({

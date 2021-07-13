@@ -168,7 +168,7 @@ export const getOneBadge = async (badgeId) => {
   return badge[0];
 };
 
-export const getAllAndRoleSpecificBadges = async (assignedRole) => {
+export const getRoleBasedBadges = async (assignedRole) => {
   const badges = await Badge.aggregate([
     { $match: { automated: false } },
     { $match: { assignedRole: { $in: [BADGE_ACCESS_LEVEL.ALL, parseInt(assignedRole, 10)] } } },

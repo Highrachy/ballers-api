@@ -662,8 +662,8 @@ describe('Badge Controller', () => {
   });
 
   describe('Get all and role specific badge route', () => {
-    const endpoint = '/api/v1/badge/role-specific';
-    const method = 'post';
+    const endpoint = '/api/v1/badge/all/role/';
+    const method = 'get';
 
     const allBadges = BadgeFactory.buildList(
       5,
@@ -695,9 +695,8 @@ describe('Badge Controller', () => {
     context('when vendor role is requested', () => {
       it('returns related badges', (done) => {
         request()
-          [method](endpoint)
+          [method](`${endpoint}${BADGE_ACCESS_LEVEL.VENDOR}`)
           .set('authorization', adminToken)
-          .send({ assignedRole: BADGE_ACCESS_LEVEL.VENDOR })
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
@@ -712,9 +711,8 @@ describe('Badge Controller', () => {
     context('when user role is requested', () => {
       it('returns related badges', (done) => {
         request()
-          [method](endpoint)
+          [method](`${endpoint}${BADGE_ACCESS_LEVEL.USER}`)
           .set('authorization', adminToken)
-          .send({ assignedRole: BADGE_ACCESS_LEVEL.USER })
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
@@ -727,16 +725,13 @@ describe('Badge Controller', () => {
     });
 
     context('data is invalid', () => {
-      context('when role is empty', () => {
+      context('when role is not sent', () => {
         it('returns error', (done) => {
           request()
             [method](endpoint)
             .set('authorization', adminToken)
-            .send({ assignedRole: '' })
             .end((err, res) => {
-              expect(res).to.have.status(412);
-              expect(res.body.success).to.be.eql(false);
-              expect(res.body.error).to.be.eql('"Role" must be one of [-1, 1, 2]');
+              expect(res).to.have.status(404);
               done();
             });
         });
@@ -745,13 +740,14 @@ describe('Badge Controller', () => {
       context('when role is an invalid number', () => {
         it('returns error', (done) => {
           request()
-            [method](endpoint)
+            [method](`${endpoint}6`)
             .set('authorization', adminToken)
-            .send({ assignedRole: 6 })
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
-              expect(res.body.error).to.be.eql('"Role" must be one of [-1, 1, 2]');
+              expect(res.body.error).to.be.eql(
+                '"Role" must be a valid role based number - All Roles (-1), User(1) or Vendor(2)',
+              );
               done();
             });
         });
@@ -760,21 +756,20 @@ describe('Badge Controller', () => {
 
     [vendorUser, regularUser].map((user) =>
       itReturnsForbiddenForTokenWithInvalidAccess({
-        endpoint,
+        endpoint: `${endpoint}${BADGE_ACCESS_LEVEL.USER}`,
         method,
         user,
         useExistingUser: true,
       }),
     );
 
-    itReturnsForbiddenForNoToken({ endpoint, method });
+    itReturnsForbiddenForNoToken({ endpoint: `${endpoint}${BADGE_ACCESS_LEVEL.USER}`, method });
 
     itReturnsAnErrorWhenServiceFails({
-      endpoint,
+      endpoint: `${endpoint}${BADGE_ACCESS_LEVEL.USER}`,
       method,
       user: adminUser,
       model: Badge,
-      data: { assignedRole: BADGE_ACCESS_LEVEL.USER },
       modelMethod: 'aggregate',
       useExistingUser: true,
     });

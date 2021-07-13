@@ -28,5 +28,12 @@ export const updateBadgeSchema = Joi.object({
 });
 
 export const assignedRoleBadgeSchema = Joi.object({
-  assignedRole,
+  role: Joi.string()
+    .label('Role')
+    .valid(...Object.values(BADGE_ACCESS_LEVEL).map(String))
+    .messages({
+      'any.only': '"Role" must be a valid role based number - All Roles (-1), User(1) or Vendor(2)',
+      'any.base': '"Role" must be a valid role based number - All Roles (-1), User(1) or Vendor(2)',
+    })
+    .required(),
 });
