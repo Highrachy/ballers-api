@@ -4,13 +4,7 @@ import {
   updateBadgeSchema,
   assignedRoleBadgeSchema,
 } from '../schemas/badge.schema';
-import {
-  schemaValidation,
-  authenticate,
-  isAdmin,
-  hasValidObjectId,
-  parameterSchemaValidation,
-} from '../helpers/middleware';
+import { schemaValidation, authenticate, isAdmin, hasValidObjectId } from '../helpers/middleware';
 import BadgeController from '../controllers/badge.controllers';
 
 const router = express.Router();
@@ -164,7 +158,7 @@ router.get(
   '/all/role/:role',
   authenticate,
   isAdmin,
-  parameterSchemaValidation(assignedRoleBadgeSchema),
+  schemaValidation(assignedRoleBadgeSchema, { validateParams: true }),
   BadgeController.getRoleBasedBadges,
 );
 

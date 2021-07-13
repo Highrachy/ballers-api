@@ -738,9 +738,10 @@ describe('Badge Controller', () => {
       });
 
       context('when role is an invalid number', () => {
+        const invalidRole = 6;
         it('returns error', (done) => {
           request()
-            [method](`${endpoint}6`)
+            [method](`${endpoint}${invalidRole}`)
             .set('authorization', adminToken)
             .end((err, res) => {
               expect(res).to.have.status(412);
