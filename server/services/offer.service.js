@@ -746,3 +746,9 @@ export const isVendorFirstSale = async (vendorId) => {
 
   return offer.length === 1;
 };
+
+export const getOffersAttachedToAccount = async (accountId) => {
+  const offer = await Offer.find({ bankAccounts: { $in: [accountId] } });
+
+  return offer;
+};
