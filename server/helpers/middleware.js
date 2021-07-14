@@ -3,9 +3,10 @@ import httpStatus from './httpStatus';
 import { USER_ROLE } from './constants';
 import { decodeToken, getUserById } from '../services/user.service';
 
-export const schemaValidation = (schema) => {
+export const schemaValidation = (schema, { validateParams = false } = {}) => {
   return (req, res, next) => {
-    const { value, error } = schema.validate(req.body);
+    const request = validateParams ? req.params : req.body;
+    const { value, error } = schema.validate(request);
 
     if (value && !error) {
       req.locals = value;

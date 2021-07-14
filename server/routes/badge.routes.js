@@ -1,5 +1,9 @@
 import express from 'express';
-import { addBadgeSchema, updateBadgeSchema } from '../schemas/badge.schema';
+import {
+  addBadgeSchema,
+  updateBadgeSchema,
+  assignedRoleBadgeSchema,
+} from '../schemas/badge.schema';
 import { schemaValidation, authenticate, isAdmin, hasValidObjectId } from '../helpers/middleware';
 import BadgeController from '../controllers/badge.controllers';
 
@@ -128,5 +132,34 @@ router.get('/all', authenticate, isAdmin, BadgeController.getAllBadges);
  *          description: Internal server error
  */
 router.get('/:id', authenticate, hasValidObjectId, isAdmin, BadgeController.getOneBadge);
+
+/**
+ * @swagger
+ * /badge/all/role/:role:
+ *   get:
+ *     tags:
+ *       - Badge
+ *     description: Returns all badges and role specific badge
+ *     produces:
+ *       - application/json
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Badge'
+ *      description: Returns all badges and role specific badge
+ *     responses:
+ *      '200':
+ *        description: Badges returned
+ *      '500':
+ *       description: Internal server error
+ */
+router.get(
+  '/all/role/:role',
+  authenticate,
+  isAdmin,
+  schemaValidation(assignedRoleBadgeSchema, { validateParams: true }),
+  BadgeController.getRoleBasedBadges,
+);
 
 module.exports = router;
