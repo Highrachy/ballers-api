@@ -175,6 +175,45 @@ const OfferSchema = new mongoose.Schema(
         },
       },
     ],
+    additionalClause: {
+      type: String,
+    },
+    otherPayments: [
+      {
+        name: {
+          type: String,
+        },
+        amount: {
+          type: Number,
+        },
+      },
+    ],
+    paymentAccount: {
+      type: ObjectId,
+    },
+    otherTerms: {
+      administrativeCharge: {
+        type: Number,
+      },
+      bankDraftDue: {
+        type: Date,
+      },
+      dateDue: {
+        type: Date,
+      },
+      deductibleRefundPercentage: {
+        type: Number,
+      },
+      gracePeriod: {
+        type: Date,
+      },
+      terminationInterest: {
+        type: Number,
+      },
+      terminationPeriod: {
+        type: Date,
+      },
+    },
   },
   { timestamps: true },
 );
