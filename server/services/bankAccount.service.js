@@ -3,13 +3,13 @@ import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { USER_ROLE } from '../helpers/constants';
 import { getOffersAttachedToAccount } from './offer.service';
-import { decodeToken } from './user.service';
+import { decodeToken, getUserById } from './user.service';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
 
 export const getAccountById = async (id) => BankAccount.findById(id).select();
 
-export const getAccountByNameAndNumber = async ({ accountNumber, accountName }) =>
-  BankAccount.find({ accountNumber, accountName }).collation({
+export const getAccountByNameAndNumber = async ({ accountNumber, accountName, bank }) =>
+  BankAccount.find({ accountNumber, accountName, bank }).collation({
     locale: 'en',
     strength: 2,
   });
@@ -18,6 +18,7 @@ export const addAccount = async (accountInfo) => {
   const accountExists = await getAccountByNameAndNumber({
     accountNumber: accountInfo.accountNumber,
     accountName: accountInfo.accountName,
+    bank: accountInfo.bank,
   });
 
   if (accountExists.length > 0) {
@@ -103,8 +104,10 @@ export const getAllAccounts = async (token = null) => {
   let accountOptions = [{ $match: { approved: true } }];
 
   if (token) {
-    const user = await decodeToken(token);
-    if (user?.role === USER_ROLE.ADMIN) {
+    const decodedToken = await decodeToken(token);
+    const user = await getUserById(decodedToken.id);
+
+    if (user.role === USER_ROLE.ADMIN) {
       accountOptions = [
         {
           $lookup: {
@@ -123,7 +126,12 @@ export const getAllAccounts = async (token = null) => {
           },
         },
         { $unwind: '$addedBy' },
-        { $unwind: '$approvedBy' },
+        {
+          $unwind: {
+            path: '$approvedBy',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
         {
           $project: {
             ...NON_PROJECTED_USER_INFO('addedBy'),

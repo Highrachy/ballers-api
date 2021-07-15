@@ -14,9 +14,9 @@ import mongoose from 'mongoose';
  *          accountName:
  *            type: string
  *          accountNumber:
- *            type: number
+ *            type: string
  *          bank:
- *            type: number
+ *            type: string
  *        example:
  *           accountName: Highrachy Investment & Technology Limited
  *           accountNumber: 0123456789
@@ -32,7 +32,7 @@ const BankAccountSchema = new mongoose.Schema(
       required: true,
     },
     accountNumber: {
-      type: Number,
+      type: String,
       required: true,
     },
     addedBy: {
@@ -47,7 +47,7 @@ const BankAccountSchema = new mongoose.Schema(
       type: ObjectId,
     },
     bank: {
-      type: Number,
+      type: String,
       required: true,
     },
   },
