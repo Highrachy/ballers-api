@@ -44,5 +44,5 @@ export default (app) => {
   app.use('/api/v1/total-count', totalCount);
   app.use('/api/v1/badge', badge);
   app.use('/api/v1/assign-badge', assignedBadge);
-  app.use('/api/v1/account', bankAccount);
+  app.use('/api/v1/bank-account', bankAccount);
 };

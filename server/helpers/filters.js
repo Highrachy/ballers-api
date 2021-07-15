@@ -379,3 +379,11 @@ export const ASSIGNED_BADGE_FILTERS = {
   createdAt: { type: FILTER_TYPE.DATE },
   userId: { type: FILTER_TYPE.OBJECT_ID },
 };
+
+export const BANK_ACCOUNT_FILTERS = {
+  accountName: { type: FILTER_TYPE.STRING },
+  accountNumber: { type: FILTER_TYPE.STRING },
+  approved: { type: FILTER_TYPE.BOOLEAN },
+  bankName: { type: FILTER_TYPE.STRING },
+  createdAt: { type: FILTER_TYPE.DATE },
+};

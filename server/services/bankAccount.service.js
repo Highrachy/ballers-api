@@ -2,24 +2,18 @@ import BankAccount from '../models/bankAccount.model';
 import { ErrorHandler } from '../helpers/errorHandler';
 import httpStatus from '../helpers/httpStatus';
 import { USER_ROLE } from '../helpers/constants';
-import { getOffersAttachedToAccount } from './offer.service';
 import { decodeToken, getUserById } from './user.service';
 import { NON_PROJECTED_USER_INFO } from '../helpers/projectedSchemaInfo';
+import { generatePagination, generateFacetData, getPaginationTotal } from '../helpers/pagination';
+import { buildFilterAndSortQuery, BANK_ACCOUNT_FILTERS } from '../helpers/filters';
 
-export const getAccountById = async (id) => BankAccount.findById(id).select();
+export const getBankAccountById = async (id) => BankAccount.findById(id).select();
 
-export const getAccountByNameAndNumber = async ({ accountNumber, accountName, bank }) =>
-  BankAccount.find({ accountNumber, accountName, bank }).collation({
-    locale: 'en',
-    strength: 2,
-  });
+export const getAccountByAccountNumber = async (accountNumber) =>
+  BankAccount.find({ accountNumber }).collation({ locale: 'en', strength: 2 });
 
-export const addAccount = async (accountInfo) => {
-  const accountExists = await getAccountByNameAndNumber({
-    accountNumber: accountInfo.accountNumber,
-    accountName: accountInfo.accountName,
-    bank: accountInfo.bank,
-  });
+export const addBankAccount = async (accountInfo) => {
+  const accountExists = await getAccountByAccountNumber(accountInfo.accountNumber);
 
   if (accountExists.length > 0) {
     throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Account already exists');
@@ -33,12 +27,16 @@ export const addAccount = async (accountInfo) => {
   }
 };
 
-export const editAccount = async (updatedAccount) => {
-  const account = await getAccountById(updatedAccount.id).catch((error) => {
+export const editBankAccount = async (updatedAccount) => {
+  const account = await getBankAccountById(updatedAccount.id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
   if (!account) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Account not found');
+  }
+
+  if (account.approved) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Approved accounts cannot be edited');
   }
 
   const accountPayload = {
@@ -53,12 +51,16 @@ export const editAccount = async (updatedAccount) => {
   }
 };
 
-export const approveAccount = async ({ accountId, approvedBy }) => {
-  const account = await getAccountById(accountId).catch((error) => {
+export const approveBankAccount = async ({ accountId, approvedBy }) => {
+  const account = await getBankAccountById(accountId).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
   if (!account) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Account not found');
+  }
+
+  if (account.approved) {
+    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Account has been approved previously');
   }
 
   try {
@@ -72,25 +74,12 @@ export const approveAccount = async ({ accountId, approvedBy }) => {
   }
 };
 
-export const deleteAccount = async (id) => {
-  const account = await getAccountById(id).catch((error) => {
+export const deleteBankAccount = async (id) => {
+  const account = await getBankAccountById(id).catch((error) => {
     throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
   });
   if (!account) {
     throw new ErrorHandler(httpStatus.NOT_FOUND, 'Account not found');
-  }
-
-  const attachedOffers = await getOffersAttachedToAccount(account._id).catch((error) => {
-    throw new ErrorHandler(httpStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', error);
-  });
-
-  if (attachedOffers.length > 0) {
-    throw new ErrorHandler(
-      httpStatus.PRECONDITION_FAILED,
-      `Account is attached to ${attachedOffers.length} ${
-        attachedOffers.length > 1 ? 'offers' : 'offer'
-      }`,
-    );
   }
 
   try {
@@ -100,15 +89,33 @@ export const deleteAccount = async (id) => {
   }
 };
 
-export const getAllAccounts = async (token = null) => {
-  let accountOptions = [{ $match: { approved: true } }];
+export const getAllBankAccounts = async (token = null, { page = 1, limit = 10, ...query } = {}) => {
+  let accountOptions = [
+    { $match: { approved: true } },
+    {
+      $project: {
+        addedBy: 0,
+        approvedBy: 0,
+      },
+    },
+    {
+      $facet: {
+        metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+        data: generateFacetData(page, limit),
+      },
+    },
+  ];
 
   if (token) {
     const decodedToken = await decodeToken(token);
     const user = await getUserById(decodedToken.id);
 
     if (user.role === USER_ROLE.ADMIN) {
+      const { filterQuery, sortQuery } = buildFilterAndSortQuery(BANK_ACCOUNT_FILTERS, query);
+
       accountOptions = [
+        { $match: { $and: filterQuery } },
+        { $sort: sortQuery },
         {
           $lookup: {
             from: 'users',
@@ -138,11 +145,27 @@ export const getAllAccounts = async (token = null) => {
             ...NON_PROJECTED_USER_INFO('approvedBy'),
           },
         },
+        {
+          $facet: {
+            metadata: [{ $count: 'total' }, { $addFields: { page, limit } }],
+            data: generateFacetData(page, limit),
+          },
+        },
       ];
+
+      if (Object.keys(sortQuery).length === 0) {
+        accountOptions.splice(1, 1);
+      }
+
+      if (filterQuery.length < 1) {
+        accountOptions.shift();
+      }
     }
   }
 
   const accounts = await BankAccount.aggregate(accountOptions);
 
-  return accounts;
+  const total = getPaginationTotal(accounts);
+  const pagination = generatePagination(page, limit, total);
+  return { pagination, result: accounts[0].data };
 };

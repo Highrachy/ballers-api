@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
+import querystring from 'querystring';
 import { expect, request, sinon } from '../config';
 import BankAccount from '../../server/models/bankAccount.model';
 import BankAccountFactory from '../factories/bankAccount.factory';
 import UserFactory from '../factories/user.factory';
-import { addAccount } from '../../server/services/bankAccount.service';
+import { addBankAccount } from '../../server/services/bankAccount.service';
 import { addUser } from '../../server/services/user.service';
 import { USER_ROLE } from '../../server/helpers/constants';
 import {
@@ -11,7 +12,16 @@ import {
   itReturnsForbiddenForTokenWithInvalidAccess,
   itReturnsErrorForEmptyFields,
   itReturnsAnErrorWhenServiceFails,
+  itReturnsEmptyValuesWhenNoItemExistInDatabase,
+  itReturnAllResultsWhenAnUnknownFilterIsUsed,
+  defaultPaginationResult,
+  expectsPaginationToReturnTheRightValues,
+  itReturnsNoResultWhenNoFilterParameterIsMatched,
+  filterTestForSingleParameter,
+  futureDate,
+  currentDate,
 } from '../helpers';
+import { BANK_ACCOUNT_FILTERS } from '../../server/helpers/filters';
 
 let adminToken;
 
@@ -34,13 +44,13 @@ describe('Bank Account Controller', () => {
   });
 
   describe('Add account route', () => {
-    const endpoint = '/api/v1/account';
+    const endpoint = '/api/v1/bank-account';
     const method = 'post';
 
     const account = {
       accountName: 'Highrachy Limited',
       accountNumber: '0987654321',
-      bank: 'XYZ BAnk',
+      bankName: 'XYZ BAnk',
     };
 
     context('when a valid token is used', () => {
@@ -52,12 +62,12 @@ describe('Bank Account Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(201);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Account added');
-            expect(res.body.account.accountName).to.be.eql(account.accountName);
-            expect(res.body.account.accountNumber).to.be.eql(account.accountNumber);
-            expect(res.body.account.bank).to.be.eql(account.bank);
-            expect(res.body.account.approved).to.be.eql(false);
-            expect(res.body.account.addedBy).to.be.eql(adminUser._id.toString());
+            expect(res.body.message).to.be.eql('Bank account added');
+            expect(res.body.bankAccount.accountName).to.be.eql(account.accountName);
+            expect(res.body.bankAccount.accountNumber).to.be.eql(account.accountNumber);
+            expect(res.body.bankAccount.bankName).to.be.eql(account.bankName);
+            expect(res.body.bankAccount.approved).to.be.eql(false);
+            expect(res.body.bankAccount.addedBy).to.be.eql(adminUser._id.toString());
             done();
           });
       });
@@ -65,8 +75,9 @@ describe('Bank Account Controller', () => {
 
     context('when account exists', () => {
       beforeEach(async () => {
-        await addAccount({ ...account, addedBy: mongoose.Types.ObjectId() });
+        await addBankAccount({ ...account, addedBy: mongoose.Types.ObjectId() });
       });
+
       it('returns error', (done) => {
         request()
           [method](endpoint)
@@ -96,7 +107,7 @@ describe('Bank Account Controller', () => {
       const invalidEmptyData = {
         accountName: '"Account Name" is not allowed to be empty',
         accountNumber: '"Account Number" is not allowed to be empty',
-        bank: '"Bank" is not allowed to be empty',
+        bankName: '"Bank Name" is not allowed to be empty',
       };
 
       itReturnsErrorForEmptyFields({
@@ -111,7 +122,7 @@ describe('Bank Account Controller', () => {
   });
 
   describe('Update account route', () => {
-    const endpoint = '/api/v1/account';
+    const endpoint = '/api/v1/bank-account';
     const method = 'put';
     const account = BankAccountFactory.build(
       { addedBy: mongoose.Types.ObjectId() },
@@ -122,11 +133,11 @@ describe('Bank Account Controller', () => {
       id: account._id,
       accountName: 'Highrachy Limited',
       accountNumber: '0987654321',
-      bank: 'XYZ BAnk',
+      bankName: 'XYZ BAnk',
     };
 
     beforeEach(async () => {
-      await addAccount(account);
+      await addBankAccount(account);
     });
 
     context('when a valid token is used', () => {
@@ -138,11 +149,11 @@ describe('Bank Account Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Account updated');
-            expect(res.body.account._id).to.be.eql(data.id.toString());
-            expect(res.body.account.accountName).to.be.eql(data.accountName);
-            expect(res.body.account.accountNumber).to.be.eql(data.accountNumber);
-            expect(res.body.account.bank).to.be.eql(data.bank);
+            expect(res.body.message).to.be.eql('Bank account updated');
+            expect(res.body.bankAccount._id).to.be.eql(data.id.toString());
+            expect(res.body.bankAccount.accountName).to.be.eql(data.accountName);
+            expect(res.body.bankAccount.accountNumber).to.be.eql(data.accountNumber);
+            expect(res.body.bankAccount.bankName).to.be.eql(data.bankName);
             done();
           });
       });
@@ -158,6 +169,30 @@ describe('Bank Account Controller', () => {
             expect(res).to.have.status(404);
             expect(res.body.success).to.be.eql(false);
             expect(res.body.message).to.be.eql('Account not found');
+            done();
+          });
+      });
+    });
+
+    context('when account is approved', () => {
+      const approvedAccount = BankAccountFactory.build(
+        { addedBy: mongoose.Types.ObjectId(), approved: true },
+        { generateId: true },
+      );
+
+      beforeEach(async () => {
+        await addBankAccount(approvedAccount);
+      });
+
+      it('returns error', (done) => {
+        request()
+          [method](endpoint)
+          .set('authorization', adminToken)
+          .send({ ...data, id: approvedAccount._id })
+          .end((err, res) => {
+            expect(res).to.have.status(412);
+            expect(res.body.success).to.be.eql(false);
+            expect(res.body.message).to.be.eql('Approved accounts cannot be edited');
             done();
           });
       });
@@ -223,17 +258,17 @@ describe('Bank Account Controller', () => {
         });
       });
 
-      context('when bank is empty', () => {
+      context('when bank name is empty', () => {
         it('returns an error', (done) => {
           request()
             [method](endpoint)
             .set('authorization', adminToken)
-            .send({ ...data, bank: '' })
+            .send({ ...data, bankName: '' })
             .end((err, res) => {
               expect(res).to.have.status(412);
               expect(res.body.success).to.be.eql(false);
               expect(res.body.message).to.be.eql('Validation Error');
-              expect(res.body.error).to.be.eql('"Bank" is not allowed to be empty');
+              expect(res.body.error).to.be.eql('"Bank Name" is not allowed to be empty');
               done();
             });
         });
@@ -262,11 +297,11 @@ describe('Bank Account Controller', () => {
       { addedBy: mongoose.Types.ObjectId(), approved: false },
       { generateId: true },
     );
-    const endpoint = `/api/v1/account/approve/${account._id}`;
+    const endpoint = `/api/v1/bank-account/approve/${account._id}`;
     const method = 'put';
 
     beforeEach(async () => {
-      await addAccount(account);
+      await addBankAccount(account);
     });
 
     context('when a valid token is used', () => {
@@ -277,10 +312,10 @@ describe('Bank Account Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Account approved');
-            expect(res.body.account._id).to.be.eql(account._id.toString());
-            expect(res.body.account.approvedBy).to.be.eql(adminUser._id.toString());
-            expect(res.body.account.approved).to.be.eql(true);
+            expect(res.body.message).to.be.eql('Bank account approved');
+            expect(res.body.bankAccount._id).to.be.eql(account._id.toString());
+            expect(res.body.bankAccount.approvedBy).to.be.eql(adminUser._id.toString());
+            expect(res.body.bankAccount.approved).to.be.eql(true);
             done();
           });
       });
@@ -290,7 +325,7 @@ describe('Bank Account Controller', () => {
       const invalidId = mongoose.Types.ObjectId();
       it('returns not found', (done) => {
         request()
-          [method](`/api/v1/account/approve/${invalidId}`)
+          [method](`/api/v1/bank-account/approve/${invalidId}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(404);
@@ -332,11 +367,11 @@ describe('Bank Account Controller', () => {
       { addedBy: mongoose.Types.ObjectId() },
       { generateId: true },
     );
-    const endpoint = `/api/v1/account/${account._id}`;
+    const endpoint = `/api/v1/bank-account/${account._id}`;
     const method = 'delete';
 
     beforeEach(async () => {
-      await addAccount(account);
+      await addBankAccount(account);
     });
 
     context('when a valid token is used', () => {
@@ -347,7 +382,7 @@ describe('Bank Account Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(200);
             expect(res.body.success).to.be.eql(true);
-            expect(res.body.message).to.be.eql('Account deleted');
+            expect(res.body.message).to.be.eql('Bank account deleted');
             done();
           });
       });
@@ -356,7 +391,7 @@ describe('Bank Account Controller', () => {
     context('when account id is invalid', () => {
       it('returns not found', (done) => {
         request()
-          [method](`/api/v1/account/${mongoose.Types.ObjectId()}`)
+          [method](`/api/v1/bank-account/${mongoose.Types.ObjectId()}`)
           .set('authorization', adminToken)
           .end((err, res) => {
             expect(res).to.have.status(404);
@@ -394,93 +429,220 @@ describe('Bank Account Controller', () => {
   });
 
   describe('Get all accounts route', () => {
-    const endpoint = '/api/v1/account/all';
+    const endpoint = '/api/v1/bank-account/all';
     const method = 'get';
     let vendorToken;
     let userToken;
 
     const approvedAccounts = BankAccountFactory.buildList(
-      5,
-      { approved: true, addedBy: adminUser._id, approvedBy: adminUser._id },
+      18,
+      { approved: true, addedBy: adminUser._id, approvedBy: adminUser._id, createdAt: currentDate },
       { generateId: true },
     );
     const unApprovedAccounts = BankAccountFactory.buildList(
       2,
-      { approved: false, addedBy: adminUser._id },
+      {
+        approved: false,
+        addedBy: adminUser._id,
+        createdAt: futureDate,
+        accountName: 'Blissvile Ltd',
+        accountNumber: '2345678901',
+        bankName: 'Second Bank Ltd',
+      },
       { generateId: true },
     );
 
     beforeEach(async () => {
-      await BankAccount.insertMany([...approvedAccounts, ...unApprovedAccounts]);
+      vendorToken = await addUser(vendorUser);
+      userToken = await addUser(regularUser);
     });
 
-    context('when request is made by an admin', () => {
-      it('returns all accounts', (done) => {
-        request()
-          [method](endpoint)
-          .set('authorization', adminToken)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.accounts.length).to.be.eql(
-              approvedAccounts.length + unApprovedAccounts.length,
-            );
-            expect(res.body.accounts[0]._id).to.be.eql(approvedAccounts[0]._id.toString());
-            expect(res.body.accounts[0].addedBy._id).to.be.eql(adminUser._id.toString());
-            expect(res.body.accounts[0].approvedBy._id).to.be.eql(adminUser._id.toString());
-            expect(res.body.accounts[0].addedBy).to.not.have.property('password');
-            expect(res.body.accounts[0].approvedBy).to.not.have.property('password');
-            done();
+    describe('Pagination Tests', () => {
+      context('when no bank account exists in db', () => {
+        [adminUser, vendorUser, regularUser].map((user) =>
+          itReturnsEmptyValuesWhenNoItemExistInDatabase({
+            endpoint,
+            method,
+            user,
+            useExistingUser: true,
+          }),
+        );
+      });
+
+      describe('when bank accounts exist in db', () => {
+        beforeEach(async () => {
+          await BankAccount.insertMany([...approvedAccounts, ...unApprovedAccounts]);
+        });
+
+        context('when non admin token is used', () => {
+          [...new Array(2)].map((_, index) =>
+            it('returns only approved accounts', (done) => {
+              request()
+                [method](endpoint)
+                .set('authorization', [vendorToken, userToken][index])
+                .end((err, res) => {
+                  expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+                  expect(res.body.result[0]._id).to.be.eql(approvedAccounts[0]._id.toString());
+                  expect(res.body.result[0]).to.not.have.property('addedBy');
+                  expect(res.body.result[0]).to.not.have.property('approvedBy');
+                  done();
+                });
+            }),
+          );
+        });
+
+        context('when token is not used', () => {
+          it('returns only approved accounts', (done) => {
+            request()
+              [method](endpoint)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+                expect(res.body.result[0]._id).to.be.eql(approvedAccounts[0]._id.toString());
+                expect(res.body.result[0]).to.not.have.property('addedBy');
+                expect(res.body.result[0]).to.not.have.property('approvedBy');
+                done();
+              });
           });
+        });
+
+        context('when request is made with admin token', () => {
+          it('returns all accounts', (done) => {
+            request()
+              [method](endpoint)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  ...defaultPaginationResult,
+                  total: 20,
+                });
+                expect(res.body.result[0]._id).to.be.eql(approvedAccounts[0]._id.toString());
+                expect(res.body.result[0].addedBy._id).to.be.eql(adminUser._id.toString());
+                expect(res.body.result[0].approvedBy._id).to.be.eql(adminUser._id.toString());
+                expect(res.body.result[0].addedBy).to.not.have.property('password');
+                expect(res.body.result[0].approvedBy).to.not.have.property('password');
+                done();
+              });
+          });
+        });
+
+        itReturnsAnErrorWhenServiceFails({
+          endpoint,
+          method,
+          user: adminUser,
+          model: BankAccount,
+          modelMethod: 'aggregate',
+          useExistingUser: true,
+        });
       });
     });
 
-    context('when non admin token is used', () => {
+    describe('Filter Tests', () => {
       beforeEach(async () => {
-        vendorToken = await addUser(vendorUser);
-        userToken = await addUser(regularUser);
+        await BankAccount.insertMany([...approvedAccounts, unApprovedAccounts[0]]);
       });
-      [...new Array(2)].map((_, index) =>
-        it('returns only approved accounts', (done) => {
-          request()
-            [method](endpoint)
-            .set('authorization', [vendorToken, userToken][index])
-            .end((err, res) => {
-              expect(res).to.have.status(200);
-              expect(res.body.success).to.be.eql(true);
-              expect(res.body.accounts.length).to.be.eql(approvedAccounts.length);
-              expect(res.body.accounts[0]._id).to.be.eql(approvedAccounts[0]._id.toString());
-              expect(res.body.accounts[0].addedBy).to.be.eql(adminUser._id.toString());
-              expect(res.body.accounts[0].approvedBy).to.be.eql(adminUser._id.toString());
-              done();
-            });
-        }),
-      );
-    });
 
-    context('when token is not used', () => {
-      it('returns only approved accounts', (done) => {
-        request()
-          [method](endpoint)
-          .end((err, res) => {
-            expect(res).to.have.status(200);
-            expect(res.body.success).to.be.eql(true);
-            expect(res.body.accounts.length).to.be.eql(approvedAccounts.length);
-            expect(res.body.accounts[0]._id).to.be.eql(approvedAccounts[0]._id.toString());
-            expect(res.body.accounts[0].addedBy).to.be.eql(adminUser._id.toString());
-            expect(res.body.accounts[0].approvedBy).to.be.eql(adminUser._id.toString());
-            done();
+      describe('Unknown Filters', () => {
+        const unknownFilter = {
+          dob: '1993-02-01',
+        };
+
+        itReturnAllResultsWhenAnUnknownFilterIsUsed({
+          filter: unknownFilter,
+          method,
+          endpoint,
+          user: adminUser,
+          expectedPagination: { ...defaultPaginationResult, total: 19 },
+          useExistingUser: true,
+        });
+      });
+
+      context('when multiple filters are used', () => {
+        const multipleFilters = {
+          accountName: unApprovedAccounts[0].accountName,
+          accountNumber: unApprovedAccounts[0].accountNumber,
+          approved: unApprovedAccounts[0].approved,
+        };
+        const filteredParams = querystring.stringify(multipleFilters);
+
+        context('with admin token', () => {
+          it('returns matched account', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .set('authorization', adminToken)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, {
+                  currentPage: 1,
+                  limit: 10,
+                  offset: 0,
+                  result: 1,
+                  total: 1,
+                  totalPage: 1,
+                });
+                expect(res.body.result[0]._id).to.be.eql(unApprovedAccounts[0]._id.toString());
+                expect(res.body.result[0].accountName).to.be.eql(multipleFilters.accountName);
+                expect(res.body.result[0].accountNumber).to.be.eql(multipleFilters.accountNumber);
+                expect(res.body.result[0].approved).to.be.eql(multipleFilters.approved);
+                done();
+              });
           });
-      });
-    });
+        });
 
-    itReturnsAnErrorWhenServiceFails({
-      endpoint,
-      method,
-      user: adminUser,
-      model: BankAccount,
-      modelMethod: 'aggregate',
-      useExistingUser: true,
+        context('without token', () => {
+          it('returns only approved accounts', (done) => {
+            request()
+              [method](`${endpoint}?${filteredParams}`)
+              .end((err, res) => {
+                expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+                expect(res.body.result[0]._id).to.be.eql(approvedAccounts[0]._id.toString());
+                expect(res.body.result[0]).to.not.have.property('addedBy');
+                expect(res.body.result[0]).to.not.have.property('approvedBy');
+                done();
+              });
+          });
+        });
+
+        context('when non admin token is used', () => {
+          [...new Array(2)].map((_, index) =>
+            it('returns only approved accounts', (done) => {
+              request()
+                [method](`${endpoint}?${filteredParams}`)
+                .set('authorization', [vendorToken, userToken][index])
+                .end((err, res) => {
+                  expectsPaginationToReturnTheRightValues(res, defaultPaginationResult);
+                  expect(res.body.result[0]._id).to.be.eql(approvedAccounts[0]._id.toString());
+                  expect(res.body.result[0]).to.not.have.property('addedBy');
+                  expect(res.body.result[0]).to.not.have.property('approvedBy');
+                  done();
+                });
+            }),
+          );
+        });
+      });
+
+      context('when no parameter is matched', () => {
+        const nonMatchingFilters = {
+          createdAt: '2020-11-12',
+          accountName: 'ASD Nig Limited',
+          approved: false,
+        };
+
+        itReturnsNoResultWhenNoFilterParameterIsMatched({
+          filter: nonMatchingFilters,
+          method,
+          endpoint,
+          user: adminUser,
+          useExistingUser: true,
+        });
+      });
+
+      filterTestForSingleParameter({
+        filter: BANK_ACCOUNT_FILTERS,
+        method,
+        endpoint,
+        user: adminUser,
+        dataObject: unApprovedAccounts[0],
+        useExistingUser: true,
+      });
     });
   });
 });

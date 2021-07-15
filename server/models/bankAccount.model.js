@@ -9,18 +9,18 @@ import mongoose from 'mongoose';
  *        required:
  *          - accountName
  *          - accountNumber
- *          - bank
+ *          - bankName
  *        properties:
  *          accountName:
  *            type: string
  *          accountNumber:
  *            type: string
- *          bank:
+ *          bankName:
  *            type: string
  *        example:
  *           accountName: Highrachy Investment & Technology Limited
  *           accountNumber: 0123456789
- *           bank: ABC Bank
+ *           bankName: ABC Bank
  */
 
 const { ObjectId } = mongoose.Schema.Types;
@@ -46,7 +46,7 @@ const BankAccountSchema = new mongoose.Schema(
     approvedBy: {
       type: ObjectId,
     },
-    bank: {
+    bankName: {
       type: String,
       required: true,
     },

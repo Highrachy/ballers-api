@@ -8,4 +8,4 @@ export default new Factory()
   )
   .attr('accountName', 'Highrachy Investment & Technology Limited')
   .sequence('accountNumber', (i) => `012345678${i}`)
-  .attr('bank', 'ABC Bank');
+  .attr('bankName', 'ABC Bank');

@@ -1,54 +1,61 @@
 import {
-  addAccount,
-  editAccount,
-  getAllAccounts,
-  approveAccount,
-  deleteAccount,
+  addBankAccount,
+  editBankAccount,
+  getAllBankAccounts,
+  approveBankAccount,
+  deleteBankAccount,
 } from '../services/bankAccount.service';
 import httpStatus from '../helpers/httpStatus';
 
 const BankAccountController = {
-  addAccount(req, res, next) {
+  addBankAccount(req, res, next) {
     const accountInfo = req.locals;
-    addAccount({ ...accountInfo, addedBy: req.user._id })
-      .then((account) => {
-        res.status(httpStatus.CREATED).json({ success: true, message: 'Account added', account });
+    addBankAccount({ ...accountInfo, addedBy: req.user._id })
+      .then((bankAccount) => {
+        res
+          .status(httpStatus.CREATED)
+          .json({ success: true, message: 'Bank account added', bankAccount });
       })
       .catch((error) => next(error));
   },
 
-  editAccount(req, res, next) {
+  editBankAccount(req, res, next) {
     const accountInfo = req.locals;
-    editAccount(accountInfo)
-      .then((account) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Account updated', account });
+    editBankAccount(accountInfo)
+      .then((bankAccount) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Bank account updated', bankAccount });
       })
       .catch((error) => next(error));
   },
 
-  approveAccount(req, res, next) {
+  approveBankAccount(req, res, next) {
     const { id } = req.params;
-    approveAccount({ accountId: id, approvedBy: req.user._id })
-      .then((account) => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Account approved', account });
+    approveBankAccount({ accountId: id, approvedBy: req.user._id })
+      .then((bankAccount) => {
+        res
+          .status(httpStatus.OK)
+          .json({ success: true, message: 'Bank account approved', bankAccount });
       })
       .catch((error) => next(error));
   },
 
-  getAllAccounts(req, res, next) {
+  getAllBankAccounts(req, res, next) {
     const token = req.headers.authorization;
-    getAllAccounts(token)
-      .then((accounts) => {
-        res.status(httpStatus.OK).json({ success: true, accounts });
+    const { query } = req;
+    getAllBankAccounts(token, query)
+      .then(({ result, pagination }) => {
+        res.status(httpStatus.OK).json({ success: true, pagination, result });
       })
       .catch((error) => next(error));
   },
 
-  deleteAccount(req, res, next) {
+  deleteBankAccount(req, res, next) {
     const { id } = req.params;
-    deleteAccount(id)
+    deleteBankAccount(id)
       .then(() => {
-        res.status(httpStatus.OK).json({ success: true, message: 'Account deleted' });
+        res.status(httpStatus.OK).json({ success: true, message: 'Bank account deleted' });
       })
       .catch((error) => next(error));
   },

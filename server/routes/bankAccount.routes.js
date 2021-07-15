@@ -7,7 +7,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /account/:
+ * /bank-account/:
  *   post:
  *     tags:
  *       - BankAccount
@@ -33,12 +33,12 @@ router.post(
   authenticate,
   isAdmin,
   schemaValidation(addAccountSchema),
-  BankAccountController.addAccount,
+  BankAccountController.addBankAccount,
 );
 
 /**
  * @swagger
- * /account/:
+ * /bank-account/:
  *   put:
  *     tags:
  *       - BankAccount
@@ -64,12 +64,12 @@ router.put(
   authenticate,
   isAdmin,
   schemaValidation(updateAccountSchema),
-  BankAccountController.editAccount,
+  BankAccountController.editBankAccount,
 );
 
 /**
  * @swagger
- * /account/approve/:id:
+ * /bank-account/approve/:id:
  *   put:
  *     tags:
  *       - BankAccount
@@ -95,12 +95,12 @@ router.put(
   authenticate,
   isAdmin,
   hasValidObjectId,
-  BankAccountController.approveAccount,
+  BankAccountController.approveBankAccount,
 );
 
 /**
  * @swagger
- * /account/:id:
+ * /bank-account/:id:
  *   delete:
  *     tags:
  *       - BankAccount
@@ -119,11 +119,17 @@ router.put(
  *      '500':
  *       description: Internal server error
  */
-router.delete('/:id', authenticate, hasValidObjectId, isAdmin, BankAccountController.deleteAccount);
+router.delete(
+  '/:id',
+  authenticate,
+  hasValidObjectId,
+  isAdmin,
+  BankAccountController.deleteBankAccount,
+);
 
 /**
  * @swagger
- * /account/all:
+ * /bank-account/all:
  *   get:
  *     tags:
  *       - BankAccount
@@ -142,6 +148,6 @@ router.delete('/:id', authenticate, hasValidObjectId, isAdmin, BankAccountContro
  *      '500':
  *       description: Internal server error
  */
-router.get('/all', BankAccountController.getAllAccounts);
+router.get('/all', BankAccountController.getAllBankAccounts);
 
 module.exports = router;

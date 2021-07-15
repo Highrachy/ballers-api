@@ -4,12 +4,12 @@ import { requiredObjectId, requiredString, optionalString } from './helper.schem
 export const addAccountSchema = Joi.object({
   accountName: requiredString('Account Name'),
   accountNumber: requiredString('Account Number'),
-  bank: requiredString('Bank'),
+  bankName: requiredString('Bank Name'),
 });
 
 export const updateAccountSchema = Joi.object({
   id: requiredObjectId('Account Id'),
   accountName: optionalString('Account Name'),
   accountNumber: optionalString('Account Number'),
-  bank: optionalString('Bank'),
+  bankName: optionalString('Bank Name'),
 });
