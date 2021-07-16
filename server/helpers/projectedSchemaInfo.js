@@ -69,7 +69,6 @@ export const NON_PROJECTED_USER_INFO = (infoType, userRole = null) => {
     [`${infoType}.banned:`]: 0,
     [`${infoType}.password`]: 0,
     [`${infoType}.referralCode`]: 0,
-    [`${infoType}.role`]: 0,
     [`${infoType}.notifications`]: 0,
     [`${infoType}.additionalInfo`]: 0,
     [`${infoType}.vendor.logs`]: 0,
