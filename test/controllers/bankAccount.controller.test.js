@@ -192,7 +192,7 @@ describe('Bank Account Controller', () => {
           .end((err, res) => {
             expect(res).to.have.status(412);
             expect(res.body.success).to.be.eql(false);
-            expect(res.body.message).to.be.eql('Approved accounts cannot be edited');
+            expect(res.body.message).to.be.eql('Approved bank accounts cannot be edited');
             done();
           });
       });

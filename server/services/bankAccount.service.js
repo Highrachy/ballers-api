@@ -10,7 +10,7 @@ import { buildFilterAndSortQuery, BANK_ACCOUNT_FILTERS } from '../helpers/filter
 export const getBankAccountById = async (id) => BankAccount.findById(id).select();
 
 export const getAccountByAccountNumber = async (accountNumber) =>
-  BankAccount.find({ accountNumber }).collation({ locale: 'en', strength: 2 });
+  BankAccount.find({ accountNumber });
 
 export const addBankAccount = async (accountInfo) => {
   const accountExists = await getAccountByAccountNumber(accountInfo.accountNumber);
@@ -36,7 +36,10 @@ export const editBankAccount = async (updatedAccount) => {
   }
 
   if (account.approved) {
-    throw new ErrorHandler(httpStatus.PRECONDITION_FAILED, 'Approved accounts cannot be edited');
+    throw new ErrorHandler(
+      httpStatus.PRECONDITION_FAILED,
+      'Approved bank accounts cannot be edited',
+    );
   }
 
   const accountPayload = {
