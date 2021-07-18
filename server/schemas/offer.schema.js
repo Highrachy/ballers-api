@@ -5,7 +5,35 @@ import {
   requiredNumber,
   requiredFutureDate,
   requiredPercentage,
+  optionalString,
+  optionalNumber,
+  optionalObjectId,
 } from './helper.schema';
+
+const additionalClause = Joi.array()
+  .label('Additional Clause')
+  .items(optionalString('Additional Clause'));
+
+const bankAccounts = Joi.array().label('Bank Accounts').items(optionalObjectId('Bank Account Id'));
+
+const otherPayments = Joi.object().keys({
+  agencyFee: optionalNumber('Agency Fee'),
+  deedOfAssignmentExecution: optionalNumber('Deed Of Assignment Execution'),
+  infrastructureDevelopment: optionalNumber('Infrastructure Development'),
+  legalFee: optionalNumber('Legal Fee'),
+  powerConnectionFee: optionalNumber('Power Connection Fee'),
+  surveyPlan: optionalNumber('Survey Plan'),
+});
+
+const otherTerms = Joi.object().keys({
+  administrativeCharge: optionalNumber('Administrative Charge'),
+  bankDraftDue: optionalNumber('Bank Draft Due'),
+  dateDue: optionalNumber('Date Due'),
+  deductibleRefundPercentage: optionalNumber('Deductible Refund Percentage'),
+  gracePeriod: optionalNumber('Grace Period'),
+  terminationInterest: optionalNumber('Termination Interest'),
+  terminationPeriod: optionalNumber('Termination Period'),
+});
 
 export const createOfferSchema = Joi.object({
   enquiryId: requiredObjectId('Enquiry ID'),
@@ -19,6 +47,10 @@ export const createOfferSchema = Joi.object({
   allocationInPercentage: requiredPercentage('Allocation'),
   handOverDate: requiredFutureDate('Handover Date'),
   expires: requiredFutureDate('Expiry Date'),
+  additionalClause,
+  bankAccounts,
+  otherPayments,
+  otherTerms,
 });
 
 export const acceptOfferSchema = Joi.object({

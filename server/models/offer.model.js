@@ -175,6 +175,74 @@ const OfferSchema = new mongoose.Schema(
         },
       },
     ],
+    additionalClause: {
+      type: [String],
+    },
+    bankAccounts: {
+      type: [ObjectId],
+    },
+    otherPayments: {
+      agencyFee: {
+        type: Number,
+        default: 5,
+      },
+      deedOfAssignmentExecution: {
+        type: Number,
+      },
+      infrastructureDevelopment: {
+        type: Number,
+      },
+      legalFee: {
+        type: Number,
+        default: 5,
+      },
+      powerConnectionFee: {
+        type: Number,
+      },
+      surveyPlan: {
+        type: Number,
+      },
+    },
+    paymentSchedule: [
+      {
+        amount: {
+          type: Number,
+        },
+        date: {
+          type: Date,
+        },
+      },
+    ],
+    otherTerms: {
+      administrativeCharge: {
+        type: Number,
+        default: 10,
+      },
+      bankDraftDue: {
+        type: Number,
+        default: 5,
+      },
+      dateDue: {
+        type: Number,
+        default: 21,
+      },
+      deductibleRefundPercentage: {
+        type: Number,
+        default: 5,
+      },
+      gracePeriod: {
+        type: Number,
+        default: 30,
+      },
+      terminationInterest: {
+        type: Number,
+        default: 10,
+      },
+      terminationPeriod: {
+        type: Number,
+        default: 90,
+      },
+    },
   },
   { timestamps: true },
 );
