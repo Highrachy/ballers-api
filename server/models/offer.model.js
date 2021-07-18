@@ -182,24 +182,24 @@ const OfferSchema = new mongoose.Schema(
       type: [ObjectId],
     },
     otherPayments: {
-      legalFee: {
-        type: Number,
-        default: 5,
-      },
       agencyFee: {
         type: Number,
         default: 5,
       },
-      surveyPlan: {
-        type: Number,
-      },
       deedOfAssignmentExecution: {
         type: Number,
+      },
+      infrastructureDevelopment: {
+        type: Number,
+      },
+      legalFee: {
+        type: Number,
+        default: 5,
       },
       powerConnectionFee: {
         type: Number,
       },
-      infrastructureDevelopment: {
+      surveyPlan: {
         type: Number,
       },
     },

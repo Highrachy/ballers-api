@@ -139,7 +139,29 @@ describe('Offer Controller', () => {
 
       context('with valid data', () => {
         it('returns successful offer', (done) => {
-          const offer = OfferFactory.build({ enquiryId: enquiry._id });
+          const offer = OfferFactory.build({
+            enquiryId: enquiry._id,
+            additionalClause: ['Additional Clause 1', 'Additional Clause 2'],
+            bankAccounts: ['60d31a4c3514f460ba0601c2', '60d7b9f47b49a27b993971ed'],
+            otherPayments: {
+              agencyFee: 6,
+              deedOfAssignmentExecution: 7,
+              infrastructureDevelopment: 6,
+              legalFee: 7,
+              powerConnectionFee: 6,
+              surveyPlan: 7,
+            },
+            otherTerms: {
+              administrativeCharge: 6,
+              bankDraftDue: 7,
+              dateDue: 6,
+              deductibleRefundPercentage: 7,
+              gracePeriod: 6,
+              terminationInterest: 7,
+              terminationPeriod: 6,
+            },
+          });
+
           request()
             .post('/api/v1/offer/create')
             .set('authorization', vendorToken)
@@ -157,6 +179,23 @@ describe('Offer Controller', () => {
               expect(res.body.offer.referenceCode).to.be.eql(
                 `HIG/LVE/OLM/01/${getTodaysDateShortCode()}`,
               );
+              expect(res.body.offer.additionalClause.length).to.be.eql(2);
+              expect(res.body.offer.additionalClause[0]).to.be.eql(offer.additionalClause[0]);
+              expect(res.body.offer.bankAccounts.length).to.be.eql(2);
+              expect(res.body.offer.bankAccounts[0]).to.be.eql(offer.bankAccounts[0]);
+              expect(res.body.offer.otherPayments.agencyFee).to.be.eql(6);
+              expect(res.body.offer.otherPayments.deedOfAssignmentExecution).to.be.eql(7);
+              expect(res.body.offer.otherPayments.infrastructureDevelopment).to.be.eql(6);
+              expect(res.body.offer.otherPayments.legalFee).to.be.eql(7);
+              expect(res.body.offer.otherPayments.powerConnectionFee).to.be.eql(6);
+              expect(res.body.offer.otherPayments.surveyPlan).to.be.eql(7);
+              expect(res.body.offer.otherTerms.administrativeCharge).to.be.eql(6);
+              expect(res.body.offer.otherTerms.bankDraftDue).to.be.eql(7);
+              expect(res.body.offer.otherTerms.dateDue).to.be.eql(6);
+              expect(res.body.offer.otherTerms.deductibleRefundPercentage).to.be.eql(7);
+              expect(res.body.offer.otherTerms.gracePeriod).to.be.eql(6);
+              expect(res.body.offer.otherTerms.terminationInterest).to.be.eql(7);
+              expect(res.body.offer.otherTerms.terminationPeriod).to.be.eql(6);
               done();
             });
         });
